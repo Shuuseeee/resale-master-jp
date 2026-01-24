@@ -1,15 +1,17 @@
-// app/transactions/add/page.tsx
+// app/transactions/[id]/edit/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { supabase, uploadImage, compressImage } from '@/lib/supabase/client';
-import type { PaymentMethod, TransactionFormData } from '@/types/database.types';
-import { useRouter } from 'next/navigation';
+import type { PaymentMethod, TransactionFormData, Transaction } from '@/types/database.types';
 import Image from 'next/image';
 
-export default function AddTransactionPage() {
+export default function EditTransactionPage() {
   const router = useRouter();
-  
+  const params = useParams();
+  const id = params.id as string;
+
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
     date: new Date().toISOString().split('T')[0],
@@ -30,12 +32,54 @@ export default function AddTransactionPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 加载支付方式列表
+  // 加载交易数据和支付方式列表
   useEffect(() => {
+    loadTransaction();
     fetchPaymentMethods();
-  }, []);
+  }, [id]);
+
+  const loadTransaction = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          date: data.date,
+          product_name: data.product_name,
+          purchase_price_total: data.purchase_price_total,
+          card_paid: data.card_paid,
+          point_paid: data.point_paid,
+          balance_paid: data.balance_paid,
+          card_id: data.card_id || '',
+          expected_platform_points: data.expected_platform_points,
+          expected_card_points: data.expected_card_points,
+          image_url: data.image_url || '',
+          notes: data.notes || '',
+        });
+
+        // 设置现有图片预览
+        if (data.image_url) {
+          setImagePreview(data.image_url);
+        }
+      }
+    } catch (error) {
+      console.error('加载交易失败:', error);
+      alert('加载失败，请重试');
+      router.push('/transactions');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchPaymentMethods = async () => {
     const { data, error } = await supabase
@@ -144,7 +188,7 @@ export default function AddTransactionPage() {
     }
 
     setSelectedImage(file);
-    
+
     // 生成预览
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -191,29 +235,34 @@ export default function AddTransactionPage() {
     try {
       let imageUrl = formData.image_url;
 
-      // 上传图片
+      // 如果选择了新图片，则上传
       if (selectedImage) {
         const compressed = await compressImage(selectedImage);
         imageUrl = await uploadImage(compressed);
       }
 
-      // 插入交易记录
+      // 更新交易记录
       const { error } = await supabase
         .from('transactions')
-        .insert([
-          {
-            ...formData,
-            image_url: imageUrl,
-            card_id: formData.card_id || null,
-          },
-        ])
-        .select()
-        .single();
+        .update({
+          date: formData.date,
+          product_name: formData.product_name,
+          purchase_price_total: formData.purchase_price_total,
+          card_paid: formData.card_paid,
+          point_paid: formData.point_paid,
+          balance_paid: formData.balance_paid,
+          card_id: formData.card_id || null,
+          expected_platform_points: formData.expected_platform_points,
+          expected_card_points: formData.expected_card_points,
+          image_url: imageUrl,
+          notes: formData.notes,
+        })
+        .eq('id', id);
 
       if (error) throw error;
 
-      // 成功后跳转
-      router.push('/transactions');
+      // 成功后跳转到详情页
+      router.push(`/transactions/${id}`);
     } catch (error: any) {
       console.error('保存失败:', error);
       setErrors({ submit: error.message || '保存失败,请重试' });
@@ -221,6 +270,20 @@ export default function AddTransactionPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-xl">加载中...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -236,11 +299,11 @@ export default function AddTransactionPage() {
             </svg>
             <span className="font-medium">返回</span>
           </button>
-          
+
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            记录新交易
+            编辑交易
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">快速录入您的转卖商品信息</p>
+          <p className="text-gray-600 dark:text-gray-400">修改交易记录信息</p>
         </div>
 
         {/* 表单卡片 */}
@@ -483,7 +546,7 @@ export default function AddTransactionPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   采购截图
                 </label>
-                
+
                 {imagePreview ? (
                   <div className="relative group">
                     <div className="relative w-full h-48 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600">
@@ -559,23 +622,32 @@ export default function AddTransactionPage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                保存中...
-              </span>
-            ) : (
-              '保存交易'
-            )}
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  保存中...
+                </span>
+              ) : (
+                '保存更改'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-slate-700/50 text-gray-700 dark:text-gray-300 hover:text-white font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+            >
+              取消
+            </button>
+          </div>
         </form>
       </div>
     </div>

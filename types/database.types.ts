@@ -13,6 +13,7 @@ export interface PaymentMethod {
   type: PaymentMethodType;
   closing_day: number | null;
   payment_day: number | null;
+  payment_same_month: boolean; // true: 当月还款, false: 次月还款
   point_rate: number;
   is_active: boolean;
   created_at: string;
