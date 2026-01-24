@@ -127,7 +127,7 @@ export default function EnhancedAddTransactionPage() {
         formData.purchase_price_total,
         formData.expected_platform_points,
         formData.expected_card_points,
-        selectedMethod.point_conversion_rate || 1.0
+        selectedMethod.point_rate || 1.0
       );
 
       const profit = calculateTotalProfit(
@@ -137,11 +137,11 @@ export default function EnhancedAddTransactionPage() {
         formData.purchase_price_total,
         formData.expected_platform_points,
         formData.expected_card_points,
-        selectedMethod.point_conversion_rate || 1.0
+        selectedMethod.point_rate || 1.0
       );
 
-      const pointsValue = (formData.expected_platform_points + formData.expected_card_points) 
-        * (selectedMethod.point_conversion_rate || 1.0) * 0.01;
+      const pointsValue = (formData.expected_platform_points + formData.expected_card_points)
+        * (selectedMethod.point_rate || 1.0) * 0.01;
 
       setPreview(prev => ({
         ...prev,
