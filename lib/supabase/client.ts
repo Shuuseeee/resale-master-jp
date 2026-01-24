@@ -2,7 +2,6 @@
 // Supabase Client Configuration
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
 
 // 环境变量验证
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 创建 Supabase 客户端实例
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
