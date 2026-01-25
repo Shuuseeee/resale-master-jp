@@ -288,7 +288,7 @@ export default function TransactionDetailPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-slate-700 disabled:to-slate-700 text-gray-900 dark:text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-gradient-to-r bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
                 >
                   {submitting ? '保存中...' : '保存销售信息'}
                 </button>

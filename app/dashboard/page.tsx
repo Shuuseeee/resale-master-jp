@@ -196,7 +196,7 @@ export default function DashboardPage() {
               {pendingPoints.length > 0 && (
                 <button 
                   onClick={() => {/* TODO: 批量确认 */}}
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-lg text-sm font-medium transition-all"
+                  className="px-4 py-2 bg-gradient-to-r bg-green-500/20 hover:bg-green-500/30 rounded-lg text-sm font-medium transition-all"
                 >
                   一键确认全部
                 </button>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                         <span>购买日: {point.purchase_date}</span>
                         <button 
                           onClick={() => {/* TODO: 单个确认 */}}
-                          className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 rounded text-emerald-400 transition-colors"
+                          className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 rounded transition-colors"
                         >
                           确认
                         </button>

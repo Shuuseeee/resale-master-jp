@@ -319,7 +319,8 @@ export default function TransactionsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {filteredTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-100 dark:bg-gray-700 transition-colors">
+                    // 移动端点击整行也能进入详情
+                    <tr key={transaction.id} className="hover:bg-gray-100 dark:bg-gray-700 transition-colors" onClick={() => {if (window.innerWidth < 768) location.href = `/transactions/${transaction.id}`}}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {transaction.image_url && (
@@ -346,7 +347,7 @@ export default function TransactionsPage() {
                       <td className="px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         {new Date(transaction.date).toLocaleDateString('zh-CN')}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap" >
                         {transaction.status === 'sold' ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                             已售出
