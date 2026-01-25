@@ -67,9 +67,11 @@ export async function getWaterLevelData(): Promise<WaterLevelData | null> {
 
   if (error) {
     console.error('获取财务水位线失败:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return null;
   }
 
+  console.log('Water level data:', data);
   return data;
 }
 
@@ -86,9 +88,11 @@ export async function getUpcomingPayments(days: number = 30): Promise<UpcomingPa
 
   if (error) {
     console.error('获取即将到期的支付失败:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return [];
   }
 
+  console.log('Upcoming payments data:', data);
   return data || [];
 }
 
