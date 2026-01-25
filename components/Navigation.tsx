@@ -1,13 +1,27 @@
 // components/Navigation.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { user, signOut } = useAuth();
+
+  // 等待组件挂载后再渲染用户相关内容，避免 hydration 错误
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 不在认证页面显示导航栏
+  const isAuthPage = pathname?.startsWith('/auth');
+  if (isAuthPage) {
+    return null;
+  }
 
   const navItems = [
     {
@@ -75,6 +89,12 @@ export default function Navigation() {
     return pathname === href || pathname?.startsWith(href + '/');
   };
 
+  const handleLogout = async () => {
+    if (confirm('确定要退出登录吗？')) {
+      await signOut();
+    }
+  };
+
   return (
     <>
       {/* 桌面端侧边栏 */}
@@ -119,12 +139,28 @@ export default function Navigation() {
           })}
         </nav>
 
-        {/* 底部信息 */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        {/* 用户信息和退出按钮 */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+          {/* 用户信息 */}
           <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="text-xs text-gray-500 dark:text-gray-400">Version</div>
-            <div className="text-sm text-gray-900 dark:text-white font-medium">1.0.0</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
+            <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
+              {mounted ? (user?.email || '未登录') : '加载中...'}
+            </div>
           </div>
+
+          {/* 退出按钮 */}
+          {mounted && (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="text-sm font-medium">退出登录</span>
+            </button>
+          )}
         </div>
       </aside>
 
@@ -183,6 +219,27 @@ export default function Navigation() {
                 );
               })}
             </nav>
+
+            {/* 移动端用户信息 */}
+            <div className="px-4 pb-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg mb-2">
+                <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
+                <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
+                  {mounted ? (user?.email || '未登录') : '加载中...'}
+                </div>
+              </div>
+              {mounted && (
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-sm font-medium">退出登录</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

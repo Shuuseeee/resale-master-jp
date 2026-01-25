@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import { ClientProviders } from '@/components/ClientProviders'
 
 export const metadata: Metadata = {
   title: 'Resale Master JP - 转卖账务管理系统',
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <Navigation />
-        <div className="lg:pl-64">
-          {children}
-        </div>
+        <ClientProviders>
+          <Navigation />
+          <div className="lg:pl-64">
+            {children}
+          </div>
+        </ClientProviders>
       </body>
     </html>
   )

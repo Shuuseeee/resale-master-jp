@@ -1,7 +1,7 @@
 // lib/supabase/client.ts
 // Supabase Client Configuration
 
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // 环境变量验证
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,14 +11,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// 创建 Supabase 客户端实例
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// 创建 Supabase 浏览器客户端实例
+// 使用 @supabase/ssr 确保 cookies 正确同步
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * 获取当前用户ID
+ * @returns 当前登录用户的 ID，如果未登录则返回 null
+ */
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
 // Storage bucket 名称常量
 export const STORAGE_BUCKETS = {
