@@ -126,10 +126,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
       setSession(null);
       setUser(null);
-      router.push('/auth/login');
-      router.refresh();
+      // 使用 window.location.href 确保完整刷新，特别是在 iOS 上
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error('Sign out error:', error);
+      // 即使出错也强制跳转到登录页
+      window.location.href = '/auth/login';
     }
   };
 
