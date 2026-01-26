@@ -2,14 +2,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, uploadImage, compressImage } from '@/lib/supabase/client';
-import type { PaymentMethod, TransactionFormData } from '@/types/database.types';
+import { supabase, uploadImage } from '@/lib/supabase/client';
+import { processImageForUpload } from '@/lib/image-utils';
+import type { PaymentMethod, TransactionFormData, PointsPlatform } from '@/types/database.types';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { layout, heading, card, button, input } from '@/lib/theme';
 
 export default function AddTransactionPage() {
   const router = useRouter();
-  
+
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
     date: new Date().toISOString().split('T')[0],
@@ -21,20 +23,26 @@ export default function AddTransactionPage() {
     card_id: '',
     expected_platform_points: 0,
     expected_card_points: 0,
+    extra_platform_points: 0,
+    platform_points_platform_id: '',
+    card_points_platform_id: '',
+    extra_platform_points_platform_id: '',
     image_url: '',
     notes: '',
   });
 
   // UI 状态
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 加载支付方式列表
+  // 加载支付方式列表和积分平台列表
   useEffect(() => {
     fetchPaymentMethods();
+    fetchPointsPlatforms();
   }, []);
 
   const fetchPaymentMethods = async () => {
@@ -52,6 +60,21 @@ export default function AddTransactionPage() {
     setPaymentMethods(data || []);
   };
 
+  const fetchPointsPlatforms = async () => {
+    const { data, error } = await supabase
+      .from('points_platforms')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_name');
+
+    if (error) {
+      console.error('获取积分平台失败:', error);
+      return;
+    }
+
+    setPointsPlatforms(data || []);
+  };
+
   // 处理输入变化
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -62,7 +85,7 @@ export default function AddTransactionPage() {
       [name]: value,
     }));
 
-    // 当选择信用卡时，自动计算预期卡积分
+    // 当选择信用卡时，自动计算预期卡积分并设置积分平台
     if (name === 'card_id' && value) {
       const selectedCard = paymentMethods.find((pm) => pm.id === value);
       if (selectedCard && formData.card_paid > 0) {
@@ -71,6 +94,13 @@ export default function AddTransactionPage() {
           ...prev,
           card_id: value,
           expected_card_points: calculatedPoints,
+          card_points_platform_id: selectedCard.card_points_platform_id || '',
+        }));
+      } else if (selectedCard) {
+        setFormData((prev) => ({
+          ...prev,
+          card_id: value,
+          card_points_platform_id: selectedCard.card_points_platform_id || '',
         }));
       }
     }
@@ -137,14 +167,18 @@ export default function AddTransactionPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({ ...prev, image: '请选择图片文件' }));
+    // 支持常见图片格式 + HEIC/HEIF (iOS默认格式)
+    const isValidImage = file.type.startsWith('image/') ||
+                        file.name.toLowerCase().endsWith('.heic') ||
+                        file.name.toLowerCase().endsWith('.heif');
+
+    if (!isValidImage) {
+      setErrors((prev) => ({ ...prev, image: '请选择图片文件（支持JPG、PNG、HEIC等格式）' }));
       return;
     }
 
     setSelectedImage(file);
-    
+
     // 生成预览
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -174,6 +208,19 @@ export default function AddTransactionPage() {
       newErrors.card_id = '请选择支付方式';
     }
 
+    // 验证积分平台
+    if (formData.expected_platform_points > 0 && !formData.platform_points_platform_id) {
+      newErrors.platform_points_platform_id = '请选择平台积分平台';
+    }
+
+    if (formData.extra_platform_points && formData.extra_platform_points > 0 && !formData.extra_platform_points_platform_id) {
+      newErrors.extra_platform_points_platform_id = '请选择额外积分平台';
+    }
+
+    if (formData.expected_card_points > 0 && !formData.card_points_platform_id) {
+      newErrors.card_points_platform_id = '请选择信用卡积分平台';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -193,7 +240,7 @@ export default function AddTransactionPage() {
 
       // 上传图片
       if (selectedImage) {
-        const compressed = await compressImage(selectedImage);
+        const compressed = await processImageForUpload(selectedImage);
         imageUrl = await uploadImage(compressed);
       }
 
@@ -205,6 +252,10 @@ export default function AddTransactionPage() {
             ...formData,
             image_url: imageUrl,
             card_id: formData.card_id || null,
+            platform_points_platform_id: formData.platform_points_platform_id || null,
+            card_points_platform_id: formData.card_points_platform_id || null,
+            extra_platform_points: formData.extra_platform_points || 0,
+            extra_platform_points_platform_id: formData.extra_platform_points_platform_id || null,
           },
         ])
         .select()
@@ -223,21 +274,21 @@ export default function AddTransactionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={layout.page}>
       <div className="relative max-w-2xl mx-auto px-4 py-8">
         {/* 标题区域 */}
-        <div className="mb-8">
+        <div className={layout.section}>
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-white transition-colors mb-4"
+            className={button.ghost + ' flex items-center gap-2 mb-4'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             <span className="font-medium">返回</span>
           </button>
-          
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+
+          <h1 className={heading.h1 + ' mb-2'}>
             记录新交易
           </h1>
           <p className="text-gray-600 dark:text-gray-400">快速录入您的转卖商品信息</p>
@@ -245,11 +296,11 @@ export default function AddTransactionPage() {
 
         {/* 表单卡片 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className={card.primary + ' p-6 shadow-2xl'}>
             {/* 基本信息 */}
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+              <h2 className={heading.h3 + ' flex items-center gap-2'}>
+                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
                 基本信息
               </h2>
 
@@ -423,10 +474,11 @@ export default function AddTransactionPage() {
                 预期积分
               </h2>
 
+              {/* 平台积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    平台积分
+                    平台积分数量
                   </label>
                   <div className="relative">
                     <input
@@ -442,10 +494,80 @@ export default function AddTransactionPage() {
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    信用卡积分
+                    积分平台
+                  </label>
+                  <select
+                    name="platform_points_platform_id"
+                    value={formData.platform_points_platform_id || ''}
+                    onChange={handleInputChange}
+                    disabled={formData.expected_platform_points === 0}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">选择平台</option>
+                    {pointsPlatforms.map((platform) => (
+                      <option key={platform.id} value={platform.id}>
+                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.platform_points_platform_id && (
+                    <p className="mt-1 text-sm text-red-400">{errors.platform_points_platform_id}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* 额外平台积分 - 组合式布局 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    额外积分数量
+                    <span className="text-xs text-gray-500 ml-2">(如d point)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="extra_platform_points"
+                      value={formData.extra_platform_points || ''}
+                      onChange={handleNumberChange}
+                      step="1"
+                      min="0"
+                      placeholder="0"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    额外积分平台
+                  </label>
+                  <select
+                    name="extra_platform_points_platform_id"
+                    value={formData.extra_platform_points_platform_id || ''}
+                    onChange={handleInputChange}
+                    disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">选择平台</option>
+                    {pointsPlatforms.map((platform) => (
+                      <option key={platform.id} value={platform.id}>
+                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.extra_platform_points_platform_id && (
+                    <p className="mt-1 text-sm text-red-400">{errors.extra_platform_points_platform_id}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* 信用卡积分 - 组合式布局 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    信用卡积分数量
                     {formData.card_id && paymentMethods.find(pm => pm.id === formData.card_id) && (
                       <span className="ml-2 text-xs text-emerald-400">
                         (返点率: {(paymentMethods.find(pm => pm.id === formData.card_id)?.point_rate || 0) * 100}%)
@@ -461,11 +583,38 @@ export default function AddTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">根据卡片返点率自动计算，可手动调整</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    信用卡积分平台
+                  </label>
+                  <select
+                    name="card_points_platform_id"
+                    value={formData.card_points_platform_id || ''}
+                    onChange={handleInputChange}
+                    disabled={formData.expected_card_points === 0 || !formData.card_id}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">选择平台</option>
+                    {pointsPlatforms.map((platform) => (
+                      <option key={platform.id} value={platform.id}>
+                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.card_points_platform_id && (
+                    <p className="mt-1 text-sm text-red-400">{errors.card_points_platform_id}</p>
+                  )}
+                  {formData.card_id && formData.card_points_platform_id && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                      已从支付方式自动设置
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

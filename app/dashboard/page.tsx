@@ -2,16 +2,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDashboardStats } from '@/lib/api/financial';
-import { 
-  calculateWaterLevel, 
-  getWaterLevelStatus, 
+import { getDashboardStats, confirmPointsReceived, batchConfirmPoints } from '@/lib/api/financial';
+import {
+  calculateWaterLevel,
+  getWaterLevelStatus,
   formatCurrency,
   daysUntil,
-  getUrgencyLevel 
+  getUrgencyLevel
 } from '@/lib/financial/calculator';
 import type { WaterLevelData, UpcomingPayment, PendingPoint, BankAccount } from '@/lib/api/financial';
 import Link from 'next/link';
+import { layout, heading, card, button, badge, alert as alertStyles } from '@/lib/theme';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,9 @@ export default function DashboardPage() {
   const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
   const [pendingPoints, setPendingPoints] = useState<PendingPoint[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [confirmingPointId, setConfirmingPointId] = useState<string | null>(null);
+  const [confirmingAll, setConfirmingAll] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -36,6 +40,48 @@ export default function DashboardPage() {
       console.error('加载数据失败:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmPoint = async (pointId: string) => {
+    setConfirmingPointId(pointId);
+    try {
+      const success = await confirmPointsReceived(pointId);
+      if (success) {
+        setSuccessMessage('积分已确认！');
+        setTimeout(() => setSuccessMessage(null), 3000);
+        await loadData(); // 重新加载数据
+      } else {
+        alert('确认积分失败，请重试');
+      }
+    } catch (error) {
+      console.error('确认积分失败:', error);
+      alert('确认积分失败，请重试');
+    } finally {
+      setConfirmingPointId(null);
+    }
+  };
+
+  const handleConfirmAllPoints = async () => {
+    if (pendingPoints.length === 0) return;
+
+    setConfirmingAll(true);
+    try {
+      const pointIds = pendingPoints.map(p => p.id);
+      const confirmedCount = await batchConfirmPoints(pointIds);
+
+      if (confirmedCount > 0) {
+        setSuccessMessage(`成功确认 ${confirmedCount} 笔积分！`);
+        setTimeout(() => setSuccessMessage(null), 3000);
+        await loadData(); // 重新加载数据
+      } else {
+        alert('批量确认失败，请重试');
+      }
+    } catch (error) {
+      console.error('批量确认失败:', error);
+      alert('批量确认失败，请重试');
+    } finally {
+      setConfirmingAll(false);
     }
   };
 
@@ -67,18 +113,25 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+    <div className={layout.page}>
+      {/* 成功提示 */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+          {successMessage}
+        </div>
+      )}
+
+      <div className={layout.container}>
         {/* 标题 */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">财务仪表盘</h1>
+        <div className={layout.section}>
+          <h1 className={heading.h1 + ' mb-2'}>财务仪表盘</h1>
           <p className="text-gray-600 dark:text-gray-400">实时监控您的财务状况</p>
         </div>
 
         {/* 财务安全水位线 */}
-        <div className="mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+        <div className={layout.section}>
+          <div className={card.primary + ' p-6 shadow-2xl'}>
+            <h2 className={heading.h2 + ' mb-6 flex items-center gap-3'}>
               <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${statusColors[waterLevelStatus]}`}></div>
               财务安全水位线
             </h2>
@@ -193,14 +246,23 @@ export default function DashboardPage() {
                 <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-yellow-500 rounded-full"></div>
                 待确认积分
               </h2>
-              {pendingPoints.length > 0 && (
-                <button 
-                  onClick={() => {/* TODO: 批量确认 */}}
-                  className="px-4 py-2 bg-gradient-to-r bg-green-500/20 hover:bg-green-500/30 rounded-lg text-sm font-medium transition-all"
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/points"
+                  className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
                 >
-                  一键确认全部
-                </button>
-              )}
+                  查看全部 →
+                </Link>
+                {pendingPoints.length > 0 && (
+                  <button
+                    onClick={handleConfirmAllPoints}
+                    disabled={confirmingAll}
+                    className="px-4 py-2 bg-gradient-to-r bg-green-500/20 hover:bg-green-500/30 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {confirmingAll ? '确认中...' : '一键确认全部'}
+                  </button>
+                )}
+              </div>
             </div>
 
             {pendingPoints.length === 0 ? (
@@ -242,11 +304,12 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex justify-between items-center text-xs opacity-60">
                         <span>购买日: {point.purchase_date}</span>
-                        <button 
-                          onClick={() => {/* TODO: 单个确认 */}}
-                          className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 rounded transition-colors"
+                        <button
+                          onClick={() => handleConfirmPoint(point.id)}
+                          disabled={confirmingPointId === point.id}
+                          className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          确认
+                          {confirmingPointId === point.id ? '确认中...' : '确认'}
                         </button>
                       </div>
                     </div>
@@ -328,6 +391,16 @@ export default function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
             </svg>
             <div className="font-semibold">优惠券</div>
+          </Link>
+
+          <Link
+            href="/points"
+            className="bg-blue-600 hover:bg-blue-700 rounded-xl p-6 text-center transition-all transform hover:scale-105 shadow-lg text-white"
+          >
+            <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="font-semibold">积分管理</div>
           </Link>
 
           <Link

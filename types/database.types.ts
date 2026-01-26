@@ -7,6 +7,18 @@ export type PointStatus = 'pending' | 'received' | 'expired';
 export type BillingCycle = 'monthly' | 'yearly';
 export type DiscountType = 'percentage' | 'fixed_amount' | 'free_shipping';
 
+// 积分平台接口
+export interface PointsPlatform {
+  id: string;
+  name: string;
+  display_name: string;
+  yen_conversion_rate: number; // 积分兑换日元的比率
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaymentMethod {
   id: string;
   name: string;
@@ -14,7 +26,8 @@ export interface PaymentMethod {
   closing_day: number | null;
   payment_day: number | null;
   payment_same_month: boolean; // true: 当月还款, false: 次月还款
-  point_rate: number;
+  point_rate: number; // (已废弃) 使用card_points_platform_id代替
+  card_points_platform_id: string | null; // 关联的积分平台ID
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -25,35 +38,40 @@ export interface Transaction {
   date: string;
   product_name: string;
   status: TransactionStatus;
-  
+
   // 成本端
   purchase_price_total: number;
   card_paid: number;
   point_paid: number;
   balance_paid: number;
   card_id: string | null;
-  
+
   // 利润端
   selling_price: number | null;
   platform_fee: number;
   shipping_fee: number;
-  cash_profit: number | null;
+  cash_profit: number | null; // 现金利润（不含积分价值）
+  total_profit: number | null; // 总利润（现金利润 + 积分价值）
   roi: number | null;
-  
+
   // 积分端
   expected_platform_points: number;
   expected_card_points: number;
+  extra_platform_points: number; // 额外平台积分（用于叠加积分）
   point_status: PointStatus;
-  
+  platform_points_platform_id: string | null; // 购物平台积分的平台ID
+  card_points_platform_id: string | null; // 信用卡积分的平台ID
+  extra_platform_points_platform_id: string | null; // 额外平台积分的平台ID
+
   // 还款信息
   expected_payment_date: string | null;
-  
+
   // 凭证
   image_url: string | null;
-  
+
   // 备注
   notes: string | null;
-  
+
   created_at: string;
   updated_at: string;
 }
@@ -98,6 +116,10 @@ export interface TransactionFormData {
   card_id: string;
   expected_platform_points: number;
   expected_card_points: number;
+  extra_platform_points?: number; // 额外平台积分
+  platform_points_platform_id?: string; // 购物平台积分平台ID
+  card_points_platform_id?: string; // 信用卡积分平台ID
+  extra_platform_points_platform_id?: string; // 额外平台积分平台ID
   image_url?: string;
   notes?: string;
 }

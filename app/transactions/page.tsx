@@ -7,12 +7,13 @@ import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import Image from 'next/image';
+import { layout, heading, card, button, badge, input, tabs } from '@/lib/theme';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
 }
 
-type SortField = 'date' | 'purchase_price_total' | 'cash_profit' | 'roi';
+type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
 type SortOrder = 'asc' | 'desc';
 
 export default function TransactionsPage() {
@@ -67,7 +68,7 @@ export default function TransactionsPage() {
     const sold = transactions.filter(t => t.status === 'sold');
 
     const totalCost = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
-    const totalProfit = sold.reduce((sum, t) => sum + (t.cash_profit || 0), 0);
+    const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0); // 使用 total_profit 而不是 cash_profit
     const avgROI = sold.length > 0
       ? sold.reduce((sum, t) => sum + (t.roi || 0), 0) / sold.length
       : 0;
@@ -136,7 +137,7 @@ export default function TransactionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={layout.page + ' flex items-center justify-center'}>
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -149,18 +150,18 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+    <div className={layout.page}>
+      <div className={layout.container}>
         {/* 标题区域 */}
-        <div className="mb-8">
+        <div className={layout.section}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">交易记录</h1>
+              <h1 className={heading.h1 + ' mb-2'}>交易记录</h1>
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
             <Link
               href="/transactions/add"
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 flex items-center gap-2"
+              className={button.primary + ' flex items-center gap-2'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -172,38 +173,38 @@ export default function TransactionsPage() {
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总交易</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-emerald-500/30">
-            <div className="text-emerald-400 text-sm mb-1">已售出</div>
-            <div className="text-2xl font-bold text-emerald-400">{stats.sold}</div>
+          <div className={card.stat + ' border-emerald-500/30'}>
+            <div className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">已售出</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.sold}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-amber-500/30">
-            <div className="text-amber-400 text-sm mb-1">库存中</div>
-            <div className="text-2xl font-bold text-amber-400">{stats.inStock}</div>
+          <div className={card.stat + ' border-amber-500/30'}>
+            <div className="text-amber-600 dark:text-amber-400 text-sm mb-1">库存中</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inStock}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalCost)}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
-            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
               {formatCurrency(stats.totalProfit)}
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
-            <div className={`text-2xl font-bold ${stats.avgROI >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`text-2xl font-bold ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
               {formatROI(stats.avgROI)}
             </div>
           </div>
         </div>
 
         {/* 筛选和搜索 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-6">
+        <div className={card.primary + ' p-6 shadow-2xl mb-6'}>
           <div className="flex flex-col md:flex-row gap-4">
             {/* 搜索框 */}
             <div className="flex-1">
@@ -213,7 +214,7 @@ export default function TransactionsPage() {
                   placeholder="搜索商品名称或备注..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-3 pl-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  className={input.base + ' pl-12'}
                 />
                 <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -225,7 +226,7 @@ export default function TransactionsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className={input.base}
             >
               <option value="all">全部状态</option>
               <option value="in_stock">库存中</option>
@@ -235,16 +236,16 @@ export default function TransactionsPage() {
         </div>
 
         {/* 交易列表 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+        <div className={card.primary + ' shadow-2xl overflow-hidden'}>
           {filteredTransactions.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
               <p className="text-gray-600 dark:text-gray-400 text-lg">暂无交易记录</p>
               <Link
                 href="/transactions/add"
-                className="inline-block mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                className={button.primary + ' inline-block mt-4'}
               >
                 添加第一条交易
               </Link>
@@ -288,11 +289,11 @@ export default function TransactionsPage() {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                      onClick={() => toggleSort('cash_profit')}
+                      onClick={() => toggleSort('total_profit')}
                     >
                       <div className="flex items-center justify-end gap-1">
                         利润
-                        {sortField === 'cash_profit' && (
+                        {sortField === 'total_profit' && (
                           <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
@@ -349,11 +350,11 @@ export default function TransactionsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" >
                         {transaction.status === 'sold' ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <span className={badge.success + ' border border-emerald-500/30'}>
                             已售出
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                          <span className={badge.pending + ' border border-amber-500/30'}>
                             库存中
                           </span>
                         )}
@@ -363,8 +364,8 @@ export default function TransactionsPage() {
                       </td>
                       <td className="px-6 py-4 text-right font-mono">
                         {transaction.status === 'sold' ? (
-                          <span className={transaction.cash_profit && transaction.cash_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                            {formatCurrency(transaction.cash_profit || 0)}
+                          <span className={transaction.total_profit && transaction.total_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                            {formatCurrency(transaction.total_profit || 0)}
                           </span>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-500">-</span>

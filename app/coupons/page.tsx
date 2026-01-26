@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { Coupon } from '@/types/database.types';
 import { formatCurrency, daysUntil } from '@/lib/financial/calculator';
 import Link from 'next/link';
+import { layout, heading, card, button, badge, tabs } from '@/lib/theme';
 
 type FilterType = 'all' | 'unused' | 'used' | 'expiring';
 
@@ -111,7 +112,7 @@ export default function CouponsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={layout.page + ' flex items-center justify-center'}>
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -124,18 +125,18 @@ export default function CouponsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+    <div className={layout.page}>
+      <div className={layout.container}>
         {/* 标题区域 */}
-        <div className="mb-8">
+        <div className={layout.section}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">优惠券管理</h1>
+              <h1 className={heading.h1 + ' mb-2'}>优惠券管理</h1>
               <p className="text-gray-600 dark:text-gray-400">管理您的优惠券和折扣码</p>
             </div>
             <Link
               href="/coupons/add"
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 flex items-center gap-2"
+              className={button.primary + ' flex items-center gap-2'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -147,63 +148,55 @@ export default function CouponsPage() {
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">全部</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-green-500/30">
-            <div className="text-green-500 text-sm mb-1">未使用</div>
-            <div className="text-2xl font-bold text-green-500">{stats.unused}</div>
+          <div className={card.stat + ' border-emerald-500/30'}>
+            <div className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">未使用</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.unused}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-orange-500/30">
-            <div className="text-orange-500 text-sm mb-1">即将过期</div>
-            <div className="text-2xl font-bold text-orange-500">{stats.expiring}</div>
+          <div className={card.stat + ' border-amber-500/30'}>
+            <div className="text-amber-600 dark:text-amber-400 text-sm mb-1">即将过期</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.expiring}</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-500/30">
-            <div className="text-gray-500 text-sm mb-1">已使用</div>
-            <div className="text-2xl font-bold text-gray-500">{stats.used}</div>
+          <div className={card.stat + ' border-gray-500/30'}>
+            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">已使用</div>
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.used}</div>
           </div>
         </div>
 
         {/* 筛选器 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-6">
+        <div className={tabs.container + ' mb-6'}>
           <div className="flex gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              className={`${tabs.tab.base} ${
+                filter === 'all' ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
               全部
             </button>
             <button
               onClick={() => setFilter('unused')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'unused'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              className={`${tabs.tab.base} ${
+                filter === 'unused' ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
               未使用
             </button>
             <button
               onClick={() => setFilter('expiring')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'expiring'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              className={`${tabs.tab.base} ${
+                filter === 'expiring' ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
               即将过期
             </button>
             <button
               onClick={() => setFilter('used')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                filter === 'used'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              className={`${tabs.tab.base} ${
+                filter === 'used' ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
               已使用
@@ -212,16 +205,16 @@ export default function CouponsPage() {
         </div>
 
         {/* 优惠券列表 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+        <div className={card.primary + ' shadow-2xl overflow-hidden'}>
           {filteredCoupons.length === 0 ? (
             <div className="p-12 text-center">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
               </svg>
               <p className="text-gray-600 dark:text-gray-400 text-lg">暂无优惠券</p>
               <Link
                 href="/coupons/add"
-                className="inline-block mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className={button.primary + ' inline-block mt-4'}
               >
                 添加第一张优惠券
               </Link>

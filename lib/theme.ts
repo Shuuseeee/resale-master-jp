@@ -1,0 +1,176 @@
+// lib/theme.ts
+// 统一的设计系统配置
+
+/**
+ * 颜色系统
+ */
+export const colors = {
+  // 主色调
+  primary: {
+    light: 'bg-blue-500',
+    DEFAULT: 'bg-blue-600',
+    dark: 'bg-blue-700',
+    text: 'text-blue-600 dark:text-blue-400',
+  },
+
+  // 状态颜色
+  status: {
+    pending: {
+      bg: 'bg-amber-500/20',
+      border: 'border-amber-500/50',
+      text: 'text-amber-600 dark:text-amber-400',
+      solid: 'bg-amber-500',
+    },
+    success: {
+      bg: 'bg-emerald-500/20',
+      border: 'border-emerald-500/50',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      solid: 'bg-emerald-500',
+    },
+    error: {
+      bg: 'bg-red-500/20',
+      border: 'border-red-500/50',
+      text: 'text-red-600 dark:text-red-400',
+      solid: 'bg-red-500',
+    },
+    warning: {
+      bg: 'bg-amber-500/20',
+      border: 'border-amber-500/50',
+      text: 'text-amber-600 dark:text-amber-400',
+      solid: 'bg-amber-500',
+    },
+    info: {
+      bg: 'bg-blue-500/20',
+      border: 'border-blue-500/50',
+      text: 'text-blue-600 dark:text-blue-400',
+      solid: 'bg-blue-500',
+    },
+  },
+
+  // 中性色
+  neutral: {
+    bg: 'bg-gray-50 dark:bg-gray-900',
+    text: {
+      primary: 'text-gray-900 dark:text-white',
+      secondary: 'text-gray-600 dark:text-gray-400',
+      tertiary: 'text-gray-500 dark:text-gray-500',
+    },
+  },
+};
+
+/**
+ * 卡片样式
+ */
+export const card = {
+  // 主要内容卡片（实心）
+  primary: 'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm',
+
+  // 次要内容卡片（半透明）
+  secondary: 'bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50',
+
+  // 交互卡片（带hover效果）
+  interactive: 'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-gray-300 dark:hover:border-gray-600 transition-colors cursor-pointer',
+
+  // 统计卡片
+  stat: 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6',
+};
+
+/**
+ * 按钮样式
+ */
+export const button = {
+  // 主要按钮（实心）
+  primary: 'px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+
+  // 成功按钮
+  success: 'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+
+  // 危险按钮
+  danger: 'px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+
+  // 次要按钮（半透明）
+  secondary: 'px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium transition-colors border border-gray-200 dark:border-gray-700',
+
+  // 幽灵按钮
+  ghost: 'px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors',
+
+  // 链接按钮
+  link: 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors',
+};
+
+/**
+ * 徽章样式
+ */
+export const badge = {
+  pending: 'px-2 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400',
+  success: 'px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+  error: 'px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400',
+  info: 'px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  neutral: 'px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-400',
+};
+
+/**
+ * 输入框样式
+ */
+export const input = {
+  base: 'w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors',
+  error: 'w-full px-4 py-2 bg-white dark:bg-gray-800 border border-red-500 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors',
+};
+
+/**
+ * 布局样式
+ */
+export const layout = {
+  page: 'min-h-screen bg-gray-50 dark:bg-gray-900',
+  container: 'max-w-7xl mx-auto px-4 py-8',
+  section: 'mb-8',
+};
+
+/**
+ * 标题样式
+ */
+export const heading = {
+  h1: 'text-4xl font-bold text-gray-900 dark:text-white',
+  h2: 'text-2xl font-bold text-gray-900 dark:text-white',
+  h3: 'text-xl font-semibold text-gray-900 dark:text-white',
+  h4: 'text-lg font-semibold text-gray-900 dark:text-white',
+};
+
+/**
+ * Tab导航样式
+ */
+export const tabs = {
+  container: 'bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700',
+  tab: {
+    base: 'flex-1 px-4 py-2 rounded-lg font-medium transition-colors',
+    active: 'bg-blue-600 text-white',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
+  },
+};
+
+/**
+ * 加载状态样式
+ */
+export const loading = {
+  spinner: 'inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600',
+  container: 'text-center py-12',
+  text: 'text-gray-600 dark:text-gray-400 mt-4',
+};
+
+/**
+ * 空状态样式
+ */
+export const empty = {
+  container: 'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center',
+  text: 'text-gray-600 dark:text-gray-400 text-lg',
+};
+
+/**
+ * 提示消息样式
+ */
+export const alert = {
+  success: 'mb-6 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-4 py-3 rounded-lg',
+  error: 'mb-6 bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg',
+  warning: 'mb-6 bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 px-4 py-3 rounded-lg',
+  info: 'mb-6 bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-lg',
+};

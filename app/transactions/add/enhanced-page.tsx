@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, uploadImage, compressImage } from '@/lib/supabase/client';
+import { supabase, uploadImage } from '@/lib/supabase/client';
+import { processImageForUpload } from '@/lib/image-utils';
 import { 
   calculateROI, 
   calculateTotalProfit,
@@ -127,7 +128,8 @@ export default function EnhancedAddTransactionPage() {
         formData.purchase_price_total,
         formData.expected_platform_points,
         formData.expected_card_points,
-        selectedMethod.point_rate || 1.0
+        selectedMethod.point_rate || 1.0,
+        formData.point_paid
       );
 
       const profit = calculateTotalProfit(
@@ -141,7 +143,7 @@ export default function EnhancedAddTransactionPage() {
       );
 
       const pointsValue = (formData.expected_platform_points + formData.expected_card_points)
-        * (selectedMethod.point_rate || 1.0) * 0.01;
+        * (selectedMethod.point_rate || 1.0);
 
       setPreview(prev => ({
         ...prev,
@@ -213,13 +215,18 @@ export default function EnhancedAddTransactionPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({ ...prev, image: '请选择图片文件' }));
+    // 支持常见图片格式 + HEIC/HEIF
+    const isValidImage = file.type.startsWith('image/') ||
+                        file.name.toLowerCase().endsWith('.heic') ||
+                        file.name.toLowerCase().endsWith('.heif');
+
+    if (!isValidImage) {
+      setErrors((prev) => ({ ...prev, image: '请选择图片文件（支持JPG、PNG、HEIC等格式）' }));
       return;
     }
 
     setSelectedImage(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -264,7 +271,7 @@ export default function EnhancedAddTransactionPage() {
       let imageUrl = formData.image_url;
 
       if (selectedImage) {
-        const compressed = await compressImage(selectedImage);
+        const compressed = await processImageForUpload(selectedImage);
         imageUrl = await uploadImage(compressed);
       }
 

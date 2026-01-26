@@ -23,7 +23,7 @@ export function calculatePointsValue(
   points: number,
   conversionRate: number = POINT_CONVERSION_RATES.DEFAULT
 ): number {
-  return points * conversionRate * 0.01;
+  return points * conversionRate;
 }
 
 /**
@@ -77,6 +77,7 @@ export function calculateTotalProfit(
  * @param platformPoints 平台积分
  * @param cardPoints 信用卡积分
  * @param conversionRate 积分折算率
+ * @param pointPaid 积分抵扣金额（默认0）
  * @returns ROI 百分比
  */
 export function calculateROI(
@@ -86,10 +87,13 @@ export function calculateROI(
   purchaseCost: number,
   platformPoints: number = 0,
   cardPoints: number = 0,
-  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT
+  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT,
+  pointPaid: number = 0
 ): number {
-  if (purchaseCost <= 0) return 0;
-  
+  // 计算实际现金支出（采购成本 - 积分抵扣）
+  const actualCashSpent = purchaseCost - pointPaid;
+  if (actualCashSpent <= 0) return 0;
+
   const totalProfit = calculateTotalProfit(
     sellingPrice,
     platformFee,
@@ -99,8 +103,8 @@ export function calculateROI(
     cardPoints,
     conversionRate
   );
-  
-  return (totalProfit / purchaseCost) * 100;
+
+  return (totalProfit / actualCashSpent) * 100;
 }
 
 /**

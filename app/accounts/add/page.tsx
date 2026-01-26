@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { layout, heading, card, button, input } from '@/lib/theme';
 
 interface AccountFormData {
   name: string;

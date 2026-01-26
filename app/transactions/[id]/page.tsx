@@ -4,13 +4,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import type { Transaction, PaymentMethod } from '@/types/database.types';
+import type { Transaction, PaymentMethod, PointsPlatform } from '@/types/database.types';
 import { formatCurrency, formatROI, daysUntil, calculatePaymentDate } from '@/lib/financial/calculator';
 import Image from 'next/image';
 import Link from 'next/link';
+import { layout, heading, card, button, badge, input } from '@/lib/theme';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
+  platform_points_platform?: PointsPlatform;
+  card_points_platform?: PointsPlatform;
+  extra_platform_points_platform?: PointsPlatform;
 }
 
 interface SaleFormData {
@@ -46,7 +50,19 @@ export default function TransactionDetailPage() {
         .from('transactions')
         .select(`
           *,
-          payment_method:payment_methods(*)
+          payment_method:payment_methods(*),
+          platform_points_platform:platform_points_platform_id (
+            display_name,
+            yen_conversion_rate
+          ),
+          card_points_platform:card_points_platform_id (
+            display_name,
+            yen_conversion_rate
+          ),
+          extra_platform_points_platform:extra_platform_points_platform_id (
+            display_name,
+            yen_conversion_rate
+          )
         `)
         .eq('id', id)
         .single();
@@ -70,13 +86,27 @@ export default function TransactionDetailPage() {
 
     setSubmitting(true);
     try {
-      // 计算利润和ROI
-      const cash_profit = saleData.selling_price - saleData.platform_fee - saleData.shipping_fee - transaction.purchase_price_total;
+      // 计算现金利润（不含积分）
+      const cash_profit = saleData.selling_price - transaction.purchase_price_total - saleData.platform_fee - saleData.shipping_fee;
 
-      // 积分价值 (简化计算: 1积分 = 0.01日元)
-      const points_value = (transaction.expected_platform_points + transaction.expected_card_points) * 0.01;
+      // 计算积分价值（使用平台兑换率）
+      const platformPointsValue = (transaction.expected_platform_points || 0) *
+        (transaction.platform_points_platform?.yen_conversion_rate || 1.0);
+      const cardPointsValue = (transaction.expected_card_points || 0) *
+        (transaction.card_points_platform?.yen_conversion_rate || 1.0);
+      const extraPlatformPointsValue = (transaction.extra_platform_points || 0) *
+        (transaction.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+
+      const points_value = platformPointsValue + cardPointsValue + extraPlatformPointsValue;
+
+      // 计算总利润（现金 + 积分）
       const total_profit = cash_profit + points_value;
-      const roi = (total_profit / transaction.purchase_price_total) * 100;
+
+      // 计算实际现金支出（采购成本 - 积分抵扣）
+      const actual_cash_spent = transaction.purchase_price_total - transaction.point_paid;
+
+      // 计算 ROI（总利润 / 实际现金支出）
+      const roi = actual_cash_spent > 0 ? (total_profit / actual_cash_spent) * 100 : 0;
 
       const { error } = await supabase
         .from('transactions')
@@ -86,6 +116,7 @@ export default function TransactionDetailPage() {
           platform_fee: saleData.platform_fee,
           shipping_fee: saleData.shipping_fee,
           cash_profit,
+          total_profit,
           roi,
         })
         .eq('id', id);
@@ -336,40 +367,63 @@ export default function TransactionDetailPage() {
             </div>
 
             {/* 销售信息 */}
-            {transaction.status === 'sold' && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
-                  销售信息
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">销售价格</span>
-                    <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.selling_price || 0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">平台费用</span>
-                    <span className="text-red-400 font-mono">-{formatCurrency(transaction.platform_fee)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">运费</span>
-                    <span className="text-red-400 font-mono">-{formatCurrency(transaction.shipping_fee)}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">现金利润</span>
-                    <span className={`text-xl font-bold ${(transaction.cash_profit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {formatCurrency(transaction.cash_profit || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">ROI</span>
-                    <span className={`text-xl font-bold ${(transaction.roi || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {formatROI(transaction.roi || 0)}
-                    </span>
+            {transaction.status === 'sold' && (() => {
+              // 计算积分价值
+              const platformPointsValue = (transaction.expected_platform_points || 0) *
+                (transaction.platform_points_platform?.yen_conversion_rate || 1.0);
+              const cardPointsValue = (transaction.expected_card_points || 0) *
+                (transaction.card_points_platform?.yen_conversion_rate || 1.0);
+              const extraPlatformPointsValue = (transaction.extra_platform_points || 0) *
+                (transaction.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+              const totalPointsValue = platformPointsValue + cardPointsValue + extraPlatformPointsValue;
+
+              return (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                    销售信息
+                  </h2>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">销售价格</span>
+                      <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.selling_price || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">平台费用</span>
+                      <span className="text-red-400 font-mono">-{formatCurrency(transaction.platform_fee)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">运费</span>
+                      <span className="text-red-400 font-mono">-{formatCurrency(transaction.shipping_fee)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <span className="text-gray-600 dark:text-gray-400">现金利润</span>
+                      <span className={`text-lg font-semibold ${(transaction.cash_profit || 0) >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                        {formatCurrency(transaction.cash_profit || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">积分价值</span>
+                      <span className="text-amber-400 font-semibold">
+                        +{formatCurrency(totalPointsValue)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300 dark:border-gray-600">
+                      <span className="text-gray-900 dark:text-white font-semibold">总利润</span>
+                      <span className={`text-2xl font-bold ${(transaction.total_profit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatCurrency(transaction.total_profit || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">ROI</span>
+                      <span className={`text-xl font-bold ${(transaction.roi || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatROI(transaction.roi || 0)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 预期积分 */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
@@ -377,14 +431,61 @@ export default function TransactionDetailPage() {
                 <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
                 预期积分
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                {/* 平台积分 */}
                 <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30">
-                  <div className="text-amber-400 text-sm mb-1">平台积分</div>
-                  <div className="text-2xl font-bold text-amber-400">{transaction.expected_platform_points} P</div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-amber-400 text-sm mb-1">平台积分</div>
+                      <div className="text-2xl font-bold text-amber-400">{transaction.expected_platform_points} P</div>
+                    </div>
+                    {transaction.platform_points_platform && (
+                      <div className="text-right">
+                        <div className="text-xs text-amber-400/70">{transaction.platform_points_platform.display_name}</div>
+                        <div className="text-sm text-amber-400 font-mono">
+                          ¥{((transaction.expected_platform_points || 0) * transaction.platform_points_platform.yen_conversion_rate).toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/30">
-                  <div className="text-orange-400 text-sm mb-1">信用卡积分</div>
-                  <div className="text-2xl font-bold text-orange-400">{transaction.expected_card_points} P</div>
+
+                {/* 额外平台积分 */}
+                {transaction.extra_platform_points > 0 && (
+                  <div className="bg-cyan-500/10 rounded-xl p-4 border border-cyan-500/30">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-cyan-400 text-sm mb-1">额外积分</div>
+                        <div className="text-2xl font-bold text-cyan-400">{transaction.extra_platform_points} P</div>
+                      </div>
+                      {transaction.extra_platform_points_platform && (
+                        <div className="text-right">
+                          <div className="text-xs text-cyan-400/70">{transaction.extra_platform_points_platform.display_name}</div>
+                          <div className="text-sm text-cyan-400 font-mono">
+                            ¥{((transaction.extra_platform_points || 0) * transaction.extra_platform_points_platform.yen_conversion_rate).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 信用卡积分 */}
+                <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/30">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-purple-400 text-sm mb-1">信用卡积分</div>
+                      <div className="text-2xl font-bold text-purple-400">{transaction.expected_card_points} P</div>
+                    </div>
+                    {transaction.card_points_platform && (
+                      <div className="text-right">
+                        <div className="text-xs text-purple-400/70">{transaction.card_points_platform.display_name}</div>
+                        <div className="text-sm text-purple-400 font-mono">
+                          ¥{((transaction.expected_card_points || 0) * transaction.card_points_platform.yen_conversion_rate).toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="mt-4 p-3 bg-white dark:bg-gray-700 rounded-lg">

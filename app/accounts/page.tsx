@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { BankAccount } from '@/lib/api/financial';
 import { formatCurrency } from '@/lib/financial/calculator';
 import Link from 'next/link';
+import { layout, heading, card, button, badge, input } from '@/lib/theme';
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -95,7 +96,7 @@ export default function AccountsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={layout.page + ' flex items-center justify-center'}>
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -108,18 +109,18 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={layout.page}>
       <div className="relative max-w-6xl mx-auto px-4 py-8">
         {/* 标题区域 */}
-        <div className="mb-8">
+        <div className={layout.section}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">账户管理</h1>
+              <h1 className={heading.h1 + ' mb-2'}>账户管理</h1>
               <p className="text-gray-600 dark:text-gray-400">管理您的银行账户和余额</p>
             </div>
             <Link
               href="/accounts/add"
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 flex items-center gap-2"
+              className={button.primary + ' flex items-center gap-2'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { layout, heading, card, button, input, alert as alertStyles } from '@/lib/theme';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');

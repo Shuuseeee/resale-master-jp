@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
+import { layout, heading, card, button, input } from '@/lib/theme';
 
 interface CouponFormData {
   name: string;

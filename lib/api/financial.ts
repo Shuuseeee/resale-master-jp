@@ -216,6 +216,186 @@ export async function getExpiringCoupons(days: number = 3) {
 }
 
 /**
+ * 积分记录
+ */
+export interface PointRecord {
+  id: string;
+  product_name: string;
+  purchase_date: string;
+  expected_platform_points: number;
+  expected_card_points: number;
+  extra_platform_points: number; // 额外平台积分
+  point_status: 'pending' | 'received' | 'expired';
+  total_points: number; // 积分的日元价值总和
+  payment_method_name: string | null;
+  card_id: string | null;
+  platform_points_value: number; // 平台积分的日元价值
+  card_points_value: number; // 信用卡积分的日元价值
+  extra_platform_points_value: number; // 额外平台积分的日元价值
+  platform_points_platform_name: string | null; // 平台积分平台名称
+  card_points_platform_name: string | null; // 信用卡积分平台名称
+  extra_platform_points_platform_name: string | null; // 额外平台积分平台名称
+}
+
+/**
+ * 积分统计数据
+ */
+export interface PointsStats {
+  total_pending_count: number;
+  total_received_count: number;
+  total_expired_count: number;
+  total_pending_points: number;
+  total_received_points: number;
+  total_value: number;
+}
+
+/**
+ * 获取指定状态的积分记录
+ * @param status 积分状态 (pending | received | expired)，不传则返回所有
+ */
+export async function getPointsByStatus(
+  status?: 'pending' | 'received' | 'expired'
+): Promise<PointRecord[]> {
+  let query = supabase
+    .from('transactions')
+    .select(`
+      id,
+      product_name,
+      date,
+      expected_platform_points,
+      expected_card_points,
+      extra_platform_points,
+      point_status,
+      card_id,
+      payment_methods:card_id (
+        name
+      ),
+      platform_points_platform:platform_points_platform_id (
+        display_name,
+        yen_conversion_rate
+      ),
+      card_points_platform:card_points_platform_id (
+        display_name,
+        yen_conversion_rate
+      ),
+      extra_platform_points_platform:extra_platform_points_platform_id (
+        display_name,
+        yen_conversion_rate
+      )
+    `)
+    .not('expected_platform_points', 'is', null)
+    .order('date', { ascending: false });
+
+  if (status) {
+    query = query.eq('point_status', status);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('获取积分记录失败:', error);
+    return [];
+  }
+
+  // 计算总积分并格式化数据
+  return (data || []).map(record => {
+    const platformPointsValue = (record.expected_platform_points || 0) *
+      (record.platform_points_platform?.yen_conversion_rate || 1.0);
+    const cardPointsValue = (record.expected_card_points || 0) *
+      (record.card_points_platform?.yen_conversion_rate || 1.0);
+    const extraPlatformPointsValue = (record.extra_platform_points || 0) *
+      (record.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+
+    return {
+      id: record.id,
+      product_name: record.product_name,
+      purchase_date: record.date,
+      expected_platform_points: record.expected_platform_points,
+      expected_card_points: record.expected_card_points,
+      extra_platform_points: record.extra_platform_points || 0,
+      point_status: record.point_status,
+      total_points: platformPointsValue + cardPointsValue + extraPlatformPointsValue,
+      payment_method_name: record.payment_methods?.name || null,
+      card_id: record.card_id,
+      platform_points_value: platformPointsValue,
+      card_points_value: cardPointsValue,
+      extra_platform_points_value: extraPlatformPointsValue,
+      platform_points_platform_name: record.platform_points_platform?.display_name || null,
+      card_points_platform_name: record.card_points_platform?.display_name || null,
+      extra_platform_points_platform_name: record.extra_platform_points_platform?.display_name || null
+    };
+  });
+}
+
+/**
+ * 获取积分统计数据（使用积分平台兑换率）
+ */
+export async function getPointsStats(): Promise<PointsStats> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(`
+      point_status,
+      expected_platform_points,
+      expected_card_points,
+      extra_platform_points,
+      platform_points_platform:platform_points_platform_id (
+        yen_conversion_rate
+      ),
+      card_points_platform:card_points_platform_id (
+        yen_conversion_rate
+      ),
+      extra_platform_points_platform:extra_platform_points_platform_id (
+        yen_conversion_rate
+      )
+    `)
+    .not('expected_platform_points', 'is', null);
+
+  if (error) {
+    console.error('获取积分统计失败:', error);
+    return {
+      total_pending_count: 0,
+      total_received_count: 0,
+      total_expired_count: 0,
+      total_pending_points: 0,
+      total_received_points: 0,
+      total_value: 0,
+    };
+  }
+
+  const stats = {
+    total_pending_count: 0,
+    total_received_count: 0,
+    total_expired_count: 0,
+    total_pending_points: 0,
+    total_received_points: 0,
+    total_value: 0,
+  };
+
+  (data || []).forEach(record => {
+    const platformPointsValue = (record.expected_platform_points || 0) *
+      (record.platform_points_platform?.yen_conversion_rate || 1.0);
+    const cardPointsValue = (record.expected_card_points || 0) *
+      (record.card_points_platform?.yen_conversion_rate || 1.0);
+    const extraPlatformPointsValue = (record.extra_platform_points || 0) *
+      (record.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+    const totalValue = platformPointsValue + cardPointsValue + extraPlatformPointsValue;
+
+    if (record.point_status === 'pending') {
+      stats.total_pending_count++;
+      stats.total_pending_points += totalValue;
+    } else if (record.point_status === 'received') {
+      stats.total_received_count++;
+      stats.total_received_points += totalValue;
+      stats.total_value += totalValue;
+    } else if (record.point_status === 'expired') {
+      stats.total_expired_count++;
+    }
+  });
+
+  return stats;
+}
+
+/**
  * 获取仪表盘统计数据
  */
 export async function getDashboardStats() {

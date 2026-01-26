@@ -1,17 +1,14 @@
-// app/settings/payment-methods/[id]/edit/page.tsx
+// app/settings/payment-methods/add/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod } from '@/types/database.types';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 
-export default function EditPaymentMethodPage() {
+export default function AddPaymentMethodPage() {
   const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -19,54 +16,22 @@ export default function EditPaymentMethodPage() {
     closing_day: '',
     payment_day: '',
     payment_same_month: false,
-    point_rate: '',
+    point_rate: '1.0',
     is_active: true,
   });
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    loadPaymentMethod();
-  }, [id]);
-
-  const loadPaymentMethod = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      setFormData({
-        name: data.name,
-        type: data.type,
-        closing_day: data.closing_day?.toString() || '',
-        payment_day: data.payment_day?.toString() || '',
-        payment_same_month: data.payment_same_month || false,
-        point_rate: (data.point_rate * 100).toString(),
-        is_active: data.is_active,
-      });
-    } catch (error) {
-      console.error('加载失败:', error);
-      alert('加载失败，请重试');
-      router.push('/settings/payment-methods');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrors({});
 
     try {
       const { error } = await supabase
         .from('payment_methods')
-        .update({
+        .insert([{
           name: formData.name,
           type: formData.type,
           closing_day: formData.closing_day ? parseInt(formData.closing_day) : null,
@@ -74,8 +39,7 @@ export default function EditPaymentMethodPage() {
           payment_same_month: formData.payment_same_month,
           point_rate: parseFloat(formData.point_rate) / 100,
           is_active: formData.is_active,
-        })
-        .eq('id', id);
+        }]);
 
       if (error) throw error;
 
@@ -88,16 +52,8 @@ export default function EditPaymentMethodPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">加载中...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <Link
           href="/settings/payment-methods"
@@ -109,7 +65,7 @@ export default function EditPaymentMethodPage() {
           返回
         </Link>
 
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">编辑支付方式</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">添加支付方式</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -124,6 +80,7 @@ export default function EditPaymentMethodPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
+                  placeholder="例如：楽天カード、PayPay"
                 />
               </div>
 
@@ -187,6 +144,10 @@ export default function EditPaymentMethodPage() {
                       <option value="next">次月还款</option>
                       <option value="same">当月还款</option>
                     </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      次月还款：还款日在账单日的下个月（大部分信用卡）<br/>
+                      当月还款：还款日在账单日的当月（部分储蓄卡联名卡）
+                    </p>
                   </div>
 
                   <div>
@@ -202,6 +163,9 @@ export default function EditPaymentMethodPage() {
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="1.0"
                     />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      例如：1% 返点率输入 1.0
+                    </p>
                   </div>
                 </>
               )}
