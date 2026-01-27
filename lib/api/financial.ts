@@ -300,11 +300,11 @@ export async function getPointsByStatus(
   // 计算总积分并格式化数据
   return (data || []).map(record => {
     const platformPointsValue = (record.expected_platform_points || 0) *
-      (record.platform_points_platform?.yen_conversion_rate || 1.0);
+      ((record.platform_points_platform as any)?.yen_conversion_rate || 1.0);
     const cardPointsValue = (record.expected_card_points || 0) *
-      (record.card_points_platform?.yen_conversion_rate || 1.0);
+      ((record.card_points_platform as any)?.yen_conversion_rate || 1.0);
     const extraPlatformPointsValue = (record.extra_platform_points || 0) *
-      (record.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+      ((record.extra_platform_points_platform as any)?.yen_conversion_rate || 1.0);
 
     return {
       id: record.id,
@@ -315,14 +315,14 @@ export async function getPointsByStatus(
       extra_platform_points: record.extra_platform_points || 0,
       point_status: record.point_status,
       total_points: platformPointsValue + cardPointsValue + extraPlatformPointsValue,
-      payment_method_name: record.payment_methods?.name || null,
+      payment_method_name: (record.payment_methods as any)?.name || null,
       card_id: record.card_id,
       platform_points_value: platformPointsValue,
       card_points_value: cardPointsValue,
       extra_platform_points_value: extraPlatformPointsValue,
-      platform_points_platform_name: record.platform_points_platform?.display_name || null,
-      card_points_platform_name: record.card_points_platform?.display_name || null,
-      extra_platform_points_platform_name: record.extra_platform_points_platform?.display_name || null
+      platform_points_platform_name: (record.platform_points_platform as any)?.display_name || null,
+      card_points_platform_name: (record.card_points_platform as any)?.display_name || null,
+      extra_platform_points_platform_name: (record.extra_platform_points_platform as any)?.display_name || null
     };
   });
 }
@@ -373,11 +373,11 @@ export async function getPointsStats(): Promise<PointsStats> {
 
   (data || []).forEach(record => {
     const platformPointsValue = (record.expected_platform_points || 0) *
-      (record.platform_points_platform?.yen_conversion_rate || 1.0);
+      ((record.platform_points_platform as any)?.yen_conversion_rate || 1.0);
     const cardPointsValue = (record.expected_card_points || 0) *
-      (record.card_points_platform?.yen_conversion_rate || 1.0);
+      ((record.card_points_platform as any)?.yen_conversion_rate || 1.0);
     const extraPlatformPointsValue = (record.extra_platform_points || 0) *
-      (record.extra_platform_points_platform?.yen_conversion_rate || 1.0);
+      ((record.extra_platform_points_platform as any)?.yen_conversion_rate || 1.0);
     const totalValue = platformPointsValue + cardPointsValue + extraPlatformPointsValue;
 
     if (record.point_status === 'pending') {

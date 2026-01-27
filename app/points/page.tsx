@@ -9,7 +9,7 @@ import {
   type PointRecord,
   type PointsStats
 } from '@/lib/api/financial';
-import { layout, heading, card, button, badge, alert, loading, empty, tabs } from '@/lib/theme';
+import { layout, heading, card, button, badge, alert, loading as loadingStyles, empty, tabs } from '@/lib/theme';
 
 export default function PointsPage() {
   const [loading, setLoading] = useState(true);
@@ -245,9 +245,9 @@ export default function PointsPage() {
 
         {/* 积分列表 */}
         {loading ? (
-          <div className={loading.container}>
-            <div className={loading.spinner}></div>
-            <p className={loading.text}>加载中...</p>
+          <div className={loadingStyles.container}>
+            <div className={loadingStyles.spinner}></div>
+            <p className={loadingStyles.text}>加载中...</p>
           </div>
         ) : points.length === 0 ? (
           <div className={empty.container}>
