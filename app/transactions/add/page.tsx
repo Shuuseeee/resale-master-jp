@@ -16,6 +16,7 @@ export default function AddTransactionPage() {
   const [formData, setFormData] = useState<TransactionFormData>({
     date: new Date().toISOString().split('T')[0],
     product_name: '',
+    quantity: 1, // 默认数量为1
     purchase_price_total: 0,
     card_paid: 0,
     point_paid: 0,
@@ -335,6 +336,25 @@ export default function AddTransactionPage() {
                   {errors.product_name && (
                     <p className="mt-1 text-sm text-red-400">{errors.product_name}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    数量 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity || 1}
+                    onChange={handleNumberChange}
+                    min="1"
+                    placeholder="1"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    批量进货时填写总数量，如30个
+                  </p>
                 </div>
               </div>
             </div>

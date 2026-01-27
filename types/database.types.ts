@@ -39,6 +39,11 @@ export interface Transaction {
   product_name: string;
   status: TransactionStatus;
 
+  // 批量库存
+  quantity: number; // 商品总数量
+  quantity_sold: number; // 已售出数量
+  quantity_in_stock: number; // 库存数量（计算字段）
+
   // 成本端
   purchase_price_total: number;
   card_paid: number;
@@ -46,7 +51,7 @@ export interface Transaction {
   balance_paid: number;
   card_id: string | null;
 
-  // 利润端
+  // 利润端（用于单品或整批销售）
   selling_price: number | null;
   platform_fee: number;
   shipping_fee: number;
@@ -109,6 +114,7 @@ export interface Coupon {
 export interface TransactionFormData {
   date: string;
   product_name: string;
+  quantity?: number; // 商品数量
   purchase_price_total: number;
   card_paid: number;
   point_paid: number;
@@ -121,6 +127,35 @@ export interface TransactionFormData {
   card_points_platform_id?: string; // 信用卡积分平台ID
   extra_platform_points_platform_id?: string; // 额外平台积分平台ID
   image_url?: string;
+  notes?: string;
+}
+
+// 销售记录接口
+export interface SalesRecord {
+  id: string;
+  transaction_id: string;
+  user_id: string;
+  quantity_sold: number;
+  selling_price_per_unit: number;
+  platform_fee: number;
+  shipping_fee: number;
+  sale_date: string;
+  total_selling_price: number;
+  cash_profit: number | null;
+  total_profit: number | null;
+  roi: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// 销售记录表单数据
+export interface SalesRecordFormData {
+  quantity_sold: number;
+  selling_price_per_unit: number;
+  platform_fee: number;
+  shipping_fee: number;
+  sale_date: string;
   notes?: string;
 }
 
