@@ -7,6 +7,7 @@ import { useState } from 'react';
 import type { Transaction, SalesRecordFormData } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
+import DatePicker from '@/components/DatePicker';
 
 interface BatchSaleFormProps {
   transaction: Transaction;
@@ -168,11 +169,10 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           销售日期
         </label>
-        <input
-          type="date"
-          value={formData.sale_date}
-          onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
-          className={input.base}
+        <DatePicker
+          selected={formData.sale_date ? new Date(formData.sale_date) : new Date()}
+          onChange={(date) => setFormData({ ...formData, sale_date: date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] })}
+          placeholder="选择销售日期"
         />
       </div>
 

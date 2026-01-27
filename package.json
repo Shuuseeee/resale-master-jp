@@ -16,11 +16,13 @@
     "heic2any": "^0.0.4",
     "next": "^15.1.6",
     "react": "^19.0.0",
+    "react-datepicker": "^9.1.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/react": "^19.0.0",
+    "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",

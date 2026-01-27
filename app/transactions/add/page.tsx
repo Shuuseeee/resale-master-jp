@@ -8,6 +8,7 @@ import type { PaymentMethod, TransactionFormData, PointsPlatform } from '@/types
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
+import DatePicker from '@/components/DatePicker';
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -310,13 +311,15 @@ export default function AddTransactionPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     日期 <span className="text-red-400">*</span>
                   </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
+                  <DatePicker
+                    selected={formData.date ? new Date(formData.date) : null}
+                    onChange={(date) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        date: date ? date.toISOString().split('T')[0] : ''
+                      }));
+                    }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    required
                   />
                 </div>
 

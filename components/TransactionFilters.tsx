@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { button, input } from '@/lib/theme';
+import DatePicker from '@/components/DatePicker';
 
 export interface FilterValues {
   dateFrom: string;
@@ -96,19 +97,17 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
               日期范围
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                className={input.base}
+              <DatePicker
+                selected={filters.dateFrom ? new Date(filters.dateFrom) : null}
+                onChange={(date) => setFilters({ ...filters, dateFrom: date ? date.toISOString().split('T')[0] : '' })}
                 placeholder="开始日期"
+                maxDate={filters.dateTo ? new Date(filters.dateTo) : undefined}
               />
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                className={input.base}
+              <DatePicker
+                selected={filters.dateTo ? new Date(filters.dateTo) : null}
+                onChange={(date) => setFilters({ ...filters, dateTo: date ? date.toISOString().split('T')[0] : '' })}
                 placeholder="结束日期"
+                minDate={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
               />
             </div>
           </div>
