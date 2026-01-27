@@ -107,7 +107,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, quantity_sold: parseInt(e.target.value) || 0 })}
             min="1"
             max={transaction.quantity_in_stock}
-            className={input.primary}
+            className={input.base}
             required
           />
         </div>
@@ -122,7 +122,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, selling_price_per_unit: parseFloat(e.target.value) || 0 })}
             min="0"
             step="0.01"
-            className={input.primary}
+            className={input.base}
             required
           />
         </div>
@@ -145,7 +145,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, platform_fee: parseFloat(e.target.value) || 0 })}
             min="0"
             step="0.01"
-            className={input.primary}
+            className={input.base}
           />
         </div>
 
@@ -159,7 +159,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, shipping_fee: parseFloat(e.target.value) || 0 })}
             min="0"
             step="0.01"
-            className={input.primary}
+            className={input.base}
           />
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           type="date"
           value={formData.sale_date}
           onChange={(e) => setFormData({ ...formData, sale_date: e.target.value })}
-          className={input.primary}
+          className={input.base}
         />
       </div>
 
@@ -184,7 +184,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
-          className={input.primary}
+          className={input.base}
           placeholder="可选"
         />
       </div>

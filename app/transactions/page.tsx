@@ -8,6 +8,7 @@ import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import Image from 'next/image';
 import { layout, heading, card, button, badge, input, tabs } from '@/lib/theme';
+import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -16,13 +17,20 @@ interface TransactionWithPayment extends Transaction {
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
 type SortOrder = 'asc' | 'desc';
 
+interface PaymentMethodBasic {
+  id: string;
+  name: string;
+}
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold'>('all');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -36,6 +44,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadTransactions();
+    loadPaymentMethods();
   }, []);
 
   useEffect(() => {
@@ -63,12 +72,24 @@ export default function TransactionsPage() {
     }
   };
 
+  const loadPaymentMethods = async () => {
+    const { data, error } = await supabase
+      .from('payment_methods')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name');
+
+    if (!error && data) {
+      setPaymentMethods(data);
+    }
+  };
+
   const calculateStats = () => {
     const inStock = transactions.filter(t => t.status === 'in_stock');
     const sold = transactions.filter(t => t.status === 'sold');
 
     const totalCost = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
-    const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0); // 使用 total_profit 而不是 cash_profit
+    const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0);
     const avgROI = sold.length > 0
       ? sold.reduce((sum, t) => sum + (t.roi || 0), 0) / sold.length
       : 0;
@@ -83,12 +104,44 @@ export default function TransactionsPage() {
     });
   };
 
+  const handleApplyFilters = (filters: FilterValues) => {
+    setActiveFilters(filters);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters(null);
+  };
+
   // 筛选和排序
   const filteredTransactions = transactions
     .filter(t => {
+      // 原有的搜索和状态筛选
       const matchesSearch = t.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            t.notes?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+
+      // 高级筛选
+      if (activeFilters) {
+        // 日期筛选
+        if (activeFilters.dateFrom && t.date < activeFilters.dateFrom) return false;
+        if (activeFilters.dateTo && t.date > activeFilters.dateTo) return false;
+
+        // 商品名称筛选
+        if (activeFilters.productName && !t.product_name.toLowerCase().includes(activeFilters.productName.toLowerCase())) {
+          return false;
+        }
+
+        // 状态筛选（多选）
+        if (activeFilters.status.length > 0 && !activeFilters.status.includes(t.status)) {
+          return false;
+        }
+
+        // 支付方式筛选
+        if (activeFilters.paymentMethodId && t.card_id !== activeFilters.paymentMethodId) {
+          return false;
+        }
+      }
+
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -202,6 +255,13 @@ export default function TransactionsPage() {
             </div>
           </div>
         </div>
+
+        {/* 高级筛选器 */}
+        <TransactionFilters
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+          paymentMethods={paymentMethods}
+        />
 
         {/* 筛选和搜索 */}
         <div className={card.primary + ' p-6 shadow-2xl mb-6'}>

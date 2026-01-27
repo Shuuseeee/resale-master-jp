@@ -100,14 +100,14 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                className={input.primary}
+                className={input.base}
                 placeholder="开始日期"
               />
               <input
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                className={input.primary}
+                className={input.base}
                 placeholder="结束日期"
               />
             </div>
@@ -122,7 +122,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
               type="text"
               value={filters.productName}
               onChange={(e) => setFilters({ ...filters, productName: e.target.value })}
-              className={input.primary}
+              className={input.base}
               placeholder="搜索商品名称..."
             />
           </div>
@@ -162,7 +162,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
             <select
               value={filters.paymentMethodId}
               onChange={(e) => setFilters({ ...filters, paymentMethodId: e.target.value })}
-              className={input.primary}
+              className={input.base}
             >
               <option value="">全部</option>
               {paymentMethods.map(pm => (
