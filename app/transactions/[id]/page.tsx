@@ -9,6 +9,8 @@ import { formatCurrency, formatROI, daysUntil, calculatePaymentDate } from '@/li
 import Image from 'next/image';
 import Link from 'next/link';
 import { layout, heading, card, button, badge, input } from '@/lib/theme';
+import BatchSaleForm from '@/components/BatchSaleForm';
+import SalesRecordsList from '@/components/SalesRecordsList';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -31,6 +33,7 @@ export default function TransactionDetailPage() {
   const [transaction, setTransaction] = useState<TransactionWithPayment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSaleForm, setShowSaleForm] = useState(false);
+  const [showBatchSaleForm, setShowBatchSaleForm] = useState(false); // 批量销售表单
   const [submitting, setSubmitting] = useState(false);
 
   const [saleData, setSaleData] = useState<SaleFormData>({
@@ -253,7 +256,20 @@ export default function TransactionDetailPage() {
 
             {/* 操作按钮 */}
             <div className="flex items-center gap-2">
-              {transaction.status === 'in_stock' && !showSaleForm && (
+              {/* 批量商品显示批量销售按钮 */}
+              {transaction.quantity > 1 && transaction.quantity_in_stock > 0 && !showBatchSaleForm && (
+                <button
+                  onClick={() => setShowBatchSaleForm(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  记录销售
+                </button>
+              )}
+              {/* 单品显示原有的记录销售按钮 */}
+              {transaction.quantity === 1 && transaction.status === 'in_stock' && !showSaleForm && (
                 <button
                   onClick={() => setShowSaleForm(true)}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
@@ -296,6 +312,24 @@ export default function TransactionDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 批量销售表单 */}
+        {showBatchSaleForm && transaction.quantity > 1 && (
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></div>
+              记录销售信息
+            </h2>
+            <BatchSaleForm
+              transaction={transaction}
+              onSuccess={() => {
+                setShowBatchSaleForm(false);
+                loadTransaction();
+              }}
+              onCancel={() => setShowBatchSaleForm(false)}
+            />
+          </div>
+        )}
 
         {/* 销售表单（库存中商品） */}
         {showSaleForm && transaction.status === 'in_stock' && (
@@ -557,6 +591,38 @@ export default function TransactionDetailPage() {
 
           {/* 右侧边栏 */}
           <div className="space-y-6">
+            {/* 批量商品的库存和销售记录 */}
+            {transaction.quantity > 1 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">库存信息</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">总数量</span>
+                    <span className="text-gray-900 dark:text-white font-medium">{transaction.quantity}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">已售出</span>
+                    <span className="text-emerald-400 font-medium">{transaction.quantity_sold}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">库存</span>
+                    <span className="text-blue-400 font-bold text-lg">{transaction.quantity_in_stock}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 销售记录列表（批量商品） */}
+            {transaction.quantity > 1 && transaction.quantity_sold > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">销售记录</h3>
+                <SalesRecordsList
+                  transactionId={transaction.id}
+                  onUpdate={loadTransaction}
+                />
+              </div>
+            )}
+
             {/* 凭证图片 */}
             {transaction.image_url && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
