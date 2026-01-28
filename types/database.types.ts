@@ -2,7 +2,7 @@
 // Resale Master JP - TypeScript Type Definitions
 
 export type PaymentMethodType = 'card' | 'bank' | 'wallet';
-export type TransactionStatus = 'in_stock' | 'sold';
+export type TransactionStatus = 'in_stock' | 'sold' | 'returned';
 export type PointStatus = 'pending' | 'received' | 'expired';
 export type BillingCycle = 'monthly' | 'yearly';
 export type DiscountType = 'percentage' | 'fixed_amount' | 'free_shipping';
@@ -76,6 +76,12 @@ export interface Transaction {
 
   // 备注
   notes: string | null;
+
+  // 退货信息
+  return_date?: string;
+  return_amount?: number;
+  return_notes?: string;
+  points_deducted?: number;
 
   created_at: string;
   updated_at: string;

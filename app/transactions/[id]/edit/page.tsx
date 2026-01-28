@@ -42,6 +42,7 @@ export default function EditTransactionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
 
   // 加载交易数据和支付方式列表
   useEffect(() => {
@@ -62,9 +63,11 @@ export default function EditTransactionPage() {
       if (error) throw error;
 
       if (data) {
+        setTransaction(data); // 保存完整的交易数据
         setFormData({
           date: data.date,
           product_name: data.product_name,
+          quantity: data.quantity,
           purchase_price_total: data.purchase_price_total,
           card_paid: data.card_paid,
           point_paid: data.point_paid,
@@ -404,6 +407,27 @@ export default function EditTransactionPage() {
                   />
                   {errors.product_name && (
                     <p className="mt-1 text-sm text-red-400">{errors.product_name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    数量 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity || 1}
+                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                    min="1"
+                    disabled={!!(transaction && transaction.quantity_sold > 0)}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    required
+                  />
+                  {transaction && transaction.quantity_sold > 0 && (
+                    <p className="text-amber-500 text-sm mt-1">
+                      该商品已售出 {transaction.quantity_sold} 件，无法修改总数量
+                    </p>
                   )}
                 </div>
               </div>

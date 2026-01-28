@@ -11,7 +11,7 @@ export interface FilterValues {
   dateFrom: string;
   dateTo: string;
   productName: string;
-  status: ('in_stock' | 'sold')[];
+  status: ('in_stock' | 'sold' | 'returned')[];
   paymentMethodId: string;
 }
 
@@ -47,7 +47,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
     onClear();
   };
 
-  const toggleStatus = (status: 'in_stock' | 'sold') => {
+  const toggleStatus = (status: 'in_stock' | 'sold' | 'returned') => {
     setFilters(prev => ({
       ...prev,
       status: prev.status.includes(status)
@@ -149,6 +149,15 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">已售出</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.status.includes('returned')}
+                  onChange={() => toggleStatus('returned')}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">已退货</span>
               </label>
             </div>
           </div>

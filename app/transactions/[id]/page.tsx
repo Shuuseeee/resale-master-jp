@@ -34,12 +34,20 @@ export default function TransactionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showBatchSaleForm, setShowBatchSaleForm] = useState(false); // 批量销售表单
+  const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
   const [submitting, setSubmitting] = useState(false);
 
   const [saleData, setSaleData] = useState<SaleFormData>({
     selling_price: 0,
     platform_fee: 0,
     shipping_fee: 0,
+  });
+
+  const [returnData, setReturnData] = useState({
+    return_date: new Date().toISOString().split('T')[0],
+    return_amount: 0,
+    return_notes: '',
+    points_deducted: 0,
   });
 
   useEffect(() => {
@@ -168,6 +176,41 @@ export default function TransactionDetailPage() {
     }
   };
 
+  const handleReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!transaction) return;
+
+    if (!confirm('确定要标记为退货吗？\n\n此操作将：\n• 将状态改为"已退货"\n• 记录退货信息\n\n此操作无法撤销。')) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          status: 'returned',
+          return_date: returnData.return_date,
+          return_amount: returnData.return_amount,
+          return_notes: returnData.return_notes,
+          points_deducted: returnData.points_deducted,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await loadTransaction();
+      setShowReturnForm(false);
+      alert('已标记为退货');
+    } catch (error) {
+      console.error('标记退货失败:', error);
+      alert('操作失败，请重试');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const deleteTransaction = async () => {
     if (!confirm('确定要删除这条交易记录吗？此操作无法撤销。')) {
       return;
@@ -280,6 +323,18 @@ export default function TransactionDetailPage() {
                   记录销售
                 </button>
               )}
+              {/* 退货按钮 - 仅当status=in_stock且quantity_sold=0时显示 */}
+              {transaction.status === 'in_stock' && transaction.quantity_sold === 0 && !showReturnForm && (
+                <button
+                  onClick={() => setShowReturnForm(true)}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                  </svg>
+                  标记为退货
+                </button>
+              )}
               {transaction.status === 'sold' && (
                 <button
                   onClick={cancelSale}
@@ -312,6 +367,89 @@ export default function TransactionDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 退货表单 */}
+        {showReturnForm && (
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-red-500/30 shadow-2xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-1 h-6 bg-gradient-to-b from-red-500 to-rose-500 rounded-full"></div>
+              标记为退货
+            </h2>
+            <form onSubmit={handleReturn} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    退货日期 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={returnData.return_date}
+                    onChange={(e) => setReturnData({ ...returnData, return_date: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    退款金额
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={returnData.return_amount || ''}
+                      onChange={(e) => setReturnData({ ...returnData, return_amount: parseFloat(e.target.value) || 0 })}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    扣除积分
+                  </label>
+                  <input
+                    type="number"
+                    value={returnData.points_deducted || ''}
+                    onChange={(e) => setReturnData({ ...returnData, points_deducted: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    placeholder="退货时被扣除的积分数量"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  退货备注
+                </label>
+                <textarea
+                  value={returnData.return_notes}
+                  onChange={(e) => setReturnData({ ...returnData, return_notes: e.target.value })}
+                  rows={3}
+                  placeholder="记录退货原因、处理方式等信息..."
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
+                >
+                  {submitting ? '提交中...' : '确认退货'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReturnForm(false)}
+                  className="px-6 py-3 bg-white dark:bg-gray-700 hover:bg-slate-700/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* 批量销售表单 */}
         {showBatchSaleForm && transaction.quantity > 1 && (

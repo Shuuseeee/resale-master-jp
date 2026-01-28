@@ -29,18 +29,56 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
     setLoading(false);
   };
 
-  const handleDelete = async (recordId: string) => {
-    if (!confirm('确定要删除这条销售记录吗？\n\n删除后库存数量会相应增加。')) {
+  const handleCancelSale = async (record: SalesRecord) => {
+    if (!confirm('确定要取消这笔销售吗？\n\n此操作将：\n• 删除该销售记录\n• 恢复库存数量\n• 如果全部售出已取消，状态将改回"库存中"\n\n此操作无法撤销。')) {
       return;
     }
 
-    const success = await deleteSalesRecord(recordId);
-    if (success) {
-      alert('销售记录已删除');
+    try {
+      // 1. 删除销售记录
+      const deleteSuccess = await deleteSalesRecord(record.id);
+      if (!deleteSuccess) {
+        alert('删除销售记录失败，请重试');
+        return;
+      }
+
+      // 2. 获取交易当前数据
+      const { data: transaction, error: fetchError } = await (await import('@/lib/supabase/client')).supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', record.transaction_id)
+        .single();
+
+      if (fetchError || !transaction) {
+        alert('获取交易数据失败，请刷新页面');
+        return;
+      }
+
+      // 3. 更新交易数据
+      const newQuantitySold = transaction.quantity_sold - record.quantity_sold;
+      const newQuantityInStock = transaction.quantity_in_stock + record.quantity_sold;
+      const newStatus = newQuantitySold === 0 ? 'in_stock' : transaction.status;
+
+      const { error: updateError } = await (await import('@/lib/supabase/client')).supabase
+        .from('transactions')
+        .update({
+          quantity_sold: newQuantitySold,
+          quantity_in_stock: newQuantityInStock,
+          status: newStatus,
+        })
+        .eq('id', record.transaction_id);
+
+      if (updateError) {
+        alert('更新交易数据失败，请重试');
+        return;
+      }
+
+      alert('销售已取消，库存已恢复');
       await loadRecords();
       onUpdate();
-    } else {
-      alert('删除失败，请重试');
+    } catch (error) {
+      console.error('取消销售失败:', error);
+      alert('操作失败，请重试');
     }
   };
 
@@ -70,10 +108,10 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
               </div>
             </div>
             <button
-              onClick={() => handleDelete(record.id)}
+              onClick={() => handleCancelSale(record)}
               className="text-red-400 hover:text-red-300 text-sm"
             >
-              删除
+              取消销售
             </button>
           </div>
 

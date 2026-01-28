@@ -27,7 +27,7 @@ export default function TransactionsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold' | 'returned'>('all');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null);
@@ -64,7 +64,32 @@ export default function TransactionsPage() {
 
       if (error) throw error;
 
-      setTransactions(data || []);
+      // 对于部分销售的商品，计算已售出部分的累计利润和ROI
+      const transactionsWithPartialProfit = await Promise.all(
+        (data || []).map(async (transaction) => {
+          if (transaction.quantity_sold > 0 && transaction.status === 'in_stock') {
+            // 获取该交易的所有销售记录
+            const { data: salesRecords } = await supabase
+              .from('sales_records')
+              .select('total_profit, roi')
+              .eq('transaction_id', transaction.id);
+
+            if (salesRecords && salesRecords.length > 0) {
+              const partialProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+              const partialROI = salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length;
+
+              return {
+                ...transaction,
+                partial_profit: partialProfit,
+                partial_roi: partialROI,
+              };
+            }
+          }
+          return transaction;
+        })
+      );
+
+      setTransactions(transactionsWithPartialProfit);
     } catch (error) {
       console.error('加载交易记录失败:', error);
     } finally {
@@ -291,6 +316,7 @@ export default function TransactionsPage() {
               <option value="all">全部状态</option>
               <option value="in_stock">库存中</option>
               <option value="sold">已售出</option>
+              <option value="returned">已退货</option>
             </select>
           </div>
         </div>
@@ -413,6 +439,10 @@ export default function TransactionsPage() {
                           <span className={badge.success + ' border border-emerald-500/30'}>
                             已售出
                           </span>
+                        ) : transaction.status === 'returned' ? (
+                          <span className={badge.error + ' border border-red-500/30'}>
+                            已退货
+                          </span>
                         ) : (
                           <span className={badge.pending + ' border border-amber-500/30'}>
                             库存中
@@ -427,6 +457,13 @@ export default function TransactionsPage() {
                           <span className={transaction.total_profit && transaction.total_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                             {formatCurrency(transaction.total_profit || 0)}
                           </span>
+                        ) : transaction.quantity_sold > 0 && (transaction as any).partial_profit !== undefined ? (
+                          <div className="flex flex-col items-end">
+                            <span className={(transaction as any).partial_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              {formatCurrency((transaction as any).partial_profit)}
+                            </span>
+                            <span className="text-xs text-blue-400">部分销售</span>
+                          </div>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-500">-</span>
                         )}
@@ -435,6 +472,10 @@ export default function TransactionsPage() {
                         {transaction.status === 'sold' ? (
                           <span className={transaction.roi && transaction.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                             {formatROI(transaction.roi || 0)}
+                          </span>
+                        ) : transaction.quantity_sold > 0 && (transaction as any).partial_roi !== undefined ? (
+                          <span className={(transaction as any).partial_roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                            {formatROI((transaction as any).partial_roi)}
                           </span>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-500">-</span>
