@@ -67,27 +67,47 @@ export async function getSuppliesCost(id: string): Promise<SuppliesCost | null> 
 export async function createSuppliesCost(
   formData: SuppliesCostFormData
 ): Promise<{ data: SuppliesCost | null; error: any }> {
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    // 获取当前用户
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { data: null, error: { message: '用户未登录' } };
+    if (authError) {
+      console.error('获取用户信息失败:', authError);
+      return { data: null, error: { message: '获取用户信息失败: ' + authError.message } };
+    }
+
+    if (!user) {
+      console.error('用户未登录');
+      return { data: null, error: { message: '用户未登录，请先登录' } };
+    }
+
+    console.log('当前用户ID:', user.id);
+
+    // 插入数据
+    const { data, error } = await supabase
+      .from('supplies_costs')
+      .insert({
+        user_id: user.id,
+        category: formData.category,
+        amount: formData.amount,
+        purchase_date: formData.purchase_date,
+        description: formData.description || null,
+        notes: formData.notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('创建耗材成本失败:', error);
+      return { data: null, error: { message: error.message, details: error } };
+    }
+
+    console.log('创建成功:', data);
+    return { data, error: null };
+  } catch (err: any) {
+    console.error('创建耗材成本异常:', err);
+    return { data: null, error: { message: err.message || '创建失败' } };
   }
-
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .insert({
-      ...formData,
-      user_id: user.id,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('创建耗材成本失败:', error);
-    return { data: null, error };
-  }
-
-  return { data, error: null };
 }
 
 /**
