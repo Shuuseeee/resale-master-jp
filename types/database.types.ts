@@ -95,6 +95,26 @@ export interface FixedCost {
   updated_at: string;
 }
 
+export interface SuppliesCost {
+  id: string;
+  user_id: string;
+  category: string; // 包装材料、运输耗材、标签打印、其他
+  amount: number;
+  purchase_date: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SuppliesCostFormData {
+  category: string;
+  amount: number;
+  purchase_date: string;
+  description?: string;
+  notes?: string;
+}
+
 export interface Coupon {
   id: string;
   name: string;

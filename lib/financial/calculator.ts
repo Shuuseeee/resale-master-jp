@@ -32,15 +32,17 @@ export function calculatePointsValue(
  * @param platformFee 平台费用
  * @param shippingFee 运费
  * @param purchaseCost 采购成本
+ * @param suppliesCost 耗材成本（可选）
  * @returns 现金利润
  */
 export function calculateCashProfit(
   sellingPrice: number,
   platformFee: number = 0,
   shippingFee: number = 0,
-  purchaseCost: number
+  purchaseCost: number,
+  suppliesCost: number = 0
 ): number {
-  return sellingPrice - platformFee - shippingFee - purchaseCost;
+  return sellingPrice - platformFee - shippingFee - purchaseCost - suppliesCost;
 }
 
 /**
@@ -52,6 +54,7 @@ export function calculateCashProfit(
  * @param platformPoints 平台积分
  * @param cardPoints 信用卡积分
  * @param conversionRate 积分折算率
+ * @param suppliesCost 耗材成本（可选）
  * @returns 总利润
  */
 export function calculateTotalProfit(
@@ -61,9 +64,10 @@ export function calculateTotalProfit(
   purchaseCost: number,
   platformPoints: number = 0,
   cardPoints: number = 0,
-  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT
+  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT,
+  suppliesCost: number = 0
 ): number {
-  const cashProfit = calculateCashProfit(sellingPrice, platformFee, shippingFee, purchaseCost);
+  const cashProfit = calculateCashProfit(sellingPrice, platformFee, shippingFee, purchaseCost, suppliesCost);
   const pointsValue = calculatePointsValue(platformPoints + cardPoints, conversionRate);
   return cashProfit + pointsValue;
 }
@@ -78,6 +82,7 @@ export function calculateTotalProfit(
  * @param cardPoints 信用卡积分
  * @param conversionRate 积分折算率
  * @param pointPaid 积分抵扣金额（默认0）
+ * @param suppliesCost 耗材成本（可选）
  * @returns ROI 百分比
  */
 export function calculateROI(
@@ -88,10 +93,11 @@ export function calculateROI(
   platformPoints: number = 0,
   cardPoints: number = 0,
   conversionRate: number = POINT_CONVERSION_RATES.DEFAULT,
-  pointPaid: number = 0
+  pointPaid: number = 0,
+  suppliesCost: number = 0
 ): number {
-  // 计算实际现金支出（采购成本 - 积分抵扣）
-  const actualCashSpent = purchaseCost - pointPaid;
+  // 计算实际现金支出（采购成本 + 耗材成本 - 积分抵扣）
+  const actualCashSpent = purchaseCost + suppliesCost - pointPaid;
   if (actualCashSpent <= 0) return 0;
 
   const totalProfit = calculateTotalProfit(
@@ -101,7 +107,8 @@ export function calculateROI(
     purchaseCost,
     platformPoints,
     cardPoints,
-    conversionRate
+    conversionRate,
+    suppliesCost
   );
 
   return (totalProfit / actualCashSpent) * 100;

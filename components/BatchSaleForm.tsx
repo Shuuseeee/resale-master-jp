@@ -64,6 +64,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           platform_points_platform_id: transaction.platform_points_platform_id,
           card_points_platform_id: transaction.card_points_platform_id,
           extra_platform_points_platform_id: transaction.extra_platform_points_platform_id,
+          date: transaction.date, // 添加交易日期用于耗材成本分摊
         }
       );
 
