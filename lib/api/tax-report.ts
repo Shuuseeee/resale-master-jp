@@ -1,11 +1,11 @@
 // lib/api/tax-report.ts
-// 日本税务申报报表 API
+// 確定申告レポート API
 
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction } from '@/types/database.types';
 
 /**
- * 税务报表明细记录
+ * 税務レポート明細記録
  */
 export interface TaxReportDetail {
   transactionId: string;
@@ -13,37 +13,37 @@ export interface TaxReportDetail {
   productName: string;
   quantity: number;
   quantitySold: number;
-  purchasePrice: number; // 购入价格
+  purchasePrice: number; // 購入価格
   sellingPrice: number; // 売却価格
-  platformFee: number; // 平台手数料
+  platformFee: number; // 販売手数料
   shippingFee: number; // 送料
-  suppliesCost: number; // 耗材費
-  pointsReward: number; // 積分回報（日元价值）
-  cashProfit: number; // 现金利益
-  totalProfit: number; // 総利益（含积分）
+  suppliesCost: number; // 消耗品費
+  pointsReward: number; // ポイント還元（円換算）
+  cashProfit: number; // 現金利益
+  totalProfit: number; // 総利益（ポイント含む）
   notes: string;
 }
 
 /**
- * 税务报表年度汇总
+ * 税務レポート年度集計
  */
 export interface TaxReportSummary {
   year: number;
-  totalRevenue: number; // 総売上高（现金）
-  totalPointsValue: number; // 積分収入
-  totalIncome: number; // 総収入（现金 + 积分）
+  totalRevenue: number; // 売上高（現金）
+  totalPointsValue: number; // ポイント収入
+  totalIncome: number; // 総収入（現金 + ポイント）
   totalExpenses: number; // 必要経費合計
-  purchaseCosts: number; // 仕入れコスト
-  platformFees: number; // 平台手数料
+  purchaseCosts: number; // 仕入費
+  platformFees: number; // 販売手数料
   shippingFees: number; // 送料
-  suppliesCosts: number; // 耗材費
+  suppliesCosts: number; // 消耗品費
   netIncome: number; // 所得金額（収入 - 経費）
-  cashIncome: number; // 现金収入
+  cashIncome: number; // 現金収入
   transactionCount: number; // 取引件数
 }
 
 /**
- * 获取指定年度的所有已售交易记录
+ * 指定年度の売却済み取引を取得
  */
 async function getSoldTransactionsByYear(year: number): Promise<Transaction[]> {
   try {
@@ -68,30 +68,30 @@ async function getSoldTransactionsByYear(year: number): Promise<Transaction[]> {
 
     return data || [];
   } catch (error) {
-    console.error('获取年度交易记录失败:', error);
+    console.error('年度取引記録の取得に失敗:', error);
     return [];
   }
 }
 
 /**
- * 计算交易的积分价值（日元）
+ * 取引のポイント価値を計算（円換算）
  */
 function calculatePointsValue(transaction: any): number {
   let totalPointsValue = 0;
 
-  // 平台积分价值
+  // プラットフォームポイント価値
   if (transaction.expected_platform_points && transaction.platform_points_platform) {
     const rate = (transaction.platform_points_platform as any).yen_conversion_rate || 1.0;
     totalPointsValue += transaction.expected_platform_points * rate;
   }
 
-  // 信用卡积分价值
+  // クレジットカードポイント価値
   if (transaction.expected_card_points && transaction.card_points_platform) {
     const rate = (transaction.card_points_platform as any).yen_conversion_rate || 1.0;
     totalPointsValue += transaction.expected_card_points * rate;
   }
 
-  // 额外平台积分价值
+  // 追加プラットフォームポイント価値
   if (transaction.extra_platform_points && transaction.extra_platform_points_platform) {
     const rate = (transaction.extra_platform_points_platform as any).yen_conversion_rate || 1.0;
     totalPointsValue += transaction.extra_platform_points * rate;
@@ -101,7 +101,7 @@ function calculatePointsValue(transaction: any): number {
 }
 
 /**
- * 获取年度耗材成本
+ * 年度消耗品費を取得
  */
 async function getYearlySuppliesCosts(year: number): Promise<number> {
   try {
@@ -118,13 +118,13 @@ async function getYearlySuppliesCosts(year: number): Promise<number> {
 
     return (data || []).reduce((sum, item) => sum + item.amount, 0);
   } catch (error) {
-    console.error('获取年度耗材成本失败:', error);
+    console.error('年度消耗品費の取得に失敗:', error);
     return 0;
   }
 }
 
 /**
- * 生成税务报表明细
+ * 税務レポート明細を生成
  */
 export async function generateTaxReportDetails(year: number): Promise<TaxReportDetail[]> {
   try {
@@ -145,7 +145,7 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
         sellingPrice: transaction.selling_price || 0,
         platformFee: transaction.platform_fee || 0,
         shippingFee: transaction.shipping_fee || 0,
-        suppliesCost: 0, // 耗材成本在汇总中统一计算
+        suppliesCost: 0, // 消耗品費は集計で一括計算
         pointsReward: pointsValue,
         cashProfit: cashProfit,
         totalProfit: totalProfit,
@@ -155,20 +155,20 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
 
     return details;
   } catch (error) {
-    console.error('生成税务报表明细失败:', error);
+    console.error('税務レポート明細の生成に失敗:', error);
     return [];
   }
 }
 
 /**
- * 生成税务报表年度汇总
+ * 税務レポート年度集計を生成
  */
 export async function generateTaxReportSummary(year: number): Promise<TaxReportSummary> {
   try {
     const transactions = await getSoldTransactionsByYear(year);
     const yearlySuppliesCosts = await getYearlySuppliesCosts(year);
 
-    // 计算各项指标
+    // 各項目を計算
     const totalRevenue = transactions.reduce((sum, t) => sum + (t.selling_price || 0), 0);
     const totalPointsValue = transactions.reduce((sum, t) => sum + calculatePointsValue(t), 0);
     const totalIncome = totalRevenue + totalPointsValue;
@@ -196,7 +196,7 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
       transactionCount: transactions.length,
     };
   } catch (error) {
-    console.error('生成税务报表汇总失败:', error);
+    console.error('税務レポート集計の生成に失敗:', error);
     return {
       year,
       totalRevenue: 0,
@@ -215,7 +215,7 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
 }
 
 /**
- * 获取可用的年份列表
+ * 利用可能な年度リストを取得
  */
 export async function getAvailableYears(): Promise<number[]> {
   try {
@@ -230,15 +230,15 @@ export async function getAvailableYears(): Promise<number[]> {
       return [new Date().getFullYear()];
     }
 
-    // 提取所有年份并去重
+    // 全年度を抽出して重複を削除
     const years = data
       .map(t => new Date(t.date).getFullYear())
       .filter((year, index, self) => self.indexOf(year) === index)
-      .sort((a, b) => b - a); // 降序排列
+      .sort((a, b) => b - a); // 降順
 
     return years;
   } catch (error) {
-    console.error('获取可用年份列表失败:', error);
+    console.error('利用可能な年度リストの取得に失敗:', error);
     return [new Date().getFullYear()];
   }
 }
