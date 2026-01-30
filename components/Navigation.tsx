@@ -144,8 +144,8 @@ export default function Navigation() {
               </svg>
             </div>
             <div>
-              <div className="text-gray-900 dark:text-white font-bold text-lg">Resale Master</div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">JP Edition</div>
+              <div className="text-gray-900 dark:text-white font-bold text-lg">Sale System</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">For Internal Use Only</div>
             </div>
           </Link>
         </div>
@@ -209,7 +209,7 @@ export default function Navigation() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-            <span className="text-gray-900 dark:text-white font-bold">Resale Master</span>
+            <span className="text-gray-900 dark:text-white font-bold">Sale</span>
           </Link>
 
           <button
