@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { parseNumberInput } from '@/lib/number-utils';
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -117,10 +118,10 @@ export default function AddTransactionPage() {
     }
   };
 
-  // 处理数字输入
+  // 处理数字输入（支持逗号分隔的金额）
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numValue = parseFloat(value) || 0;
+    const numValue = parseNumberInput(value, 0);
     setFormData((prev) => ({
       ...prev,
       [name]: numValue,
@@ -137,9 +138,10 @@ export default function AddTransactionPage() {
     return Math.max(0, balance);
   };
 
-  // 处理支付金额变化
-  const handlePaymentChange = (field: 'card_paid' | 'point_paid', value: number) => {
-    const newFormData = { ...formData, [field]: value };
+  // 处理支付金额变化（支持逗号分隔的金额）
+  const handlePaymentChange = (field: 'card_paid' | 'point_paid', value: string) => {
+    const numValue = parseNumberInput(value, 0);
+    const newFormData = { ...formData, [field]: numValue };
 
     // 自动计算余额支付
     const balancePaid = calculateBalancePaid(
@@ -153,7 +155,7 @@ export default function AddTransactionPage() {
     if (field === 'card_paid' && newFormData.card_id) {
       const selectedCard = paymentMethods.find((pm) => pm.id === newFormData.card_id);
       if (selectedCard) {
-        cardPoints = Math.floor(value * selectedCard.point_rate);
+        cardPoints = Math.floor(numValue * selectedCard.point_rate);
       }
     }
 
@@ -346,11 +348,11 @@ export default function AddTransactionPage() {
                     数量 <span className="text-red-400">*</span>
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     name="quantity"
                     value={formData.quantity || 1}
                     onChange={handleNumberChange}
-                    min="1"
                     placeholder="1"
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     required
@@ -377,12 +379,13 @@ export default function AddTransactionPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name="purchase_price_total"
                     value={formData.purchase_price_total || ''}
                     onChange={(e) => {
                       handleNumberChange(e);
-                      const total = parseFloat(e.target.value) || 0;
+                      const total = parseNumberInput(e.target.value, 0);
                       const balancePaid = calculateBalancePaid(
                         total,
                         formData.card_paid,
@@ -390,9 +393,7 @@ export default function AddTransactionPage() {
                       );
                       setFormData((prev) => ({ ...prev, balance_paid: balancePaid }));
                     }}
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
+                    placeholder="0.00 或 3,000"
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                     required
                   />
@@ -412,13 +413,11 @@ export default function AddTransactionPage() {
                   <div className="flex gap-3">
                     <div className="flex-1 relative">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={formData.card_paid || ''}
-                        onChange={(e) => handlePaymentChange('card_paid', parseFloat(e.target.value) || 0)}
-                        step="0.01"
-                        min="0"
-                        max={formData.purchase_price_total}
-                        placeholder="0.00"
+                        onChange={(e) => handlePaymentChange('card_paid', e.target.value)}
+                        placeholder="0.00 或 3,000"
                         className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -451,13 +450,11 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       value={formData.point_paid || ''}
-                      onChange={(e) => handlePaymentChange('point_paid', parseFloat(e.target.value) || 0)}
-                      step="0.01"
-                      min="0"
-                      max={formData.purchase_price_total}
-                      placeholder="0.00"
+                      onChange={(e) => handlePaymentChange('point_paid', e.target.value)}
+                      placeholder="0.00 或 3,000"
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -505,13 +502,12 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       name="expected_platform_points"
                       value={formData.expected_platform_points || ''}
                       onChange={handleNumberChange}
-                      step="1"
-                      min="0"
-                      placeholder="0"
+                      placeholder="0 或 1,000"
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -550,13 +546,12 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       name="extra_platform_points"
                       value={formData.extra_platform_points || ''}
                       onChange={handleNumberChange}
-                      step="1"
-                      min="0"
-                      placeholder="0"
+                      placeholder="0 或 1,000"
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -599,13 +594,12 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       name="expected_card_points"
                       value={formData.expected_card_points || ''}
                       onChange={handleNumberChange}
-                      step="1"
-                      min="0"
-                      placeholder="0"
+                      placeholder="0 或 1,000"
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>

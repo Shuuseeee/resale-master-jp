@@ -326,7 +326,7 @@ export default function TaxReportPage() {
               <select
                 value={selectedYear}
                 onChange={e => setSelectedYear(Number(e.target.value))}
-                className={input.base + ' w-32'}
+                className={input.base + ' w-full sm:w-32'}
                 disabled={loading}
               >
                 {availableYears.map(year => (

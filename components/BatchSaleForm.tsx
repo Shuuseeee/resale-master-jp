@@ -8,6 +8,7 @@ import type { Transaction, SalesRecordFormData } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { parseNumberInput } from '@/lib/number-utils';
 
 interface BatchSaleFormProps {
   transaction: Transaction;
@@ -104,13 +105,13 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             销售数量 <span className="text-red-400">*</span>
           </label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={formData.quantity_sold || ''}
-            onChange={(e) => setFormData({ ...formData, quantity_sold: e.target.value === '' ? 0 : parseInt(e.target.value) })}
-            min="1"
-            max={transaction.quantity_in_stock}
+            onChange={(e) => setFormData({ ...formData, quantity_sold: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             required
+            placeholder="1"
           />
         </div>
 
@@ -119,13 +120,13 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             单价 (¥) <span className="text-red-400">*</span>
           </label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={formData.selling_price_per_unit || ''}
-            onChange={(e) => setFormData({ ...formData, selling_price_per_unit: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-            min="0"
-            step="0.01"
+            onChange={(e) => setFormData({ ...formData, selling_price_per_unit: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             required
+            placeholder="0.00"
           />
         </div>
       </div>
@@ -142,12 +143,12 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             平台费用 (¥)
           </label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={formData.platform_fee || ''}
-            onChange={(e) => setFormData({ ...formData, platform_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-            min="0"
-            step="0.01"
+            onChange={(e) => setFormData({ ...formData, platform_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
+            placeholder="0.00"
           />
         </div>
 
@@ -156,12 +157,12 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             运费 (¥)
           </label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={formData.shipping_fee || ''}
-            onChange={(e) => setFormData({ ...formData, shipping_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-            min="0"
-            step="0.01"
+            onChange={(e) => setFormData({ ...formData, shipping_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
+            placeholder="0.00"
           />
         </div>
       </div>

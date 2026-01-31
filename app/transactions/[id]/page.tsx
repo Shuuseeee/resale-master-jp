@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { layout, heading, card, button, badge, input } from '@/lib/theme';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
+import { parseNumberInput } from '@/lib/number-utils';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -284,72 +285,80 @@ export default function TransactionDetailPage() {
             <span className="font-medium">返回交易列表</span>
           </Link>
 
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{transaction.product_name}</h1>
-              <div className="flex items-center gap-3">
+          <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl xs:text-3xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-3 xs:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
                     已售出
                   </span>
+                ) : transaction.status === 'returned' ? (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-red-500/20 text-red-400 border border-red-500/30 whitespace-nowrap">
+                    已退货
+                  </span>
                 ) : (
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 whitespace-nowrap">
                     库存中
                   </span>
                 )}
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                   {new Date(transaction.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
             </div>
 
             {/* 操作按钮 */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap xs:flex-nowrap">
               {/* 批量商品显示批量销售按钮 */}
               {transaction.quantity > 1 && transaction.quantity_in_stock > 0 && !showBatchSaleForm && (
                 <button
                   onClick={() => setShowBatchSaleForm(true)}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  记录销售
+                  <span className="hidden xs:inline">记录销售</span>
+                  <span className="xs:hidden">记录</span>
                 </button>
               )}
               {/* 单品显示原有的记录销售按钮 */}
               {transaction.quantity === 1 && transaction.status === 'in_stock' && !showSaleForm && (
                 <button
                   onClick={() => setShowSaleForm(true)}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  记录销售
+                  <span className="hidden xs:inline">记录销售</span>
+                  <span className="xs:hidden">记录</span>
                 </button>
               )}
               {/* 退货按钮 - 仅当status=in_stock且quantity_sold=0时显示 */}
               {transaction.status === 'in_stock' && transaction.quantity_sold === 0 && !showReturnForm && (
                 <button
                   onClick={() => setShowReturnForm(true)}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
                   </svg>
-                  标记为退货
+                  <span className="hidden xs:inline">标记为退货</span>
+                  <span className="xs:hidden">退货</span>
                 </button>
               )}
               {transaction.status === 'sold' && (
                 <button
                   onClick={cancelSale}
-                  className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
-                  取消销售
+                  <span className="hidden xs:inline">取消销售</span>
+                  <span className="xs:hidden">取消</span>
                 </button>
               )}
               <Link
@@ -401,11 +410,11 @@ export default function TransactionDetailPage() {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       value={returnData.return_amount || ''}
-                      onChange={(e) => setReturnData({ ...returnData, return_amount: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
+                      onChange={(e) => setReturnData({ ...returnData, return_amount: parseNumberInput(e.target.value, 0) })}
+                      placeholder="0.00"
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -416,10 +425,10 @@ export default function TransactionDetailPage() {
                     扣除积分
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={returnData.points_deducted || ''}
-                    onChange={(e) => setReturnData({ ...returnData, points_deducted: parseInt(e.target.value) || 0 })}
-                    min="0"
+                    onChange={(e) => setReturnData({ ...returnData, points_deducted: parseNumberInput(e.target.value, 0) })}
                     placeholder="退货时被扣除的积分数量"
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   />

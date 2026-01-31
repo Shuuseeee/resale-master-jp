@@ -3,6 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  /* 触摸优化 - 移动端交互体验提升 */
+  * {
+    /* 禁用移动端点击高亮（使用自定义 active 状态代替） */
+    -webkit-tap-highlight-color: transparent;
+
+    /* 优化触摸滚动 */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 移动端点击延迟优化 */
+  a, button, [role="button"], input, select, textarea {
+    touch-action: manipulation; /* 禁用双击缩放，减少点击延迟 */
+  }
+
+  /* 表单元素触摸优化 */
+  input, select, textarea, button {
+    /* iOS 样式重置 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* 按钮样式优化 */
+  button {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* 链接样式优化 */
+  a {
+    -webkit-touch-callout: none; /* 禁用 iOS 长按菜单 */
+  }
+
   /* 隐藏数字输入框的上下箭头 */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
@@ -24,6 +58,14 @@
   *::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+
+  /* 移动端安全区域适配 (iPhone X+ 刘海屏) */
+  @supports (padding: max(0px)) {
+    body {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+  }
 }
 
 @layer utilities {
@@ -31,12 +73,71 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* 触摸反馈工具类 */
+  .touch-feedback {
+    @apply active:scale-95 active:opacity-80 transition-transform duration-150;
+  }
+
+  /* 平滑滚动 */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* 防止文本选择（适用于按钮等交互元素） */
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  /* Multi-line truncation with line-clamp */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* CJK text word breaking */
+  .break-cjk {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    line-break: strict;
+  }
+
+  .break-cjk-normal {
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-break: auto;
+  }
 }
 
 /* 全局样式 */
 body {
   @apply bg-gray-50 text-gray-900;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  /* 启用字体平滑 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 深色模式（可选） */
@@ -45,3 +146,13 @@ body {
     @apply bg-gray-900 text-gray-100;
   }
 }
+
+/* 移动端优化：减少动画以提升性能 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

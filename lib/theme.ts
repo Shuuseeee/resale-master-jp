@@ -23,22 +23,22 @@ export const card = {
  */
 export const button = {
   // 主要按钮（实心）
-  primary: 'px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+  primary: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-blue-600 hover:bg-blue-700 active:bg-blue-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
 
   // 成功按钮
-  success: 'px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+  success: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
 
   // 危险按钮
-  danger: 'px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm',
+  danger: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-red-600 hover:bg-red-700 active:bg-red-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
 
   // 次要按钮（半透明）
-  secondary: 'px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium transition-colors border border-gray-200 dark:border-gray-700',
+  secondary: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 active:scale-95 text-gray-900 dark:text-white rounded-lg font-medium transition-all border border-gray-200 dark:border-gray-700 min-h-[44px] flex items-center justify-center',
 
   // 幽灵按钮
-  ghost: 'px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors',
+  ghost: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 rounded-lg font-medium transition-all',
 
   // 链接按钮
-  link: 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors',
+  link: 'text-sm md:text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors',
 };
 
 /**
@@ -56,8 +56,8 @@ export const badge = {
  * 输入框样式
  */
 export const input = {
-  base: 'px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors',
-  error: 'w-full px-4 py-2 bg-white dark:bg-gray-800 border border-red-500 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors',
+  base: 'px-3 py-2 md:px-4 text-sm md:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors min-h-[44px]',
+  error: 'w-full px-3 py-2 md:px-4 text-sm md:text-base bg-white dark:bg-gray-800 border border-red-500 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors min-h-[44px]',
 };
 
 /**
@@ -73,10 +73,10 @@ export const layout = {
  * 标题样式
  */
 export const heading = {
-  h1: 'text-4xl font-bold text-gray-900 dark:text-white',
-  h2: 'text-2xl font-bold text-gray-900 dark:text-white',
-  h3: 'text-xl font-semibold text-gray-900 dark:text-white',
-  h4: 'text-lg font-semibold text-gray-900 dark:text-white',
+  h1: 'text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white',
+  h2: 'text-xl md:text-2xl font-bold text-gray-900 dark:text-white',
+  h3: 'text-lg md:text-xl font-semibold text-gray-900 dark:text-white',
+  h4: 'text-base md:text-lg font-semibold text-gray-900 dark:text-white',
 };
 
 /**
@@ -105,7 +105,7 @@ export const loading = {
  */
 export const empty = {
   container: 'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center',
-  text: 'text-gray-600 dark:text-gray-400 text-lg',
+  text: 'text-gray-600 dark:text-gray-400 text-base md:text-lg',
 };
 
 /**
