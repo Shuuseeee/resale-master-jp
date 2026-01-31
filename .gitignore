@@ -33,3 +33,6 @@ next-env.d.ts
 # Vercel
 .vercel
 .env*.local
+
+# Accidental package directories
+/react-datepicker
