@@ -105,8 +105,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           </label>
           <input
             type="number"
-            value={formData.quantity_sold}
-            onChange={(e) => setFormData({ ...formData, quantity_sold: parseInt(e.target.value) || 0 })}
+            value={formData.quantity_sold || ''}
+            onChange={(e) => setFormData({ ...formData, quantity_sold: e.target.value === '' ? 0 : parseInt(e.target.value) })}
             min="1"
             max={transaction.quantity_in_stock}
             className={input.base}
@@ -120,8 +120,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           </label>
           <input
             type="number"
-            value={formData.selling_price_per_unit}
-            onChange={(e) => setFormData({ ...formData, selling_price_per_unit: parseFloat(e.target.value) || 0 })}
+            value={formData.selling_price_per_unit || ''}
+            onChange={(e) => setFormData({ ...formData, selling_price_per_unit: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             min="0"
             step="0.01"
             className={input.base}
@@ -143,8 +143,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           </label>
           <input
             type="number"
-            value={formData.platform_fee}
-            onChange={(e) => setFormData({ ...formData, platform_fee: parseFloat(e.target.value) || 0 })}
+            value={formData.platform_fee || ''}
+            onChange={(e) => setFormData({ ...formData, platform_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             min="0"
             step="0.01"
             className={input.base}
@@ -157,8 +157,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           </label>
           <input
             type="number"
-            value={formData.shipping_fee}
-            onChange={(e) => setFormData({ ...formData, shipping_fee: parseFloat(e.target.value) || 0 })}
+            value={formData.shipping_fee || ''}
+            onChange={(e) => setFormData({ ...formData, shipping_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             min="0"
             step="0.01"
             className={input.base}

@@ -161,8 +161,8 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   </label>
                   <input
                     type="number"
-                    value={editFormData.quantity_sold}
-                    onChange={(e) => setEditFormData({ ...editFormData, quantity_sold: parseInt(e.target.value) || 0 })}
+                    value={editFormData.quantity_sold || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, quantity_sold: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                     className={input.base}
                     min="1"
                   />
@@ -174,8 +174,8 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   </label>
                   <input
                     type="number"
-                    value={editFormData.selling_price_per_unit}
-                    onChange={(e) => setEditFormData({ ...editFormData, selling_price_per_unit: parseFloat(e.target.value) || 0 })}
+                    value={editFormData.selling_price_per_unit || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, selling_price_per_unit: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                     className={input.base}
                     step="0.01"
                   />
@@ -187,8 +187,8 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   </label>
                   <input
                     type="number"
-                    value={editFormData.platform_fee}
-                    onChange={(e) => setEditFormData({ ...editFormData, platform_fee: parseFloat(e.target.value) || 0 })}
+                    value={editFormData.platform_fee || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, platform_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                     className={input.base}
                     step="0.01"
                   />
@@ -200,8 +200,8 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   </label>
                   <input
                     type="number"
-                    value={editFormData.shipping_fee}
-                    onChange={(e) => setEditFormData({ ...editFormData, shipping_fee: parseFloat(e.target.value) || 0 })}
+                    value={editFormData.shipping_fee || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, shipping_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                     className={input.base}
                     step="0.01"
                   />
