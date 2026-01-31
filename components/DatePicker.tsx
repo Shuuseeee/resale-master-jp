@@ -52,21 +52,6 @@ export default function DatePicker({
       wrapperClassName="w-full"
       calendarClassName="custom-datepicker"
       popperPlacement="bottom-start"
-      popperModifiers={[
-        {
-          name: 'offset',
-          options: {
-            offset: [0, 8],
-          },
-        },
-        {
-          name: 'preventOverflow',
-          options: {
-            boundary: 'viewport',
-            padding: 8,
-          },
-        },
-      ]}
     />
   );
 }
