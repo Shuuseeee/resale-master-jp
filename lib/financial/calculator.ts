@@ -2,31 +2,6 @@
 // 财务计算工具函数库
 
 /**
- * 积分折算率配置
- */
-export const POINT_CONVERSION_RATES = {
-  PAYPAY: 1.0,      // PayPay: 1积分 = 1日元
-  RAKUTEN: 1.0,     // 楽天: 1积分 = 1日元
-  TPOINT: 1.0,      // Tポイント: 1积分 = 1日元
-  DPOINT: 1.0,      // dポイント: 1积分 = 1日元
-  PONTA: 1.0,       // Pontaポイント: 1积分 = 1日元
-  DEFAULT: 1.0,     // 默认折算率
-} as const;
-
-/**
- * 计算积分价值
- * @param points 积分数量
- * @param conversionRate 折算率
- * @returns 积分价值(日元)
- */
-export function calculatePointsValue(
-  points: number,
-  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT
-): number {
-  return points * conversionRate;
-}
-
-/**
  * 计算现金利润
  * @param sellingPrice 销售价格
  * @param platformFee 平台费用
@@ -46,72 +21,34 @@ export function calculateCashProfit(
 }
 
 /**
- * 计算总利润(包含积分价值)
- * @param sellingPrice 销售价格
- * @param platformFee 平台费用
- * @param shippingFee 运费
- * @param purchaseCost 采购成本
- * @param platformPoints 平台积分
- * @param cardPoints 信用卡积分
- * @param conversionRate 积分折算率
- * @param suppliesCost 耗材成本（可选）
- * @returns 总利润
+ * 计算距离日期的天数
+ * @param targetDate 目标日期
+ * @returns 天数(负数表示已过期)
  */
-export function calculateTotalProfit(
-  sellingPrice: number,
-  platformFee: number = 0,
-  shippingFee: number = 0,
-  purchaseCost: number,
-  platformPoints: number = 0,
-  cardPoints: number = 0,
-  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT,
-  suppliesCost: number = 0
-): number {
-  const cashProfit = calculateCashProfit(sellingPrice, platformFee, shippingFee, purchaseCost, suppliesCost);
-  const pointsValue = calculatePointsValue(platformPoints + cardPoints, conversionRate);
-  return cashProfit + pointsValue;
+export function daysUntil(targetDate: Date | string): number {
+  const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
 }
 
 /**
- * 计算 ROI (投资回报率)
- * @param sellingPrice 销售价格
- * @param platformFee 平台费用
- * @param shippingFee 运费
- * @param purchaseCost 采购成本
- * @param platformPoints 平台积分
- * @param cardPoints 信用卡积分
- * @param conversionRate 积分折算率
- * @param pointPaid 积分抵扣金额（默认0）
- * @param suppliesCost 耗材成本（可选）
- * @returns ROI 百分比
+ * 判断日期紧急程度
+ * @param targetDate 目标日期
+ * @returns 紧急程度: 'urgent' | 'warning' | 'normal' | 'expired'
  */
-export function calculateROI(
-  sellingPrice: number,
-  platformFee: number = 0,
-  shippingFee: number = 0,
-  purchaseCost: number,
-  platformPoints: number = 0,
-  cardPoints: number = 0,
-  conversionRate: number = POINT_CONVERSION_RATES.DEFAULT,
-  pointPaid: number = 0,
-  suppliesCost: number = 0
-): number {
-  // 计算实际现金支出（采购成本 + 耗材成本 - 积分抵扣）
-  const actualCashSpent = purchaseCost + suppliesCost - pointPaid;
-  if (actualCashSpent <= 0) return 0;
+export function getUrgencyLevel(targetDate: Date | string): 'urgent' | 'warning' | 'normal' | 'expired' {
+  const days = daysUntil(targetDate);
 
-  const totalProfit = calculateTotalProfit(
-    sellingPrice,
-    platformFee,
-    shippingFee,
-    purchaseCost,
-    platformPoints,
-    cardPoints,
-    conversionRate,
-    suppliesCost
-  );
-
-  return (totalProfit / actualCashSpent) * 100;
+  if (days < 0) return 'expired';
+  if (days <= 3) return 'urgent';
+  if (days <= 7) return 'warning';
+  return 'normal';
 }
 
 /**
@@ -155,37 +92,6 @@ export function calculatePaymentDate(
   );
 
   return paymentDate;
-}
-
-/**
- * 计算距离日期的天数
- * @param targetDate 目标日期
- * @returns 天数(负数表示已过期)
- */
-export function daysUntil(targetDate: Date | string): number {
-  const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  
-  const diffTime = target.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays;
-}
-
-/**
- * 判断日期紧急程度
- * @param targetDate 目标日期
- * @returns 紧急程度: 'urgent' | 'warning' | 'normal' | 'expired'
- */
-export function getUrgencyLevel(targetDate: Date | string): 'urgent' | 'warning' | 'normal' | 'expired' {
-  const days = daysUntil(targetDate);
-  
-  if (days < 0) return 'expired';
-  if (days <= 3) return 'urgent';
-  if (days <= 7) return 'warning';
-  return 'normal';
 }
 
 /**
@@ -243,20 +149,4 @@ export function getWaterLevelStatus(waterLevel: number): 'safe' | 'warning' | 'd
   if (waterLevel >= 50) return 'safe';
   if (waterLevel >= 20) return 'warning';
   return 'danger';
-}
-
-/**
- * 计算积分过期日期
- * @param purchaseDate 购买日期
- * @param expiryDays 过期天数(默认90天)
- * @returns 过期日期
- */
-export function calculatePointsExpiryDate(
-  purchaseDate: Date | string,
-  expiryDays: number = 90
-): Date {
-  const date = typeof purchaseDate === 'string' ? new Date(purchaseDate) : purchaseDate;
-  const expiryDate = new Date(date);
-  expiryDate.setDate(expiryDate.getDate() + expiryDays);
-  return expiryDate;
 }

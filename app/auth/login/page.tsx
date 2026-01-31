@@ -18,7 +18,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('Attempting login with:', email);
       const { error } = await signIn(email, password);
 
       if (error) {
@@ -32,8 +31,6 @@ export default function LoginPage() {
         } else {
           setError(error.message);
         }
-      } else {
-        console.log('Login successful, redirecting...');
       }
     } catch (err) {
       setError('登录失败，请稍后重试');

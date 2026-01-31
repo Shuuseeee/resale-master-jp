@@ -15,15 +15,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // 使用 @supabase/ssr 确保 cookies 正确同步
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
-/**
- * 获取当前用户ID
- * @returns 当前登录用户的 ID，如果未登录则返回 null
- */
-export async function getCurrentUserId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
-
 // Storage bucket 名称常量
 export const STORAGE_BUCKETS = {
   RECEIPTS: 'receipts',

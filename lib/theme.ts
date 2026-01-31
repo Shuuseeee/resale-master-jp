@@ -2,63 +2,6 @@
 // 统一的设计系统配置
 
 /**
- * 颜色系统
- */
-export const colors = {
-  // 主色调
-  primary: {
-    light: 'bg-blue-500',
-    DEFAULT: 'bg-blue-600',
-    dark: 'bg-blue-700',
-    text: 'text-blue-600 dark:text-blue-400',
-  },
-
-  // 状态颜色
-  status: {
-    pending: {
-      bg: 'bg-amber-500/20',
-      border: 'border-amber-500/50',
-      text: 'text-amber-600 dark:text-amber-400',
-      solid: 'bg-amber-500',
-    },
-    success: {
-      bg: 'bg-emerald-500/20',
-      border: 'border-emerald-500/50',
-      text: 'text-emerald-600 dark:text-emerald-400',
-      solid: 'bg-emerald-500',
-    },
-    error: {
-      bg: 'bg-red-500/20',
-      border: 'border-red-500/50',
-      text: 'text-red-600 dark:text-red-400',
-      solid: 'bg-red-500',
-    },
-    warning: {
-      bg: 'bg-amber-500/20',
-      border: 'border-amber-500/50',
-      text: 'text-amber-600 dark:text-amber-400',
-      solid: 'bg-amber-500',
-    },
-    info: {
-      bg: 'bg-blue-500/20',
-      border: 'border-blue-500/50',
-      text: 'text-blue-600 dark:text-blue-400',
-      solid: 'bg-blue-500',
-    },
-  },
-
-  // 中性色
-  neutral: {
-    bg: 'bg-gray-50 dark:bg-gray-900',
-    text: {
-      primary: 'text-gray-900 dark:text-white',
-      secondary: 'text-gray-600 dark:text-gray-400',
-      tertiary: 'text-gray-500 dark:text-gray-500',
-    },
-  },
-};
-
-/**
  * 卡片样式
  */
 export const card = {

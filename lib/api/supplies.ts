@@ -81,8 +81,6 @@ export async function createSuppliesCost(
       return { data: null, error: { message: '用户未登录，请先登录' } };
     }
 
-    console.log('当前用户ID:', user.id);
-
     // 插入数据
     const { data, error } = await supabase
       .from('supplies_costs')
@@ -102,7 +100,6 @@ export async function createSuppliesCost(
       return { data: null, error: { message: error.message, details: error } };
     }
 
-    console.log('创建成功:', data);
     return { data, error: null };
   } catch (err: any) {
     console.error('创建耗材成本异常:', err);

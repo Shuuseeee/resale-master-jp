@@ -5,24 +5,6 @@ import { supabase } from '@/lib/supabase/client';
 import type { PointsPlatform } from '@/types/database.types';
 
 /**
- * 获取所有活跃的积分平台
- */
-export async function getActivePointsPlatforms(): Promise<PointsPlatform[]> {
-  const { data, error } = await supabase
-    .from('points_platforms')
-    .select('*')
-    .eq('is_active', true)
-    .order('display_name', { ascending: true });
-
-  if (error) {
-    console.error('获取积分平台失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
  * 根据ID获取积分平台
  */
 export async function getPointsPlatformById(id: string): Promise<PointsPlatform | null> {

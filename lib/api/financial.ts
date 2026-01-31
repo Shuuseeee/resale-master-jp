@@ -71,7 +71,6 @@ export async function getWaterLevelData(): Promise<WaterLevelData | null> {
     return null;
   }
 
-  console.log('Water level data:', data);
   return data;
 }
 
@@ -92,7 +91,6 @@ export async function getUpcomingPayments(days: number = 30): Promise<UpcomingPa
     return [];
   }
 
-  console.log('Upcoming payments data:', data);
   return data || [];
 }
 

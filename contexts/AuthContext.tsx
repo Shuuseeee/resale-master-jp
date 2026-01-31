@@ -54,13 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
 
-      console.log('Sign in successful:', {
-        hasUser: !!data.user,
-        hasSession: !!data.session,
-        userId: data.user?.id,
-        userEmail: data.user?.email,
-      });
-
       setSession(data.session);
       setUser(data.user);
 

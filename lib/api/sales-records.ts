@@ -153,23 +153,3 @@ export async function deleteSalesRecord(recordId: string): Promise<boolean> {
 
   return true;
 }
-
-/**
- * 更新销售记录
- */
-export async function updateSalesRecord(
-  recordId: string,
-  formData: Partial<SalesRecordFormData>
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('sales_records')
-    .update(formData)
-    .eq('id', recordId);
-
-  if (error) {
-    console.error('更新销售记录失败:', error);
-    return false;
-  }
-
-  return true;
-}
