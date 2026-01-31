@@ -4,7 +4,7 @@ import Navigation from '@/components/Navigation'
 import { ClientProviders } from '@/components/ClientProviders'
 
 export const metadata: Metadata = {
-  title: 'Resale Master JP - 转卖账务管理系统',
+  title: '转卖账务管理系统',
   description: '专为日本转卖业务设计的现代化账务管理系统',
 }
 

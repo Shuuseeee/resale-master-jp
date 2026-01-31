@@ -144,7 +144,7 @@ export default function Navigation() {
               </svg>
             </div>
             <div>
-              <div className="text-gray-900 dark:text-white font-bold text-lg">Sale System</div>
+              <div className="text-gray-900 dark:text-white font-bold text-lg">Sales System</div>
               <div className="text-gray-500 dark:text-gray-400 text-xs">For Internal Use Only</div>
             </div>
           </Link>

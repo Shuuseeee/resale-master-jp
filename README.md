@@ -1,23 +1,40 @@
-# Resale Master JP - 转卖账务管理系统
+# Sale System - 日本转卖业务财务管理系统
 
-一个专为日本转卖业务设计的现代化账务管理系统,支持混合支付、积分管理和智能还款日推算。
+一个专为日本转卖业务设计的全功能财务管理系统,支持批量库存管理、多维度数据分析和日本税务申报。
 
 ## 🚀 核心功能
 
-- ✅ **混合支付录入**: 支持信用卡、积分、余额的组合支付
+### 交易管理
+- ✅ **批量库存管理**: 支持单笔采购多件商品,分批销售跟踪
+- 💰 **混合支付录入**: 支持信用卡、积分、余额的组合支付
 - 📊 **智能计算**: 自动计算 ROI、还款日期和利润
-- 💳 **多支付方式**: 管理多张信用卡和电子钱包
-- 🎯 **积分跟踪**: 追踪平台积分和信用卡积分
-- 📸 **凭证上传**: 支持图片上传和自动压缩
+- 🔄 **退货处理**: 完整的退货流程,自动重算利润和积分扣除
+- 📸 **凭证管理**: 支持图片上传(含 HEIC 格式)和自动压缩
+
+### 财务管理
+- 💳 **支付方式管理**: 管理多张信用卡和电子钱包,自动计算还款日
+- 🏦 **银行账户**: 追踪多个银行账户余额
+- 🎯 **积分平台系统**: 8 个预配置积分平台(PayPay、V Point、乐天等),精确计算积分价值
+- 🎫 **优惠券管理**: 追踪优惠券使用和过期状态
+- 📦 **耗材成本**: 自动分摊包装材料、运输用品等成本
+
+### 数据分析与报表
+- 📈 **数据分析仪表盘**: 7 种交互式图表,多时间维度分析
+- 💹 **财务安全水位**: 实时监控资金安全状态
+- 📅 **待付款提醒**: 30 天内到期付款汇总
+- 🧾 **日本税务申报**: 符合确定申告要求的报表,支持 Excel/PDF 导出
 - 📱 **移动优先**: 响应式设计,完美适配手机端
 
 ## 📦 技术栈
 
-- **前端框架**: Next.js 15 (App Router)
+- **前端框架**: Next.js 15 (App Router) + React 19
 - **样式**: Tailwind CSS
 - **类型安全**: TypeScript
-- **数据库**: Supabase (PostgreSQL)
-- **存储**: Supabase Storage
+- **数据库**: Supabase (PostgreSQL + Auth + Storage)
+- **图表**: Recharts
+- **导出**: jsPDF (日文字体支持) + XLSX
+- **日期选择**: react-datepicker
+- **图片处理**: heic2any (支持 iPhone HEIC 格式)
 - **UI设计**: 现代暗色主题,流畅动画
 
 ## 🛠️ 快速开始
@@ -79,17 +96,51 @@ npm run dev
 ```
 resale-master-jp/
 ├── app/
-│   ├── layout.tsx              # 根布局
-│   ├── globals.css             # 全局样式
-│   └── transactions/
-│       └── add/
-│           └── page.tsx        # 交易录入页面
+│   ├── layout.tsx                    # 根布局
+│   ├── globals.css                   # 全局样式
+│   ├── auth/                         # 认证页面
+│   │   ├── login/                    # 登录
+│   │   └── register/                 # 注册
+│   ├── dashboard/                    # 仪表盘
+│   ├── transactions/                 # 交易管理
+│   │   ├── page.tsx                  # 交易列表
+│   │   ├── add/                      # 新增交易
+│   │   └── [id]/                     # 交易详情和编辑
+│   ├── accounts/                     # 银行账户管理
+│   ├── points/                       # 积分管理
+│   ├── coupons/                      # 优惠券管理
+│   ├── supplies/                     # 耗材成本管理
+│   ├── analytics/                    # 数据分析
+│   ├── tax-report/                   # 税务申报
+│   ├── settings/                     # 设置
+│   │   └── payment-methods/          # 支付方式管理
+│   └── admin/                        # 管理工具
+├── components/
+│   ├── Navigation.tsx                # 导航组件
+│   ├── TransactionFilters.tsx        # 交易筛选器
+│   ├── DatePicker.tsx                # 日期选择器
+│   ├── SalesRecordsList.tsx          # 销售记录列表
+│   └── BatchSaleForm.tsx             # 批量销售表单
 ├── lib/
-│   └── supabase/
-│       └── client.ts           # Supabase 客户端配置
+│   ├── supabase/
+│   │   └── client.ts                 # Supabase 客户端
+│   ├── api/                          # API 函数
+│   │   ├── transactions.ts           # 交易 API
+│   │   ├── payment-methods.ts        # 支付方式 API
+│   │   ├── bank-accounts.ts          # 银行账户 API
+│   │   ├── points.ts                 # 积分 API
+│   │   ├── coupons.ts                # 优惠券 API
+│   │   ├── supplies.ts               # 耗材 API
+│   │   └── analytics.ts              # 分析 API
+│   ├── calculations.ts               # 业务计算逻辑
+│   └── utils.ts                      # 工具函数
+├── contexts/
+│   └── AuthContext.tsx               # 认证上下文
 ├── types/
-│   └── database.types.ts       # TypeScript 类型定义
-├── supabase-schema.sql         # 数据库 Schema
+│   └── database.types.ts             # TypeScript 类型定义
+├── supabase/
+│   └── migrations/                   # 数据库迁移文件 (28 个)
+├── docs/                             # 技术文档
 ├── package.json
 ├── tsconfig.json
 ├── tailwind.config.ts
@@ -100,23 +151,70 @@ resale-master-jp/
 
 ### 核心表结构
 
-1. **payment_methods** - 支付方式
+1. **points_platforms** - 积分平台
+   - 8 个预配置平台 (PayPay、V Point、乐天等)
+   - 积分兑换率 (1:1, 3:1 等)
+   - 精确计算积分价值
+
+2. **payment_methods** - 支付方式
    - 支持信用卡、银行账户、电子钱包
    - 记录账单日、还款日、积分倍率
+   - 关联积分平台
 
-2. **transactions** - 交易记录
-   - 混合支付逻辑 (信用卡 + 积分 + 余额)
-   - 自动计算利润和 ROI
-   - 智能推算还款日期
-   - 图片凭证存储
+3. **bank_accounts** - 银行账户
+   - 账户类型: 支票账户、储蓄账户、电子钱包
+   - 实时余额追踪
 
-3. **fixed_costs** - 固定成本
+4. **transactions** - 交易记录
+   - **批量库存**: quantity (总数量), quantity_sold (已售), quantity_in_stock (库存)
+   - **混合支付**: card_paid + point_paid + balance_paid = purchase_price_total
+   - **利润追踪**: cash_profit, total_profit, roi
+   - **积分追踪**: expected_platform_points, expected_card_points, extra_platform_points
+   - **退货处理**: return_date, return_amount, return_notes, points_deducted
+   - **状态管理**: in_stock, sold, returned
+   - 图片凭证存储 (Supabase Storage)
+
+5. **sales_records** - 销售记录
+   - 支持单笔交易多次销售
+   - 自动更新 transaction.quantity_sold
+   - 独立计算每次销售的利润和 ROI
+
+6. **coupons** - 优惠券
+   - 折扣类型: 百分比、固定金额、免运费
+   - 过期时间管理
+   - 使用状态跟踪
+
+7. **supplies_costs** - 耗材成本
+   - 类别: 包装材料、运输用品、标签打印、其他
+   - 自动分摊到交易利润计算
+
+8. **fixed_costs** - 固定成本
    - 月度/年度订阅费用
    - 会员费管理
 
-4. **coupons** - 优惠券
-   - 过期时间管理
-   - 使用状态跟踪
+### 数据库视图
+
+1. **financial_water_level** - 财务安全水位
+   - 实时计算: 总余额 / 30 天内待付款
+   - 安全等级: safe (>150%), warning (100-150%), danger (<100%)
+
+2. **upcoming_payments** - 待付款汇总
+   - 按还款日期聚合
+   - 30 天内到期付款
+
+3. **pending_points** - 待确认积分
+   - 按紧急程度分级
+   - 自动提醒确认
+
+### 数据库特性
+
+- **Row Level Security (RLS)**: 所有表启用,多用户数据隔离
+- **自动触发器**:
+  - 自动分配 user_id
+  - 自动重算 ROI
+  - 自动更新 quantity_sold
+- **级联删除**: 用户删除时自动清理关联数据
+- **时间戳**: 自动维护 created_at 和 updated_at
 
 ## 🎨 UI/UX 特性
 
@@ -124,28 +222,101 @@ resale-master-jp/
 - **流畅动画**: 优雅的过渡和微交互
 - **智能表单**: 自动计算和实时验证
 - **响应式设计**: 完美适配手机、平板和桌面
+- **交互式图表**: Recharts 驱动的数据可视化
+- **自定义日期选择器**: 优化的日期输入体验
+- **图片预览**: 支持多种格式的图片查看
+- **加载状态**: 清晰的加载和错误提示
 
-## 🔒 安全性
+## 📚 技术文档
 
-- Row Level Security (RLS) 启用
-- 认证用户权限控制
-- 环境变量保护敏感信息
+项目包含完整的技术文档:
+
+- `/README.md` - 项目概览和快速开始
+- `/DEPLOYMENT.md` - 部署指南
+- `/SETUP_AUTH.md` - 认证系统设置
+- `/IMPLEMENTATION_SUMMARY.md` - 多用户认证实现
+- `/docs/POINTS_PLATFORM_UPGRADE.md` - 积分平台架构
+- `/docs/TRANSACTION_ADD_IMPLEMENTATION_GUIDE.md` - 交易表单实现指南
+- `/docs/TRANSACTION_ADD_POINTS_PLATFORM_PATCH.md` - 积分平台集成
 
 ## 📝 使用指南
+
+### 首次使用
+
+1. **注册账户**: 访问 `/auth/register` 创建账户
+2. **添加支付方式**: 在"设置 > 支付方式"中添加信用卡或电子钱包
+3. **添加银行账户**: 在"账户管理"中添加银行账户
+4. **开始记录交易**: 访问"记录新交易"页面
 
 ### 录入新交易
 
 1. 访问"记录新交易"页面
-2. 填写基本信息 (日期、商品名称)
-3. 输入采购总价
-4. 选择支付方式并分配金额:
-   - 信用卡支付 (需选择卡片)
-   - 积分抵扣
-   - 余额支付 (自动计算)
-5. 填写预期积分
-6. 上传采购凭证 (可选)
-7. 添加备注 (可选)
-8. 提交保存
+2. 填写基本信息:
+   - 交易日期
+   - 商品名称
+   - 采购总价
+   - **数量** (支持批量采购)
+3. 选择支付方式并分配金额:
+   - 信用卡支付 (需选择卡片,自动计算还款日)
+   - 积分抵扣 (从积分平台选择)
+   - 余额支付 (自动计算剩余金额)
+4. 填写预期积分:
+   - 平台积分 (选择积分平台)
+   - 信用卡积分 (自动根据倍率计算)
+5. 上传采购凭证 (支持 JPG、PNG、HEIC 格式)
+6. 添加备注 (可选)
+7. 提交保存
+
+### 批量库存管理
+
+**适用场景**: 一次采购多件相同商品,分批销售
+
+1. 在交易详情页查看:
+   - 总数量 (quantity)
+   - 已售数量 (quantity_sold)
+   - 库存数量 (quantity_in_stock)
+2. 点击"记录销售"添加销售记录:
+   - 销售数量
+   - 单价
+   - 平台费用
+   - 运费
+3. 系统自动:
+   - 更新已售数量和库存
+   - 计算本次销售利润和 ROI
+   - 更新交易总利润
+
+### 退货处理
+
+1. 在交易详情页点击"标记为退货"
+2. 填写退货信息:
+   - 退货日期
+   - 退款金额
+   - 扣除的积分
+   - 退货备注
+3. 系统自动重算利润和 ROI
+
+### 数据分析
+
+访问"数据分析"页面查看:
+- **收入趋势**: 按日/周/月/季度/年查看
+- **利润分析**: 现金利润 vs 积分价值
+- **支付方式分布**: 各支付方式使用情况
+- **成本结构**: 采购成本、平台费用、运费、耗材
+- **ROI 趋势**: 投资回报率变化
+- **交易量统计**: 交易数量和平均值
+- **积分收益**: 各积分平台收益对比
+
+### 税务申报
+
+访问"税务申报"页面:
+1. 选择申报年度
+2. 查看汇总数据:
+   - 现金收入
+   - 积分收入 (按平台分类)
+   - 必要经费 (采购成本、平台费用、运费、耗材、固定成本)
+3. 导出报表:
+   - **Excel 导出**: 详细交易记录
+   - **PDF 导出**: 日文格式申报表
 
 ### 混合支付逻辑
 
@@ -166,31 +337,179 @@ resale-master-jp/
 ROI = 总利润 / 实际现金支出 × 100%
 
 其中:
-- 现金利润 = 销售价格 - 采购成本 - 平台费用 - 运费
-- 积分价值 = Σ(积分数量 × 平台兑换率) 对所有积分类型求和
+- 现金利润 = 销售价格 - 采购成本 - 平台费用 - 运费 - 分摊耗材成本
+- 积分价值 = Σ(积分数量 × 积分平台兑换率)
+  - 平台积分价值 = 平台积分 × 平台兑换率
+  - 信用卡积分价值 = 信用卡积分 × 信用卡积分平台兑换率
 - 总利润 = 现金利润 + 积分价值
 - 实际现金支出 = 采购成本 - 积分抵扣
+
+注意:
+- 耗材成本按月自动分摊到所有交易
+- 批量交易的 ROI 会随着销售记录动态更新
+- 退货会自动重算利润和 ROI
 ```
 
-## 🚧 开发计划
+## 🔐 安全性与多用户支持
 
-- [ ] 交易列表页面
-- [ ] 交易详情页面
-- [ ] 编辑交易功能
-- [ ] 仪表盘和统计
-- [ ] 利润分析
-- [ ] 导出功能
-- [ ] 优惠券管理
-- [ ] 固定成本管理
+### 认证系统
+- Supabase Auth 邮箱密码认证
+- 会话管理和自动刷新
+- 中间件路由保护
+- 支持多用户注册
+
+### 数据隔离
+- **Row Level Security (RLS)**: 所有表启用
+- 用户只能访问自己的数据
+- 自动 user_id 分配
+- 完整的 CRUD 权限控制
+
+### 数据保护
+- 环境变量保护敏感信息
+- 图片使用签名 URL 访问
+- HTTPS 生产环境
+- 用户删除时级联清理数据
+
+## 🚀 部署
+
+### 生产环境
+- **平台**: Vercel
+- **数据库**: Supabase (PostgreSQL)
+- **存储**: Supabase Storage
+- **状态**: ✅ 生产就绪
+
+### 环境变量
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 部署步骤
+1. Fork 本仓库
+2. 在 Vercel 导入项目
+3. 配置环境变量
+4. 部署完成
+
+详细部署指南请参考 `/DEPLOYMENT.md`
+
+## 📊 项目统计
+
+- **总代码行数**: ~13,500+ 行
+- **页面数量**: 24 个页面
+- **组件数量**: 6 个可复用组件
+- **API 模块**: 8 个 API 文件
+- **数据库迁移**: 28 个迁移文件
+- **支持语言**: 日语 (主要),英文代码注释
+
+## 🎯 已实现功能
+
+### ✅ 完整实现
+- [x] 用户认证系统 (登录/注册)
+- [x] 仪表盘 (财务安全水位、待付款、待确认积分)
+- [x] 交易管理 (列表、新增、编辑、详情、筛选)
+- [x] 批量库存管理 (多件商品分批销售)
+- [x] 销售记录追踪
+- [x] 退货处理
+- [x] 银行账户管理
+- [x] 支付方式管理 (信用卡、电子钱包)
+- [x] 积分平台系统 (8 个预配置平台)
+- [x] 积分管理和追踪
+- [x] 优惠券管理
+- [x] 耗材成本管理
+- [x] 数据分析仪表盘 (7 种图表)
+- [x] 日本税务申报 (Excel/PDF 导出)
+- [x] 图片上传和管理 (支持 HEIC)
+- [x] 移动端响应式设计
+- [x] 多用户支持和数据隔离
+- [x] 自动 ROI 计算和更新
+- [x] 还款日期智能推算
+
+### 🔮 未来计划
+- [ ] 批量导入交易 (CSV/Excel)
+- [ ] 自定义报表生成器
+- [ ] 邮件/推送通知
+- [ ] 多语言支持 (英文)
+- [ ] 移动端 App (React Native)
+- [ ] API 接口开放
+- [ ] 数据备份和恢复
+- [ ] 高级筛选和搜索
+
+## 🔧 开发指南
+
+### 本地开发
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 启动生产服务器
+npm start
+
+# 代码检查
+npm run lint
+```
+
+### 数据库迁移
+
+所有数据库变更都通过迁移文件管理,位于 `/supabase/migrations/`:
+
+1. 创建新迁移文件 (按时间戳命名)
+2. 在 Supabase SQL Editor 中执行
+3. 提交到版本控制
+
+### 添加新功能
+
+1. 在 `/app` 中创建新页面
+2. 在 `/lib/api` 中添加 API 函数
+3. 更新 `/types/database.types.ts` 类型定义
+4. 在 `/components/Navigation.tsx` 中添加导航链接
+5. 创建必要的数据库迁移
+
+## 🤝 贡献指南
+
+欢迎贡献代码!请遵循以下步骤:
+
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 代码规范
+
+- 使用 TypeScript 严格模式
+- 遵循 ESLint 规则
+- 组件使用函数式写法
+- 使用有意义的变量和函数名
+- 添加必要的注释 (中文或英文)
 
 ## 📄 许可证
 
 MIT License
 
-## 🤝 贡献
+## 📧 联系与支持
 
-欢迎提交 Issue 和 Pull Request!
+- **问题反馈**: 通过 GitHub Issues 提交
+- **功能建议**: 通过 GitHub Discussions 讨论
+- **安全问题**: 请私下联系维护者
 
-## 📧 联系方式
+## 🙏 致谢
 
-如有问题,请通过 Issue 联系。
+本项目使用了以下优秀的开源项目:
+
+- [Next.js](https://nextjs.org/) - React 框架
+- [Supabase](https://supabase.com/) - 后端即服务
+- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
+- [Recharts](https://recharts.org/) - 图表库
+- [jsPDF](https://github.com/parallax/jsPDF) - PDF 生成
+- [SheetJS](https://sheetjs.com/) - Excel 处理
+
+---
+
+**Sale System** - 让日本转卖业务管理更简单 🚀

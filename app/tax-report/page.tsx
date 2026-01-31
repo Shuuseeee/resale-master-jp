@@ -100,7 +100,8 @@ export default function TaxReportPage() {
       // 明細表を作成
       const detailsData = [
         [
-          '取引日',
+          '販売日',
+          '購入日',
           '商品名',
           '数量',
           '売却数',
@@ -114,7 +115,8 @@ export default function TaxReportPage() {
           '備考',
         ],
         ...details.map(d => [
-          d.transactionDate,
+          d.saleDate,
+          d.purchaseDate,
           d.productName,
           d.quantity,
           d.quantitySold,
@@ -213,7 +215,7 @@ export default function TaxReportPage() {
         startY: 22,
         head: [
           [
-            '取引日',
+            '販売日',
             '商品名',
             '数量',
             '購入価格',
@@ -225,7 +227,7 @@ export default function TaxReportPage() {
           ],
         ],
         body: details.map(d => [
-          d.transactionDate,
+          d.saleDate,
           d.productName,
           d.quantitySold.toString(),
           formatCurrency(d.purchasePrice),
@@ -540,7 +542,7 @@ export default function TaxReportPage() {
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
-                            取引日
+                            販売日
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                             商品名
@@ -571,11 +573,11 @@ export default function TaxReportPage() {
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {paginatedDetails.map(detail => (
                           <tr
-                            key={detail.transactionId}
+                            key={detail.saleRecordId}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                              {detail.transactionDate}
+                              {detail.saleDate}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                               {detail.productName}
