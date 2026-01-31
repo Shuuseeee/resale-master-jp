@@ -136,7 +136,7 @@ export default function PointsPage() {
                 <span className="text-amber-600 dark:text-amber-400">⏳</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {stats.total_pending_points.toLocaleString()}
+                {(stats.total_pending_points || 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500">
                 {stats.total_pending_count} 条记录
@@ -149,7 +149,7 @@ export default function PointsPage() {
                 <span className="text-emerald-600 dark:text-emerald-400">✓</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {stats.total_received_points.toLocaleString()}
+                {(stats.total_received_points || 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500">
                 {stats.total_received_count} 条记录
@@ -175,7 +175,7 @@ export default function PointsPage() {
                 <span className="text-blue-600 dark:text-blue-400">¥</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                ¥{stats.total_value.toLocaleString()}
+                ¥{(stats.total_value || 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500">
                 已收到积分价值

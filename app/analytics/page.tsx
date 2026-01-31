@@ -539,7 +539,7 @@ export default function AnalyticsPage() {
                       {platform.platformName}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {platform.totalPoints.toLocaleString()} 积分
+                      {(platform.totalPoints || 0).toLocaleString()} 积分
                     </div>
                   </div>
                   <div className="text-right">
