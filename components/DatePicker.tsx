@@ -1,8 +1,11 @@
 // components/DatePicker.tsx
 'use client';
 
-import ReactDatePicker from 'react-datepicker';
+import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import "/assets/styles/date-picker.css";
+import ja from "date-fns/locale/ja";
+registerLocale("ja", ja);
 import { input } from '@/lib/theme';
 
 interface DatePickerProps {
@@ -37,6 +40,7 @@ export default function DatePicker({
       selected={selected}
       onChange={onChange}
       dateFormat={dateFormat}
+      locale="ja"
       placeholderText={placeholder}
       minDate={minDate}
       maxDate={maxDate}
@@ -47,6 +51,22 @@ export default function DatePicker({
       className={className || input.base}
       wrapperClassName="w-full"
       calendarClassName="custom-datepicker"
+      popperPlacement="bottom-start"
+      popperModifiers={[
+        {
+          name: 'offset',
+          options: {
+            offset: [0, 8],
+          },
+        },
+        {
+          name: 'preventOverflow',
+          options: {
+            boundary: 'viewport',
+            padding: 8,
+          },
+        },
+      ]}
     />
   );
 }
