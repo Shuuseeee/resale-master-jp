@@ -194,7 +194,10 @@ export function getUrgencyLevel(targetDate: Date | string): 'urgent' | 'warning'
  * @param currency 货币符号
  * @returns 格式化后的金额字符串
  */
-export function formatCurrency(amount: number, currency: string = '¥'): string {
+export function formatCurrency(amount: number | null | undefined, currency: string = '¥'): string {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return `${currency}0`;
+  }
   return `${currency}${amount.toLocaleString('ja-JP', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
@@ -206,7 +209,10 @@ export function formatCurrency(amount: number, currency: string = '¥'): string 
  * @param roi ROI 百分比
  * @returns 格式化后的 ROI 字符串
  */
-export function formatROI(roi: number): string {
+export function formatROI(roi: number | null | undefined): string {
+  if (roi === null || roi === undefined || isNaN(roi)) {
+    return '+0.00%';
+  }
   const sign = roi >= 0 ? '+' : '';
   return `${sign}${roi.toFixed(2)}%`;
 }

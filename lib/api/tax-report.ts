@@ -9,7 +9,9 @@ import type { Transaction } from '@/types/database.types';
  */
 export interface TaxReportDetail {
   transactionId: string;
-  transactionDate: string;
+  saleRecordId: string; // 販売記録ID
+  saleDate: string; // 販売日（税務申告の基準日）
+  purchaseDate: string; // 購入日（参考）
   productName: string;
   quantity: number;
   quantitySold: number;
@@ -43,32 +45,43 @@ export interface TaxReportSummary {
 }
 
 /**
- * 指定年度の売却済み取引を取得
+ * 指定年度の販売記録を取得（販売日基準）
  */
-async function getSoldTransactionsByYear(year: number): Promise<Transaction[]> {
+async function getSalesRecordsByYear(year: number): Promise<any[]> {
   try {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
     const { data, error } = await supabase
-      .from('transactions')
+      .from('sales_records')
       .select(`
         *,
-        payment_method:payment_methods(id, name),
-        platform_points_platform:platform_points_platform_id(id, display_name, yen_conversion_rate),
-        card_points_platform:card_points_platform_id(id, display_name, yen_conversion_rate),
-        extra_platform_points_platform:extra_platform_points_platform_id(id, display_name, yen_conversion_rate)
+        transaction:transaction_id(
+          id,
+          date,
+          product_name,
+          quantity,
+          purchase_price_total,
+          point_paid,
+          expected_platform_points,
+          expected_card_points,
+          extra_platform_points,
+          platform_points_platform_id,
+          card_points_platform_id,
+          extra_platform_points_platform_id,
+          notes
+        )
       `)
-      .eq('status', 'sold')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true });
+      .not('sale_date', 'is', null)
+      .gte('sale_date', startDate)
+      .lte('sale_date', endDate)
+      .order('sale_date', { ascending: true });
 
     if (error) throw error;
 
     return data || [];
   } catch (error) {
-    console.error('年度取引記録の取得に失敗:', error);
+    console.error('年度販売記録の取得に失敗:', error);
     return [];
   }
 }
@@ -124,32 +137,69 @@ async function getYearlySuppliesCosts(year: number): Promise<number> {
 }
 
 /**
- * 税務レポート明細を生成
+ * 税務レポート明細を生成（販売記録ベース）
  */
 export async function generateTaxReportDetails(year: number): Promise<TaxReportDetail[]> {
   try {
-    const transactions = await getSoldTransactionsByYear(year);
+    const salesRecords = await getSalesRecordsByYear(year);
 
-    const details: TaxReportDetail[] = transactions.map(transaction => {
-      const pointsValue = calculatePointsValue(transaction);
-      const cashProfit = transaction.cash_profit || 0;
-      const totalProfit = transaction.total_profit || 0;
+    // 積分平台情報を取得
+    const { data: platforms } = await supabase
+      .from('points_platforms')
+      .select('*');
+
+    const platformsMap = new Map((platforms || []).map(p => [p.id, p]));
+
+    const details: TaxReportDetail[] = salesRecords.map(record => {
+      const transaction = record.transaction as any;
+
+      // 販売数量に応じたポイント価値を計算
+      const pointsRatio = record.quantity_sold / (transaction?.quantity || 1);
+
+      let pointsValue = 0;
+
+      // プラットフォームポイント
+      if (transaction?.expected_platform_points && transaction?.platform_points_platform_id) {
+        const platform = platformsMap.get(transaction.platform_points_platform_id);
+        const rate = platform?.yen_conversion_rate || 1.0;
+        pointsValue += (transaction.expected_platform_points * pointsRatio) * rate;
+      }
+
+      // クレジットカードポイント
+      if (transaction?.expected_card_points && transaction?.card_points_platform_id) {
+        const platform = platformsMap.get(transaction.card_points_platform_id);
+        const rate = platform?.yen_conversion_rate || 1.0;
+        pointsValue += (transaction.expected_card_points * pointsRatio) * rate;
+      }
+
+      // 追加プラットフォームポイント
+      if (transaction?.extra_platform_points && transaction?.extra_platform_points_platform_id) {
+        const platform = platformsMap.get(transaction.extra_platform_points_platform_id);
+        const rate = platform?.yen_conversion_rate || 1.0;
+        pointsValue += (transaction.extra_platform_points * pointsRatio) * rate;
+      }
+
+      // 購入価格を数量で按分
+      const costPerUnit = (transaction?.purchase_price_total || 0) / (transaction?.quantity || 1);
+      const allocatedPurchasePrice = costPerUnit * record.quantity_sold;
 
       return {
-        transactionId: transaction.id,
-        transactionDate: transaction.date,
-        productName: transaction.product_name,
-        quantity: transaction.quantity || 1,
-        quantitySold: transaction.quantity_sold || 1,
-        purchasePrice: transaction.purchase_price_total,
-        sellingPrice: transaction.selling_price || 0,
-        platformFee: transaction.platform_fee || 0,
-        shippingFee: transaction.shipping_fee || 0,
+        transactionId: transaction?.id || '',
+        saleRecordId: record.id,
+        saleDate: record.sale_date || '', // 販売日（税務申告の基準）
+        purchaseDate: transaction?.date || '', // 購入日（参考）
+        productName: transaction?.product_name || '',
+        quantity: transaction?.quantity || 1,
+        quantitySold: record.quantity_sold,
+        purchasePrice: allocatedPurchasePrice,
+        sellingPrice: record.total_selling_price || 0,
+        platformFee: record.platform_fee || 0,
+        shippingFee: record.shipping_fee || 0,
         suppliesCost: 0, // 消耗品費は集計で一括計算
         pointsReward: pointsValue,
-        cashProfit: cashProfit,
-        totalProfit: totalProfit,
-        notes: transaction.notes || '',
+        cashProfit: record.cash_profit || 0,
+        totalProfit: record.total_profit || 0,
+        notes: record.notes || transaction?.notes || '',
       };
     });
 
@@ -161,21 +211,21 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
 }
 
 /**
- * 税務レポート年度集計を生成
+ * 税務レポート年度集計を生成（販売記録ベース）
  */
 export async function generateTaxReportSummary(year: number): Promise<TaxReportSummary> {
   try {
-    const transactions = await getSoldTransactionsByYear(year);
+    const details = await generateTaxReportDetails(year);
     const yearlySuppliesCosts = await getYearlySuppliesCosts(year);
 
-    // 各項目を計算
-    const totalRevenue = transactions.reduce((sum, t) => sum + (t.selling_price || 0), 0);
-    const totalPointsValue = transactions.reduce((sum, t) => sum + calculatePointsValue(t), 0);
+    // 各項目を計算（販売記録から集計）
+    const totalRevenue = details.reduce((sum, d) => sum + d.sellingPrice, 0);
+    const totalPointsValue = details.reduce((sum, d) => sum + d.pointsReward, 0);
     const totalIncome = totalRevenue + totalPointsValue;
 
-    const purchaseCosts = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
-    const platformFees = transactions.reduce((sum, t) => sum + (t.platform_fee || 0), 0);
-    const shippingFees = transactions.reduce((sum, t) => sum + (t.shipping_fee || 0), 0);
+    const purchaseCosts = details.reduce((sum, d) => sum + d.purchasePrice, 0);
+    const platformFees = details.reduce((sum, d) => sum + d.platformFee, 0);
+    const shippingFees = details.reduce((sum, d) => sum + d.shippingFee, 0);
 
     const totalExpenses = purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts;
     const netIncome = totalIncome - totalExpenses;
@@ -193,7 +243,7 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
       suppliesCosts: yearlySuppliesCosts,
       netIncome,
       cashIncome,
-      transactionCount: transactions.length,
+      transactionCount: details.length, // 販売記録の件数
     };
   } catch (error) {
     console.error('税務レポート集計の生成に失敗:', error);

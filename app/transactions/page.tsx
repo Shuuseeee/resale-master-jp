@@ -14,8 +14,9 @@ interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
 }
 
-type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
+type SortField = 'date' | 'sale_date' | 'purchase_price_total' | 'total_profit' | 'roi';
 type SortOrder = 'asc' | 'desc';
+type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
 
 interface PaymentMethodBasic {
   id: string;
@@ -30,6 +31,7 @@ export default function TransactionsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold' | 'returned'>('all');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [dateSortMode, setDateSortMode] = useState<DateSortMode>('purchase'); // 日期排序模式
   const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null);
 
   // 统计数据
@@ -64,28 +66,37 @@ export default function TransactionsPage() {
 
       if (error) throw error;
 
-      // 对于部分销售的商品，计算已售出部分的累计利润和ROI
+      // 对于有销售记录的商品，计算累计利润和ROI，并获取最新销售日期
       const transactionsWithPartialProfit = await Promise.all(
         (data || []).map(async (transaction) => {
-          if (transaction.quantity_sold > 0 && transaction.status === 'in_stock') {
-            // 获取该交易的所有销售记录
-            const { data: salesRecords } = await supabase
-              .from('sales_records')
-              .select('total_profit, roi')
-              .eq('transaction_id', transaction.id);
+          // 获取该交易的所有销售记录
+          const { data: salesRecords } = await supabase
+            .from('sales_records')
+            .select('total_profit, roi, sale_date')
+            .eq('transaction_id', transaction.id)
+            .order('sale_date', { ascending: false });
 
-            if (salesRecords && salesRecords.length > 0) {
-              const partialProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
-              const partialROI = salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length;
+          let latest_sale_date = null;
+          let aggregated_profit = null;
+          let aggregated_roi = null;
 
-              return {
-                ...transaction,
-                partial_profit: partialProfit,
-                partial_roi: partialROI,
-              };
+          if (salesRecords && salesRecords.length > 0) {
+            // 获取最新销售日期
+            latest_sale_date = salesRecords[0].sale_date;
+
+            // 计算累计利润和ROI（对所有有销售记录的商品）
+            if (transaction.quantity_sold > 0) {
+              aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+              aggregated_roi = salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length;
             }
           }
-          return transaction;
+
+          return {
+            ...transaction,
+            latest_sale_date,
+            aggregated_profit,
+            aggregated_roi,
+          };
         })
       );
 
@@ -170,12 +181,26 @@ export default function TransactionsPage() {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
+      let aValue: any;
+      let bValue: any;
+
+      // 如果是日期排序，根据模式选择购买日期或销售日期
+      if (sortField === 'date') {
+        if (dateSortMode === 'sale') {
+          aValue = (a as any).latest_sale_date || '9999-12-31'; // 没有销售日期的排在最后
+          bValue = (b as any).latest_sale_date || '9999-12-31';
+        } else {
+          aValue = a.date;
+          bValue = b.date;
+        }
+      } else {
+        aValue = a[sortField];
+        bValue = b[sortField];
+      }
 
       // 处理 null 值
-      if (aValue === null) aValue = 0;
-      if (bValue === null) bValue = 0;
+      if (aValue === null || aValue === undefined) aValue = 0;
+      if (bValue === null || bValue === undefined) bValue = 0;
 
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
@@ -344,17 +369,26 @@ export default function TransactionsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       商品
                     </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                      onClick={() => toggleSort('date')}
-                    >
-                      <div className="flex items-center gap-1">
-                        日期
-                        {sortField === 'date' && (
-                          <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSort('date')}
+                          className="flex items-center gap-1 hover:text-white transition-colors"
+                        >
+                          {dateSortMode === 'purchase' ? '购买日期' : '销售日期'}
+                          {sortField === 'date' && (
+                            <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')}
+                          className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                          title="切换日期类型"
+                        >
+                          ⇄
+                        </button>
                       </div>
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
@@ -432,7 +466,15 @@ export default function TransactionsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {new Date(transaction.date).toLocaleDateString('zh-CN')}
+                        {dateSortMode === 'sale' ? (
+                          (transaction as any).latest_sale_date ? (
+                            <span>{new Date((transaction as any).latest_sale_date).toLocaleDateString('zh-CN')}</span>
+                          ) : (
+                            <span className="text-gray-500 dark:text-gray-500">未售出</span>
+                          )
+                        ) : (
+                          new Date(transaction.date).toLocaleDateString('zh-CN')
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" >
                         {transaction.status === 'sold' ? (
@@ -453,29 +495,23 @@ export default function TransactionsPage() {
                         {formatCurrency(transaction.purchase_price_total)}
                       </td>
                       <td className="px-6 py-4 text-right font-mono">
-                        {transaction.status === 'sold' ? (
-                          <span className={transaction.total_profit && transaction.total_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                            {formatCurrency(transaction.total_profit || 0)}
-                          </span>
-                        ) : transaction.quantity_sold > 0 && (transaction as any).partial_profit !== undefined ? (
+                        {(transaction as any).aggregated_profit !== null && (transaction as any).aggregated_profit !== undefined ? (
                           <div className="flex flex-col items-end">
-                            <span className={(transaction as any).partial_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                              {formatCurrency((transaction as any).partial_profit)}
+                            <span className={(transaction as any).aggregated_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                              {formatCurrency((transaction as any).aggregated_profit)}
                             </span>
-                            <span className="text-xs text-blue-400">部分销售</span>
+                            {transaction.status === 'in_stock' && transaction.quantity_sold > 0 && (
+                              <span className="text-xs text-blue-400">部分销售</span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-500">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right font-mono">
-                        {transaction.status === 'sold' ? (
-                          <span className={transaction.roi && transaction.roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                            {formatROI(transaction.roi || 0)}
-                          </span>
-                        ) : transaction.quantity_sold > 0 && (transaction as any).partial_roi !== undefined ? (
-                          <span className={(transaction as any).partial_roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                            {formatROI((transaction as any).partial_roi)}
+                        {(transaction as any).aggregated_roi !== null && (transaction as any).aggregated_roi !== undefined ? (
+                          <span className={(transaction as any).aggregated_roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                            {formatROI((transaction as any).aggregated_roi)}
                           </span>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-500">-</span>

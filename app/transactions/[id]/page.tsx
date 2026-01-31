@@ -469,82 +469,21 @@ export default function TransactionDetailPage() {
           </div>
         )}
 
-        {/* 销售表单（库存中商品） */}
+        {/* 销售表单（统一使用批量销售表单） */}
         {showSaleForm && transaction.status === 'in_stock' && (
           <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></div>
               记录销售信息
             </h2>
-            <form onSubmit={handleSaleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    销售价格 <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={saleData.selling_price || ''}
-                      onChange={(e) => setSaleData({ ...saleData, selling_price: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
-                      required
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    平台费用
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={saleData.platform_fee || ''}
-                      onChange={(e) => setSaleData({ ...saleData, platform_fee: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    运费
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={saleData.shipping_fee || ''}
-                      onChange={(e) => setSaleData({ ...saleData, shipping_fee: parseFloat(e.target.value) || 0 })}
-                      step="0.01"
-                      min="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-6 py-3 bg-gradient-to-r bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
-                >
-                  {submitting ? '保存中...' : '保存销售信息'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSaleForm(false)}
-                  className="px-6 py-3 bg-white dark:bg-gray-700 hover:bg-slate-700/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white rounded-xl transition-all border border-gray-300 dark:border-gray-600"
-                >
-                  取消
-                </button>
-              </div>
-            </form>
+            <BatchSaleForm
+              transaction={transaction}
+              onSuccess={() => {
+                setShowSaleForm(false);
+                loadTransaction();
+              }}
+              onCancel={() => setShowSaleForm(false)}
+            />
           </div>
         )}
 
@@ -579,8 +518,8 @@ export default function TransactionDetailPage() {
               </div>
             </div>
 
-            {/* 销售信息 */}
-            {transaction.status === 'sold' && (() => {
+            {/* 销售信息 - 仅显示没有销售记录的旧数据（向后兼容） */}
+            {transaction.status === 'sold' && transaction.quantity_sold === 0 && (() => {
               // 计算积分价值
               const platformPointsValue = (transaction.expected_platform_points || 0) *
                 (transaction.platform_points_platform?.yen_conversion_rate || 1.0);
@@ -596,6 +535,11 @@ export default function TransactionDetailPage() {
                     <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
                     销售信息
                   </h2>
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
+                    <p className="text-amber-400 text-sm">
+                      ⚠️ 这是旧版销售数据，建议在销售记录中重新记录以获得更详细的信息
+                    </p>
+                  </div>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:text-gray-400">销售价格</span>
@@ -750,8 +694,8 @@ export default function TransactionDetailPage() {
               </div>
             )}
 
-            {/* 销售记录列表（批量商品） */}
-            {transaction.quantity > 1 && transaction.quantity_sold > 0 && (
+            {/* 销售记录列表 */}
+            {transaction.quantity_sold > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">销售记录</h3>
                 <SalesRecordsList

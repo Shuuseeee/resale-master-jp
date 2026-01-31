@@ -154,59 +154,106 @@ function getPreviousDateRange(start: Date, end: Date): { start: Date; end: Date 
 }
 
 /**
- * 构建查询条件
+ * 构建查询条件（基于销售记录的销售日期）
  */
 function buildQuery(filters: AnalyticsFilters) {
   const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
 
   let query = supabase
-    .from('transactions')
+    .from('sales_records')
     .select(`
       *,
-      payment_method:payment_methods(id, name),
-      platform_points_platform:platform_points_platform_id(id, display_name, yen_conversion_rate),
-      card_points_platform:card_points_platform_id(id, display_name, yen_conversion_rate),
-      extra_platform_points_platform:extra_platform_points_platform_id(id, display_name, yen_conversion_rate)
+      transaction:transaction_id(
+        id,
+        date,
+        product_name,
+        quantity,
+        purchase_price_total,
+        point_paid,
+        card_id,
+        expected_platform_points,
+        expected_card_points,
+        extra_platform_points,
+        platform_points_platform_id,
+        card_points_platform_id,
+        extra_platform_points_platform_id,
+        payment_method:payment_methods(id, name)
+      )
     `)
-    .gte('date', start.toISOString().split('T')[0])
-    .lte('date', end.toISOString().split('T')[0]);
+    .not('sale_date', 'is', null)
+    .gte('sale_date', start.toISOString().split('T')[0])
+    .lte('sale_date', end.toISOString().split('T')[0]);
 
-  if (filters.paymentMethods && filters.paymentMethods.length > 0) {
-    query = query.in('card_id', filters.paymentMethods);
-  }
+  // 注意：支付方式筛选需要通过transaction关联查询
+  // Supabase不支持深层次筛选，所以我们在获取数据后再筛选
 
   return query;
 }
 
 /**
- * 计算核心指标
+ * 计算核心指标（基于销售记录）
  */
-function calculateCoreMetrics(transactions: any[]): CoreMetrics {
-  const soldTransactions = transactions.filter(t => t.status === 'sold');
+async function calculateCoreMetrics(salesRecords: any[]): Promise<CoreMetrics> {
+  // 获取积分平台信息
+  const { data: platforms } = await supabase
+    .from('points_platforms')
+    .select('*');
 
-  const totalSales = soldTransactions.reduce((sum, t) => sum + (t.selling_price || 0), 0);
-  const totalProfit = soldTransactions.reduce((sum, t) => sum + (t.total_profit || 0), 0);
-  const totalCost = soldTransactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
-  const avgROI = soldTransactions.length > 0
-    ? soldTransactions.reduce((sum, t) => sum + (t.roi || 0), 0) / soldTransactions.length
+  const platformsMap = new Map((platforms || []).map(p => [p.id, p]));
+
+  const totalSales = salesRecords.reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
+  const totalProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+
+  // 计算总成本（按比例分配）
+  const totalCost = salesRecords.reduce((sum, r) => {
+    const transaction = r.transaction as any;
+    if (!transaction) return sum;
+    const costPerUnit = (transaction.purchase_price_total || 0) / (transaction.quantity || 1);
+    return sum + (costPerUnit * r.quantity_sold);
+  }, 0);
+
+  const avgROI = salesRecords.length > 0
+    ? salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length
     : 0;
-  const avgProfitPerTransaction = soldTransactions.length > 0
-    ? totalProfit / soldTransactions.length
+  const avgProfitPerTransaction = salesRecords.length > 0
+    ? totalProfit / salesRecords.length
     : 0;
 
-  const totalPlatformFees = soldTransactions.reduce((sum, t) => sum + (t.platform_fee || 0), 0);
-  const totalShippingFees = soldTransactions.reduce((sum, t) => sum + (t.shipping_fee || 0), 0);
-  const totalSuppliesCosts = soldTransactions.reduce((sum, t) => sum + (t.supplies_cost || 0), 0);
+  const totalPlatformFees = salesRecords.reduce((sum, r) => sum + (r.platform_fee || 0), 0);
+  const totalShippingFees = salesRecords.reduce((sum, r) => sum + (r.shipping_fee || 0), 0);
+  const totalSuppliesCosts = 0; // 耗材成本已包含在销售记录的利润计算中
 
-  // 计算积分价值
-  const totalPointsValue = soldTransactions.reduce((sum, t) => {
-    const platformPointsValue = (t.expected_platform_points || 0) *
-      ((t.platform_points_platform as any)?.yen_conversion_rate || 1.0);
-    const cardPointsValue = (t.expected_card_points || 0) *
-      ((t.card_points_platform as any)?.yen_conversion_rate || 1.0);
-    const extraPlatformPointsValue = (t.extra_platform_points || 0) *
-      ((t.extra_platform_points_platform as any)?.yen_conversion_rate || 1.0);
-    return sum + platformPointsValue + cardPointsValue + extraPlatformPointsValue;
+  // 计算积分价值（按销售比例）
+  const totalPointsValue = salesRecords.reduce((sum, r) => {
+    const transaction = r.transaction as any;
+    if (!transaction) return sum;
+
+    const pointsRatio = r.quantity_sold / (transaction.quantity || 1);
+
+    let pointsValue = 0;
+
+    // 平台积分
+    if (transaction.expected_platform_points && transaction.platform_points_platform_id) {
+      const platform = platformsMap.get(transaction.platform_points_platform_id);
+      const rate = platform?.yen_conversion_rate || 1.0;
+      pointsValue += (transaction.expected_platform_points * pointsRatio) * rate;
+    }
+
+    // 信用卡积分
+    if (transaction.expected_card_points && transaction.card_points_platform_id) {
+      const platform = platformsMap.get(transaction.card_points_platform_id);
+      const rate = platform?.yen_conversion_rate || 1.0;
+      pointsValue += (transaction.expected_card_points * pointsRatio) * rate;
+    }
+
+    // 额外平台积分
+    if (transaction.extra_platform_points && transaction.extra_platform_points_platform_id) {
+      const platform = platformsMap.get(transaction.extra_platform_points_platform_id);
+      const rate = platform?.yen_conversion_rate || 1.0;
+      pointsValue += (transaction.extra_platform_points * pointsRatio) * rate;
+    }
+
+    return sum + pointsValue;
   }, 0);
 
   return {
@@ -214,7 +261,7 @@ function calculateCoreMetrics(transactions: any[]): CoreMetrics {
     totalProfit,
     totalCost,
     avgROI,
-    transactionCount: soldTransactions.length,
+    transactionCount: salesRecords.length,
     avgProfitPerTransaction,
     totalPlatformFees,
     totalShippingFees,
@@ -235,11 +282,19 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
       return [];
     }
 
-    // 按日期分组
-    const groupedData = (data || []).reduce((acc: any, transaction: any) => {
-      if (transaction.status !== 'sold') return acc;
+    // 按销售日期分组
+    const groupedData = (data || []).reduce((acc: any, record: any) => {
+      const date = record.sale_date;
+      if (!date) return acc;
 
-      const date = transaction.date;
+      // 应用支付方式筛选
+      const transaction = record.transaction as any;
+      if (filters.paymentMethods && filters.paymentMethods.length > 0) {
+        if (!filters.paymentMethods.includes(transaction?.card_id)) {
+          return acc;
+        }
+      }
+
       if (!acc[date]) {
         acc[date] = {
           date,
@@ -251,10 +306,14 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
         };
       }
 
-      acc[date].sales += transaction.selling_price || 0;
-      acc[date].profit += transaction.total_profit || 0;
-      acc[date].cost += transaction.purchase_price_total || 0;
-      acc[date].roi.push(transaction.roi || 0);
+      // 计算成本（按比例）
+      const costPerUnit = (transaction?.purchase_price_total || 0) / (transaction?.quantity || 1);
+      const recordCost = costPerUnit * record.quantity_sold;
+
+      acc[date].sales += record.total_selling_price || 0;
+      acc[date].profit += record.total_profit || 0;
+      acc[date].cost += recordCost;
+      acc[date].roi.push(record.roi || 0);
       acc[date].transactions += 1;
 
       return acc;
@@ -301,8 +360,19 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
     const { data: prevData, error: prevError } = await buildQuery(prevFilters);
     if (prevError) throw prevError;
 
-    const current = calculateCoreMetrics(currentData || []);
-    const previous = calculateCoreMetrics(prevData || []);
+    // 应用支付方式筛选
+    const filterByPaymentMethod = (records: any[]) => {
+      if (!filters.paymentMethods || filters.paymentMethods.length === 0) {
+        return records;
+      }
+      return records.filter(r => {
+        const transaction = r.transaction as any;
+        return filters.paymentMethods?.includes(transaction?.card_id);
+      });
+    };
+
+    const current = await calculateCoreMetrics(filterByPaymentMethod(currentData || []));
+    const previous = await calculateCoreMetrics(filterByPaymentMethod(prevData || []));
 
     const salesChange = previous.totalSales > 0
       ? ((current.totalSales - previous.totalSales) / previous.totalSales) * 100
@@ -351,20 +421,27 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
 }
 
 /**
- * 获取支付方式分析
+ * 获取支付方式分析（基于销售记录）
  */
 export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promise<PaymentMethodAnalysis[]> {
   try {
     const { data, error } = await buildQuery(filters);
     if (error) throw error;
 
-    const soldTransactions = (data || []).filter((t: any) => t.status === 'sold');
-    const totalSales = soldTransactions.reduce((sum, t) => sum + (t.selling_price || 0), 0);
+    const totalSales = (data || []).reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
 
     // 按支付方式分组
-    const groupedData = soldTransactions.reduce((acc: any, transaction: any) => {
-      const methodId = transaction.card_id || 'unknown';
-      const methodName = (transaction.payment_method as any)?.name || '未知';
+    const groupedData = (data || []).reduce((acc: any, record: any) => {
+      const transaction = record.transaction as any;
+      const methodId = transaction?.card_id || 'unknown';
+      const methodName = (transaction?.payment_method as any)?.name || '未知';
+
+      // 应用支付方式筛选
+      if (filters.paymentMethods && filters.paymentMethods.length > 0) {
+        if (!filters.paymentMethods.includes(methodId)) {
+          return acc;
+        }
+      }
 
       if (!acc[methodId]) {
         acc[methodId] = {
@@ -378,9 +455,9 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
       }
 
       acc[methodId].transactionCount += 1;
-      acc[methodId].totalSales += transaction.selling_price || 0;
-      acc[methodId].totalProfit += transaction.total_profit || 0;
-      acc[methodId].roiList.push(transaction.roi || 0);
+      acc[methodId].totalSales += record.total_selling_price || 0;
+      acc[methodId].totalProfit += record.total_profit || 0;
+      acc[methodId].roiList.push(record.roi || 0);
 
       return acc;
     }, {});
@@ -407,14 +484,19 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
 }
 
 /**
- * 获取平台分析
+ * 获取平台分析（基于销售记录）
  */
 export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<PlatformAnalysis[]> {
   try {
     const { data, error } = await buildQuery(filters);
     if (error) throw error;
 
-    const soldTransactions = (data || []).filter((t: any) => t.status === 'sold');
+    // 获取积分平台信息
+    const { data: platforms } = await supabase
+      .from('points_platforms')
+      .select('*');
+
+    const platformsMap = new Map((platforms || []).map(p => [p.id, p]));
 
     // 统计所有平台
     const platformMap = new Map<string, {
@@ -425,77 +507,95 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
       totalPointsValue: number;
     }>();
 
-    soldTransactions.forEach((transaction: any) => {
-      // 平台积分
-      if (transaction.expected_platform_points && transaction.platform_points_platform) {
-        const platform = transaction.platform_points_platform as any;
-        const platformId = platform.id;
-        const platformName = platform.display_name;
-        const points = transaction.expected_platform_points;
-        const pointsValue = points * (platform.yen_conversion_rate || 1.0);
+    (data || []).forEach((record: any) => {
+      const transaction = record.transaction as any;
+      if (!transaction) return;
 
-        if (!platformMap.has(platformId)) {
-          platformMap.set(platformId, {
-            platformId,
-            platformName,
-            transactionCount: 0,
-            totalPoints: 0,
-            totalPointsValue: 0,
-          });
+      // 应用支付方式筛选
+      if (filters.paymentMethods && filters.paymentMethods.length > 0) {
+        if (!filters.paymentMethods.includes(transaction.card_id)) {
+          return;
         }
+      }
 
-        const entry = platformMap.get(platformId)!;
-        entry.transactionCount += 1;
-        entry.totalPoints += points;
-        entry.totalPointsValue += pointsValue;
+      const pointsRatio = record.quantity_sold / (transaction.quantity || 1);
+
+      // 平台积分
+      if (transaction.expected_platform_points && transaction.platform_points_platform_id) {
+        const platform = platformsMap.get(transaction.platform_points_platform_id);
+        if (platform) {
+          const platformId = platform.id;
+          const platformName = platform.display_name;
+          const points = transaction.expected_platform_points * pointsRatio;
+          const pointsValue = points * (platform.yen_conversion_rate || 1.0);
+
+          if (!platformMap.has(platformId)) {
+            platformMap.set(platformId, {
+              platformId,
+              platformName,
+              transactionCount: 0,
+              totalPoints: 0,
+              totalPointsValue: 0,
+            });
+          }
+
+          const entry = platformMap.get(platformId)!;
+          entry.transactionCount += 1;
+          entry.totalPoints += points;
+          entry.totalPointsValue += pointsValue;
+        }
       }
 
       // 信用卡积分
-      if (transaction.expected_card_points && transaction.card_points_platform) {
-        const platform = transaction.card_points_platform as any;
-        const platformId = platform.id;
-        const platformName = platform.display_name;
-        const points = transaction.expected_card_points;
-        const pointsValue = points * (platform.yen_conversion_rate || 1.0);
+      if (transaction.expected_card_points && transaction.card_points_platform_id) {
+        const platform = platformsMap.get(transaction.card_points_platform_id);
+        if (platform) {
+          const platformId = platform.id;
+          const platformName = platform.display_name;
+          const points = transaction.expected_card_points * pointsRatio;
+          const pointsValue = points * (platform.yen_conversion_rate || 1.0);
 
-        if (!platformMap.has(platformId)) {
-          platformMap.set(platformId, {
-            platformId,
-            platformName,
-            transactionCount: 0,
-            totalPoints: 0,
-            totalPointsValue: 0,
-          });
+          if (!platformMap.has(platformId)) {
+            platformMap.set(platformId, {
+              platformId,
+              platformName,
+              transactionCount: 0,
+              totalPoints: 0,
+              totalPointsValue: 0,
+            });
+          }
+
+          const entry = platformMap.get(platformId)!;
+          entry.transactionCount += 1;
+          entry.totalPoints += points;
+          entry.totalPointsValue += pointsValue;
         }
-
-        const entry = platformMap.get(platformId)!;
-        entry.transactionCount += 1;
-        entry.totalPoints += points;
-        entry.totalPointsValue += pointsValue;
       }
 
       // 额外平台积分
-      if (transaction.extra_platform_points && transaction.extra_platform_points_platform) {
-        const platform = transaction.extra_platform_points_platform as any;
-        const platformId = platform.id;
-        const platformName = platform.display_name;
-        const points = transaction.extra_platform_points;
-        const pointsValue = points * (platform.yen_conversion_rate || 1.0);
+      if (transaction.extra_platform_points && transaction.extra_platform_points_platform_id) {
+        const platform = platformsMap.get(transaction.extra_platform_points_platform_id);
+        if (platform) {
+          const platformId = platform.id;
+          const platformName = platform.display_name;
+          const points = transaction.extra_platform_points * pointsRatio;
+          const pointsValue = points * (platform.yen_conversion_rate || 1.0);
 
-        if (!platformMap.has(platformId)) {
-          platformMap.set(platformId, {
-            platformId,
-            platformName,
-            transactionCount: 0,
-            totalPoints: 0,
-            totalPointsValue: 0,
-          });
+          if (!platformMap.has(platformId)) {
+            platformMap.set(platformId, {
+              platformId,
+              platformName,
+              transactionCount: 0,
+              totalPoints: 0,
+              totalPointsValue: 0,
+            });
+          }
+
+          const entry = platformMap.get(platformId)!;
+          entry.transactionCount += 1;
+          entry.totalPoints += points;
+          entry.totalPointsValue += pointsValue;
         }
-
-        const entry = platformMap.get(platformId)!;
-        entry.transactionCount += 1;
-        entry.totalPoints += points;
-        entry.totalPointsValue += pointsValue;
       }
     });
 
@@ -519,19 +619,32 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
 }
 
 /**
- * 获取成本结构
+ * 获取成本结构（基于销售记录）
  */
 export async function getCostStructure(filters: AnalyticsFilters): Promise<CostStructure> {
   try {
     const { data, error } = await buildQuery(filters);
     if (error) throw error;
 
-    const soldTransactions = (data || []).filter((t: any) => t.status === 'sold');
+    // 应用支付方式筛选
+    const filteredRecords = (data || []).filter((r: any) => {
+      const transaction = r.transaction as any;
+      if (filters.paymentMethods && filters.paymentMethods.length > 0) {
+        return filters.paymentMethods.includes(transaction?.card_id);
+      }
+      return true;
+    });
 
-    const purchaseCost = soldTransactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
-    const platformFees = soldTransactions.reduce((sum, t) => sum + (t.platform_fee || 0), 0);
-    const shippingFees = soldTransactions.reduce((sum, t) => sum + (t.shipping_fee || 0), 0);
-    const suppliesCosts = soldTransactions.reduce((sum, t) => sum + (t.supplies_cost || 0), 0);
+    const purchaseCost = filteredRecords.reduce((sum, r) => {
+      const transaction = r.transaction as any;
+      if (!transaction) return sum;
+      const costPerUnit = (transaction.purchase_price_total || 0) / (transaction.quantity || 1);
+      return sum + (costPerUnit * r.quantity_sold);
+    }, 0);
+
+    const platformFees = filteredRecords.reduce((sum, r) => sum + (r.platform_fee || 0), 0);
+    const shippingFees = filteredRecords.reduce((sum, r) => sum + (r.shipping_fee || 0), 0);
+    const suppliesCosts = 0; // 耗材成本已包含在销售记录的利润计算中
 
     return {
       purchaseCost,
