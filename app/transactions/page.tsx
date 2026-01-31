@@ -12,9 +12,12 @@ import TransactionFilters, { type FilterValues } from '@/components/TransactionF
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
+  latest_sale_date?: string | null;
+  aggregated_profit?: number | null;
+  aggregated_roi?: number | null;
 }
 
-type SortField = 'date' | 'sale_date' | 'purchase_price_total' | 'total_profit' | 'roi';
+type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
 type SortOrder = 'asc' | 'desc';
 type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
 
