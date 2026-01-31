@@ -4,7 +4,7 @@
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import "/assets/styles/date-picker.css";
-import ja from "date-fns/locale/ja";
+import { ja } from "date-fns/locale/ja";
 registerLocale("ja", ja);
 import { input } from '@/lib/theme';
 
