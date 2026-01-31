@@ -319,7 +319,7 @@ export default function PointsPage() {
                   <div className="flex justify-between text-sm pt-2 border-t border-gray-200 dark:border-gray-700">
                     <span className="text-gray-600 dark:text-gray-400 font-medium">积分价值</span>
                     <span className="text-gray-900 dark:text-white font-bold">
-                      ¥{point.total_points.toLocaleString()}
+                      ¥{(point.total_points || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>

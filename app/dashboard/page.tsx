@@ -293,7 +293,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold">
-                            {point.total_points.toLocaleString()} P
+                            {(point.total_points || 0).toLocaleString()} P
                           </div>
                           {days !== null && (
                             <div className="text-xs opacity-75">
