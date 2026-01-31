@@ -251,14 +251,20 @@ export default function TransactionDetailPage() {
 
   // 重新计算预计还款日期（使用最新的 payment_same_month 配置）
   let calculatedPaymentDate: string | null = null;
-  if (transaction.payment_method && transaction.payment_method.closing_day && transaction.payment_method.payment_day) {
-    const paymentDate = calculatePaymentDate(
-      new Date(transaction.date),
-      transaction.payment_method.closing_day,
-      transaction.payment_method.payment_day,
-      transaction.payment_method.payment_same_month || false
-    );
-    calculatedPaymentDate = paymentDate.toLocaleString().split(' ')[0]; // 只取日期部分
+  if (transaction.payment_method && transaction.payment_method.closing_day && transaction.payment_method.payment_day && transaction.date) {
+    try {
+      const paymentDate = calculatePaymentDate(
+        new Date(transaction.date),
+        transaction.payment_method.closing_day,
+        transaction.payment_method.payment_day,
+        transaction.payment_method.payment_same_month || false
+      );
+      if (paymentDate && !isNaN(paymentDate.getTime())) {
+        calculatedPaymentDate = paymentDate.toLocaleString().split(' ')[0]; // 只取日期部分
+      }
+    } catch (error) {
+      console.error('Error calculating payment date:', error);
+    }
   }
 
   const daysToPayment = calculatedPaymentDate ? daysUntil(calculatedPaymentDate) : null;
