@@ -1,10 +1,11 @@
 // app/accounts/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { layout, heading, card, button, input } from '@/lib/theme';
+import { useCalculator } from '@/hooks/useCalculator';
 
 interface AccountFormData {
   name: string;
@@ -31,6 +32,12 @@ export default function EditAccountPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculator ref
+  const currentBalanceRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator
+  useCalculator(currentBalanceRef);
 
   useEffect(() => {
     loadAccount();
@@ -237,6 +244,7 @@ export default function EditAccountPage() {
                     onChange={handleNumberChange}
                     step="0.01"
                     placeholder="0.00"
+                    ref={currentBalanceRef}
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">

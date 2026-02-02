@@ -1,7 +1,7 @@
 // app/transactions/add/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
 import type { PaymentMethod, TransactionFormData, PointsPlatform } from '@/types/database.types';
@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
+import { useCalculator } from '@/hooks/useCalculator';
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -41,6 +42,24 @@ export default function AddTransactionPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculator refs for numeric inputs
+  const quantityRef = useRef<HTMLInputElement>(null);
+  const purchasePriceTotalRef = useRef<HTMLInputElement>(null);
+  const cardPaidRef = useRef<HTMLInputElement>(null);
+  const pointPaidRef = useRef<HTMLInputElement>(null);
+  const expectedPlatformPointsRef = useRef<HTMLInputElement>(null);
+  const extraPlatformPointsRef = useRef<HTMLInputElement>(null);
+  const expectedCardPointsRef = useRef<HTMLInputElement>(null);
+
+  // Register inputs with calculator
+  useCalculator(quantityRef);
+  useCalculator(purchasePriceTotalRef);
+  useCalculator(cardPaidRef);
+  useCalculator(pointPaidRef);
+  useCalculator(expectedPlatformPointsRef);
+  useCalculator(extraPlatformPointsRef);
+  useCalculator(expectedCardPointsRef);
 
   // 加载支付方式列表和积分平台列表
   useEffect(() => {
@@ -348,6 +367,7 @@ export default function AddTransactionPage() {
                     数量 <span className="text-red-400">*</span>
                   </label>
                   <input
+                    ref={quantityRef}
                     type="text"
                     inputMode="numeric"
                     name="quantity"
@@ -379,6 +399,7 @@ export default function AddTransactionPage() {
                 </label>
                 <div className="relative">
                   <input
+                    ref={purchasePriceTotalRef}
                     type="text"
                     inputMode="decimal"
                     name="purchase_price_total"
@@ -413,6 +434,7 @@ export default function AddTransactionPage() {
                   <div className="flex gap-3">
                     <div className="flex-1 relative">
                       <input
+                        ref={cardPaidRef}
                         type="text"
                         inputMode="decimal"
                         value={formData.card_paid || ''}
@@ -450,6 +472,7 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
+                      ref={pointPaidRef}
                       type="text"
                       inputMode="decimal"
                       value={formData.point_paid || ''}
@@ -502,6 +525,7 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
+                      ref={expectedPlatformPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="expected_platform_points"
@@ -546,6 +570,7 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
+                      ref={extraPlatformPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="extra_platform_points"
@@ -594,6 +619,7 @@ export default function AddTransactionPage() {
                   </label>
                   <div className="relative">
                     <input
+                      ref={expectedCardPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="expected_card_points"

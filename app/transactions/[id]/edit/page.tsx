@@ -1,7 +1,7 @@
 // app/transactions/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
@@ -9,6 +9,7 @@ import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform } 
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { useCalculator } from '@/hooks/useCalculator';
 
 export default function EditTransactionPage() {
   const router = useRouter();
@@ -43,6 +44,22 @@ export default function EditTransactionPage() {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+
+  // Calculator refs
+  const purchasePriceRef = useRef<HTMLInputElement>(null);
+  const cardPaidRef = useRef<HTMLInputElement>(null);
+  const pointPaidRef = useRef<HTMLInputElement>(null);
+  const platformPointsRef = useRef<HTMLInputElement>(null);
+  const extraPointsRef = useRef<HTMLInputElement>(null);
+  const cardPointsRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator for each numeric input
+  useCalculator(purchasePriceRef);
+  useCalculator(cardPaidRef);
+  useCalculator(pointPaidRef);
+  useCalculator(platformPointsRef);
+  useCalculator(extraPointsRef);
+  useCalculator(cardPointsRef);
 
   // 加载交易数据和支付方式列表
   useEffect(() => {
@@ -464,6 +481,7 @@ export default function EditTransactionPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
+                    ref={purchasePriceRef}
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                     required
                   />
@@ -490,6 +508,7 @@ export default function EditTransactionPage() {
                         min="0"
                         max={formData.purchase_price_total}
                         placeholder="0.00"
+                        ref={cardPaidRef}
                         className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -529,6 +548,7 @@ export default function EditTransactionPage() {
                       min="0"
                       max={formData.purchase_price_total}
                       placeholder="0.00"
+                      ref={pointPaidRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -583,6 +603,7 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
+                      ref={platformPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -628,6 +649,7 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
+                      ref={extraPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -677,6 +699,7 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
+                      ref={cardPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>

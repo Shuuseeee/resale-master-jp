@@ -1,12 +1,13 @@
 // app/coupons/add/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { useCalculator } from '@/hooks/useCalculator';
 
 interface CouponFormData {
   name: string;
@@ -31,6 +32,14 @@ export default function AddCouponPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculator refs
+  const discountValueRef = useRef<HTMLInputElement>(null);
+  const minPurchaseRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator
+  useCalculator(discountValueRef);
+  useCalculator(minPurchaseRef);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -195,6 +204,7 @@ export default function AddCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
+                      ref={discountValueRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       required
                     />
@@ -222,6 +232,7 @@ export default function AddCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
+                      ref={minPurchaseRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>

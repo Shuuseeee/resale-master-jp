@@ -1,12 +1,13 @@
 // app/settings/payment-methods/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentMethod } from '@/types/database.types';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
+import { useCalculator } from '@/hooks/useCalculator';
 
 export default function EditPaymentMethodPage() {
   const router = useRouter();
@@ -26,6 +27,16 @@ export default function EditPaymentMethodPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculator refs
+  const closingDayRef = useRef<HTMLInputElement>(null);
+  const paymentDayRef = useRef<HTMLInputElement>(null);
+  const pointRateRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator
+  useCalculator(closingDayRef);
+  useCalculator(paymentDayRef);
+  useCalculator(pointRateRef);
 
   useEffect(() => {
     loadPaymentMethod();
@@ -155,6 +166,7 @@ export default function EditPaymentMethodPage() {
                         onChange={(e) => setFormData({ ...formData, closing_day: e.target.value })}
                         min="1"
                         max="31"
+                        ref={closingDayRef}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="1-31"
                       />
@@ -169,6 +181,7 @@ export default function EditPaymentMethodPage() {
                         onChange={(e) => setFormData({ ...formData, payment_day: e.target.value })}
                         min="1"
                         max="31"
+                        ref={paymentDayRef}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="1-31"
                       />
@@ -199,6 +212,7 @@ export default function EditPaymentMethodPage() {
                       onChange={(e) => setFormData({ ...formData, point_rate: e.target.value })}
                       step="0.01"
                       min="0"
+                      ref={pointRateRef}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="1.0"
                     />

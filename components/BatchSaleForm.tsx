@@ -3,12 +3,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Transaction, SalesRecordFormData } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
+import { useCalculator } from '@/hooks/useCalculator';
 
 interface BatchSaleFormProps {
   transaction: Transaction;
@@ -28,6 +29,18 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Calculator refs
+  const quantitySoldRef = useRef<HTMLInputElement>(null);
+  const sellingPriceRef = useRef<HTMLInputElement>(null);
+  const platformFeeRef = useRef<HTMLInputElement>(null);
+  const shippingFeeRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator
+  useCalculator(quantitySoldRef);
+  useCalculator(sellingPriceRef);
+  useCalculator(platformFeeRef);
+  useCalculator(shippingFeeRef);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +125,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             className={input.base}
             required
             placeholder="1"
+            ref={quantitySoldRef}
           />
         </div>
 
@@ -127,6 +141,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             className={input.base}
             required
             placeholder="0.00"
+            ref={sellingPriceRef}
           />
         </div>
       </div>
@@ -149,6 +164,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, platform_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             placeholder="0.00"
+            ref={platformFeeRef}
           />
         </div>
 
@@ -163,6 +179,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
             onChange={(e) => setFormData({ ...formData, shipping_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             placeholder="0.00"
+            ref={shippingFeeRef}
           />
         </div>
       </div>

@@ -1,12 +1,13 @@
 // app/supplies/add/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { SuppliesCostFormData } from '@/types/database.types';
 import { layout, heading, card, button } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { useCalculator } from '@/hooks/useCalculator';
 
 // 耗材分类选项
 const CATEGORY_OPTIONS = [
@@ -27,6 +28,12 @@ export default function AddSupplyPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculator ref
+  const amountRef = useRef<HTMLInputElement>(null);
+
+  // Initialize calculator
+  useCalculator(amountRef);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -180,6 +187,7 @@ export default function AddSupplyPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
+                    ref={amountRef}
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     required
                   />
