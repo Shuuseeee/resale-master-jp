@@ -38,18 +38,18 @@ export const button = {
   ghost: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 rounded-lg font-medium transition-all',
 
   // 链接按钮
-  link: 'text-sm md:text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors',
+  link: 'text-sm md:text-base text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 font-medium transition-colors',
 };
 
 /**
- * 徽章样式
+ * 徽章样式 (WCAG 2 AA compliant)
  */
 export const badge = {
-  pending: 'px-2 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400',
-  success: 'px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-  error: 'px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400',
-  info: 'px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 dark:text-blue-400',
-  neutral: 'px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-400',
+  pending: 'px-2 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-300',
+  success: 'px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-300',
+  error: 'px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-300',
+  info: 'px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 dark:text-blue-300',
+  neutral: 'px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-300',
 };
 
 /**
@@ -109,11 +109,11 @@ export const empty = {
 };
 
 /**
- * 提示消息样式
+ * 提示消息样式 (WCAG 2 AA compliant)
  */
 export const alert = {
-  success: 'mb-6 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-4 py-3 rounded-lg',
-  error: 'mb-6 bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg',
-  warning: 'mb-6 bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 px-4 py-3 rounded-lg',
-  info: 'mb-6 bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-lg',
+  success: 'mb-6 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-lg',
+  error: 'mb-6 bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-300 px-4 py-3 rounded-lg',
+  warning: 'mb-6 bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 px-4 py-3 rounded-lg',
+  info: 'mb-6 bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-300 px-4 py-3 rounded-lg',
 };

@@ -134,7 +134,7 @@ export default function AddSupplyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    耗材分类 <span className="text-red-400">*</span>
+                    耗材分类 <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="category"
@@ -150,13 +150,13 @@ export default function AddSupplyPage() {
                     ))}
                   </select>
                   {errors.category && (
-                    <p className="mt-1 text-sm text-red-400">{errors.category}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.category}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    采购日期 <span className="text-red-400">*</span>
+                    采购日期 <span className="text-red-300">*</span>
                   </label>
                   <DatePicker
                     selected={formData.purchase_date ? new Date(formData.purchase_date) : null}
@@ -169,14 +169,14 @@ export default function AddSupplyPage() {
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   />
                   {errors.purchase_date && (
-                    <p className="mt-1 text-sm text-red-400">{errors.purchase_date}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.purchase_date}</p>
                   )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  金额 <span className="text-red-400">*</span>
+                  金额 <span className="text-red-300">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -196,7 +196,7 @@ export default function AddSupplyPage() {
                   </span>
                 </div>
                 {errors.amount && (
-                  <p className="mt-1 text-sm text-red-400">{errors.amount}</p>
+                  <p className="mt-1 text-sm text-red-300">{errors.amount}</p>
                 )}
               </div>
 
@@ -233,7 +233,7 @@ export default function AddSupplyPage() {
           {/* 提交按钮 */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-400">{errors.submit}</p>
+              <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
 

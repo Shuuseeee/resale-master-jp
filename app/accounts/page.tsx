@@ -233,7 +233,7 @@ export default function AccountsPage() {
                           onClick={() => toggleActive(account.id, account.is_active)}
                           className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                             account.is_active
-                              ? 'bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30'
+                              ? 'bg-green-600/30 text-green-500 border border-green-500/30 hover:bg-green-600/40'
                               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'
                           }`}
                         >

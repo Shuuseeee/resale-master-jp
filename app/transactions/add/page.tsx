@@ -330,7 +330,7 @@ export default function AddTransactionPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    日期 <span className="text-red-400">*</span>
+                    日期 <span className="text-red-300">*</span>
                   </label>
                   <DatePicker
                     selected={formData.date ? new Date(formData.date) : null}
@@ -346,7 +346,7 @@ export default function AddTransactionPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    商品名称 <span className="text-red-400">*</span>
+                    商品名称 <span className="text-red-300">*</span>
                   </label>
                   <input
                     type="text"
@@ -358,13 +358,13 @@ export default function AddTransactionPage() {
                     required
                   />
                   {errors.product_name && (
-                    <p className="mt-1 text-sm text-red-400">{errors.product_name}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.product_name}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    数量 <span className="text-red-400">*</span>
+                    数量 <span className="text-red-300">*</span>
                   </label>
                   <input
                     ref={quantityRef}
@@ -395,7 +395,7 @@ export default function AddTransactionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  采购总价 <span className="text-red-400">*</span>
+                  采购总价 <span className="text-red-300">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -421,7 +421,7 @@ export default function AddTransactionPage() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                 </div>
                 {errors.purchase_price_total && (
-                  <p className="mt-1 text-sm text-red-400">{errors.purchase_price_total}</p>
+                  <p className="mt-1 text-sm text-red-300">{errors.purchase_price_total}</p>
                 )}
               </div>
 
@@ -462,7 +462,7 @@ export default function AddTransactionPage() {
                     </select>
                   </div>
                   {errors.card_id && (
-                    <p className="mt-1 text-sm text-red-400">{errors.card_id}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.card_id}</p>
                   )}
                 </div>
 
@@ -502,7 +502,7 @@ export default function AddTransactionPage() {
 
                 {errors.payment && (
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-sm text-red-400">{errors.payment}</p>
+                    <p className="text-sm text-red-300">{errors.payment}</p>
                   </div>
                 )}
               </div>
@@ -556,7 +556,7 @@ export default function AddTransactionPage() {
                     ))}
                   </select>
                   {errors.platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-400">{errors.platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -601,7 +601,7 @@ export default function AddTransactionPage() {
                     ))}
                   </select>
                   {errors.extra_platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-400">{errors.extra_platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.extra_platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -612,7 +612,7 @@ export default function AddTransactionPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     信用卡积分数量
                     {formData.card_id && paymentMethods.find(pm => pm.id === formData.card_id) && (
-                      <span className="ml-2 text-xs text-emerald-400">
+                      <span className="ml-2 text-xs text-emerald-300">
                         (返点率: {(paymentMethods.find(pm => pm.id === formData.card_id)?.point_rate || 0) * 100}%)
                       </span>
                     )}
@@ -651,7 +651,7 @@ export default function AddTransactionPage() {
                     ))}
                   </select>
                   {errors.card_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-400">{errors.card_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.card_points_platform_id}</p>
                   )}
                   {formData.card_id && formData.card_points_platform_id && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
@@ -719,7 +719,7 @@ export default function AddTransactionPage() {
                   </label>
                 )}
                 {errors.image && (
-                  <p className="mt-1 text-sm text-red-400">{errors.image}</p>
+                  <p className="mt-1 text-sm text-red-300">{errors.image}</p>
                 )}
               </div>
             </div>
@@ -747,7 +747,7 @@ export default function AddTransactionPage() {
           {/* 提交按钮 */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-400">{errors.submit}</p>
+              <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
 

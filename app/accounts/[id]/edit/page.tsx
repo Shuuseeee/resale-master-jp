@@ -184,7 +184,7 @@ export default function EditAccountPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  账户名称 <span className="text-red-400">*</span>
+                  账户名称 <span className="text-red-300">*</span>
                 </label>
                 <input
                   type="text"
@@ -195,13 +195,13 @@ export default function EditAccountPage() {
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
-                {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+                {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    账户类型 <span className="text-red-400">*</span>
+                    账户类型 <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="account_type"
@@ -286,7 +286,7 @@ export default function EditAccountPage() {
           {/* 提交按钮 */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-400">{errors.submit}</p>
+              <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
 

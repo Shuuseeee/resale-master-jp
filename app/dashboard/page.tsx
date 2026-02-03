@@ -98,8 +98,8 @@ export default function DashboardPage() {
   };
 
   const urgencyColors = {
-    urgent: 'bg-red-500/20 border-red-500/50 text-red-400',
-    warning: 'bg-amber-500/20 border-amber-500/50 text-amber-400',
+    urgent: 'bg-red-500/20 border-red-500/50 text-red-300',
+    warning: 'bg-amber-500/20 border-amber-500/50 text-amber-300',
     normal: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-gray-900 dark:text-gray-300',
     expired: 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400',
   };
@@ -156,28 +156,28 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总余额</div>
-                <div className="text-2xl font-bold text-emerald-400">
+                <div className="text-2xl font-bold text-emerald-300">
                   {formatCurrency(waterLevel?.total_balance || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">30日应付</div>
-                <div className="text-2xl font-bold text-amber-400">
+                <div className="text-2xl font-bold text-amber-300">
                   {formatCurrency(waterLevel?.upcoming_payments_30d || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">7日应付</div>
-                <div className="text-2xl font-bold text-orange-400">
+                <div className="text-2xl font-bold text-orange-300">
                   {formatCurrency(waterLevel?.upcoming_payments_7d || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">待处理</div>
-                <div className="text-lg font-bold text-rose-400">
+                <div className="text-lg font-bold text-rose-300">
                   {waterLevel?.expiring_coupons_3d || 0} 券 / {waterLevel?.expiring_points_7d || 0} 积分
                 </div>
               </div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/points"
-                  className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+                  className="text-sm text-amber-300 hover:text-amber-300 transition-colors"
                 >
                   查看全部 →
                 </Link>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                   <button
                     onClick={handleConfirmAllPoints}
                     disabled={confirmingAll}
-                    className="px-4 py-2 bg-gradient-to-r bg-green-500/20 hover:bg-green-500/30 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-gradient-to-r bg-green-600/30 hover:bg-green-600/40 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {confirmingAll ? '确认中...' : '一键确认全部'}
                   </button>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                         <button
                           onClick={() => handleConfirmPoint(point.id)}
                           disabled={confirmingPointId === point.id}
-                          className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 bg-green-600/30 hover:bg-green-600/40 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {confirmingPointId === point.id ? '确认中...' : '确认'}
                         </button>
@@ -330,7 +330,7 @@ export default function DashboardPage() {
               </h2>
               <Link 
                 href="/accounts"
-                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="text-sm text-cyan-300 hover:text-cyan-300 transition-colors"
               >
                 管理账户 →
               </Link>

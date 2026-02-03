@@ -89,7 +89,7 @@ export default function TransactionRow({
       <td className="px-6 py-4 text-right font-mono">
         {(transaction as any).aggregated_profit !== null && (transaction as any).aggregated_profit !== undefined ? (
           <div className="flex flex-col items-end">
-            <span className={(transaction as any).aggregated_profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+            <span className={(transaction as any).aggregated_profit >= 0 ? 'text-emerald-300' : 'text-red-300'}>
               {formatCurrency((transaction as any).aggregated_profit)}
             </span>
             {transaction.status === 'in_stock' && transaction.quantity_sold > 0 && (
@@ -102,7 +102,7 @@ export default function TransactionRow({
       </td>
       <td className="px-6 py-4 text-right font-mono">
         {(transaction as any).aggregated_roi !== null && (transaction as any).aggregated_roi !== undefined ? (
-          <span className={(transaction as any).aggregated_roi >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+          <span className={(transaction as any).aggregated_roi >= 0 ? 'text-emerald-300' : 'text-red-300'}>
             {formatROI((transaction as any).aggregated_roi)}
           </span>
         ) : (
@@ -123,7 +123,7 @@ export default function TransactionRow({
           </Link>
           <Link
             href={`/transactions/${transaction.id}/edit`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
             title="编辑"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ export default function TransactionRow({
               e.stopPropagation();
               onDelete(transaction.id);
             }}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
             title="删除"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -145,7 +145,7 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  销售日期 <span className="text-red-400">*</span>
+                  销售日期 <span className="text-red-300">*</span>
                 </label>
                 <DatePicker
                   selected={editFormData.sale_date ? new Date(editFormData.sale_date) : null}
@@ -262,7 +262,7 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   </button>
                   <button
                     onClick={() => handleCancelSale(record)}
-                    className="text-red-400 hover:text-red-300 text-sm"
+                    className="text-red-300 hover:text-red-300 text-sm"
                   >
                     取消销售
                   </button>
@@ -296,19 +296,19 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">现金利润：</span>
-                  <span className={`font-medium ${(record.cash_profit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`font-medium ${(record.cash_profit || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                     {formatCurrency(record.cash_profit || 0)}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">总利润：</span>
-                  <span className={`font-medium ${(record.total_profit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`font-medium ${(record.total_profit || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                     {formatCurrency(record.total_profit || 0)}
                   </span>
                 </div>
                 <div className="col-span-2">
                   <span className="text-gray-600 dark:text-gray-400">ROI：</span>
-                  <span className={`font-bold text-lg ${(record.roi || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`font-bold text-lg ${(record.roi || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                     {formatROI(record.roi || 0)}
                   </span>
                 </div>

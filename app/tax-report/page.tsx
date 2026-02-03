@@ -393,7 +393,7 @@ export default function TaxReportPage() {
 
               {/* 収入の部 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-emerald-600 dark:text-emerald-400'}>
+                <h3 className={heading.h3 + ' mb-4 text-emerald-600 dark:text-emerald-300'}>
                   収入の部
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -401,7 +401,7 @@ export default function TaxReportPage() {
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       売上高（現金）
                     </div>
-                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
                       {formatCurrency(summary.totalRevenue)}
                     </div>
                   </div>
@@ -409,7 +409,7 @@ export default function TaxReportPage() {
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       ポイント収入
                     </div>
-                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function TaxReportPage() {
 
               {/* 必要経費の部 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-red-600 dark:text-red-400'}>
+                <h3 className={heading.h3 + ' mb-4 text-red-600 dark:text-red-300'}>
                   必要経費の部
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -466,7 +466,7 @@ export default function TaxReportPage() {
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       経費合計
                     </div>
-                    <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                    <div className="text-xl font-bold text-red-600 dark:text-red-300">
                       {formatCurrency(summary.totalExpenses)}
                     </div>
                   </div>
@@ -588,7 +588,7 @@ export default function TaxReportPage() {
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
                               {formatCurrency(detail.purchasePrice)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-emerald-600 dark:text-emerald-300 text-right font-mono">
                               {formatCurrency(detail.sellingPrice)}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-right font-mono">
@@ -597,14 +597,14 @@ export default function TaxReportPage() {
                             <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-right font-mono">
                               {formatCurrency(detail.shippingFee)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-amber-600 dark:text-amber-400 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-amber-600 dark:text-amber-300 text-right font-mono">
                               {formatCurrency(detail.pointsReward)}
                             </td>
                             <td
                               className={`px-4 py-3 text-sm text-right font-mono font-semibold ${
                                 detail.totalProfit >= 0
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-red-600 dark:text-red-400'
+                                  ? 'text-emerald-600 dark:text-emerald-300'
+                                  : 'text-red-600 dark:text-red-300'
                               }`}
                             >
                               {formatCurrency(detail.totalProfit)}

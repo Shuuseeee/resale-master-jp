@@ -153,12 +153,12 @@ export default function CouponsPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
           </div>
           <div className={card.stat + ' border-emerald-500/30'}>
-            <div className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">未使用</div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.unused}</div>
+            <div className="text-emerald-600 dark:text-emerald-300 text-sm mb-1">未使用</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{stats.unused}</div>
           </div>
           <div className={card.stat + ' border-amber-500/30'}>
-            <div className="text-amber-600 dark:text-amber-400 text-sm mb-1">即将过期</div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.expiring}</div>
+            <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">即将过期</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{stats.expiring}</div>
           </div>
           <div className={card.stat + ' border-gray-500/30'}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">已使用</div>
@@ -272,9 +272,9 @@ export default function CouponsPage() {
                       </div>
                       <div className={`font-medium ${
                         isExpired
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-red-600 dark:text-red-300'
                           : isExpiringSoon
-                          ? 'text-orange-600 dark:text-orange-400'
+                          ? 'text-orange-600 dark:text-orange-300'
                           : 'text-green-600 dark:text-green-400'
                       }`}>
                         {isExpired
@@ -308,7 +308,7 @@ export default function CouponsPage() {
                       </Link>
                       <button
                         onClick={() => deleteCoupon(coupon.id)}
-                        className="px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg transition-colors"
+                        className="px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-300 text-sm font-medium rounded-lg transition-colors"
                       >
                         删除
                       </button>

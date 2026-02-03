@@ -290,16 +290,16 @@ export default function TransactionsPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
           </div>
           <div className={card.stat + ' border-emerald-500/30'}>
-            <div className="text-emerald-600 dark:text-emerald-400 text-sm mb-1">已售出</div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.sold}</div>
+            <div className="text-emerald-600 dark:text-emerald-300 text-sm mb-1">已售出</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{stats.sold}</div>
           </div>
           <div className={card.stat + ' border-amber-500/30'}>
-            <div className="text-amber-600 dark:text-amber-400 text-sm mb-1">库存中</div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inStock}</div>
+            <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">库存中</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{stats.inStock}</div>
           </div>
           <div className={card.stat + ' border-red-500/30'}>
-            <div className="text-red-600 dark:text-red-400 text-sm mb-1">已退货</div>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.returned}</div>
+            <div className="text-red-600 dark:text-red-300 text-sm mb-1">已退货</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-300">{stats.returned}</div>
           </div>
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
@@ -307,13 +307,13 @@ export default function TransactionsPage() {
           </div>
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
-            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
               {formatCurrency(stats.totalProfit)}
             </div>
           </div>
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
-            <div className={`text-2xl font-bold ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+            <div className={`text-2xl font-bold ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
               {formatROI(stats.avgROI)}
             </div>
           </div>

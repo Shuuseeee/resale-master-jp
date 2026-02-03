@@ -133,7 +133,7 @@ export default function PointsPage() {
             <div className={card.stat}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-sm">待确认积分</span>
-                <span className="text-amber-600 dark:text-amber-400">⏳</span>
+                <span className="text-amber-600 dark:text-amber-300">⏳</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {(stats.total_pending_points || 0).toLocaleString()}
@@ -146,7 +146,7 @@ export default function PointsPage() {
             <div className={card.stat}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-sm">已收到积分</span>
-                <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+                <span className="text-emerald-600 dark:text-emerald-300">✓</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {(stats.total_received_points || 0).toLocaleString()}
@@ -159,7 +159,7 @@ export default function PointsPage() {
             <div className={card.stat}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-sm">已过期积分</span>
-                <span className="text-red-600 dark:text-red-400">✕</span>
+                <span className="text-red-600 dark:text-red-300">✕</span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {stats.total_expired_count}
@@ -292,7 +292,7 @@ export default function PointsPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">额外积分</span>
                       <div className="text-right">
-                        <div className="text-cyan-600 dark:text-cyan-400 font-medium">
+                        <div className="text-cyan-600 dark:text-cyan-300 font-medium">
                           {point.extra_platform_points?.toLocaleString() || 0} P
                         </div>
                         {point.extra_platform_points_platform_name && (

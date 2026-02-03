@@ -146,7 +146,7 @@ export default function AddCouponPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  优惠券名称 <span className="text-red-400">*</span>
+                  优惠券名称 <span className="text-red-300">*</span>
                 </label>
                 <input
                   type="text"
@@ -157,7 +157,7 @@ export default function AddCouponPage() {
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
-                {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+                {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
               </div>
 
               <div>
@@ -177,7 +177,7 @@ export default function AddCouponPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    折扣类型 <span className="text-red-400">*</span>
+                    折扣类型 <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="discount_type"
@@ -193,7 +193,7 @@ export default function AddCouponPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    折扣值 <span className="text-red-400">*</span>
+                    折扣值 <span className="text-red-300">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -213,7 +213,7 @@ export default function AddCouponPage() {
                     </span>
                   </div>
                   {errors.discount_value && (
-                    <p className="mt-1 text-sm text-red-400">{errors.discount_value}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.discount_value}</p>
                   )}
                 </div>
               </div>
@@ -241,7 +241,7 @@ export default function AddCouponPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    过期日期 <span className="text-red-400">*</span>
+                    过期日期 <span className="text-red-300">*</span>
                   </label>
                   <DatePicker
                     selected={formData.expiry_date ? new Date(formData.expiry_date) : null}
@@ -254,7 +254,7 @@ export default function AddCouponPage() {
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                   {errors.expiry_date && (
-                    <p className="mt-1 text-sm text-red-400">{errors.expiry_date}</p>
+                    <p className="mt-1 text-sm text-red-300">{errors.expiry_date}</p>
                   )}
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default function AddCouponPage() {
           {/* 提交按钮 */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-400">{errors.submit}</p>
+              <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
 

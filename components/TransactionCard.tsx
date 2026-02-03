@@ -133,7 +133,7 @@ export default function TransactionCard({
           </Link>
           <Link
             href={`/transactions/${transaction.id}/edit`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
             title="编辑"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ export default function TransactionCard({
               e.stopPropagation();
               onDelete(transaction.id);
             }}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
             title="删除"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

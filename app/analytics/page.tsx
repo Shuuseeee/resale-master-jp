@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
 
   const formatChangePercentage = (value: number) => {
     const sign = value >= 0 ? '+' : '';
-    const color = value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+    const color = value >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300';
     return <span className={color}>{sign}{value.toFixed(2)}%</span>;
   };
 
