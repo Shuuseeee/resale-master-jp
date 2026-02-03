@@ -115,7 +115,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            销售数量 <span className="text-red-300">*</span>
+            销售数量 <span className="text-red-600 dark:text-red-300">*</span>
           </label>
           <input
             type="text"
@@ -131,7 +131,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            单价 (¥) <span className="text-red-300">*</span>
+            单价 (¥) <span className="text-red-600 dark:text-red-300">*</span>
           </label>
           <input
             type="text"

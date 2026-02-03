@@ -395,7 +395,7 @@ export default function EditTransactionPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    日期 <span className="text-red-300">*</span>
+                    日期 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <DatePicker
                     selected={formData.date ? new Date(formData.date) : null}
@@ -411,7 +411,7 @@ export default function EditTransactionPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    商品名称 <span className="text-red-300">*</span>
+                    商品名称 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <input
                     type="text"
@@ -423,13 +423,13 @@ export default function EditTransactionPage() {
                     required
                   />
                   {errors.product_name && (
-                    <p className="mt-1 text-sm text-red-300">{errors.product_name}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.product_name}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    数量 <span className="text-red-300">*</span>
+                    数量 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <input
                     type="number"
@@ -461,7 +461,7 @@ export default function EditTransactionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  采购总价 <span className="text-red-300">*</span>
+                  采购总价 <span className="text-red-600 dark:text-red-300">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -488,7 +488,7 @@ export default function EditTransactionPage() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                 </div>
                 {errors.purchase_price_total && (
-                  <p className="mt-1 text-sm text-red-300">{errors.purchase_price_total}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.purchase_price_total}</p>
                 )}
               </div>
 
@@ -531,7 +531,7 @@ export default function EditTransactionPage() {
                     </select>
                   </div>
                   {errors.card_id && (
-                    <p className="mt-1 text-sm text-red-300">{errors.card_id}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.card_id}</p>
                   )}
                 </div>
 
@@ -573,7 +573,7 @@ export default function EditTransactionPage() {
 
                 {errors.payment && (
                   <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-sm text-red-300">{errors.payment}</p>
+                    <p className="text-sm text-red-600 dark:text-red-300">{errors.payment}</p>
                   </div>
                 )}
               </div>
@@ -628,7 +628,7 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-300">{errors.platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -674,7 +674,7 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.extra_platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-300">{errors.extra_platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.extra_platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -685,7 +685,7 @@ export default function EditTransactionPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     信用卡积分数量
                     {formData.card_id && paymentMethods.find(pm => pm.id === formData.card_id) && (
-                      <span className="ml-2 text-xs text-emerald-300">
+                      <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-300">
                         (返点率: {(paymentMethods.find(pm => pm.id === formData.card_id)?.point_rate || 0) * 100}%)
                       </span>
                     )}
@@ -725,7 +725,7 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.card_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-300">{errors.card_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.card_points_platform_id}</p>
                   )}
                   {formData.card_id && formData.card_points_platform_id && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
@@ -793,7 +793,7 @@ export default function EditTransactionPage() {
                   </label>
                 )}
                 {errors.image && (
-                  <p className="mt-1 text-sm text-red-300">{errors.image}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.image}</p>
                 )}
               </div>
             </div>
@@ -821,7 +821,7 @@ export default function EditTransactionPage() {
           {/* 提交按钮 */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-300">{errors.submit}</p>
+              <p className="text-sm text-red-600 dark:text-red-300">{errors.submit}</p>
             </div>
           )}
 

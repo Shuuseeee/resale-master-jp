@@ -290,15 +290,15 @@ export default function TransactionDetailPage() {
               <h1 className="text-2xl xs:text-3xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-3 xs:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
                     已售出
                   </span>
                 ) : transaction.status === 'returned' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-red-500/20 text-red-300 border border-red-500/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-red-500/20 text-red-600 dark:text-red-300 border border-red-500/30 whitespace-nowrap">
                     已退货
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 whitespace-nowrap">
                     库存中
                   </span>
                 )}
@@ -372,7 +372,7 @@ export default function TransactionDetailPage() {
               </Link>
               <button
                 onClick={deleteTransaction}
-                className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-300 rounded-xl transition-all border border-red-500/30"
+                className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-all border border-red-500/30"
                 title="删除"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -394,7 +394,7 @@ export default function TransactionDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    退货日期 <span className="text-red-300">*</span>
+                    退货日期 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <input
                     type="date"
@@ -551,7 +551,7 @@ export default function TransactionDetailPage() {
                     销售信息
                   </h2>
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
-                    <p className="text-amber-300 text-sm">
+                    <p className="text-amber-600 dark:text-amber-300 text-sm">
                       ⚠️ 这是旧版销售数据，建议在销售记录中重新记录以获得更详细的信息
                     </p>
                   </div>
@@ -562,33 +562,33 @@ export default function TransactionDetailPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:text-gray-400">平台费用</span>
-                      <span className="text-red-300 font-mono">-{formatCurrency(transaction.platform_fee)}</span>
+                      <span className="text-red-600 dark:text-red-300 font-mono">-{formatCurrency(transaction.platform_fee)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:text-gray-400">运费</span>
-                      <span className="text-red-300 font-mono">-{formatCurrency(transaction.shipping_fee)}</span>
+                      <span className="text-red-600 dark:text-red-300 font-mono">-{formatCurrency(transaction.shipping_fee)}</span>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
                       <span className="text-gray-600 dark:text-gray-400">现金利润</span>
-                      <span className={`text-lg font-semibold ${(transaction.cash_profit || 0) >= 0 ? 'text-blue-400' : 'text-red-300'}`}>
+                      <span className={`text-lg font-semibold ${(transaction.cash_profit || 0) >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-300'}`}>
                         {formatCurrency(transaction.cash_profit || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:text-gray-400">积分价值</span>
-                      <span className="text-amber-300 font-semibold">
+                      <span className="text-amber-600 dark:text-amber-300 font-semibold">
                         +{formatCurrency(totalPointsValue)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300 dark:border-gray-600">
                       <span className="text-gray-900 dark:text-white font-semibold">总利润</span>
-                      <span className={`text-2xl font-bold ${(transaction.total_profit || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                      <span className={`text-2xl font-bold ${(transaction.total_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
                         {formatCurrency(transaction.total_profit || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 dark:text-gray-400">ROI</span>
-                      <span className={`text-xl font-bold ${(transaction.roi || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                      <span className={`text-xl font-bold ${(transaction.roi || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
                         {formatROI(transaction.roi || 0)}
                       </span>
                     </div>
@@ -608,13 +608,13 @@ export default function TransactionDetailPage() {
                 <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-amber-300 text-sm mb-1">平台积分</div>
-                      <div className="text-2xl font-bold text-amber-300">{transaction.expected_platform_points} P</div>
+                      <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">平台积分</div>
+                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{transaction.expected_platform_points} P</div>
                     </div>
                     {transaction.platform_points_platform && (
                       <div className="text-right">
-                        <div className="text-xs text-amber-300/90">{transaction.platform_points_platform.display_name}</div>
-                        <div className="text-sm text-amber-300 font-mono">
+                        <div className="text-xs text-amber-600 dark:text-amber-300/90">{transaction.platform_points_platform.display_name}</div>
+                        <div className="text-sm text-amber-600 dark:text-amber-300 font-mono">
                           ¥{((transaction.expected_platform_points || 0) * transaction.platform_points_platform.yen_conversion_rate).toFixed(2)}
                         </div>
                       </div>
@@ -646,13 +646,13 @@ export default function TransactionDetailPage() {
                 <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/30">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-purple-400 text-sm mb-1">信用卡积分</div>
-                      <div className="text-2xl font-bold text-purple-400">{transaction.expected_card_points} P</div>
+                      <div className="text-purple-600 dark:text-purple-400 text-sm mb-1">信用卡积分</div>
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{transaction.expected_card_points} P</div>
                     </div>
                     {transaction.card_points_platform && (
                       <div className="text-right">
-                        <div className="text-xs text-purple-400/70">{transaction.card_points_platform.display_name}</div>
-                        <div className="text-sm text-purple-400 font-mono">
+                        <div className="text-xs text-purple-600 dark:text-purple-400/70">{transaction.card_points_platform.display_name}</div>
+                        <div className="text-sm text-purple-600 dark:text-purple-400 font-mono">
                           ¥{((transaction.expected_card_points || 0) * transaction.card_points_platform.yen_conversion_rate).toFixed(2)}
                         </div>
                       </div>
@@ -664,11 +664,11 @@ export default function TransactionDetailPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 dark:text-gray-400 text-sm">积分状态</span>
                   {transaction.point_status === 'received' ? (
-                    <span className="text-emerald-300 text-sm font-medium">已到账</span>
+                    <span className="text-emerald-600 dark:text-emerald-300 text-sm font-medium">已到账</span>
                   ) : transaction.point_status === 'expired' ? (
-                    <span className="text-red-300 text-sm font-medium">已过期</span>
+                    <span className="text-red-600 dark:text-red-300 text-sm font-medium">已过期</span>
                   ) : (
-                    <span className="text-amber-300 text-sm font-medium">待确认</span>
+                    <span className="text-amber-600 dark:text-amber-300 text-sm font-medium">待确认</span>
                   )}
                 </div>
               </div>
@@ -699,11 +699,11 @@ export default function TransactionDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 dark:text-gray-400">已售出</span>
-                    <span className="text-emerald-300 font-medium">{transaction.quantity_sold}</span>
+                    <span className="text-emerald-600 dark:text-emerald-300 font-medium">{transaction.quantity_sold}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 dark:text-gray-400">库存</span>
-                    <span className="text-blue-400 font-bold text-lg">{transaction.quantity_in_stock}</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">{transaction.quantity_in_stock}</span>
                   </div>
                 </div>
               </div>
@@ -746,7 +746,7 @@ export default function TransactionDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 dark:text-gray-400">返点率</span>
-                    <span className="text-emerald-300 font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
+                    <span className="text-emerald-600 dark:text-emerald-300 font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
                   </div>
                   {calculatedPaymentDate && (
                     <>
@@ -760,9 +760,9 @@ export default function TransactionDetailPage() {
                         <div className="p-3 rounded-lg bg-white dark:bg-gray-700">
                           <div className="text-center">
                             {daysToPayment < 0 ? (
-                              <span className="text-red-300 font-medium">已逾期 {Math.abs(daysToPayment)} 天</span>
+                              <span className="text-red-600 dark:text-red-300 font-medium">已逾期 {Math.abs(daysToPayment)} 天</span>
                             ) : daysToPayment === 0 ? (
-                              <span className="text-amber-300 font-medium">今天到期</span>
+                              <span className="text-amber-600 dark:text-amber-300 font-medium">今天到期</span>
                             ) : (
                               <span className="text-gray-700 dark:text-gray-300">还有 <span className="text-gray-900 dark:text-white font-bold">{daysToPayment}</span> 天</span>
                             )}

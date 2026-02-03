@@ -102,7 +102,7 @@ export default function TransactionCard({
               : '-'}
           </p>
           {transaction.status === 'in_stock' && transaction.quantity_sold > 0 && (
-            <span className="text-xs text-blue-600">部分销售</span>
+            <span className="text-xs text-blue-600 dark:text-blue-400">部分销售</span>
           )}
         </div>
         <div>
@@ -123,7 +123,7 @@ export default function TransactionCard({
         <div className="flex items-center justify-end gap-2">
           <Link
             href={`/transactions/${transaction.id}`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all active:scale-95"
             title="查看详情"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@ export default function TransactionCard({
           </Link>
           <Link
             href={`/transactions/${transaction.id}/edit`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
             title="编辑"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ export default function TransactionCard({
               e.stopPropagation();
               onDelete(transaction.id);
             }}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
             title="删除"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

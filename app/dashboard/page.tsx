@@ -98,8 +98,8 @@ export default function DashboardPage() {
   };
 
   const urgencyColors = {
-    urgent: 'bg-red-500/20 border-red-500/50 text-red-300',
-    warning: 'bg-amber-500/20 border-amber-500/50 text-amber-300',
+    urgent: 'bg-red-500/20 border-red-500/50 text-red-600 dark:text-red-300',
+    warning: 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300',
     normal: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-gray-900 dark:text-gray-300',
     expired: 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400',
   };
@@ -156,28 +156,28 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总余额</div>
-                <div className="text-2xl font-bold text-emerald-300">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
                   {formatCurrency(waterLevel?.total_balance || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">30日应付</div>
-                <div className="text-2xl font-bold text-amber-300">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
                   {formatCurrency(waterLevel?.upcoming_payments_30d || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">7日应付</div>
-                <div className="text-2xl font-bold text-orange-300">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
                   {formatCurrency(waterLevel?.upcoming_payments_7d || 0)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
                 <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">待处理</div>
-                <div className="text-lg font-bold text-rose-300">
+                <div className="text-lg font-bold text-rose-600 dark:text-rose-300">
                   {waterLevel?.expiring_coupons_3d || 0} 券 / {waterLevel?.expiring_points_7d || 0} 积分
                 </div>
               </div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/points"
-                  className="text-sm text-amber-300 hover:text-amber-300 transition-colors"
+                  className="text-sm text-amber-600 dark:text-amber-300 hover:text-amber-700 dark:hover:text-amber-200 transition-colors"
                 >
                   查看全部 →
                 </Link>
@@ -328,9 +328,9 @@ export default function DashboardPage() {
                 <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></div>
                 账户余额
               </h2>
-              <Link 
+              <Link
                 href="/accounts"
-                className="text-sm text-cyan-300 hover:text-cyan-300 transition-colors"
+                className="text-sm text-cyan-600 dark:text-cyan-300 hover:text-cyan-700 dark:hover:text-cyan-200 transition-colors"
               >
                 管理账户 →
               </Link>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
               {bankAccounts.map((account) => (
                 <div
                   key={account.id}
-                  className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 transition-all"
+                  className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800 hover:border-blue-600 dark:hover:border-blue-600 transition-all"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>

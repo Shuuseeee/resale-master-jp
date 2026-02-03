@@ -195,11 +195,11 @@ export default function PaymentMethodsPage() {
                         <option value="same">当月还款</option>
                       </select>
                       {saving === method.id && (
-                        <div className="mt-1 text-xs text-emerald-300">保存中...</div>
+                        <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-300">保存中...</div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="text-emerald-300 font-medium">
+                      <span className="text-emerald-600 dark:text-emerald-300 font-medium">
                         {(method.point_rate * 100).toFixed(2)}%
                       </span>
                     </td>
@@ -208,8 +208,8 @@ export default function PaymentMethodsPage() {
                         onClick={() => toggleActive(method.id, method.is_active)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                           method.is_active
-                            ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/40'
-                            : 'bg-slate-700/50 text-gray-600 dark:text-gray-400 border border-slate-600 hover:bg-slate-700'
+                            ? 'bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/40'
+                            : 'bg-slate-700/50 text-gray-700 dark:text-gray-400 border border-slate-600 hover:bg-slate-700'
                         }`}
                       >
                         {method.is_active ? '启用' : '禁用'}
@@ -279,8 +279,8 @@ export default function PaymentMethodsPage() {
                         onClick={() => toggleActive(method.id, method.is_active)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                           method.is_active
-                            ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-slate-700/50 text-gray-600 dark:text-gray-400 border border-slate-600'
+                            ? 'bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30'
+                            : 'bg-slate-700/50 text-gray-700 dark:text-gray-400 border border-slate-600'
                         }`}
                       >
                         {method.is_active ? '启用' : '禁用'}
