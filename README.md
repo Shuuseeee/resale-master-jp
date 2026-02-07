@@ -14,7 +14,7 @@
 ### 财务管理
 - 💳 **支付方式管理**: 管理多张信用卡和电子钱包,自动计算还款日
 - 🏦 **银行账户**: 追踪多个银行账户余额
-- 🎯 **积分平台系统**: 8 个预配置积分平台(PayPay、V Point、乐天等),精确计算积分价值
+- 🎯 **积分平台系统**: 9 个预配置积分平台(PayPay、V Point、乐天、Amazon等),精确计算积分价值
 - 🎫 **优惠券管理**: 追踪优惠券使用和过期状态
 - 📦 **耗材成本**: 自动分摊包装材料、运输用品等成本
 
@@ -69,11 +69,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ### 4. 设置数据库
 
-在 Supabase 项目中执行 `supabase-schema.sql`:
+在 Supabase 项目中执行整合后的迁移文件:
 
 1. 登录 Supabase Dashboard
 2. 进入 SQL Editor
-3. 复制并执行 `supabase-schema.sql` 中的所有 SQL 语句
+3. 复制并执行 `supabase/migrations/00_initial_schema.sql` 中的所有 SQL 语句
+
+**注意**: 该文件已整合所有数据库 schema，包括：
+- 用户认证和 RLS
+- 积分平台系统（9 个平台）
+- ROI 和利润计算
+- 存储桶配置
+- 批量库存管理
 
 ### 5. 创建 Storage Bucket
 
@@ -118,28 +125,40 @@ resale-master-jp/
 ├── components/
 │   ├── Navigation.tsx                # 导航组件
 │   ├── TransactionFilters.tsx        # 交易筛选器
+│   ├── TransactionCard.tsx           # 交易卡片组件
+│   ├── TransactionRow.tsx            # 交易行组件
 │   ├── DatePicker.tsx                # 日期选择器
 │   ├── SalesRecordsList.tsx          # 销售记录列表
-│   └── BatchSaleForm.tsx             # 批量销售表单
+│   ├── BatchSaleForm.tsx             # 批量销售表单
+│   ├── Modal.tsx                     # 模态框组件
+│   ├── OptimizedImage.tsx            # 优化图片组件
+│   ├── Calculator.tsx                # 桌面计算器
+│   ├── CalculatorButton.tsx          # 计算器按钮
+│   ├── CalculatorProvider.tsx        # 计算器上下文
+│   └── ClientProviders.tsx           # 客户端提供者
 ├── lib/
 │   ├── supabase/
 │   │   └── client.ts                 # Supabase 客户端
 │   ├── api/                          # API 函数
-│   │   ├── transactions.ts           # 交易 API
-│   │   ├── payment-methods.ts        # 支付方式 API
-│   │   ├── bank-accounts.ts          # 银行账户 API
-│   │   ├── points.ts                 # 积分 API
-│   │   ├── coupons.ts                # 优惠券 API
+│   │   ├── analytics.ts              # 分析 API
+│   │   ├── financial.ts              # 财务 API
+│   │   ├── points-platforms.ts       # 积分平台 API
+│   │   ├── sales-records.ts          # 销售记录 API
 │   │   ├── supplies.ts               # 耗材 API
-│   │   └── analytics.ts              # 分析 API
-│   ├── calculations.ts               # 业务计算逻辑
-│   └── utils.ts                      # 工具函数
+│   │   └── tax-report.ts             # 税务申报 API
+│   ├── financial/
+│   │   └── calculator.ts             # 财务计算器
+│   ├── image-utils.ts                # 图片工具
+│   ├── number-utils.ts               # 数字工具
+│   ├── pdf-font-loader.ts            # PDF 字体加载器
+│   └── theme.ts                      # 主题配置
 ├── contexts/
 │   └── AuthContext.tsx               # 认证上下文
 ├── types/
 │   └── database.types.ts             # TypeScript 类型定义
 ├── supabase/
-│   └── migrations/                   # 数据库迁移文件 (28 个)
+│   └── migrations/
+│       └── 00_initial_schema.sql     # 整合后的数据库 schema (605 行)
 ├── docs/                             # 技术文档
 ├── package.json
 ├── tsconfig.json
@@ -152,7 +171,7 @@ resale-master-jp/
 ### 核心表结构
 
 1. **points_platforms** - 积分平台
-   - 8 个预配置平台 (PayPay、V Point、乐天等)
+   - 9 个预配置平台 (PayPay、V Point、乐天、Amazon等)
    - 积分兑换率 (1:1, 3:1 等)
    - 精确计算积分价值
 
@@ -224,20 +243,20 @@ resale-master-jp/
 - **响应式设计**: 完美适配手机、平板和桌面
 - **交互式图表**: Recharts 驱动的数据可视化
 - **自定义日期选择器**: 优化的日期输入体验
+- **桌面端计算器**: 数字输入页面的专用计算器，提升输入效率
 - **图片预览**: 支持多种格式的图片查看
 - **加载状态**: 清晰的加载和错误提示
+- **无障碍访问**: 符合 WCAG 2 AA 标准的颜色对比度
 
-## 📚 技术文档
+## 📚 项目文档
 
-项目包含完整的技术文档:
-
-- `/README.md` - 项目概览和快速开始
-- `/DEPLOYMENT.md` - 部署指南
-- `/SETUP_AUTH.md` - 认证系统设置
-- `/IMPLEMENTATION_SUMMARY.md` - 多用户认证实现
-- `/docs/POINTS_PLATFORM_UPGRADE.md` - 积分平台架构
-- `/docs/TRANSACTION_ADD_IMPLEMENTATION_GUIDE.md` - 交易表单实现指南
-- `/docs/TRANSACTION_ADD_POINTS_PLATFORM_PATCH.md` - 积分平台集成
+本 README 包含完整的项目文档，包括：
+- 核心功能说明
+- 快速开始指南
+- 数据库设计详解
+- 使用指南
+- 部署说明
+- 开发指南
 
 ## 📝 使用指南
 
@@ -390,15 +409,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 3. 配置环境变量
 4. 部署完成
 
-详细部署指南请参考 `/DEPLOYMENT.md`
-
 ## 📊 项目统计
 
-- **总代码行数**: ~13,500+ 行
+- **总代码行数**: ~15,000+ 行
 - **页面数量**: 24 个页面
-- **组件数量**: 6 个可复用组件
-- **API 模块**: 8 个 API 文件
-- **数据库迁移**: 28 个迁移文件
+- **组件数量**: 13+ 个可复用组件
+- **API 模块**: 6 个 API 文件 + 多个工具模块
+- **数据库 Schema**: 1 个整合文件 (605 行，包含完整 schema)
 - **支持语言**: 日语 (主要),英文代码注释
 
 ## 🎯 已实现功能
@@ -412,7 +429,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - [x] 退货处理
 - [x] 银行账户管理
 - [x] 支付方式管理 (信用卡、电子钱包)
-- [x] 积分平台系统 (8 个预配置平台)
+- [x] 积分平台系统 (9 个预配置平台)
 - [x] 积分管理和追踪
 - [x] 优惠券管理
 - [x] 耗材成本管理
@@ -423,6 +440,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - [x] 多用户支持和数据隔离
 - [x] 自动 ROI 计算和更新
 - [x] 还款日期智能推算
+- [x] 桌面端计算器 (优化数字输入体验)
+- [x] 无障碍访问 (WCAG 2 AA 合规)
 
 ### 🔮 未来计划
 - [ ] 批量导入交易 (CSV/Excel)
@@ -455,13 +474,21 @@ npm start
 npm run lint
 ```
 
-### 数据库迁移
+### 数据库 Schema
 
-所有数据库变更都通过迁移文件管理,位于 `/supabase/migrations/`:
+数据库 schema 已整合到单一文件 `/supabase/migrations/00_initial_schema.sql` (605 行):
 
-1. 创建新迁移文件 (按时间戳命名)
+**首次部署**:
+1. 在 Supabase SQL Editor 中执行 `00_initial_schema.sql`
+2. 该文件包含完整的数据库结构（认证、积分平台、ROI 计算、存储、批量库存等）
+
+**后续变更**:
+1. 创建增量迁移文件 (按时间戳命名，如 `20260208000000_description.sql`)
 2. 在 Supabase SQL Editor 中执行
 3. 提交到版本控制
+
+**注意**:
+整合文件代表数据库的最终状态，适合新环境部署。现有环境继续使用增量迁移。
 
 ### 添加新功能
 
