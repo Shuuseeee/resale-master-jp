@@ -76,21 +76,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 3. 复制并执行 `supabase/migrations/00_initial_schema.sql` 中的所有 SQL 语句
 
 **注意**: 该文件已整合所有数据库 schema，包括：
+- 基础表创建（bank_accounts、payment_methods、transactions、coupons、supplies_costs、fixed_costs）
 - 用户认证和 RLS
 - 积分平台系统（9 个平台）
+- 数据库视图（pending_points、financial_water_level、upcoming_payments）
 - ROI 和利润计算
 - 存储桶配置
 - 批量库存管理
 
-### 5. 创建 Storage Bucket
-
-在 Supabase Dashboard 中:
-
-1. 进入 Storage
-2. 创建名为 `receipts` 的 bucket
-3. 设置为 Public bucket
-
-### 6. 启动开发服务器
+### 5. 启动开发服务器
 
 ```bash
 npm run dev
@@ -158,7 +152,7 @@ resale-master-jp/
 │   └── database.types.ts             # TypeScript 类型定义
 ├── supabase/
 │   └── migrations/
-│       └── 00_initial_schema.sql     # 整合后的数据库 schema (605 行)
+│       └── 00_initial_schema.sql     # 整合后的数据库 schema (~830 行)
 ├── docs/                             # 技术文档
 ├── package.json
 ├── tsconfig.json
@@ -415,7 +409,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 - **页面数量**: 24 个页面
 - **组件数量**: 13+ 个可复用组件
 - **API 模块**: 6 个 API 文件 + 多个工具模块
-- **数据库 Schema**: 1 个整合文件 (605 行，包含完整 schema)
+- **数据库 Schema**: 1 个整合文件 (~830 行，包含完整 schema)
 - **支持语言**: 日语 (主要),英文代码注释
 
 ## 🎯 已实现功能
@@ -476,7 +470,7 @@ npm run lint
 
 ### 数据库 Schema
 
-数据库 schema 已整合到单一文件 `/supabase/migrations/00_initial_schema.sql` (605 行):
+数据库 schema 已整合到单一文件 `/supabase/migrations/00_initial_schema.sql` (~830 行):
 
 **首次部署**:
 1. 在 Supabase SQL Editor 中执行 `00_initial_schema.sql`

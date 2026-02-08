@@ -7,12 +7,168 @@
 -- suitable for deploying to new environments.
 --
 -- This migration includes:
+-- 0. Base tables (bank_accounts, payment_methods, transactions, coupons, supplies_costs, fixed_costs)
 -- 1. User authentication and RLS (Row Level Security)
--- 2. Points platforms system
+-- 2. Points platforms system + views (pending_points, financial_water_level, upcoming_payments)
 -- 3. ROI and profit calculation
 -- 4. Storage bucket for receipts
 -- 5. Batch inventory management
 -- ============================================
+
+-- ============================================
+-- PART 0: Create Base Tables
+-- ============================================
+-- These tables must exist before any ALTER TABLE statements.
+-- Uses IF NOT EXISTS so it is safe to re-run on existing environments.
+
+-- 0.1 bank_accounts
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS bank_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  account_type TEXT NOT NULL DEFAULT 'checking' CHECK (account_type IN ('checking', 'savings', 'wallet')),
+  current_balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'JPY',
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 0.2 payment_methods
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS payment_methods (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'card' CHECK (type IN ('card', 'bank', 'wallet')),
+  closing_day INTEGER,
+  payment_day INTEGER,
+  payment_same_month BOOLEAN NOT NULL DEFAULT false,
+  point_rate NUMERIC(5, 2) NOT NULL DEFAULT 1.0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 0.3 transactions
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  product_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'in_stock' CHECK (status IN ('in_stock', 'sold', 'returned')),
+  purchase_price_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  card_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  point_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  balance_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  card_id UUID REFERENCES payment_methods(id),
+  selling_price NUMERIC(10, 2),
+  platform_fee NUMERIC(10, 2) DEFAULT 0,
+  shipping_fee NUMERIC(10, 2) DEFAULT 0,
+  cash_profit NUMERIC(10, 2),
+  roi NUMERIC(10, 2),
+  expected_platform_points NUMERIC(10, 2) DEFAULT 0,
+  expected_card_points NUMERIC(10, 2) DEFAULT 0,
+  point_status TEXT NOT NULL DEFAULT 'pending' CHECK (point_status IN ('pending', 'received', 'expired')),
+  expected_payment_date DATE,
+  image_url TEXT,
+  notes TEXT,
+  return_date DATE,
+  return_amount NUMERIC(10, 2),
+  return_notes TEXT,
+  points_deducted NUMERIC(10, 2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 0.4 coupons
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS coupons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  discount_type TEXT NOT NULL DEFAULT 'fixed_amount' CHECK (discount_type IN ('percentage', 'fixed_amount', 'free_shipping')),
+  discount_value NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  min_purchase_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  expiry_date DATE NOT NULL,
+  is_used BOOLEAN NOT NULL DEFAULT false,
+  used_date DATE,
+  platform TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 0.5 supplies_costs
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS supplies_costs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  purchase_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  description TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE supplies_costs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own supplies costs"
+ON supplies_costs FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own supplies costs"
+ON supplies_costs FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own supplies costs"
+ON supplies_costs FOR UPDATE
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own supplies costs"
+ON supplies_costs FOR DELETE
+USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_supplies_costs_user_id ON supplies_costs(user_id);
+CREATE INDEX IF NOT EXISTS idx_supplies_costs_purchase_date ON supplies_costs(purchase_date);
+
+-- 0.6 fixed_costs
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS fixed_costs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  billing_cycle TEXT NOT NULL DEFAULT 'monthly' CHECK (billing_cycle IN ('monthly', 'yearly')),
+  start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  end_date DATE,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  category TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE fixed_costs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own fixed costs"
+ON fixed_costs FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own fixed costs"
+ON fixed_costs FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own fixed costs"
+ON fixed_costs FOR UPDATE
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own fixed costs"
+ON fixed_costs FOR DELETE
+USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_fixed_costs_user_id ON fixed_costs(user_id);
 
 -- ============================================
 -- PART 1: User Authentication and RLS
@@ -312,6 +468,76 @@ WHERE t.user_id = auth.uid()
 ORDER BY t.date DESC;
 
 COMMENT ON VIEW pending_points IS '待确认积分视图，包含积分价值计算（基于积分平台兑换率）';
+
+-- 2.9 Create financial_water_level view
+-- --------------------------------------------
+DROP VIEW IF EXISTS financial_water_level CASCADE;
+
+CREATE OR REPLACE VIEW financial_water_level AS
+SELECT
+  -- Total balance across all active bank accounts
+  COALESCE((SELECT SUM(current_balance) FROM bank_accounts WHERE is_active = true AND user_id = auth.uid()), 0) AS total_balance,
+  -- Upcoming payments within 30 days
+  COALESCE((
+    SELECT SUM(purchase_price_total - COALESCE(point_paid, 0) - COALESCE(balance_paid, 0))
+    FROM transactions
+    WHERE user_id = auth.uid()
+      AND expected_payment_date IS NOT NULL
+      AND expected_payment_date <= (CURRENT_DATE + INTERVAL '30 days')
+      AND expected_payment_date >= CURRENT_DATE
+      AND status != 'returned'
+  ), 0) AS upcoming_payments_30d,
+  -- Upcoming payments within 7 days
+  COALESCE((
+    SELECT SUM(purchase_price_total - COALESCE(point_paid, 0) - COALESCE(balance_paid, 0))
+    FROM transactions
+    WHERE user_id = auth.uid()
+      AND expected_payment_date IS NOT NULL
+      AND expected_payment_date <= (CURRENT_DATE + INTERVAL '7 days')
+      AND expected_payment_date >= CURRENT_DATE
+      AND status != 'returned'
+  ), 0) AS upcoming_payments_7d,
+  -- Coupons expiring within 3 days
+  COALESCE((
+    SELECT COUNT(*)
+    FROM coupons
+    WHERE user_id = auth.uid()
+      AND is_used = false
+      AND expiry_date >= CURRENT_DATE
+      AND expiry_date <= (CURRENT_DATE + INTERVAL '3 days')
+  ), 0) AS expiring_coupons_3d,
+  -- Points expiring within 7 days (pending points count)
+  COALESCE((
+    SELECT COUNT(*)
+    FROM transactions
+    WHERE user_id = auth.uid()
+      AND point_status = 'pending'
+      AND (COALESCE(expected_platform_points, 0) + COALESCE(expected_card_points, 0)) > 0
+  ), 0) AS expiring_points_7d;
+
+COMMENT ON VIEW financial_water_level IS '财务安全水位视图 - 单行聚合，包含余额、待付款、过期优惠券和积分';
+
+-- 2.10 Create upcoming_payments view
+-- --------------------------------------------
+DROP VIEW IF EXISTS upcoming_payments CASCADE;
+
+CREATE OR REPLACE VIEW upcoming_payments AS
+SELECT
+  pm.name AS payment_method_name,
+  t.expected_payment_date,
+  SUM(t.purchase_price_total - COALESCE(t.point_paid, 0) - COALESCE(t.balance_paid, 0)) AS total_amount,
+  COUNT(t.id)::INTEGER AS transaction_count,
+  pm.id AS payment_method_id
+FROM transactions t
+JOIN payment_methods pm ON t.card_id = pm.id
+WHERE t.user_id = auth.uid()
+  AND t.expected_payment_date IS NOT NULL
+  AND t.expected_payment_date >= CURRENT_DATE
+  AND t.status != 'returned'
+GROUP BY pm.id, pm.name, t.expected_payment_date
+ORDER BY t.expected_payment_date ASC;
+
+COMMENT ON VIEW upcoming_payments IS '待付款汇总视图 - 按支付方式和还款日聚合';
 
 -- ============================================
 -- PART 3: ROI and Profit Calculation
