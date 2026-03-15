@@ -75,15 +75,6 @@ export default function PaymentMethodsPage() {
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'card': return '信用卡';
-      case 'bank': return '银行账户';
-      case 'wallet': return '电子钱包';
-      default: return type;
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -146,9 +137,6 @@ export default function PaymentMethodsPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     名称
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    类型
-                  </th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     账单日
                   </th>
@@ -174,9 +162,6 @@ export default function PaymentMethodsPage() {
                   <tr key={method.id} className="hover:bg-gray-100 dark:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">
                       {method.name}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                      {getTypeLabel(method.type)}
                     </td>
                     <td className="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
                       {method.closing_day ? `${method.closing_day}日` : '-'}
@@ -256,42 +241,6 @@ export default function PaymentMethodsPage() {
           </div>
         </div>
 
-        {/* 其他支付方式 */}
-        {paymentMethods.filter(pm => pm.type !== 'card').length > 0 && (
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></div>
-                其他支付方式
-              </h2>
-            </div>
-
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {paymentMethods.filter(pm => pm.type !== 'card').map((method) => (
-                  <div key={method.id} className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 border border-gray-300 dark:border-gray-600/50">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-gray-900 dark:text-white font-medium">{method.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getTypeLabel(method.type)}</div>
-                      </div>
-                      <button
-                        onClick={() => toggleActive(method.id, method.is_active)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          method.is_active
-                            ? 'bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30'
-                            : 'bg-slate-700/50 text-gray-700 dark:text-gray-400 border border-slate-600'
-                        }`}
-                      >
-                        {method.is_active ? '启用' : '禁用'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

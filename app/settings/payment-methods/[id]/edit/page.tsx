@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod } from '@/types/database.types';
+import type { PaymentMethod, PointsPlatform } from '@/types/database.types';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import { useCalculator } from '@/hooks/useCalculator';
@@ -16,14 +16,15 @@ export default function EditPaymentMethodPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    type: 'card' as 'card' | 'bank' | 'wallet',
     closing_day: '',
     payment_day: '',
     payment_same_month: false,
     point_rate: '',
+    card_points_platform_id: '',
     is_active: true,
   });
 
+  const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -40,6 +41,8 @@ export default function EditPaymentMethodPage() {
 
   useEffect(() => {
     loadPaymentMethod();
+    supabase.from('points_platforms').select('*').eq('is_active', true).order('display_name')
+      .then(({ data }) => setPointsPlatforms(data || []));
   }, [id]);
 
   const loadPaymentMethod = async () => {
@@ -54,11 +57,11 @@ export default function EditPaymentMethodPage() {
 
       setFormData({
         name: data.name,
-        type: data.type,
         closing_day: data.closing_day?.toString() || '',
         payment_day: data.payment_day?.toString() || '',
         payment_same_month: data.payment_same_month || false,
         point_rate: (data.point_rate * 100).toString(),
+        card_points_platform_id: data.card_points_platform_id || '',
         is_active: data.is_active,
       });
     } catch (error) {
@@ -79,11 +82,11 @@ export default function EditPaymentMethodPage() {
         .from('payment_methods')
         .update({
           name: formData.name,
-          type: formData.type,
           closing_day: formData.closing_day ? parseInt(formData.closing_day) : null,
           payment_day: formData.payment_day ? parseInt(formData.payment_day) : null,
           payment_same_month: formData.payment_same_month,
           point_rate: parseFloat(formData.point_rate) / 100,
+          card_points_platform_id: formData.card_points_platform_id || null,
           is_active: formData.is_active,
         })
         .eq('id', id);
@@ -138,24 +141,7 @@ export default function EditPaymentMethodPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  类型
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                >
-                  <option value="card">信用卡</option>
-                  <option value="bank">银行账户</option>
-                  <option value="wallet">电子钱包</option>
-                </select>
-              </div>
-
-              {formData.type === 'card' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         账单日
@@ -217,8 +203,25 @@ export default function EditPaymentMethodPage() {
                       placeholder="1.0"
                     />
                   </div>
-                </>
-              )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      信用卡积分平台
+                    </label>
+                    <select
+                      value={formData.card_points_platform_id}
+                      onChange={(e) => setFormData({ ...formData, card_points_platform_id: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    >
+                      <option value="">未设置</option>
+                      {pointsPlatforms.map((p) => (
+                        <option key={p.id} value={p.id}>{p.display_name}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      新建交易时自动关联此积分平台
+                    </p>
+                  </div>
 
               <div className="flex items-center">
                 <input

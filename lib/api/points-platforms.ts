@@ -35,12 +35,8 @@ export async function calculatePointsValue(
     return 0;
   }
 
-  const platform = await getPointsPlatformById(platformId);
-  if (!platform) {
-    return 0;
-  }
-
-  return points * platform.yen_conversion_rate;
+  // All points are 1:1 (1 point = 1 yen)
+  return points;
 }
 
 /**
@@ -60,10 +56,9 @@ export async function calculateTotalPointsValue(
   cardPointsValue: number;
   totalValue: number;
 }> {
-  const [platformValue, cardValue] = await Promise.all([
-    calculatePointsValue(platformPoints, platformPointsPlatformId),
-    calculatePointsValue(cardPoints, cardPointsPlatformId)
-  ]);
+  // All points are 1:1 (1 point = 1 yen)
+  const platformValue = platformPointsPlatformId ? platformPoints : 0;
+  const cardValue = cardPointsPlatformId ? cardPoints : 0;
 
   return {
     platformPointsValue: platformValue,

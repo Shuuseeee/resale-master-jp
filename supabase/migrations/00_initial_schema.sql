@@ -146,7 +146,6 @@ INSERT INTO points_platforms (name, display_name, yen_conversion_rate, descripti
   ('dpoint', 'd ポイント', 1.0, 'dポイント，1积分=1日元'),
   ('tpoint', 'T ポイント', 1.0, 'Tポイント，1积分=1日元'),
   ('ponta', 'Ponta ポイント', 1.0, 'Pontaポイント，1积分=1日元'),
-  ('generic_card_3to1', '信用卡积分 (3:1)', 0.3333, '通用信用卡积分，3积分=1日元'),
   ('generic_card_1to1', '信用卡积分 (1:1)', 1.0, '通用信用卡积分，1积分=1日元'),
   ('amazon', 'Amazon ポイント', 1.0, 'Amazonポイント，1积分=1日元')
 ON CONFLICT (name) DO NOTHING;
@@ -827,3 +826,25 @@ WITH CHECK (bucket_id = 'receipts');
 -- ============================================
 -- Schema setup complete!
 -- ============================================
+
+-- ============================================
+-- PART 5: 清理 generic_card_3to1 积分平台
+-- ============================================
+
+UPDATE payment_methods
+SET card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1)
+WHERE card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
+
+UPDATE transactions
+SET card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1)
+WHERE card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
+
+UPDATE transactions
+SET platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1)
+WHERE platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
+
+UPDATE transactions
+SET extra_platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1)
+WHERE extra_platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
+
+DELETE FROM points_platforms WHERE name = 'generic_card_3to1';

@@ -380,7 +380,9 @@ function AddTransactionPageContent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 提交表单
+  // 提交表单（continueAdding=true 时保存后继续添加）
+  const [continueAdding, setContinueAdding] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -400,7 +402,7 @@ function AddTransactionPageContent() {
       }
 
       // 插入交易记录
-      const { error } = await supabase
+      const { data: newRecord, error } = await supabase
         .from('transactions')
         .insert([
           {
@@ -423,13 +425,19 @@ function AddTransactionPageContent() {
 
       if (error) throw error;
 
-      // 成功后跳转
-      router.push('/transactions');
+      if (continueAdding && newRecord) {
+        // 继续添加：跳转到预填表单
+        router.push(`/transactions/add?copy=${newRecord.id}`);
+      } else {
+        // 默认：返回列表
+        router.push('/transactions');
+      }
     } catch (error: any) {
       console.error('保存失败:', error);
       setErrors({ submit: error.message || '保存失败,请重试' });
     } finally {
       setIsSubmitting(false);
+      setContinueAdding(false);
     }
   };
 
@@ -833,7 +841,7 @@ function AddTransactionPageContent() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>
@@ -878,7 +886,7 @@ function AddTransactionPageContent() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>
@@ -928,7 +936,7 @@ function AddTransactionPageContent() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>
@@ -1033,23 +1041,48 @@ function AddTransactionPageContent() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                保存中...
-              </span>
-            ) : (
-              '保存交易'
-            )}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isSubmitting && !continueAdding ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  保存中...
+                </span>
+              ) : (
+                '保存'
+              )}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => {
+                setContinueAdding(true);
+                // 通过 requestSubmit 触发表单提交（含验证）
+                const form = document.querySelector('form');
+                form?.requestSubmit();
+              }}
+              className="flex-1 py-4 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:bg-gray-400 text-teal-700 dark:text-teal-300 font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none border-2 border-teal-600 dark:border-teal-500"
+            >
+              {isSubmitting && continueAdding ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  保存中...
+                </span>
+              ) : (
+                '保存して続けて追加'
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

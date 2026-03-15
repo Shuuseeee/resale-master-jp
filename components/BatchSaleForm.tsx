@@ -16,9 +16,10 @@ interface BatchSaleFormProps {
   transaction: Transaction;
   onSuccess: () => void;
   onCancel: () => void;
+  onDataRefresh?: () => void;
 }
 
-export default function BatchSaleForm({ transaction, onSuccess, onCancel }: BatchSaleFormProps) {
+export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh }: BatchSaleFormProps) {
   const [formData, setFormData] = useState<SalesRecordFormData>({
     quantity_sold: 1,
     selling_price_per_unit: 0,
@@ -32,6 +33,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [successCount, setSuccessCount] = useState(0);
   const [sellingPlatforms, setSellingPlatforms] = useState<SellingPlatform[]>([]);
   const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
 
@@ -107,8 +109,20 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
         return;
       }
 
-      alert('销售记录已保存！');
-      onSuccess();
+      setSuccessCount(prev => prev + 1);
+
+      // 保留売却先、単価、費用，只清空数量和注文ID
+      setFormData(prev => ({
+        ...prev,
+        quantity_sold: 1,
+        sale_order_number: '',
+        notes: '',
+      }));
+
+      // 刷新父组件数据（更新库存显示等），但不关闭表单
+      if (onDataRefresh) {
+        onDataRefresh();
+      }
     } catch (err: any) {
       setError(err.message || '保存失败，请重试');
     } finally {
@@ -125,6 +139,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
         </p>
       </div>
+
+      {successCount > 0 && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+            已保存 {successCount} 条销售记录。売却先・単価・費用は前回の入力を保持しています。
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -288,11 +310,16 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={() => {
+            if (successCount > 0 && onDataRefresh) {
+              onDataRefresh();
+            }
+            onCancel();
+          }}
           disabled={submitting}
           className={button.secondary + ' flex-1'}
         >
-          取消
+          {successCount > 0 ? '完了' : '取消'}
         </button>
       </div>
     </form>

@@ -80,7 +80,7 @@ export default function TransactionDetailPage() {
     } catch (error) {
       console.error('加载交易详情失败:', error);
       alert('加载失败，请重试');
-      router.push('/transactions');
+      router.back();
     } finally {
       setLoading(false);
     }
@@ -180,7 +180,7 @@ export default function TransactionDetailPage() {
 
       if (error) throw error;
 
-      router.push('/transactions');
+      router.back();
     } catch (error) {
       console.error('删除失败:', error);
       alert('删除失败，请重试');
@@ -230,15 +230,15 @@ export default function TransactionDetailPage() {
       <div className="relative max-w-5xl mx-auto px-4 py-8">
         {/* 标题栏 */}
         <div className="mb-8">
-          <Link
-            href="/transactions"
+          <button
+            onClick={() => router.back()}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">返回交易列表</span>
-          </Link>
+            <span className="font-medium">返回</span>
+          </button>
 
           <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -496,6 +496,7 @@ export default function TransactionDetailPage() {
                 setShowBatchSaleForm(false);
                 loadTransaction();
               }}
+              onDataRefresh={loadTransaction}
               onCancel={() => setShowBatchSaleForm(false)}
             />
           </div>
@@ -514,6 +515,7 @@ export default function TransactionDetailPage() {
                 setShowSaleForm(false);
                 loadTransaction();
               }}
+              onDataRefresh={loadTransaction}
               onCancel={() => setShowSaleForm(false)}
             />
           </div>
@@ -672,9 +674,6 @@ export default function TransactionDetailPage() {
                     {transaction.platform_points_platform && (
                       <div className="text-right">
                         <div className="text-xs text-amber-600 dark:text-amber-300/90">{transaction.platform_points_platform.display_name}</div>
-                        <div className="text-sm text-amber-600 dark:text-amber-300 font-mono">
-                          ¥{((transaction.expected_platform_points || 0) * transaction.platform_points_platform.yen_conversion_rate).toFixed(2)}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -691,9 +690,6 @@ export default function TransactionDetailPage() {
                       {transaction.extra_platform_points_platform && (
                         <div className="text-right">
                           <div className="text-xs text-teal-700">{transaction.extra_platform_points_platform.display_name}</div>
-                          <div className="text-sm text-teal-700 font-mono">
-                            ¥{((transaction.extra_platform_points || 0) * transaction.extra_platform_points_platform.yen_conversion_rate).toFixed(2)}
-                          </div>
                         </div>
                       )}
                     </div>
@@ -710,9 +706,6 @@ export default function TransactionDetailPage() {
                     {transaction.card_points_platform && (
                       <div className="text-right">
                         <div className="text-xs text-teal-700 dark:text-teal-400/70">{transaction.card_points_platform.display_name}</div>
-                        <div className="text-sm text-teal-700 dark:text-teal-400 font-mono">
-                          ¥{((transaction.expected_card_points || 0) * transaction.card_points_platform.yen_conversion_rate).toFixed(2)}
-                        </div>
                       </div>
                     )}
                   </div>

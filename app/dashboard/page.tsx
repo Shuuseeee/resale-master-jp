@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { getDashboardStats } from '@/lib/api/financial';
-import type { UpcomingPayment } from '@/lib/api/financial';
 import {
   formatCurrency,
   daysUntil,
@@ -17,7 +16,6 @@ export default function DashboardPage() {
   const [inStockCount, setInStockCount] = useState(0);
   const [monthlyProfit, setMonthlyProfit] = useState(0);
   const [monthlySalesCount, setMonthlySalesCount] = useState(0);
-  const [upcomingPayments, setUpcomingPayments] = useState<UpcomingPayment[]>([]);
   const [expiringCoupons, setExpiringCoupons] = useState<any[]>([]);
   const [totalInvestment, setTotalInvestment] = useState(0);
   const [totalRecovered, setTotalRecovered] = useState(0);
@@ -37,7 +35,6 @@ export default function DashboardPage() {
       setInStockCount(data.inStockCount);
       setMonthlyProfit(data.monthlyProfit);
       setMonthlySalesCount(data.monthlySalesCount);
-      setUpcomingPayments(data.upcomingPayments);
       setExpiringCoupons(data.expiringCoupons);
       setTotalInvestment(data.totalInvestment);
       setTotalRecovered(data.totalRecovered);
@@ -188,58 +185,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 即将到期的支付 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-              支払い予定
-            </h2>
-
-            {upcomingPayments.length === 0 ? (
-              <div className="text-center py-8 text-gray-600 dark:text-gray-400">
-                <svg className="w-12 h-12 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <div>支払い予定はありません</div>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {upcomingPayments.map((payment, index) => {
-                  const days = daysUntil(payment.expected_payment_date);
-                  const urgency = getUrgencyLevel(payment.expected_payment_date);
-
-                  return (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-xl border ${urgencyColors[urgency]} transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="font-semibold">{payment.payment_method_name}</div>
-                          <div className="text-sm opacity-75">
-                            {payment.transaction_count} 件
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold">
-                            {formatCurrency(payment.total_amount)}
-                          </div>
-                          <div className="text-xs opacity-75">
-                            {days > 0 ? `${days}日後` : days === 0 ? '本日' : '期限超過'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-xs opacity-60">
-                        支払日: {payment.expected_payment_date}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           {/* 期限間近のクーポン */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="flex justify-between items-center mb-4">

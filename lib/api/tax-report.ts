@@ -92,27 +92,22 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
 }
 
 /**
- * 取引のポイント価値を計算（円換算）
+/**
+ * 取引のポイント価値を計算（円換算、all 1:1）
  */
 function calculatePointsValue(transaction: any): number {
   let totalPointsValue = 0;
 
-  // プラットフォームポイント価値
-  if (transaction.expected_platform_points && transaction.platform_points_platform) {
-    const rate = (transaction.platform_points_platform as any).yen_conversion_rate || 1.0;
-    totalPointsValue += transaction.expected_platform_points * rate;
+  if (transaction.expected_platform_points) {
+    totalPointsValue += transaction.expected_platform_points;
   }
 
-  // クレジットカードポイント価値
-  if (transaction.expected_card_points && transaction.card_points_platform) {
-    const rate = (transaction.card_points_platform as any).yen_conversion_rate || 1.0;
-    totalPointsValue += transaction.expected_card_points * rate;
+  if (transaction.expected_card_points) {
+    totalPointsValue += transaction.expected_card_points;
   }
 
-  // 追加プラットフォームポイント価値
-  if (transaction.extra_platform_points && transaction.extra_platform_points_platform) {
-    const rate = (transaction.extra_platform_points_platform as any).yen_conversion_rate || 1.0;
-    totalPointsValue += transaction.extra_platform_points * rate;
+  if (transaction.extra_platform_points) {
+    totalPointsValue += transaction.extra_platform_points;
   }
 
   return totalPointsValue;
@@ -148,40 +143,27 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
   try {
     const salesRecords = await getSalesRecordsByYear(year);
 
-    // 積分平台情報を取得
-    const { data: platforms } = await supabase
-      .from('points_platforms')
-      .select('*');
-
-    const platformsMap = new Map((platforms || []).map(p => [p.id, p]));
-
     const details: TaxReportDetail[] = salesRecords.map(record => {
       const transaction = record.transaction as any;
 
-      // 販売数量に応じたポイント価値を計算
+      // 販売数量に応じたポイント価値を計算（all 1:1）
       const pointsRatio = record.quantity_sold / (transaction?.quantity || 1);
 
       let pointsValue = 0;
 
       // プラットフォームポイント
       if (transaction?.expected_platform_points && transaction?.platform_points_platform_id) {
-        const platform = platformsMap.get(transaction.platform_points_platform_id);
-        const rate = platform?.yen_conversion_rate || 1.0;
-        pointsValue += (transaction.expected_platform_points * pointsRatio) * rate;
+        pointsValue += (transaction.expected_platform_points * pointsRatio);
       }
 
       // クレジットカードポイント
       if (transaction?.expected_card_points && transaction?.card_points_platform_id) {
-        const platform = platformsMap.get(transaction.card_points_platform_id);
-        const rate = platform?.yen_conversion_rate || 1.0;
-        pointsValue += (transaction.expected_card_points * pointsRatio) * rate;
+        pointsValue += (transaction.expected_card_points * pointsRatio);
       }
 
       // 追加プラットフォームポイント
       if (transaction?.extra_platform_points && transaction?.extra_platform_points_platform_id) {
-        const platform = platformsMap.get(transaction.extra_platform_points_platform_id);
-        const rate = platform?.yen_conversion_rate || 1.0;
-        pointsValue += (transaction.extra_platform_points * pointsRatio) * rate;
+        pointsValue += (transaction.extra_platform_points * pointsRatio);
       }
 
       // 購入価格を数量で按分

@@ -119,13 +119,8 @@ export async function createSalesRecord(
 async function getPointsValue(points: number, platformId: string | null): Promise<number> {
   if (!points || !platformId) return 0;
 
-  const { data } = await supabase
-    .from('points_platforms')
-    .select('yen_conversion_rate')
-    .eq('id', platformId)
-    .single();
-
-  return points * (data?.yen_conversion_rate || 1.0);
+  // All points are 1:1 (1 point = 1 yen)
+  return points;
 }
 
 /**

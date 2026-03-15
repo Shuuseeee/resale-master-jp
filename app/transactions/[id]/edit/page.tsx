@@ -125,7 +125,7 @@ export default function EditTransactionPage() {
     } catch (error) {
       console.error('加载交易失败:', error);
       alert('加载失败，请重试');
-      router.push('/transactions');
+      router.back();
     } finally {
       setLoading(false);
     }
@@ -805,7 +805,7 @@ export default function EditTransactionPage() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>
@@ -851,7 +851,7 @@ export default function EditTransactionPage() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>
@@ -902,7 +902,7 @@ export default function EditTransactionPage() {
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
                       <option key={platform.id} value={platform.id}>
-                        {platform.display_name} (¥{platform.yen_conversion_rate})
+                        {platform.display_name}
                       </option>
                     ))}
                   </select>

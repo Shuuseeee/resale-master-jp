@@ -51,12 +51,13 @@ function TransactionsContent() {
     const dateFrom = searchParams.get('df') || '';
     const dateTo = searchParams.get('dt') || '';
     const productName = searchParams.get('pn') || '';
+    const janCode = searchParams.get('jan') || '';
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodId = searchParams.get('pm') || '';
     const purchasePlatformId = searchParams.get('pp') || '';
-    if (dateFrom || dateTo || productName || status.length > 0 || paymentMethodId || purchasePlatformId) {
-      return { dateFrom, dateTo, productName, status, paymentMethodId, purchasePlatformId };
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodId || purchasePlatformId) {
+      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId };
     }
     return null;
   });
@@ -96,6 +97,7 @@ function TransactionsContent() {
       if (activeFilters.dateFrom) params.set('df', activeFilters.dateFrom);
       if (activeFilters.dateTo) params.set('dt', activeFilters.dateTo);
       if (activeFilters.productName) params.set('pn', activeFilters.productName);
+      if (activeFilters.janCode) params.set('jan', activeFilters.janCode);
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodId) params.set('pm', activeFilters.paymentMethodId);
       if (activeFilters.purchasePlatformId) params.set('pp', activeFilters.purchasePlatformId);
@@ -235,6 +237,11 @@ function TransactionsContent() {
 
         // 商品名称筛选
         if (activeFilters.productName && !t.product_name.toLowerCase().includes(activeFilters.productName.toLowerCase())) {
+          return false;
+        }
+
+        // JAN码筛选
+        if (activeFilters.janCode && (!t.jan_code || !t.jan_code.includes(activeFilters.janCode))) {
           return false;
         }
 
@@ -393,20 +400,20 @@ function TransactionsContent() {
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalCost)}</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+          <div className={card.stat + ' !p-3 sm:!p-6'}>
+            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">总成本</div>
+            <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(stats.totalCost)}</div>
           </div>
-          <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
-            <div className={`text-2xl font-bold ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
+          <div className={card.stat + ' !p-3 sm:!p-6'}>
+            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">总利润</div>
+            <div className={`text-base sm:text-2xl font-bold truncate ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
               {formatCurrency(stats.totalProfit)}
             </div>
           </div>
-          <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
-            <div className={`text-2xl font-bold ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
+          <div className={card.stat + ' !p-3 sm:!p-6'}>
+            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">平均ROI</div>
+            <div className={`text-base sm:text-2xl font-bold truncate ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
               {formatROI(stats.avgROI)}
             </div>
           </div>

@@ -4,36 +4,6 @@
 import { supabase } from '@/lib/supabase/client';
 
 /**
- * 即将到期的支付
- */
-export interface UpcomingPayment {
-  payment_method_name: string;
-  expected_payment_date: string;
-  total_amount: number;
-  transaction_count: number;
-  payment_method_id: string;
-}
-
-/**
- * 获取即将到期的支付
- * @param days 未来天数(默认30天)
- */
-export async function getUpcomingPayments(days: number = 30): Promise<UpcomingPayment[]> {
-  const { data, error } = await supabase
-    .from('upcoming_payments')
-    .select('*')
-    .lte('expected_payment_date', new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-    .order('expected_payment_date', { ascending: true });
-
-  if (error) {
-    console.error('获取即将到期的支付失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
  * 获取即将过期的优惠券
  * @param days 未来天数(默认3天)
  */
@@ -144,7 +114,6 @@ export async function getDashboardStats(): Promise<{
   inStockCount: number;
   monthlyProfit: number;
   monthlySalesCount: number;
-  upcomingPayments: UpcomingPayment[];
   expiringCoupons: any[];
   totalInvestment: number;
   totalRecovered: number;
@@ -156,14 +125,12 @@ export async function getDashboardStats(): Promise<{
     inStockCount,
     monthlyProfit,
     monthlySalesCount,
-    upcomingPayments,
     expiringCoupons,
     kpiData,
   ] = await Promise.all([
     getInStockCount(),
     getMonthlyProfit(),
     getMonthlySalesCount(),
-    getUpcomingPayments(30),
     getExpiringCoupons(3),
     getDashboardKPI(),
   ]);
@@ -172,7 +139,6 @@ export async function getDashboardStats(): Promise<{
     inStockCount,
     monthlyProfit,
     monthlySalesCount,
-    upcomingPayments,
     expiringCoupons,
     ...kpiData,
   };
