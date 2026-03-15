@@ -3,13 +3,14 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
-import type { Transaction, SalesRecordFormData } from '@/types/database.types';
+import { useState, useRef, useEffect } from 'react';
+import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
 import { useCalculator } from '@/hooks/useCalculator';
+import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 
 interface BatchSaleFormProps {
   transaction: Transaction;
@@ -24,11 +25,15 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
     platform_fee: 0,
     shipping_fee: 0,
     sale_date: new Date().toISOString().split('T')[0],
+    selling_platform_id: '',
+    sale_order_number: '',
     notes: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [sellingPlatforms, setSellingPlatforms] = useState<SellingPlatform[]>([]);
+  const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
 
   // Calculator refs
   const quantitySoldRef = useRef<HTMLInputElement>(null);
@@ -41,6 +46,21 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
   useCalculator(sellingPriceRef);
   useCalculator(platformFeeRef);
   useCalculator(shippingFeeRef);
+
+  useEffect(() => {
+    getSellingPlatforms().then(setSellingPlatforms);
+  }, []);
+
+  const handleAddSellingPlatform = async () => {
+    const name = newSellingPlatformName.trim();
+    if (!name) return;
+    const created = await createSellingPlatform(name);
+    if (created) {
+      setSellingPlatforms(prev => [...prev, created]);
+      setFormData(prev => ({ ...prev, selling_platform_id: created.id }));
+      setNewSellingPlatformName('');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,8 +120,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
+      <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4">
+        <p className="text-sm text-teal-800 dark:text-teal-300">
           当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
         </p>
       </div>
@@ -193,6 +213,56 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel }: Batc
           onChange={(date) => setFormData({ ...formData, sale_date: date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] })}
           placeholder="选择销售日期"
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            販売先
+          </label>
+          <select
+            value={formData.selling_platform_id || ''}
+            onChange={(e) => setFormData({ ...formData, selling_platform_id: e.target.value })}
+            className={input.base}
+          >
+            <option value="">選択してください</option>
+            {sellingPlatforms.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}{p.is_builtin ? '' : ' (カスタム)'}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newSellingPlatformName}
+              onChange={(e) => setNewSellingPlatformName(e.target.value)}
+              placeholder="新しい販売先を追加..."
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+            />
+            <button
+              type="button"
+              onClick={handleAddSellingPlatform}
+              disabled={!newSellingPlatformName.trim()}
+              className="px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+            >
+              追加
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            販売注文番号
+          </label>
+          <input
+            type="text"
+            value={formData.sale_order_number || ''}
+            onChange={(e) => setFormData({ ...formData, sale_order_number: e.target.value })}
+            className={input.base}
+            placeholder="注文番号"
+          />
+        </div>
       </div>
 
       <div>

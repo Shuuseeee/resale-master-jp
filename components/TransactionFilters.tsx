@@ -11,26 +11,34 @@ export interface FilterValues {
   dateFrom: string;
   dateTo: string;
   productName: string;
-  status: ('in_stock' | 'sold' | 'returned')[];
+  status: ('pending' | 'in_stock' | 'sold' | 'returned')[];
   paymentMethodId: string;
+  purchasePlatformId: string;
 }
 
 interface TransactionFiltersProps {
   onApply: (filters: FilterValues) => void;
   onClear: () => void;
   paymentMethods: Array<{ id: string; name: string }>;
+  purchasePlatforms?: Array<{ id: string; name: string }>;
+  initialValues?: FilterValues | null;
 }
 
-export default function TransactionFilters({ onApply, onClear, paymentMethods }: TransactionFiltersProps) {
-  const [filters, setFilters] = useState<FilterValues>({
-    dateFrom: '',
-    dateTo: '',
-    productName: '',
-    status: [],
-    paymentMethodId: '',
-  });
+export default function TransactionFilters({ onApply, onClear, paymentMethods, purchasePlatforms, initialValues }: TransactionFiltersProps) {
+  const hasInitialValues = initialValues && (initialValues.dateFrom || initialValues.dateTo || initialValues.productName || initialValues.status.length > 0 || initialValues.paymentMethodId || initialValues.purchasePlatformId);
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [filters, setFilters] = useState<FilterValues>(
+    initialValues || {
+      dateFrom: '',
+      dateTo: '',
+      productName: '',
+      status: [],
+      paymentMethodId: '',
+      purchasePlatformId: '',
+    }
+  );
+
+  const [isExpanded, setIsExpanded] = useState(!!hasInitialValues);
 
   const handleApply = () => {
     onApply(filters);
@@ -43,11 +51,12 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
       productName: '',
       status: [],
       paymentMethodId: '',
+      purchasePlatformId: '',
     });
     onClear();
   };
 
-  const toggleStatus = (status: 'in_stock' | 'sold' | 'returned') => {
+  const toggleStatus = (status: 'pending' | 'in_stock' | 'sold' | 'returned') => {
     setFilters(prev => ({
       ...prev,
       status: prev.status.includes(status)
@@ -56,7 +65,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
     }));
   };
 
-  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.productName || filters.status.length > 0 || filters.paymentMethodId;
+  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.productName || filters.status.length > 0 || filters.paymentMethodId || filters.purchasePlatformId;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg mb-6">
@@ -72,7 +81,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             筛选器
             {hasActiveFilters && (
-              <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">
+              <span className="ml-2 text-sm text-teal-600 dark:text-teal-400">
                 (已应用)
               </span>
             )}
@@ -131,13 +140,22 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               状态
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.status.includes('pending')}
+                  onChange={() => toggleStatus('pending')}
+                  className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">未着</span>
+              </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.status.includes('in_stock')}
                   onChange={() => toggleStatus('in_stock')}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">库存中</span>
               </label>
@@ -146,7 +164,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
                   type="checkbox"
                   checked={filters.status.includes('sold')}
                   onChange={() => toggleStatus('sold')}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">已售出</span>
               </label>
@@ -155,7 +173,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
                   type="checkbox"
                   checked={filters.status.includes('returned')}
                   onChange={() => toggleStatus('returned')}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">已退货</span>
               </label>
@@ -178,6 +196,25 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods }:
               ))}
             </select>
           </div>
+
+          {/* 購入先 */}
+          {purchasePlatforms && purchasePlatforms.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                購入先
+              </label>
+              <select
+                value={filters.purchasePlatformId}
+                onChange={(e) => setFilters({ ...filters, purchasePlatformId: e.target.value })}
+                className={input.base}
+              >
+                <option value="">全部</option>
+                {purchasePlatforms.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* 操作按钮 */}
           <div className="flex gap-3 pt-2">

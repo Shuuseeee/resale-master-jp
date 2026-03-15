@@ -256,7 +256,7 @@ export default function CouponsPage() {
                     </div>
 
                     <div className="mb-3">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                      <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mb-1">
                         {getDiscountLabel(coupon)}
                       </div>
                       {coupon.min_purchase_amount > 0 && (
@@ -295,7 +295,7 @@ export default function CouponsPage() {
                       {!coupon.is_used && !isExpired && (
                         <button
                           onClick={() => markAsUsed(coupon.id)}
-                          className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                          className="flex-1 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors"
                         >
                           标记已使用
                         </button>

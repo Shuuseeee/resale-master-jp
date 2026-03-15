@@ -17,6 +17,15 @@ const config: Config = {
       '2xl': '1536px', // 大屏桌面
     },
     extend: {
+      // Ocean Depths 主题色
+      colors: {
+        ocean: {
+          navy: '#1a2332',
+          teal: '#2d8b8b',
+          seafoam: '#a8dadc',
+          cream: '#f1faee',
+        },
+      },
       // 动画
       animation: {
         'pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

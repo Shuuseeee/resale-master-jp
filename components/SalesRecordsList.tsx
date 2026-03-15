@@ -4,19 +4,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { SalesRecord } from '@/types/database.types';
-import { getSalesRecords, deleteSalesRecord } from '@/lib/api/sales-records';
+import type { SalesRecord, Transaction } from '@/types/database.types';
+import { getSalesRecords, deleteSalesRecord, updateSalesRecord } from '@/lib/api/sales-records';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { card, button, badge, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
-import { supabase } from '@/lib/supabase/client';
 
 interface SalesRecordsListProps {
   transactionId: string;
+  transaction: Transaction;
   onUpdate: () => void;
 }
 
-export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecordsListProps) {
+export default function SalesRecordsList({ transactionId, transaction, onUpdate }: SalesRecordsListProps) {
   const [records, setRecords] = useState<SalesRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState<SalesRecord | null>(null);
@@ -61,18 +61,22 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
     }
 
     try {
-      // 更新销售记录（不重新计算利润，因为数量和价格没变）
-      const { error } = await supabase
-        .from('sales_records')
-        .update({
-          sale_date: editFormData.sale_date,
-          quantity_sold: editFormData.quantity_sold,
-          selling_price_per_unit: editFormData.selling_price_per_unit,
-          platform_fee: editFormData.platform_fee,
-          shipping_fee: editFormData.shipping_fee,
-          notes: editFormData.notes,
-        })
-        .eq('id', editingRecord.id);
+      const { error } = await updateSalesRecord(
+        editingRecord.id,
+        editFormData,
+        {
+          purchase_price_total: transaction.purchase_price_total,
+          point_paid: transaction.point_paid,
+          quantity: transaction.quantity,
+          expected_platform_points: transaction.expected_platform_points,
+          expected_card_points: transaction.expected_card_points,
+          extra_platform_points: transaction.extra_platform_points,
+          platform_points_platform_id: transaction.platform_points_platform_id,
+          card_points_platform_id: transaction.card_points_platform_id,
+          extra_platform_points_platform_id: transaction.extra_platform_points_platform_id,
+          date: transaction.date,
+        }
+      );
 
       if (error) throw error;
 
@@ -247,6 +251,17 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                   <div className="text-lg font-semibold text-gray-900 dark:text-white">
                     售出 {record.quantity_sold} 个
                   </div>
+                  {(record as any).selling_platform && (
+                    <div className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
+                      {(record as any).selling_platform.name}
+                      {record.sale_order_number && ` · ${record.sale_order_number}`}
+                    </div>
+                  )}
+                  {!(record as any).selling_platform && record.sale_order_number && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      注文: {record.sale_order_number}
+                    </div>
+                  )}
                   {!record.sale_date && (
                     <div className="text-xs text-amber-500 mt-1">
                       ⚠️ 请编辑此记录补充销售日期
@@ -256,7 +271,7 @@ export default function SalesRecordsList({ transactionId, onUpdate }: SalesRecor
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(record)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+                    className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm"
                   >
                     编辑
                   </button>

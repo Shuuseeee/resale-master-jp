@@ -5,11 +5,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
-import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform } from '@/types/database.types';
+import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform, PurchasePlatform } from '@/types/database.types';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { useCalculator } from '@/hooks/useCalculator';
+import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
+import { parseNumberInput } from '@/lib/number-utils';
 
 export default function EditTransactionPage() {
   const router = useRouter();
@@ -31,6 +33,10 @@ export default function EditTransactionPage() {
     platform_points_platform_id: '',
     card_points_platform_id: '',
     extra_platform_points_platform_id: '',
+    jan_code: '',
+    unit_price: 0,
+    purchase_platform_id: '',
+    order_number: '',
     image_url: '',
     notes: '',
   });
@@ -38,12 +44,15 @@ export default function EditTransactionPage() {
   // UI 状态
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
+  const [purchasePlatforms, setPurchasePlatforms] = useState<PurchasePlatform[]>([]);
+  const [newPurchasePlatformName, setNewPurchasePlatformName] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [isPending, setIsPending] = useState(false); // 未着品トグル
 
   // Calculator refs
   const purchasePriceRef = useRef<HTMLInputElement>(null);
@@ -52,6 +61,7 @@ export default function EditTransactionPage() {
   const platformPointsRef = useRef<HTMLInputElement>(null);
   const extraPointsRef = useRef<HTMLInputElement>(null);
   const cardPointsRef = useRef<HTMLInputElement>(null);
+  const unitPriceRef = useRef<HTMLInputElement>(null);
 
   // Initialize calculator for each numeric input
   useCalculator(purchasePriceRef);
@@ -60,12 +70,14 @@ export default function EditTransactionPage() {
   useCalculator(platformPointsRef);
   useCalculator(extraPointsRef);
   useCalculator(cardPointsRef);
+  useCalculator(unitPriceRef);
 
   // 加载交易数据和支付方式列表
   useEffect(() => {
     loadTransaction();
     fetchPaymentMethods();
     fetchPointsPlatforms();
+    fetchPurchasePlatforms();
   }, [id]);
 
   const loadTransaction = async () => {
@@ -81,6 +93,7 @@ export default function EditTransactionPage() {
 
       if (data) {
         setTransaction(data); // 保存完整的交易数据
+        setIsPending(data.status === 'pending'); // 设置未着品状态
         setFormData({
           date: data.date,
           product_name: data.product_name,
@@ -96,6 +109,10 @@ export default function EditTransactionPage() {
           platform_points_platform_id: data.platform_points_platform_id || '',
           card_points_platform_id: data.card_points_platform_id || '',
           extra_platform_points_platform_id: data.extra_platform_points_platform_id || '',
+          jan_code: data.jan_code || '',
+          unit_price: data.unit_price || 0,
+          purchase_platform_id: data.purchase_platform_id || '',
+          order_number: data.order_number || '',
           image_url: data.image_url || '',
           notes: data.notes || '',
         });
@@ -142,6 +159,22 @@ export default function EditTransactionPage() {
     }
 
     setPointsPlatforms(data || []);
+  };
+
+  const fetchPurchasePlatforms = async () => {
+    const data = await getPurchasePlatforms();
+    setPurchasePlatforms(data);
+  };
+
+  const handleAddPurchasePlatform = async () => {
+    const name = newPurchasePlatformName.trim();
+    if (!name) return;
+    const created = await createPurchasePlatform(name);
+    if (created) {
+      setPurchasePlatforms(prev => [...prev, created]);
+      setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
+      setNewPurchasePlatformName('');
+    }
   };
 
   // 处理输入变化
@@ -314,9 +347,7 @@ export default function EditTransactionPage() {
       }
 
       // 更新交易记录
-      const { error } = await supabase
-        .from('transactions')
-        .update({
+      const updateData: Record<string, any> = {
           date: formData.date,
           product_name: formData.product_name,
           purchase_price_total: formData.purchase_price_total,
@@ -330,9 +361,22 @@ export default function EditTransactionPage() {
           platform_points_platform_id: formData.platform_points_platform_id || null,
           card_points_platform_id: formData.card_points_platform_id || null,
           extra_platform_points_platform_id: formData.extra_platform_points_platform_id || null,
+          jan_code: formData.jan_code || null,
+          unit_price: formData.unit_price || null,
+          purchase_platform_id: formData.purchase_platform_id || null,
+          order_number: formData.order_number || null,
           image_url: imageUrl,
           notes: formData.notes,
-        })
+      };
+
+      // 只有当前状态是 pending 或 in_stock 时才允许切换
+      if (transaction && (transaction.status === 'pending' || transaction.status === 'in_stock') && transaction.quantity_sold === 0) {
+        updateData.status = isPending ? 'pending' : 'in_stock';
+      }
+
+      const { error } = await supabase
+        .from('transactions')
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
@@ -388,7 +432,7 @@ export default function EditTransactionPage() {
             {/* 基本信息 */}
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
                 基本信息
               </h2>
 
@@ -405,7 +449,7 @@ export default function EditTransactionPage() {
                         date: date ? date.toISOString().split('T')[0] : ''
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -419,7 +463,7 @@ export default function EditTransactionPage() {
                     value={formData.product_name}
                     onChange={handleInputChange}
                     placeholder="例: Nintendo Switch OLED"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     required
                   />
                   {errors.product_name && (
@@ -438,7 +482,7 @@ export default function EditTransactionPage() {
                     onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
                     min="1"
                     disabled={!!(transaction && transaction.quantity_sold > 0)}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                   {transaction && transaction.quantity_sold > 0 && (
@@ -446,6 +490,144 @@ export default function EditTransactionPage() {
                       该商品已售出 {transaction.quantity_sold} 件，无法修改总数量
                     </p>
                   )}
+                </div>
+
+                {/* 未着品トグル - 只有 pending/in_stock 且未售出时可切换 */}
+                {transaction && (transaction.status === 'pending' || transaction.status === 'in_stock') && transaction.quantity_sold === 0 && (
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        未着品（未到着）
+                      </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        商品がまだ届いていない場合���ONにしてください
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isPending}
+                      onClick={() => setIsPending(!isPending)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isPending ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isPending ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 購入情報 */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+            <div className="space-y-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                購入情報
+              </h2>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    JANコード
+                  </label>
+                  <input
+                    type="text"
+                    name="jan_code"
+                    value={formData.jan_code || ''}
+                    onChange={handleInputChange}
+                    placeholder="4901234567890"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    注文番号
+                  </label>
+                  <input
+                    type="text"
+                    name="order_number"
+                    value={formData.order_number || ''}
+                    onChange={handleInputChange}
+                    placeholder="注文番号"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  単価 (¥)
+                </label>
+                <div className="relative">
+                  <input
+                    ref={unitPriceRef}
+                    type="text"
+                    inputMode="decimal"
+                    name="unit_price"
+                    value={formData.unit_price || ''}
+                    onChange={(e) => {
+                      const val = parseNumberInput(e.target.value, 0);
+                      const qty = formData.quantity || 1;
+                      setFormData(prev => ({
+                        ...prev,
+                        unit_price: val,
+                        purchase_price_total: Math.round(val * qty * 100) / 100,
+                        balance_paid: calculateBalancePaid(Math.round(val * qty * 100) / 100, prev.card_paid, prev.point_paid),
+                      }));
+                    }}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  入力すると採購総価が自動計算されます（単価 × 数量）
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  購入先
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    name="purchase_platform_id"
+                    value={formData.purchase_platform_id || ''}
+                    onChange={handleInputChange}
+                    className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">選択してください</option>
+                    {purchasePlatforms.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}{p.is_builtin ? '' : ' (カスタム)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={newPurchasePlatformName}
+                    onChange={(e) => setNewPurchasePlatformName(e.target.value)}
+                    placeholder="新しい購入先を追加..."
+                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPurchasePlatform}
+                    disabled={!newPurchasePlatformName.trim()}
+                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+                  >
+                    追加
+                  </button>
                 </div>
               </div>
             </div>
@@ -509,7 +691,7 @@ export default function EditTransactionPage() {
                         max={formData.purchase_price_total}
                         placeholder="0.00"
                         ref={cardPaidRef}
-                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                     </div>
@@ -517,7 +699,7 @@ export default function EditTransactionPage() {
                       name="card_id"
                       value={formData.card_id}
                       onChange={handleInputChange}
-                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       disabled={formData.card_paid === 0}
                     >
                       <option value="">选择卡片</option>
@@ -549,7 +731,7 @@ export default function EditTransactionPage() {
                       max={formData.purchase_price_total}
                       placeholder="0.00"
                       ref={pointPaidRef}
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
@@ -650,7 +832,7 @@ export default function EditTransactionPage() {
                       min="0"
                       placeholder="0"
                       ref={extraPointsRef}
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -664,7 +846,7 @@ export default function EditTransactionPage() {
                     value={formData.extra_platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -700,7 +882,7 @@ export default function EditTransactionPage() {
                       min="0"
                       placeholder="0"
                       ref={cardPointsRef}
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -715,7 +897,7 @@ export default function EditTransactionPage() {
                     value={formData.card_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_card_points === 0 || !formData.card_id}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -803,7 +985,7 @@ export default function EditTransactionPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-teal-400 to-teal-500 rounded-full"></div>
                 备注
               </h2>
 
@@ -813,7 +995,7 @@ export default function EditTransactionPage() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="添加备注信息..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
               />
             </div>
           </div>
@@ -829,7 +1011,7 @@ export default function EditTransactionPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">

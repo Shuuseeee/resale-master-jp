@@ -23,6 +23,8 @@ export interface TaxReportDetail {
   pointsReward: number; // ポイント還元（円換算）
   cashProfit: number; // 現金利益
   totalProfit: number; // 総利益（ポイント含む）
+  purchasePlatformName: string; // 購入先
+  sellingPlatformName: string; // 販売先
   notes: string;
 }
 
@@ -56,6 +58,7 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
       .from('sales_records')
       .select(`
         *,
+        selling_platform:selling_platform_id(name),
         transaction:transaction_id(
           id,
           date,
@@ -69,6 +72,8 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
           platform_points_platform_id,
           card_points_platform_id,
           extra_platform_points_platform_id,
+          purchase_platform_id,
+          purchase_platform:purchase_platform_id(name),
           notes
         )
       `)
@@ -199,6 +204,8 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
         pointsReward: pointsValue,
         cashProfit: record.cash_profit || 0,
         totalProfit: record.total_profit || 0,
+        purchasePlatformName: (transaction?.purchase_platform as any)?.name || '',
+        sellingPlatformName: (record.selling_platform as any)?.name || '',
         notes: record.notes || transaction?.notes || '',
       };
     });

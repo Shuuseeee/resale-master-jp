@@ -26,6 +26,8 @@ import {
   getPlatformAnalysis,
   getCostStructure,
   getAllPaymentMethods,
+  getPurchasePlatformAnalysis,
+  getSellingPlatformAnalysis,
   type TimeRange,
   type AnalyticsFilters,
   type TrendDataPoint,
@@ -34,6 +36,8 @@ import {
   type PlatformAnalysis,
   type CostStructure,
   type PaymentMethodFilter,
+  type PurchasePlatformAnalysis,
+  type SellingPlatformAnalysis,
 } from '@/lib/api/analytics';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { layout, heading, card, button, badge, input } from '@/lib/theme';
@@ -54,6 +58,8 @@ export default function AnalyticsPage() {
   const [paymentMethodData, setPaymentMethodData] = useState<PaymentMethodAnalysis[]>([]);
   const [platformData, setPlatformData] = useState<PlatformAnalysis[]>([]);
   const [costStructure, setCostStructure] = useState<CostStructure | null>(null);
+  const [purchasePlatformData, setPurchasePlatformData] = useState<PurchasePlatformAnalysis[]>([]);
+  const [sellingPlatformData, setSellingPlatformData] = useState<SellingPlatformAnalysis[]>([]);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -78,12 +84,14 @@ export default function AnalyticsPage() {
         paymentMethods: selectedPaymentMethods.length > 0 ? selectedPaymentMethods : undefined,
       };
 
-      const [trend, comp, payment, platform, cost] = await Promise.all([
+      const [trend, comp, payment, platform, cost, purchasePlatform, sellingPlatform] = await Promise.all([
         getTrendData(filters),
         getComparisonMetrics(filters),
         getPaymentMethodAnalysis(filters),
         getPlatformAnalysis(filters),
         getCostStructure(filters),
+        getPurchasePlatformAnalysis(filters),
+        getSellingPlatformAnalysis(filters),
       ]);
 
       setTrendData(trend);
@@ -91,6 +99,8 @@ export default function AnalyticsPage() {
       setPaymentMethodData(payment);
       setPlatformData(platform);
       setCostStructure(cost);
+      setPurchasePlatformData(purchasePlatform);
+      setSellingPlatformData(sellingPlatform);
     } catch (error) {
       console.error('加载分析数据失败:', error);
     } finally {
@@ -168,7 +178,7 @@ export default function AnalyticsPage() {
                     onClick={() => setTimeRange(range)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       timeRange === range
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -218,7 +228,7 @@ export default function AnalyticsPage() {
                     onClick={() => togglePaymentMethod(method.id)}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                       selectedPaymentMethods.includes(method.id)
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -553,6 +563,153 @@ export default function AnalyticsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* 购入平台和出手平台分析 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* 购入平台分析 */}
+          <div className={card.primary + ' p-6'}>
+            <h2 className={heading.h3 + ' mb-4'}>购入平台分析</h2>
+            {purchasePlatformData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={purchasePlatformData}
+                      dataKey="totalCost"
+                      nameKey="platformName"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={(entry: any) => `${entry.platformName} (${entry.percentage.toFixed(1)}%)`}
+                    >
+                      {purchasePlatformData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #374151',
+                        borderRadius: '0.5rem',
+                        color: '#f3f4f6',
+                      }}
+                      formatter={(value) => formatCurrency(value as number)}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                {/* 购入平台详细列表 */}
+                <div className="mt-4 space-y-2">
+                  {purchasePlatformData.map((platform, index) => (
+                    <div
+                      key={platform.platformId}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {platform.platformName}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {platform.transactionCount} 笔交易
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(platform.totalCost)}
+             </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          ROI: {formatROI(platform.avgROI)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                暂无购入平台数据
+              </div>
+            )}
+          </div>
+
+          {/* 出手平台分析 */}
+          <div className={card.primary + ' p-6'}>
+            <h2 className={heading.h3 + ' mb-4'}>出手平台分析</h2>
+            {sellingPlatformData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={sellingPlatformData}
+                      dataKey="totalSales"
+                      nameKey="platformName"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={(entry: any) => `${entry.platformName} (${entry.percentage.toFixed(1)}%)`}
+                    >
+                      {sellingPlatformData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #374151',
+                        borderRadius: '0.5rem',
+                        color: '#f3f4f6',
+                      }}
+                      formatter={(value) => formatCurrency(value as number)}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                {/* ��手平台详细列表 */}
+                <div className="mt-4 space-y-2">
+                  {sellingPlatformData.map((platform, index) => (
+                    <div
+                      key={platform.platformId}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {platform.platformName}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {platform.transactionCount} 笔交易
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(platform.totalSales)}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          ROI: {formatROI(platform.avgROI)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                暂无出手平台数据
+              </div>
+            )}
           </div>
         </div>
 

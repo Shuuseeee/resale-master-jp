@@ -190,7 +190,7 @@ export function Calculator() {
             <CalcButton onClick={() => handleNumber('3')}>3</CalcButton>
             <button
               onClick={handleEquals}
-              className="row-span-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg font-medium transition-colors text-xl"
+              className="row-span-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-lg font-medium transition-colors text-xl"
             >
               =
             </button>

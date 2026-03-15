@@ -1,42 +1,30 @@
 -- ============================================
 -- 00_initial_schema.sql
--- Complete database schema definition
+-- Complete database schema (consolidated)
 -- ============================================
--- This file represents the final state of the database schema.
--- It consolidates all incremental migrations into a single file
--- suitable for deploying to new environments.
+-- This file represents the FINAL state of the database schema.
+-- It is suitable for deploying to new environments from scratch.
 --
--- This migration includes:
--- 0. Base tables (bank_accounts, payment_methods, transactions, coupons, supplies_costs, fixed_costs)
--- 1. User authentication and RLS (Row Level Security)
--- 2. Points platforms system + views (pending_points, financial_water_level, upcoming_payments)
--- 3. ROI and profit calculation
--- 4. Storage bucket for receipts
--- 5. Batch inventory management
+-- Tables:
+--   payment_methods, transactions, coupons, supplies_costs, fixed_costs,
+--   points_platforms, purchase_platforms, selling_platforms,
+--   sales_records, return_records
+--
+-- Views:
+--   upcoming_payments
+--
+-- Key triggers:
+--   set_user_id() - auto-set user_id on insert
+--   update_transaction_quantity_sold() - sync quantity_sold from sales_records
+--   update_transaction_status() - auto-manage in_stock/sold status
+--   update_transaction_quantity_returned() - sync quantity_returned from return_records
 -- ============================================
 
 -- ============================================
--- PART 0: Create Base Tables
+-- PART 1: Base Tables
 -- ============================================
--- These tables must exist before any ALTER TABLE statements.
--- Uses IF NOT EXISTS so it is safe to re-run on existing environments.
 
--- 0.1 bank_accounts
--- --------------------------------------------
-CREATE TABLE IF NOT EXISTS bank_accounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  account_type TEXT NOT NULL DEFAULT 'checking' CHECK (account_type IN ('checking', 'savings', 'wallet')),
-  current_balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
-  currency TEXT NOT NULL DEFAULT 'JPY',
-  notes TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 0.2 payment_methods
--- --------------------------------------------
+-- 1.1 payment_methods
 CREATE TABLE IF NOT EXISTS payment_methods (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -50,39 +38,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 0.3 transactions
--- --------------------------------------------
-CREATE TABLE IF NOT EXISTS transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  date DATE NOT NULL DEFAULT CURRENT_DATE,
-  product_name TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'in_stock' CHECK (status IN ('in_stock', 'sold', 'returned')),
-  purchase_price_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  card_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  point_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  balance_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  card_id UUID REFERENCES payment_methods(id),
-  selling_price NUMERIC(10, 2),
-  platform_fee NUMERIC(10, 2) DEFAULT 0,
-  shipping_fee NUMERIC(10, 2) DEFAULT 0,
-  cash_profit NUMERIC(10, 2),
-  roi NUMERIC(10, 2),
-  expected_platform_points NUMERIC(10, 2) DEFAULT 0,
-  expected_card_points NUMERIC(10, 2) DEFAULT 0,
-  point_status TEXT NOT NULL DEFAULT 'pending' CHECK (point_status IN ('pending', 'received', 'expired')),
-  expected_payment_date DATE,
-  image_url TEXT,
-  notes TEXT,
-  return_date DATE,
-  return_amount NUMERIC(10, 2),
-  return_notes TEXT,
-  points_deducted NUMERIC(10, 2),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 0.4 coupons
--- --------------------------------------------
+-- 1.2 coupons
 CREATE TABLE IF NOT EXISTS coupons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -98,8 +54,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 0.5 supplies_costs
--- --------------------------------------------
+-- 1.3 supplies_costs
 CREATE TABLE IF NOT EXISTS supplies_costs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -133,8 +88,7 @@ USING (auth.uid() = user_id);
 CREATE INDEX IF NOT EXISTS idx_supplies_costs_user_id ON supplies_costs(user_id);
 CREATE INDEX IF NOT EXISTS idx_supplies_costs_purchase_date ON supplies_costs(purchase_date);
 
--- 0.6 fixed_costs
--- --------------------------------------------
+-- 1.4 fixed_costs
 CREATE TABLE IF NOT EXISTS fixed_costs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -171,14 +125,261 @@ USING (auth.uid() = user_id);
 CREATE INDEX IF NOT EXISTS idx_fixed_costs_user_id ON fixed_costs(user_id);
 
 -- ============================================
--- PART 1: User Authentication and RLS
+-- PART 2: Points Platforms
 -- ============================================
 
--- 1.1 Add user_id columns to existing tables
--- --------------------------------------------
-ALTER TABLE bank_accounts
-ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+CREATE TABLE IF NOT EXISTS points_platforms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  yen_conversion_rate NUMERIC(10, 4) NOT NULL DEFAULT 1.0,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
+INSERT INTO points_platforms (name, display_name, yen_conversion_rate, description) VALUES
+  ('paypay', 'PayPay ポイント', 1.0, 'PayPay积分，1积分=1日元'),
+  ('vpoint', 'V ポイント', 1.0, '三井住友V Point，1积分=1日元'),
+  ('rakuten', '楽天ポイント', 1.0, '楽天积分，1积分=1日元'),
+  ('dpoint', 'd ポイント', 1.0, 'dポイント，1积分=1日元'),
+  ('tpoint', 'T ポイント', 1.0, 'Tポイント，1积分=1日元'),
+  ('ponta', 'Ponta ポイント', 1.0, 'Pontaポイント，1积分=1日元'),
+  ('generic_card_3to1', '信用卡积分 (3:1)', 0.3333, '通用信用卡积分，3积分=1日元'),
+  ('generic_card_1to1', '信用卡积分 (1:1)', 1.0, '通用信用卡积分，1积分=1日元'),
+  ('amazon', 'Amazon ポイント', 1.0, 'Amazonポイント，1积分=1日元')
+ON CONFLICT (name) DO NOTHING;
+
+ALTER TABLE points_platforms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view points platforms"
+  ON points_platforms
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE OR REPLACE FUNCTION update_points_platforms_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_points_platforms_updated_at
+  BEFORE UPDATE ON points_platforms
+  FOR EACH ROW
+  EXECUTE FUNCTION update_points_platforms_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_points_platforms_name ON points_platforms(name);
+CREATE INDEX IF NOT EXISTS idx_points_platforms_active ON points_platforms(is_active);
+
+-- Add points platform FK to payment_methods
+ALTER TABLE payment_methods
+ADD COLUMN IF NOT EXISTS card_points_platform_id UUID REFERENCES points_platforms(id);
+
+CREATE INDEX IF NOT EXISTS idx_payment_methods_card_points_platform
+ON payment_methods(card_points_platform_id);
+
+-- ============================================
+-- PART 3: Purchase & Selling Platforms
+-- ============================================
+
+-- 3.1 purchase_platforms
+CREATE TABLE IF NOT EXISTS purchase_platforms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_builtin BOOLEAN NOT NULL DEFAULT false,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO purchase_platforms (name, is_builtin, is_active) VALUES
+  ('Amazon', true, true),
+  ('楽天市場', true, true),
+  ('Yahoo!ショッピング', true, true),
+  ('ビックカメラ.com', true, true),
+  ('ヨドバシ.com', true, true),
+  ('Apple', true, true)
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE purchase_platforms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view built-in and own purchase platforms"
+  ON purchase_platforms FOR SELECT
+  TO authenticated
+  USING (is_builtin = true OR user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own purchase platforms"
+  ON purchase_platforms FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id AND is_builtin = false);
+
+CREATE POLICY "Users can update their own purchase platforms"
+  ON purchase_platforms FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid() AND is_builtin = false);
+
+CREATE POLICY "Users can delete their own purchase platforms"
+  ON purchase_platforms FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid() AND is_builtin = false);
+
+CREATE INDEX IF NOT EXISTS idx_purchase_platforms_user_id ON purchase_platforms(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_platforms_builtin ON purchase_platforms(is_builtin);
+
+CREATE OR REPLACE FUNCTION update_purchase_platforms_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_purchase_platforms_updated_at
+  BEFORE UPDATE ON purchase_platforms
+  FOR EACH ROW
+  EXECUTE FUNCTION update_purchase_platforms_updated_at();
+
+-- 3.2 selling_platforms
+CREATE TABLE IF NOT EXISTS selling_platforms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_builtin BOOLEAN NOT NULL DEFAULT false,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO selling_platforms (name, is_builtin, is_active) VALUES
+  ('買取一丁目', true, true),
+  ('森森買取', true, true),
+  ('買取商店', true, true),
+  ('メルカリ', true, true)
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE selling_platforms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view built-in and own selling platforms"
+  ON selling_platforms FOR SELECT
+  TO authenticated
+  USING (is_builtin = true OR user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own selling platforms"
+  ON selling_platforms FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id AND is_builtin = false);
+
+CREATE POLICY "Users can update their own selling platforms"
+  ON selling_platforms FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid() AND is_builtin = false);
+
+CREATE POLICY "Users can delete their own selling platforms"
+  ON selling_platforms FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid() AND is_builtin = false);
+
+CREATE INDEX IF NOT EXISTS idx_selling_platforms_user_id ON selling_platforms(user_id);
+CREATE INDEX IF NOT EXISTS idx_selling_platforms_builtin ON selling_platforms(is_builtin);
+
+CREATE OR REPLACE FUNCTION update_selling_platforms_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_selling_platforms_updated_at
+  BEFORE UPDATE ON selling_platforms
+  FOR EACH ROW
+  EXECUTE FUNCTION update_selling_platforms_updated_at();
+
+-- ============================================
+-- PART 4: Transactions Table (final schema)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  product_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'in_stock' CHECK (status IN ('pending', 'in_stock', 'sold', 'returned')),
+
+  -- Purchase info
+  purchase_price_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  unit_price NUMERIC(10, 2),
+  card_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  point_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  balance_paid NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  card_id UUID REFERENCES payment_methods(id),
+  purchase_platform_id UUID REFERENCES purchase_platforms(id),
+  jan_code TEXT,
+  order_number TEXT,
+
+  -- Quantity tracking
+  quantity INTEGER DEFAULT 1 CHECK (quantity > 0),
+  quantity_sold INTEGER DEFAULT 0 CHECK (quantity_sold >= 0),
+  quantity_returned INTEGER DEFAULT 0 CHECK (quantity_returned >= 0),
+  quantity_in_stock INTEGER GENERATED ALWAYS AS (quantity - quantity_sold - quantity_returned) STORED,
+
+  -- Profit (aggregated from sales_records, managed by TypeScript)
+  cash_profit NUMERIC(10, 2),
+  roi NUMERIC(10, 2),
+  total_profit NUMERIC(10, 2),
+
+  -- Points
+  expected_platform_points NUMERIC(10, 2) DEFAULT 0,
+  expected_card_points NUMERIC(10, 2) DEFAULT 0,
+  extra_platform_points NUMERIC(10, 2) DEFAULT 0,
+  platform_points_platform_id UUID REFERENCES points_platforms(id),
+  card_points_platform_id UUID REFERENCES points_platforms(id),
+  extra_platform_points_platform_id UUID REFERENCES points_platforms(id),
+
+  -- Payment scheduling
+  expected_payment_date DATE,
+
+  -- Return info (legacy, per-unit returns tracked in return_records)
+  return_date DATE,
+  return_amount NUMERIC(10, 2),
+  return_notes TEXT,
+  points_deducted NUMERIC(10, 2),
+
+  -- Other
+  image_url TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_quantity_in_stock ON transactions(quantity_in_stock);
+CREATE INDEX IF NOT EXISTS idx_transactions_purchase_platform ON transactions(purchase_platform_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_jan_code ON transactions(jan_code);
+CREATE INDEX IF NOT EXISTS idx_transactions_platform_points_platform ON transactions(platform_points_platform_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_card_points_platform ON transactions(card_points_platform_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_extra_platform_points_platform ON transactions(extra_platform_points_platform_id);
+
+COMMENT ON COLUMN transactions.status IS '取引ステータス: pending=未着, in_stock=在庫中, sold=売却済, returned=返品済';
+COMMENT ON COLUMN transactions.jan_code IS 'JAN码（商品条形码）';
+COMMENT ON COLUMN transactions.unit_price IS '商品単価';
+COMMENT ON COLUMN transactions.purchase_platform_id IS '仕入先プラットフォームID';
+COMMENT ON COLUMN transactions.order_number IS '注文番号';
+COMMENT ON COLUMN transactions.quantity IS '商品総数量';
+COMMENT ON COLUMN transactions.quantity_sold IS '販売済数量';
+COMMENT ON COLUMN transactions.quantity_returned IS '返品済数量（return_records から集計）';
+COMMENT ON COLUMN transactions.quantity_in_stock IS '在庫数量（計算フィールド: quantity - quantity_sold - quantity_returned）';
+COMMENT ON COLUMN transactions.total_profit IS '総利益（現金利益 + ポイント価値）';
+COMMENT ON COLUMN transactions.cash_profit IS '現金利益（ポイント価値を除く）';
+
+-- ============================================
+-- PART 5: User Authentication and RLS
+-- ============================================
+
+-- 5.1 Add user_id columns
 ALTER TABLE payment_methods
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
@@ -188,45 +389,17 @@ ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCAD
 ALTER TABLE coupons
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- 1.2 Create indexes for better performance
--- --------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_bank_accounts_user_id ON bank_accounts(user_id);
+-- 5.2 Indexes
 CREATE INDEX IF NOT EXISTS idx_payment_methods_user_id ON payment_methods(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_user_id ON coupons(user_id);
 
--- 1.3 Enable Row Level Security (RLS)
--- --------------------------------------------
-ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
+-- 5.3 Enable RLS
 ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
 
--- 1.4 Create RLS Policies for bank_accounts
--- --------------------------------------------
-DROP POLICY IF EXISTS "Users can view their own bank accounts" ON bank_accounts;
-DROP POLICY IF EXISTS "Users can insert their own bank accounts" ON bank_accounts;
-DROP POLICY IF EXISTS "Users can update their own bank accounts" ON bank_accounts;
-DROP POLICY IF EXISTS "Users can delete their own bank accounts" ON bank_accounts;
-
-CREATE POLICY "Users can view their own bank accounts"
-ON bank_accounts FOR SELECT
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own bank accounts"
-ON bank_accounts FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own bank accounts"
-ON bank_accounts FOR UPDATE
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own bank accounts"
-ON bank_accounts FOR DELETE
-USING (auth.uid() = user_id);
-
--- 1.5 Create RLS Policies for payment_methods
--- --------------------------------------------
+-- 5.4 RLS Policies for payment_methods
 DROP POLICY IF EXISTS "Users can view their own payment methods" ON payment_methods;
 DROP POLICY IF EXISTS "Users can insert their own payment methods" ON payment_methods;
 DROP POLICY IF EXISTS "Users can update their own payment methods" ON payment_methods;
@@ -248,8 +421,7 @@ CREATE POLICY "Users can delete their own payment methods"
 ON payment_methods FOR DELETE
 USING (auth.uid() = user_id);
 
--- 1.6 Create RLS Policies for transactions
--- --------------------------------------------
+-- 5.5 RLS Policies for transactions
 DROP POLICY IF EXISTS "Users can view their own transactions" ON transactions;
 DROP POLICY IF EXISTS "Users can insert their own transactions" ON transactions;
 DROP POLICY IF EXISTS "Users can update their own transactions" ON transactions;
@@ -271,8 +443,7 @@ CREATE POLICY "Users can delete their own transactions"
 ON transactions FOR DELETE
 USING (auth.uid() = user_id);
 
--- 1.7 Create RLS Policies for coupons
--- --------------------------------------------
+-- 5.6 RLS Policies for coupons
 DROP POLICY IF EXISTS "Users can view their own coupons" ON coupons;
 DROP POLICY IF EXISTS "Users can insert their own coupons" ON coupons;
 DROP POLICY IF EXISTS "Users can update their own coupons" ON coupons;
@@ -294,8 +465,7 @@ CREATE POLICY "Users can delete their own coupons"
 ON coupons FOR DELETE
 USING (auth.uid() = user_id);
 
--- 1.8 Create function to automatically set user_id
--- --------------------------------------------
+-- 5.7 Auto-set user_id function and triggers
 DROP FUNCTION IF EXISTS set_user_id() CASCADE;
 
 CREATE OR REPLACE FUNCTION set_user_id()
@@ -305,14 +475,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 1.9 Create triggers for automatic user_id setting
--- --------------------------------------------
-DROP TRIGGER IF EXISTS set_user_id_bank_accounts ON bank_accounts;
-CREATE TRIGGER set_user_id_bank_accounts
-  BEFORE INSERT ON bank_accounts
-  FOR EACH ROW
-  EXECUTE FUNCTION set_user_id();
 
 DROP TRIGGER IF EXISTS set_user_id_payment_methods ON payment_methods;
 CREATE TRIGGER set_user_id_payment_methods
@@ -332,359 +494,10 @@ CREATE TRIGGER set_user_id_coupons
   FOR EACH ROW
   EXECUTE FUNCTION set_user_id();
 
--- 1.10 Add comments
--- --------------------------------------------
-COMMENT ON COLUMN bank_accounts.user_id IS 'User ID from auth.users - ensures data isolation';
-COMMENT ON COLUMN payment_methods.user_id IS 'User ID from auth.users - ensures data isolation';
-COMMENT ON COLUMN transactions.user_id IS 'User ID from auth.users - ensures data isolation';
-COMMENT ON COLUMN coupons.user_id IS 'User ID from auth.users - ensures data isolation';
-
 -- ============================================
--- PART 2: Points Platforms System
+-- PART 6: Sales Records
 -- ============================================
 
--- 2.1 Create points_platforms table
--- --------------------------------------------
-CREATE TABLE IF NOT EXISTS points_platforms (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE, -- Platform name like "PayPay", "V Point", "楽天ポイント"
-  display_name TEXT NOT NULL, -- Display name
-  yen_conversion_rate NUMERIC(10, 4) NOT NULL DEFAULT 1.0, -- Points to yen conversion rate (1 point = X yen)
-  description TEXT, -- Platform description
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 2.2 Insert default points platforms (including Amazon)
--- --------------------------------------------
-INSERT INTO points_platforms (name, display_name, yen_conversion_rate, description) VALUES
-  ('paypay', 'PayPay ポイント', 1.0, 'PayPay积分，1积分=1日元'),
-  ('vpoint', 'V ポイント', 1.0, '三井住友V Point，1积分=1日元'),
-  ('rakuten', '楽天ポイント', 1.0, '楽天积分，1积分=1日元'),
-  ('dpoint', 'd ポイント', 1.0, 'dポイント，1积分=1日元'),
-  ('tpoint', 'T ポイント', 1.0, 'Tポイント，1积分=1日元'),
-  ('ponta', 'Ponta ポイント', 1.0, 'Pontaポイント，1积分=1日元'),
-  ('generic_card_3to1', '信用卡积分 (3:1)', 0.3333, '通用信用卡积分，3积分=1日元'),
-  ('generic_card_1to1', '信用卡积分 (1:1)', 1.0, '通用信用卡积分，1积分=1日元'),
-  ('amazon', 'Amazon ポイント', 1.0, 'Amazonポイント，1积分=1日元')
-ON CONFLICT (name) DO NOTHING;
-
--- 2.3 Add RLS policies for points_platforms
--- --------------------------------------------
-ALTER TABLE points_platforms ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can view points platforms"
-  ON points_platforms
-  FOR SELECT
-  TO authenticated
-  USING (true);
-
--- 2.4 Create updated_at trigger for points_platforms
--- --------------------------------------------
-CREATE OR REPLACE FUNCTION update_points_platforms_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_points_platforms_updated_at
-  BEFORE UPDATE ON points_platforms
-  FOR EACH ROW
-  EXECUTE FUNCTION update_points_platforms_updated_at();
-
--- 2.5 Add indexes for points_platforms
--- --------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_points_platforms_name ON points_platforms(name);
-CREATE INDEX IF NOT EXISTS idx_points_platforms_active ON points_platforms(is_active);
-
--- 2.6 Add points platform fields to payment_methods
--- --------------------------------------------
-ALTER TABLE payment_methods
-ADD COLUMN IF NOT EXISTS card_points_platform_id UUID REFERENCES points_platforms(id);
-
-CREATE INDEX IF NOT EXISTS idx_payment_methods_card_points_platform
-ON payment_methods(card_points_platform_id);
-
-COMMENT ON COLUMN payment_methods.card_points_platform_id IS '信用卡/支付方式关联的积分平台ID';
-
--- 2.7 Add points platform fields to transactions
--- --------------------------------------------
-ALTER TABLE transactions
-ADD COLUMN IF NOT EXISTS platform_points_platform_id UUID REFERENCES points_platforms(id),
-ADD COLUMN IF NOT EXISTS card_points_platform_id UUID REFERENCES points_platforms(id),
-ADD COLUMN IF NOT EXISTS extra_platform_points NUMERIC(10, 2) DEFAULT 0,
-ADD COLUMN IF NOT EXISTS extra_platform_points_platform_id UUID REFERENCES points_platforms(id);
-
-CREATE INDEX IF NOT EXISTS idx_transactions_platform_points_platform
-ON transactions(platform_points_platform_id);
-
-CREATE INDEX IF NOT EXISTS idx_transactions_card_points_platform
-ON transactions(card_points_platform_id);
-
-CREATE INDEX IF NOT EXISTS idx_transactions_extra_platform_points_platform
-ON transactions(extra_platform_points_platform_id);
-
-COMMENT ON COLUMN transactions.platform_points_platform_id IS '购物平台积分的平台ID（如楽天、PayPay Mall等）';
-COMMENT ON COLUMN transactions.card_points_platform_id IS '信用卡/支付方式积分的平台ID';
-COMMENT ON COLUMN transactions.expected_platform_points IS '预期获得的平台积分数量';
-COMMENT ON COLUMN transactions.expected_card_points IS '预期获得的信用卡/支付方式积分数量';
-COMMENT ON COLUMN transactions.extra_platform_points IS '额外平台积分数量（用于叠加积分场景，如d point）';
-COMMENT ON COLUMN transactions.extra_platform_points_platform_id IS '额外平台积分的平台ID';
-
--- 2.8 Create/update pending_points view with points value calculation
--- --------------------------------------------
-DROP VIEW IF EXISTS pending_points CASCADE;
-
-CREATE OR REPLACE VIEW pending_points AS
-SELECT
-  t.id,
-  t.product_name,
-  t.date as purchase_date,
-  t.expected_platform_points,
-  t.expected_card_points,
-  NULL::date as points_expiry_date,
-  (COALESCE(t.expected_platform_points, 0) + COALESCE(t.expected_card_points, 0)) as total_points,
-  pm.name as payment_method_name,
-  pm.point_rate as point_conversion_rate,
-  -- Points value calculation
-  (COALESCE(t.expected_platform_points, 0) * COALESCE(ppp.yen_conversion_rate, 1.0)) as platform_points_value,
-  (COALESCE(t.expected_card_points, 0) * COALESCE(cpp.yen_conversion_rate, 1.0)) as card_points_value,
-  (
-    (COALESCE(t.expected_platform_points, 0) * COALESCE(ppp.yen_conversion_rate, 1.0)) +
-    (COALESCE(t.expected_card_points, 0) * COALESCE(cpp.yen_conversion_rate, 1.0))
-  ) as total_points_value,
-  ppp.display_name as platform_points_platform_name,
-  cpp.display_name as card_points_platform_name,
-  'normal'::text as urgency_level
-FROM transactions t
-LEFT JOIN payment_methods pm ON t.card_id = pm.id
-LEFT JOIN points_platforms ppp ON t.platform_points_platform_id = ppp.id
-LEFT JOIN points_platforms cpp ON t.card_points_platform_id = cpp.id
-WHERE t.user_id = auth.uid()
-  AND t.point_status = 'pending'
-ORDER BY t.date DESC;
-
-COMMENT ON VIEW pending_points IS '待确认积分视图，包含积分价值计算（基于积分平台兑换率）';
-
--- 2.9 Create financial_water_level view
--- --------------------------------------------
-DROP VIEW IF EXISTS financial_water_level CASCADE;
-
-CREATE OR REPLACE VIEW financial_water_level AS
-SELECT
-  -- Total balance across all active bank accounts
-  COALESCE((SELECT SUM(current_balance) FROM bank_accounts WHERE is_active = true AND user_id = auth.uid()), 0) AS total_balance,
-  -- Upcoming payments within 30 days
-  COALESCE((
-    SELECT SUM(purchase_price_total - COALESCE(point_paid, 0) - COALESCE(balance_paid, 0))
-    FROM transactions
-    WHERE user_id = auth.uid()
-      AND expected_payment_date IS NOT NULL
-      AND expected_payment_date <= (CURRENT_DATE + INTERVAL '30 days')
-      AND expected_payment_date >= CURRENT_DATE
-      AND status != 'returned'
-  ), 0) AS upcoming_payments_30d,
-  -- Upcoming payments within 7 days
-  COALESCE((
-    SELECT SUM(purchase_price_total - COALESCE(point_paid, 0) - COALESCE(balance_paid, 0))
-    FROM transactions
-    WHERE user_id = auth.uid()
-      AND expected_payment_date IS NOT NULL
-      AND expected_payment_date <= (CURRENT_DATE + INTERVAL '7 days')
-      AND expected_payment_date >= CURRENT_DATE
-      AND status != 'returned'
-  ), 0) AS upcoming_payments_7d,
-  -- Coupons expiring within 3 days
-  COALESCE((
-    SELECT COUNT(*)
-    FROM coupons
-    WHERE user_id = auth.uid()
-      AND is_used = false
-      AND expiry_date >= CURRENT_DATE
-      AND expiry_date <= (CURRENT_DATE + INTERVAL '3 days')
-  ), 0) AS expiring_coupons_3d,
-  -- Points expiring within 7 days (pending points count)
-  COALESCE((
-    SELECT COUNT(*)
-    FROM transactions
-    WHERE user_id = auth.uid()
-      AND point_status = 'pending'
-      AND (COALESCE(expected_platform_points, 0) + COALESCE(expected_card_points, 0)) > 0
-  ), 0) AS expiring_points_7d;
-
-COMMENT ON VIEW financial_water_level IS '财务安全水位视图 - 单行聚合，包含余额、待付款、过期优惠券和积分';
-
--- 2.10 Create upcoming_payments view
--- --------------------------------------------
-DROP VIEW IF EXISTS upcoming_payments CASCADE;
-
-CREATE OR REPLACE VIEW upcoming_payments AS
-SELECT
-  pm.name AS payment_method_name,
-  t.expected_payment_date,
-  SUM(t.purchase_price_total - COALESCE(t.point_paid, 0) - COALESCE(t.balance_paid, 0)) AS total_amount,
-  COUNT(t.id)::INTEGER AS transaction_count,
-  pm.id AS payment_method_id
-FROM transactions t
-JOIN payment_methods pm ON t.card_id = pm.id
-WHERE t.user_id = auth.uid()
-  AND t.expected_payment_date IS NOT NULL
-  AND t.expected_payment_date >= CURRENT_DATE
-  AND t.status != 'returned'
-GROUP BY pm.id, pm.name, t.expected_payment_date
-ORDER BY t.expected_payment_date ASC;
-
-COMMENT ON VIEW upcoming_payments IS '待付款汇总视图 - 按支付方式和还款日聚合';
-
--- ============================================
--- PART 3: ROI and Profit Calculation
--- ============================================
-
--- 3.1 Add total_profit field to transactions
--- --------------------------------------------
-ALTER TABLE transactions
-ADD COLUMN IF NOT EXISTS total_profit NUMERIC(10, 2);
-
-COMMENT ON COLUMN transactions.total_profit IS '总利润（现金利润 + 积分价值）';
-COMMENT ON COLUMN transactions.cash_profit IS '现金利润（不含积分价值）';
-
--- 3.2 Create automatic ROI recalculation trigger
--- --------------------------------------------
-CREATE OR REPLACE FUNCTION recalculate_transaction_profits()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Only calculate profit and ROI when status is 'sold'
-  IF NEW.status = 'sold' THEN
-    -- Recalculate cash profit
-    NEW.cash_profit := COALESCE(NEW.selling_price, 0)
-                      - NEW.purchase_price_total
-                      - COALESCE(NEW.platform_fee, 0)
-                      - COALESCE(NEW.shipping_fee, 0);
-
-    -- Recalculate total profit (cash profit + all points value)
-    NEW.total_profit := NEW.cash_profit +
-      -- Platform points value
-      COALESCE(NEW.expected_platform_points, 0) * COALESCE(
-        (SELECT yen_conversion_rate FROM points_platforms WHERE id = NEW.platform_points_platform_id),
-        1.0
-      ) +
-      -- Card points value
-      COALESCE(NEW.expected_card_points, 0) * COALESCE(
-        (SELECT yen_conversion_rate FROM points_platforms WHERE id = NEW.card_points_platform_id),
-        1.0
-      ) +
-      -- Extra platform points value
-      COALESCE(NEW.extra_platform_points, 0) * COALESCE(
-        (SELECT yen_conversion_rate FROM points_platforms WHERE id = NEW.extra_platform_points_platform_id),
-        1.0
-      );
-
-    -- Recalculate ROI
-    IF (NEW.purchase_price_total - COALESCE(NEW.point_paid, 0)) > 0 THEN
-      NEW.roi := (NEW.total_profit / (NEW.purchase_price_total - COALESCE(NEW.point_paid, 0))) * 100;
-    ELSE
-      NEW.roi := 0;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 3.3 Create trigger
--- --------------------------------------------
-DROP TRIGGER IF EXISTS trigger_recalculate_transaction_profits ON transactions;
-CREATE TRIGGER trigger_recalculate_transaction_profits
-  BEFORE UPDATE ON transactions
-  FOR EACH ROW
-  WHEN (
-    -- Only trigger when these fields change
-    OLD.status IS DISTINCT FROM NEW.status OR
-    OLD.selling_price IS DISTINCT FROM NEW.selling_price OR
-    OLD.platform_fee IS DISTINCT FROM NEW.platform_fee OR
-    OLD.shipping_fee IS DISTINCT FROM NEW.shipping_fee OR
-    OLD.purchase_price_total IS DISTINCT FROM NEW.purchase_price_total OR
-    OLD.point_paid IS DISTINCT FROM NEW.point_paid OR
-    OLD.expected_platform_points IS DISTINCT FROM NEW.expected_platform_points OR
-    OLD.expected_card_points IS DISTINCT FROM NEW.expected_card_points OR
-    OLD.extra_platform_points IS DISTINCT FROM NEW.extra_platform_points OR
-    OLD.platform_points_platform_id IS DISTINCT FROM NEW.platform_points_platform_id OR
-    OLD.card_points_platform_id IS DISTINCT FROM NEW.card_points_platform_id OR
-    OLD.extra_platform_points_platform_id IS DISTINCT FROM NEW.extra_platform_points_platform_id
-  )
-  EXECUTE FUNCTION recalculate_transaction_profits();
-
-COMMENT ON FUNCTION recalculate_transaction_profits() IS '自动重新计算交易的现金利润、总利润和ROI';
-COMMENT ON TRIGGER trigger_recalculate_transaction_profits ON transactions IS '当销售相关字段更新时自动重新计算利润和ROI';
-
--- ============================================
--- PART 4: Storage Bucket for Receipts
--- ============================================
-
--- 4.1 Create storage bucket with public access
--- --------------------------------------------
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('receipts', 'receipts', true)
-ON CONFLICT (id) DO NOTHING;
-
--- 4.2 Allow authenticated users to upload images
--- --------------------------------------------
-CREATE POLICY "Users can upload receipt images"
-ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'receipts');
-
--- 4.3 Allow public read access to receipt images
--- --------------------------------------------
-DROP POLICY IF EXISTS "Users can view receipt images" ON storage.objects;
-DROP POLICY IF EXISTS "Public can view receipt images" ON storage.objects;
-
-CREATE POLICY "Public can view receipt images"
-ON storage.objects
-FOR SELECT
-TO public
-USING (bucket_id = 'receipts');
-
--- 4.4 Allow authenticated users to delete their own images
--- --------------------------------------------
-CREATE POLICY "Users can delete receipt images"
-ON storage.objects
-FOR DELETE
-TO authenticated
-USING (bucket_id = 'receipts');
-
--- 4.5 Allow authenticated users to update their own images
--- --------------------------------------------
-CREATE POLICY "Users can update receipt images"
-ON storage.objects
-FOR UPDATE
-TO authenticated
-USING (bucket_id = 'receipts')
-WITH CHECK (bucket_id = 'receipts');
-
--- ============================================
--- PART 5: Batch Inventory Management
--- ============================================
-
--- 5.1 Add quantity fields to transactions table
--- --------------------------------------------
-ALTER TABLE transactions
-ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1 CHECK (quantity > 0),
-ADD COLUMN IF NOT EXISTS quantity_sold INTEGER DEFAULT 0 CHECK (quantity_sold >= 0),
-ADD COLUMN IF NOT EXISTS quantity_in_stock INTEGER GENERATED ALWAYS AS (quantity - quantity_sold) STORED;
-
-CREATE INDEX IF NOT EXISTS idx_transactions_quantity_in_stock ON transactions(quantity_in_stock);
-
-COMMENT ON COLUMN transactions.quantity IS '商品总数量';
-COMMENT ON COLUMN transactions.quantity_sold IS '已售出数量';
-COMMENT ON COLUMN transactions.quantity_in_stock IS '库存数量（计算字段���';
-
--- 5.2 Create sales_records table
--- --------------------------------------------
 CREATE TABLE IF NOT EXISTS sales_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
@@ -696,33 +509,31 @@ CREATE TABLE IF NOT EXISTS sales_records (
   platform_fee DECIMAL(10, 2) DEFAULT 0 CHECK (platform_fee >= 0),
   shipping_fee DECIMAL(10, 2) DEFAULT 0 CHECK (shipping_fee >= 0),
   sale_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  selling_platform_id UUID REFERENCES selling_platforms(id),
+  sale_order_number TEXT,
 
   -- Calculated fields
   total_selling_price DECIMAL(10, 2) GENERATED ALWAYS AS (quantity_sold * selling_price_per_unit) STORED,
   cash_profit DECIMAL(10, 2),
   total_profit DECIMAL(10, 2),
   roi DECIMAL(10, 2),
+  actual_cash_spent DECIMAL(10, 2),
 
   -- Notes
   notes TEXT,
 
   -- Timestamps
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5.3 Add indexes for sales_records
--- --------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_sales_records_transaction_id ON sales_records(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_sales_records_user_id ON sales_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_sales_records_sale_date ON sales_records(sale_date);
+CREATE INDEX IF NOT EXISTS idx_sales_records_selling_platform ON sales_records(selling_platform_id);
 
--- 5.4 Enable RLS on sales_records
--- --------------------------------------------
 ALTER TABLE sales_records ENABLE ROW LEVEL SECURITY;
 
--- 5.5 Create RLS policies for sales_records
--- --------------------------------------------
 CREATE POLICY "Users can view their own sales records"
 ON sales_records FOR SELECT
 TO authenticated
@@ -744,12 +555,14 @@ ON sales_records FOR DELETE
 TO authenticated
 USING (user_id = (SELECT auth.uid()));
 
--- 5.6 Create trigger function to auto-update quantity_sold
--- --------------------------------------------
+COMMENT ON TABLE sales_records IS '販売記録テーブル - バッチ商品の個別販売を追跡';
+COMMENT ON COLUMN sales_records.selling_platform_id IS '販売先プラットフォームID';
+COMMENT ON COLUMN sales_records.sale_order_number IS '販売注文番号';
+
+-- 6.1 Trigger: auto-update quantity_sold on transactions
 CREATE OR REPLACE FUNCTION update_transaction_quantity_sold()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Recalculate transaction's quantity_sold
   UPDATE transactions
   SET quantity_sold = (
     SELECT COALESCE(SUM(quantity_sold), 0)
@@ -762,8 +575,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 5.7 Create triggers for quantity_sold synchronization
--- --------------------------------------------
 DROP TRIGGER IF EXISTS trigger_update_quantity_sold_on_insert ON sales_records;
 CREATE TRIGGER trigger_update_quantity_sold_on_insert
   AFTER INSERT ON sales_records
@@ -782,50 +593,237 @@ CREATE TRIGGER trigger_update_quantity_sold_on_delete
   FOR EACH ROW
   EXECUTE FUNCTION update_transaction_quantity_sold();
 
--- 5.8 Create trigger function to auto-update transaction status
--- --------------------------------------------
+-- 6.2 Trigger: auto-update transaction status (in_stock <-> sold)
+-- Respects 'pending' and 'returned' statuses (managed elsewhere)
 CREATE OR REPLACE FUNCTION update_transaction_status()
 RETURNS TRIGGER AS $$
 DECLARE
   trans_quantity INTEGER;
   trans_quantity_sold INTEGER;
+  trans_status TEXT;
 BEGIN
-  -- Get transaction quantity information
-  SELECT quantity, quantity_sold INTO trans_quantity, trans_quantity_sold
+  SELECT quantity, status INTO trans_quantity, trans_status
   FROM transactions
-  WHERE id = NEW.transaction_id;
+  WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
 
-  -- If fully sold, update status to sold
+  -- Don't auto-change 'pending' or 'returned' (managed by user / return trigger)
+  IF trans_status = 'pending' OR trans_status = 'returned' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  -- Calculate directly from sales_records (avoid race condition)
+  SELECT COALESCE(SUM(quantity_sold), 0) INTO trans_quantity_sold
+  FROM sales_records
+  WHERE transaction_id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+
   IF trans_quantity_sold >= trans_quantity THEN
     UPDATE transactions
     SET status = 'sold'
-    WHERE id = NEW.transaction_id;
-  -- If partially sold, keep in_stock status
-  ELSIF trans_quantity_sold > 0 THEN
+    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+  ELSE
     UPDATE transactions
     SET status = 'in_stock'
-    WHERE id = NEW.transaction_id;
+    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
   END IF;
 
-  RETURN NEW;
+  RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
--- 5.9 Create trigger for status updates
--- --------------------------------------------
+COMMENT ON FUNCTION update_transaction_status() IS '自動ステータス更新 - pending/returned は手動管理、in_stock/sold は sales_records から自動判定';
+
 DROP TRIGGER IF EXISTS trigger_update_status_on_sale ON sales_records;
 CREATE TRIGGER trigger_update_status_on_sale
   AFTER INSERT OR UPDATE OR DELETE ON sales_records
   FOR EACH ROW
   EXECUTE FUNCTION update_transaction_status();
 
--- 5.10 Add comments
--- --------------------------------------------
-COMMENT ON TABLE sales_records IS '销售记录表 - 记录批量商品的每次销售';
-COMMENT ON COLUMN sales_records.quantity_sold IS '本次销售数量';
-COMMENT ON COLUMN sales_records.selling_price_per_unit IS '单价';
-COMMENT ON COLUMN sales_records.total_selling_price IS '总售价（计算字段）';
+-- ============================================
+-- PART 7: Return Records
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS return_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Return information
+  quantity_returned INTEGER NOT NULL CHECK (quantity_returned > 0),
+  return_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  return_amount NUMERIC(10, 2) DEFAULT 0,
+  points_deducted NUMERIC(10, 2) DEFAULT 0,
+  return_reason TEXT,
+  notes TEXT,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_return_records_transaction_id ON return_records(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_return_records_user_id ON return_records(user_id);
+CREATE INDEX IF NOT EXISTS idx_return_records_return_date ON return_records(return_date);
+
+ALTER TABLE return_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own return records"
+ON return_records FOR SELECT
+TO authenticated
+USING (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Users can insert their own return records"
+ON return_records FOR INSERT
+TO authenticated
+WITH CHECK (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Users can update their own return records"
+ON return_records FOR UPDATE
+TO authenticated
+USING (user_id = (SELECT auth.uid()))
+WITH CHECK (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Users can delete their own return records"
+ON return_records FOR DELETE
+TO authenticated
+USING (user_id = (SELECT auth.uid()));
+
+CREATE OR REPLACE FUNCTION update_return_records_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_return_records_updated_at
+  BEFORE UPDATE ON return_records
+  FOR EACH ROW
+  EXECUTE FUNCTION update_return_records_updated_at();
+
+COMMENT ON TABLE return_records IS '返品記録テーブル - バッチ商品の個別返品を追跡';
+COMMENT ON COLUMN return_records.quantity_returned IS '返品数量';
+COMMENT ON COLUMN return_records.return_amount IS '返金額';
+COMMENT ON COLUMN return_records.points_deducted IS '返品時に差し引かれたポイント';
+
+-- 7.1 Trigger: auto-update quantity_returned and manage 'returned' status
+CREATE OR REPLACE FUNCTION update_transaction_quantity_returned()
+RETURNS TRIGGER AS $$
+DECLARE
+  trans_id UUID;
+  new_quantity_returned INTEGER;
+  trans_quantity INTEGER;
+  trans_quantity_sold INTEGER;
+  trans_status TEXT;
+BEGIN
+  trans_id := COALESCE(NEW.transaction_id, OLD.transaction_id);
+
+  SELECT COALESCE(SUM(quantity_returned), 0) INTO new_quantity_returned
+  FROM return_records
+  WHERE transaction_id = trans_id;
+
+  SELECT quantity, quantity_sold, status INTO trans_quantity, trans_quantity_sold, trans_status
+  FROM transactions
+  WHERE id = trans_id;
+
+  IF new_quantity_returned > 0 AND (trans_quantity - trans_quantity_sold - new_quantity_returned) <= 0 THEN
+    -- All remaining stock returned -> 'returned'
+    UPDATE transactions
+    SET quantity_returned = new_quantity_returned, status = 'returned'
+    WHERE id = trans_id;
+  ELSIF trans_status = 'returned' AND (trans_quantity - trans_quantity_sold - new_quantity_returned) > 0 THEN
+    -- Return record deleted, stock restored -> 'in_stock'
+    UPDATE transactions
+    SET quantity_returned = new_quantity_returned, status = 'in_stock'
+    WHERE id = trans_id;
+  ELSE
+    UPDATE transactions
+    SET quantity_returned = new_quantity_returned
+    WHERE id = trans_id;
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_quantity_returned_on_insert ON return_records;
+CREATE TRIGGER trigger_update_quantity_returned_on_insert
+  AFTER INSERT ON return_records
+  FOR EACH ROW
+  EXECUTE FUNCTION update_transaction_quantity_returned();
+
+DROP TRIGGER IF EXISTS trigger_update_quantity_returned_on_update ON return_records;
+CREATE TRIGGER trigger_update_quantity_returned_on_update
+  AFTER UPDATE ON return_records
+  FOR EACH ROW
+  EXECUTE FUNCTION update_transaction_quantity_returned();
+
+DROP TRIGGER IF EXISTS trigger_update_quantity_returned_on_delete ON return_records;
+CREATE TRIGGER trigger_update_quantity_returned_on_delete
+  AFTER DELETE ON return_records
+  FOR EACH ROW
+  EXECUTE FUNCTION update_transaction_quantity_returned();
 
 -- ============================================
--- Migration completed successfully!
+-- PART 8: Views
+-- ============================================
+
+-- upcoming_payments: 待付款汇总
+DROP VIEW IF EXISTS upcoming_payments CASCADE;
+
+CREATE OR REPLACE VIEW upcoming_payments AS
+SELECT
+  pm.name AS payment_method_name,
+  t.expected_payment_date,
+  SUM(t.purchase_price_total - COALESCE(t.point_paid, 0) - COALESCE(t.balance_paid, 0)) AS total_amount,
+  COUNT(t.id)::INTEGER AS transaction_count,
+  pm.id AS payment_method_id
+FROM transactions t
+JOIN payment_methods pm ON t.card_id = pm.id
+WHERE t.user_id = auth.uid()
+  AND t.expected_payment_date IS NOT NULL
+  AND t.expected_payment_date >= CURRENT_DATE
+  AND t.status != 'returned'
+GROUP BY pm.id, pm.name, t.expected_payment_date
+ORDER BY t.expected_payment_date ASC;
+
+COMMENT ON VIEW upcoming_payments IS '支払い予定サマリー - 支払い方法と支払日ごとに集計';
+
+-- ============================================
+-- PART 9: Storage Bucket for Receipts
+-- ============================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Users can upload receipt images"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'receipts');
+
+DROP POLICY IF EXISTS "Users can view receipt images" ON storage.objects;
+DROP POLICY IF EXISTS "Public can view receipt images" ON storage.objects;
+
+CREATE POLICY "Public can view receipt images"
+ON storage.objects
+FOR SELECT
+TO public
+USING (bucket_id = 'receipts');
+
+CREATE POLICY "Users can delete receipt images"
+ON storage.objects
+FOR DELETE
+TO authenticated
+USING (bucket_id = 'receipts');
+
+CREATE POLICY "Users can update receipt images"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (bucket_id = 'receipts')
+WITH CHECK (bucket_id = 'receipts');
+
+-- ============================================
+-- Schema setup complete!
 -- ============================================

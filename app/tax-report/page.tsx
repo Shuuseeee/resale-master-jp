@@ -102,11 +102,13 @@ export default function TaxReportPage() {
         [
           '販売日',
           '購入日',
+          '購入先',
           '商品名',
           '数量',
           '売却数',
           '購入価格',
-          '売却価格',
+          '売却価���',
+          '販売先',
           '販売手数料',
           '送料',
           'ポイント還元',
@@ -117,11 +119,13 @@ export default function TaxReportPage() {
         ...details.map(d => [
           d.saleDate,
           d.purchaseDate,
+          d.purchasePlatformName || '',
           d.productName,
           d.quantity,
           d.quantitySold,
           d.purchasePrice,
           d.sellingPrice,
+          d.sellingPlatformName || '',
           d.platformFee,
           d.shippingFee,
           d.pointsReward,
@@ -153,7 +157,7 @@ export default function TaxReportPage() {
     setExporting(true);
     try {
       const doc = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
       });
@@ -216,10 +220,12 @@ export default function TaxReportPage() {
         head: [
           [
             '販売日',
+            '購入先',
             '商品名',
             '数量',
             '購入価格',
             '売却価格',
+            '販売先',
             '手数料',
             '送料',
             'ポイント',
@@ -228,10 +234,12 @@ export default function TaxReportPage() {
         ],
         body: details.map(d => [
           d.saleDate,
+          d.purchasePlatformName || '',
           d.productName,
           d.quantitySold.toString(),
           formatCurrency(d.purchasePrice),
           formatCurrency(d.sellingPrice),
+          d.sellingPlatformName || '',
           formatCurrency(d.platformFee),
           formatCurrency(d.shippingFee),
           formatCurrency(d.pointsReward),
@@ -240,28 +248,30 @@ export default function TaxReportPage() {
         theme: 'grid',
         styles: {
           font: 'NotoSansJP',
-          fontSize: 7,
+          fontSize: 6,
           cellPadding: 2,
         },
         headStyles: {
           fillColor: [66, 139, 202],
           textColor: 255,
           fontStyle: 'bold',
-          fontSize: 7,
+          fontSize: 6,
           halign: 'center',
         },
         columnStyles: {
-          0: { cellWidth: 22, halign: 'center' },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 12, halign: 'center' },
-          3: { cellWidth: 20, halign: 'right' },
-          4: { cellWidth: 20, halign: 'right' },
+          0: { cellWidth: 18, halign: 'center' },
+          1: { cellWidth: 18 },
+          2: { cellWidth: 28 },
+          3: { cellWidth: 10, halign: 'center' },
+          4: { cellWidth: 18, halign: 'right' },
           5: { cellWidth: 18, halign: 'right' },
-          6: { cellWidth: 18, halign: 'right' },
-          7: { cellWidth: 18, halign: 'right' },
-          8: { cellWidth: 22, halign: 'right' },
+          6: { cellWidth: 18 },
+          7: { cellWidth: 16, halign: 'right' },
+          8: { cellWidth: 16, halign: 'right' },
+          9: { cellWidth: 16, halign: 'right' },
+          10: { cellWidth: 20, halign: 'right' },
         },
-        margin: { left: 7, right: 7 },
+        margin: { left: 5, right: 5 },
       });
 
       doc.save(`確定申告レポート_${summary.year}年度.pdf`);
@@ -413,11 +423,11 @@ export default function TaxReportPage() {
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-blue-500/30'}>
+                  <div className={card.stat + ' border-teal-500/30'}>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       総収入
                     </div>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                       {formatCurrency(summary.totalIncome)}
                     </div>
                   </div>
@@ -475,15 +485,15 @@ export default function TaxReportPage() {
 
               {/* 所得金額 */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className={heading.h3 + ' mb-4 text-indigo-600 dark:text-indigo-400'}>
+                <h3 className={heading.h3 + ' mb-4 text-teal-600 dark:text-teal-400'}>
                   所得金額
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={card.stat + ' border-indigo-500/30'}>
+                  <div className={card.stat + ' border-teal-500/30'}>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       雑所得金額（収入 - 経費）
                     </div>
-                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">
                       {formatCurrency(summary.netIncome)}
                     </div>
                   </div>
@@ -545,6 +555,9 @@ export default function TaxReportPage() {
                             販売日
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                            購入先
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                             商品名
                           </th>
                           <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
@@ -555,6 +568,9 @@ export default function TaxReportPage() {
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                             売却価格
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                            販売先
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                             手数料
@@ -579,6 +595,9 @@ export default function TaxReportPage() {
                             <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                               {detail.saleDate}
                             </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                              {detail.purchasePlatformName || '-'}
+                            </td>
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                               {detail.productName}
                             </td>
@@ -590,6 +609,9 @@ export default function TaxReportPage() {
                             </td>
                             <td className="px-4 py-3 text-sm text-emerald-600 dark:text-emerald-300 text-right font-mono">
                               {formatCurrency(detail.sellingPrice)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                              {detail.sellingPlatformName || '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-right font-mono">
                               {formatCurrency(detail.platformFee)}

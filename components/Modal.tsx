@@ -198,7 +198,7 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmButtonClass = confirmVariant === 'danger'
     ? 'px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed'
-    : 'px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed';
+    : 'px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <Modal

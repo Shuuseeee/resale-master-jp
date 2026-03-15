@@ -3,7 +3,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { createSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCostFormData } from '@/types/database.types';
 import { layout, heading, card, button } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
@@ -82,15 +82,7 @@ export default function AddSupplyPage() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('supplies_costs').insert([
-        {
-          category: formData.category,
-          amount: formData.amount,
-          purchase_date: formData.purchase_date,
-          description: formData.description || null,
-          notes: formData.notes || null,
-        },
-      ]);
+      const { error } = await createSuppliesCost(formData);
 
       if (error) throw error;
 
@@ -127,7 +119,7 @@ export default function AddSupplyPage() {
           <div className={card.primary + ' p-6 shadow-2xl'}>
             <div className="space-y-5">
               <h2 className={heading.h3 + ' flex items-center gap-2'}>
-                <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-teal-600 to-teal-700 rounded-full"></div>
                 耗材信息
               </h2>
 
@@ -140,7 +132,7 @@ export default function AddSupplyPage() {
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     required
                   >
                     {CATEGORY_OPTIONS.map((option) => (
@@ -166,7 +158,7 @@ export default function AddSupplyPage() {
                         purchase_date: date ? date.toISOString().split('T')[0] : ''
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   />
                   {errors.purchase_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.purchase_date}</p>
@@ -188,7 +180,7 @@ export default function AddSupplyPage() {
                     min="0"
                     placeholder="0.00"
                     ref={amountRef}
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     required
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
@@ -210,7 +202,7 @@ export default function AddSupplyPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="例: A4气泡袋 100个"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -224,7 +216,7 @@ export default function AddSupplyPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="添加备注信息..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -241,7 +233,7 @@ export default function AddSupplyPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 py-4 bg-teal-700 hover:bg-teal-800 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">

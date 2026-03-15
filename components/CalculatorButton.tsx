@@ -12,7 +12,7 @@ export function CalculatorButton() {
       {/* Floating Action Button - Desktop Only */}
       <button
         onClick={openCalculator}
-        className="hidden md:flex fixed bottom-8 right-8 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all items-center justify-center group"
+        className="hidden md:flex fixed bottom-8 right-8 z-30 w-14 h-14 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all items-center justify-center group"
         aria-label="打开计算器 (Ctrl/Cmd+K)"
       >
         <svg

@@ -93,6 +93,32 @@ export interface PlatformAnalysis {
 }
 
 /**
+ * 购入平台分析
+ */
+export interface PurchasePlatformAnalysis {
+  platformId: string;
+  platformName: string;
+  transactionCount: number;
+  totalCost: number;
+  totalProfit: number;
+  avgROI: number;
+  percentage: number; // 占总成本的百分比
+}
+
+/**
+ * 出手平台分析
+ */
+export interface SellingPlatformAnalysis {
+  platformId: string;
+  platformName: string;
+  transactionCount: number;
+  totalSales: number;
+  totalProfit: number;
+  avgROI: number;
+  percentage: number; // 占总销售额的百分比
+}
+
+/**
  * 成本结构
  */
 export interface CostStructure {
@@ -212,8 +238,10 @@ async function calculateCoreMetrics(salesRecords: any[]): Promise<CoreMetrics> {
     return sum + (costPerUnit * r.quantity_sold);
   }, 0);
 
-  const avgROI = salesRecords.length > 0
-    ? salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length
+  // 加权平均 ROI：sum(total_profit) / sum(actual_cash_spent)
+  const totalActualCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
+  const avgROI = totalActualCashSpent > 0
+    ? (totalProfit / totalActualCashSpent) * 100
     : 0;
   const avgProfitPerTransaction = salesRecords.length > 0
     ? totalProfit / salesRecords.length
@@ -300,7 +328,7 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
           date,
           sales: 0,
           profit: 0,
-          roi: [],
+          totalActualCashSpent: 0,
           transactions: 0,
           cost: 0,
         };
@@ -313,18 +341,18 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
       acc[date].sales += record.total_selling_price || 0;
       acc[date].profit += record.total_profit || 0;
       acc[date].cost += recordCost;
-      acc[date].roi.push(record.roi || 0);
+      acc[date].totalActualCashSpent += record.actual_cash_spent || 0;
       acc[date].transactions += 1;
 
       return acc;
     }, {});
 
-    // 转换为数组并计算平均ROI
+    // 转换为数组并计算加权ROI
     const trendData: TrendDataPoint[] = Object.values(groupedData).map((item: any) => ({
       date: item.date,
       sales: item.sales,
       profit: item.profit,
-      roi: item.roi.length > 0 ? item.roi.reduce((sum: number, r: number) => sum + r, 0) / item.roi.length : 0,
+      roi: item.totalActualCashSpent > 0 ? (item.profit / item.totalActualCashSpent) * 100 : 0,
       transactions: item.transactions,
       cost: item.cost,
     }));
@@ -450,14 +478,14 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
           transactionCount: 0,
           totalSales: 0,
           totalProfit: 0,
-          roiList: [],
+          totalActualCashSpent: 0,
         };
       }
 
       acc[methodId].transactionCount += 1;
       acc[methodId].totalSales += record.total_selling_price || 0;
       acc[methodId].totalProfit += record.total_profit || 0;
-      acc[methodId].roiList.push(record.roi || 0);
+      acc[methodId].totalActualCashSpent += record.actual_cash_spent || 0;
 
       return acc;
     }, {});
@@ -469,8 +497,8 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
       transactionCount: item.transactionCount,
       totalSales: item.totalSales,
       totalProfit: item.totalProfit,
-      avgROI: item.roiList.length > 0
-        ? item.roiList.reduce((sum: number, r: number) => sum + r, 0) / item.roiList.length
+      avgROI: item.totalActualCashSpent > 0
+        ? (item.totalProfit / item.totalActualCashSpent) * 100
         : 0,
       percentage: totalSales > 0 ? (item.totalSales / totalSales) * 100 : 0,
     }));
@@ -681,6 +709,160 @@ export async function getAllPaymentMethods(): Promise<PaymentMethodFilter[]> {
     return data || [];
   } catch (error) {
     console.error('获取支付方式列表失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取购入平台分析（基于销售记录 + 交易的 purchase_platform_id）
+ */
+export async function getPurchasePlatformAnalysis(filters: AnalyticsFilters): Promise<PurchasePlatformAnalysis[]> {
+  try {
+    const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
+
+    const { data, error } = await supabase
+      .from('sales_records')
+      .select(`
+        *,
+        transaction:transaction_id(
+          id,
+          purchase_price_total,
+          quantity,
+          purchase_platform_id,
+          purchase_platform:purchase_platform_id(id, name)
+        )
+      `)
+      .not('sale_date', 'is', null)
+      .gte('sale_date', start.toISOString().split('T')[0])
+      .lte('sale_date', end.toISOString().split('T')[0]);
+
+    if (error) throw error;
+
+    // 按购入平台分组
+    const groupedData: Record<string, {
+      platformId: string;
+      platformName: string;
+      transactionCount: number;
+      totalCost: number;
+      totalProfit: number;
+      totalActualCashSpent: number;
+    }> = {};
+
+    (data || []).forEach((record: any) => {
+      const transaction = record.transaction as any;
+      if (!transaction) return;
+
+      const platformId = transaction.purchase_platform_id || 'unknown';
+      const platformName = (transaction.purchase_platform as any)?.name || '未設定';
+
+      if (!groupedData[platformId]) {
+        groupedData[platformId] = {
+          platformId,
+          platformName,
+          transactionCount: 0,
+          totalCost: 0,
+          totalProfit: 0,
+          totalActualCashSpent: 0,
+        };
+      }
+
+      const costPerUnit = (transaction.purchase_price_total || 0) / (transaction.quantity || 1);
+      const recordCost = costPerUnit * record.quantity_sold;
+
+      groupedData[platformId].transactionCount += 1;
+      groupedData[platformId].totalCost += recordCost;
+      groupedData[platformId].totalProfit += record.total_profit || 0;
+      groupedData[platformId].totalActualCashSpent += record.actual_cash_spent || 0;
+    });
+
+    const totalCost = Object.values(groupedData).reduce((sum, g) => sum + g.totalCost, 0);
+
+    const analysis: PurchasePlatformAnalysis[] = Object.values(groupedData).map(item => ({
+      platformId: item.platformId,
+      platformName: item.platformName,
+      transactionCount: item.transactionCount,
+      totalCost: item.totalCost,
+      totalProfit: item.totalProfit,
+      avgROI: item.totalActualCashSpent > 0
+        ? (item.totalProfit / item.totalActualCashSpent) * 100
+        : 0,
+      percentage: totalCost > 0 ? (item.totalCost / totalCost) * 100 : 0,
+    }));
+
+    return analysis.sort((a, b) => b.totalCost - a.totalCost);
+  } catch (error) {
+    console.error('获取购入平台分析失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取出手平台分析（基于销售记录的 selling_platform_id）
+ */
+export async function getSellingPlatformAnalysis(filters: AnalyticsFilters): Promise<SellingPlatformAnalysis[]> {
+  try {
+    const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
+
+    const { data, error } = await supabase
+      .from('sales_records')
+      .select(`
+        *,
+        selling_platform:selling_platform_id(id, name)
+      `)
+      .not('sale_date', 'is', null)
+      .gte('sale_date', start.toISOString().split('T')[0])
+      .lte('sale_date', end.toISOString().split('T')[0]);
+
+    if (error) throw error;
+
+    // 按出手平台分组
+    const groupedData: Record<string, {
+      platformId: string;
+      platformName: string;
+      transactionCount: number;
+      totalSales: number;
+      totalProfit: number;
+      totalActualCashSpent: number;
+    }> = {};
+
+    (data || []).forEach((record: any) => {
+      const platformId = record.selling_platform_id || 'unknown';
+      const platformName = (record.selling_platform as any)?.name || '未設定';
+
+      if (!groupedData[platformId]) {
+        groupedData[platformId] = {
+          platformId,
+          platformName,
+          transactionCount: 0,
+          totalSales: 0,
+          totalProfit: 0,
+          totalActualCashSpent: 0,
+        };
+      }
+
+      groupedData[platformId].transactionCount += 1;
+      groupedData[platformId].totalSales += record.total_selling_price || 0;
+      groupedData[platformId].totalProfit += record.total_profit || 0;
+      groupedData[platformId].totalActualCashSpent += record.actual_cash_spent || 0;
+    });
+
+    const totalSales = Object.values(groupedData).reduce((sum, g) => sum + g.totalSales, 0);
+
+    const analysis: SellingPlatformAnalysis[] = Object.values(groupedData).map(item => ({
+      platformId: item.platformId,
+      platformName: item.platformName,
+      transactionCount: item.transactionCount,
+      totalSales: item.totalSales,
+      totalProfit: item.totalProfit,
+      avgROI: item.totalActualCashSpent > 0
+        ? (item.totalProfit / item.totalActualCashSpent) * 100
+        : 0,
+      percentage: totalSales > 0 ? (item.totalSales / totalSales) * 100 : 0,
+    }));
+
+    return analysis.sort((a, b) => b.totalSales - a.totalSales);
+  } catch (error) {
+    console.error('获取出手平台分析失败:', error);
     return [];
   }
 }

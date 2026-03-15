@@ -19,12 +19,14 @@ interface TransactionCardProps {
   transaction: TransactionWithPayment;
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
+  onMarkArrived?: (id: string) => void;
 }
 
 export default function TransactionCard({
   transaction,
   dateSortMode,
   onDelete,
+  onMarkArrived,
 }: TransactionCardProps) {
   const router = useRouter();
 
@@ -43,7 +45,9 @@ export default function TransactionCard({
     : new Date(transaction.date).toLocaleDateString('zh-CN');
 
   const getStatusBadge = () => {
-    if (transaction.status === 'sold') {
+    if (transaction.status === 'pending') {
+      return <span className={badge.info + ' border border-teal-500/30'}>未着</span>;
+    } else if (transaction.status === 'sold') {
       return <span className={badge.success + ' border border-emerald-500/30'}>已售出</span>;
     } else if (transaction.status === 'returned') {
       return <span className={badge.error + ' border border-red-500/30'}>已退货</span>;
@@ -102,7 +106,7 @@ export default function TransactionCard({
               : '-'}
           </p>
           {transaction.status === 'in_stock' && transaction.quantity_sold > 0 && (
-            <span className="text-xs text-blue-600 dark:text-blue-400">部分销售</span>
+            <span className="text-xs text-teal-600 dark:text-teal-400">部分销售</span>
           )}
         </div>
         <div>
@@ -121,9 +125,21 @@ export default function TransactionCard({
 
       <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-end gap-2">
+          {transaction.status === 'pending' && onMarkArrived && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkArrived(transaction.id);
+              }}
+              className="px-3 py-1.5 text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all active:scale-95"
+              title="着荷"
+            >
+              着荷
+            </button>
+          )}
           <Link
             href={`/transactions/${transaction.id}`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all active:scale-95"
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10 rounded-lg transition-all active:scale-95"
             title="查看详情"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -46,7 +46,7 @@
 
 /* 日付ホバー時 */
 .react-datepicker__day:hover {
-  background: #db4d6d !important;
+  background: #2d8b8b !important;
   color: #fafafa !important;
   border-radius: 0.5rem;
 }
@@ -73,7 +73,7 @@
   .react-datepicker__time-box
   ul.react-datepicker__time-list
   li.react-datepicker__time-list-item--selected {
-  background: #e87a90 !important;
+  background: #2d8b8b !important;
   font-weight: normal;
   color: #fafafa !important;
   border-radius: 0.5rem;
@@ -104,14 +104,14 @@
     .react-datepicker__quarter-text--in-range,
     .react-datepicker__year-text--in-range
   ) {
-  background-color: #f596aa !important;
+  background-color: #a8dadc !important;
   border-radius: 0.5rem;
 }
 
 /* 今日の日付にボーダー */
 .react-datepicker__day--today {
   font-weight: bold;
-  border: 1px solid #e87a90;
+  border: 1px solid #2d8b8b;
 }
 
 /* 無効な日付 */
@@ -135,6 +135,6 @@
 
 .react-datepicker__month-option:hover,
 .react-datepicker__year-option:hover {
-  background-color: #f596aa;
+  background-color: #a8dadc;
 }
 

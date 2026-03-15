@@ -23,7 +23,7 @@ export const card = {
  */
 export const button = {
   // 主要按钮（实心）
-  primary: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-blue-600 hover:bg-blue-700 active:bg-blue-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
+  primary: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-teal-600 hover:bg-teal-700 active:bg-teal-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
 
   // 成功按钮
   success: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 active:scale-95 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-all shadow-sm min-h-[44px] flex items-center justify-center',
@@ -38,7 +38,7 @@ export const button = {
   ghost: 'px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 rounded-lg font-medium transition-all',
 
   // 链接按钮
-  link: 'text-sm md:text-base text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 font-medium transition-colors',
+  link: 'text-sm md:text-base text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 font-medium transition-colors',
 };
 
 /**
@@ -48,7 +48,7 @@ export const badge = {
   pending: 'px-2 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-300',
   success: 'px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-300',
   error: 'px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-300',
-  info: 'px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 dark:text-blue-300',
+  info: 'px-2 py-1 rounded-full text-xs font-medium bg-teal-500/20 text-teal-600 dark:text-teal-300',
   neutral: 'px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-300',
 };
 
@@ -56,7 +56,7 @@ export const badge = {
  * 输入框样式
  */
 export const input = {
-  base: 'px-3 py-2 md:px-4 text-sm md:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors min-h-[44px]',
+  base: 'px-3 py-2 md:px-4 text-sm md:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors min-h-[44px]',
   error: 'w-full px-3 py-2 md:px-4 text-sm md:text-base bg-white dark:bg-gray-800 border border-red-500 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors min-h-[44px]',
 };
 
@@ -64,7 +64,7 @@ export const input = {
  * 布局样式
  */
 export const layout = {
-  page: 'min-h-screen bg-gray-50 dark:bg-gray-900',
+  page: 'min-h-screen bg-ocean-cream dark:bg-ocean-navy',
   container: 'max-w-7xl mx-auto px-4 py-8',
   section: 'mb-8',
 };
@@ -86,7 +86,7 @@ export const tabs = {
   container: 'bg-white dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700',
   tab: {
     base: 'flex-1 px-4 py-2 rounded-lg font-medium transition-colors',
-    active: 'bg-blue-600 text-white',
+    active: 'bg-teal-600 text-white',
     inactive: 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700',
   },
 };
@@ -95,7 +95,7 @@ export const tabs = {
  * 加载状态样式
  */
 export const loading = {
-  spinner: 'inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600',
+  spinner: 'inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600',
   container: 'text-center py-12',
   text: 'text-gray-600 dark:text-gray-400 mt-4',
 };
@@ -115,5 +115,5 @@ export const alert = {
   success: 'mb-6 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-lg',
   error: 'mb-6 bg-red-500/20 border border-red-500/30 text-red-600 dark:text-red-300 px-4 py-3 rounded-lg',
   warning: 'mb-6 bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 px-4 py-3 rounded-lg',
-  info: 'mb-6 bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-300 px-4 py-3 rounded-lg',
+  info: 'mb-6 bg-teal-500/20 border border-teal-500/30 text-teal-600 dark:text-teal-300 px-4 py-3 rounded-lg',
 };

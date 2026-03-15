@@ -4,17 +4,6 @@
 import { supabase } from '@/lib/supabase/client';
 
 /**
- * 财务安全水位线数据
- */
-export interface WaterLevelData {
-  total_balance: number;
-  upcoming_payments_30d: number;
-  upcoming_payments_7d: number;
-  expiring_coupons_3d: number;
-  expiring_points_7d: number;
-}
-
-/**
  * 即将到期的支付
  */
 export interface UpcomingPayment {
@@ -23,55 +12,6 @@ export interface UpcomingPayment {
   total_amount: number;
   transaction_count: number;
   payment_method_id: string;
-}
-
-/**
- * 待确认积分
- */
-export interface PendingPoint {
-  id: string;
-  product_name: string;
-  purchase_date: string;
-  expected_platform_points: number;
-  expected_card_points: number;
-  points_expiry_date: string | null;
-  total_points: number;
-  payment_method_name: string | null;
-  point_conversion_rate: number;
-  urgency_level: 'urgent' | 'warning' | 'normal';
-}
-
-/**
- * 银行账户
- */
-export interface BankAccount {
-  id: string;
-  name: string;
-  account_type: 'checking' | 'savings' | 'wallet';
-  current_balance: number;
-  currency: string;
-  is_active: boolean;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * 获取财务安全水位线数据
- */
-export async function getWaterLevelData(): Promise<WaterLevelData | null> {
-  const { data, error } = await supabase
-    .from('financial_water_level')
-    .select('*')
-    .single();
-
-  if (error) {
-    console.error('获取财务水位线失败:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    return null;
-  }
-
-  return data;
 }
 
 /**
@@ -87,106 +27,10 @@ export async function getUpcomingPayments(days: number = 30): Promise<UpcomingPa
 
   if (error) {
     console.error('获取即将到期的支付失败:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
     return [];
   }
 
   return data || [];
-}
-
-/**
- * 获取待确认积分列表
- */
-export async function getPendingPoints(): Promise<PendingPoint[]> {
-  const { data, error } = await supabase
-    .from('pending_points')
-    .select('*')
-    .order('urgency_level', { ascending: true })
-    .order('points_expiry_date', { ascending: true });
-
-  if (error) {
-    console.error('获取待确认积分失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
- * 确认积分已收到
- * @param transactionId 交易ID
- */
-export async function confirmPointsReceived(transactionId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('transactions')
-    .update({ point_status: 'received' })
-    .eq('id', transactionId);
-
-  if (error) {
-    console.error('确认积分失败:', error);
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * 批量确认积分
- * @param transactionIds 交易ID数组
- */
-export async function batchConfirmPoints(transactionIds: string[]): Promise<number> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .update({ point_status: 'received' })
-    .in('id', transactionIds)
-    .select('id');
-
-  if (error) {
-    console.error('批量确认积分失败:', error);
-    return 0;
-  }
-
-  return data?.length || 0;
-}
-
-/**
- * 获取所有银行账户
- */
-export async function getBankAccounts(): Promise<BankAccount[]> {
-  const { data, error } = await supabase
-    .from('bank_accounts')
-    .select('*')
-    .eq('is_active', true)
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('获取银行账户失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
- * 更新银行账户余额
- * @param accountId 账户ID
- * @param newBalance 新余额
- */
-export async function updateBankBalance(
-  accountId: string,
-  newBalance: number
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('bank_accounts')
-    .update({ current_balance: newBalance })
-    .eq('id', accountId);
-
-  if (error) {
-    console.error('更新银行余额失败:', error);
-    return false;
-  }
-
-  return true;
 }
 
 /**
@@ -214,208 +58,159 @@ export async function getExpiringCoupons(days: number = 3) {
 }
 
 /**
- * 积分记录
+ * 获取当前在库数量（所有 in_stock 交易的 quantity_in_stock 之和）
  */
-export interface PointRecord {
-  id: string;
-  product_name: string;
-  purchase_date: string;
-  expected_platform_points: number;
-  expected_card_points: number;
-  extra_platform_points: number; // 额外平台积分
-  point_status: 'pending' | 'received' | 'expired';
-  total_points: number; // 积分的日元价值总和
-  payment_method_name: string | null;
-  card_id: string | null;
-  platform_points_value: number; // 平台积分的日元价值
-  card_points_value: number; // 信用卡积分的日元价值
-  extra_platform_points_value: number; // 额外平台积分的日元价值
-  platform_points_platform_name: string | null; // 平台积分平台名称
-  card_points_platform_name: string | null; // 信用卡积分平台名称
-  extra_platform_points_platform_name: string | null; // 额外平台积分平台名称
-}
-
-/**
- * 积分统计数据
- */
-export interface PointsStats {
-  total_pending_count: number;
-  total_received_count: number;
-  total_expired_count: number;
-  total_pending_points: number;
-  total_received_points: number;
-  total_value: number;
-}
-
-/**
- * 获取指定状态的积分记录
- * @param status 积分状态 (pending | received | expired)，不传则返回所有
- */
-export async function getPointsByStatus(
-  status?: 'pending' | 'received' | 'expired'
-): Promise<PointRecord[]> {
-  let query = supabase
-    .from('transactions')
-    .select(`
-      id,
-      product_name,
-      date,
-      expected_platform_points,
-      expected_card_points,
-      extra_platform_points,
-      point_status,
-      card_id,
-      payment_methods:card_id (
-        name
-      ),
-      platform_points_platform:platform_points_platform_id (
-        display_name,
-        yen_conversion_rate
-      ),
-      card_points_platform:card_points_platform_id (
-        display_name,
-        yen_conversion_rate
-      ),
-      extra_platform_points_platform:extra_platform_points_platform_id (
-        display_name,
-        yen_conversion_rate
-      )
-    `)
-    .not('expected_platform_points', 'is', null)
-    .order('date', { ascending: false });
-
-  if (status) {
-    query = query.eq('point_status', status);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('获取积分记录失败:', error);
-    return [];
-  }
-
-  // 计算总积分并格式化数据
-  return (data || []).map(record => {
-    const platformPointsValue = (record.expected_platform_points || 0) *
-      ((record.platform_points_platform as any)?.yen_conversion_rate || 1.0);
-    const cardPointsValue = (record.expected_card_points || 0) *
-      ((record.card_points_platform as any)?.yen_conversion_rate || 1.0);
-    const extraPlatformPointsValue = (record.extra_platform_points || 0) *
-      ((record.extra_platform_points_platform as any)?.yen_conversion_rate || 1.0);
-
-    return {
-      id: record.id,
-      product_name: record.product_name,
-      purchase_date: record.date,
-      expected_platform_points: record.expected_platform_points,
-      expected_card_points: record.expected_card_points,
-      extra_platform_points: record.extra_platform_points || 0,
-      point_status: record.point_status,
-      total_points: platformPointsValue + cardPointsValue + extraPlatformPointsValue,
-      payment_method_name: (record.payment_methods as any)?.name || null,
-      card_id: record.card_id,
-      platform_points_value: platformPointsValue,
-      card_points_value: cardPointsValue,
-      extra_platform_points_value: extraPlatformPointsValue,
-      platform_points_platform_name: (record.platform_points_platform as any)?.display_name || null,
-      card_points_platform_name: (record.card_points_platform as any)?.display_name || null,
-      extra_platform_points_platform_name: (record.extra_platform_points_platform as any)?.display_name || null
-    };
-  });
-}
-
-/**
- * 获取积分统计数据（使用积分平台兑换率）
- */
-export async function getPointsStats(): Promise<PointsStats> {
+export async function getInStockCount(): Promise<number> {
   const { data, error } = await supabase
     .from('transactions')
-    .select(`
-      point_status,
-      expected_platform_points,
-      expected_card_points,
-      extra_platform_points,
-      platform_points_platform:platform_points_platform_id (
-        yen_conversion_rate
-      ),
-      card_points_platform:card_points_platform_id (
-        yen_conversion_rate
-      ),
-      extra_platform_points_platform:extra_platform_points_platform_id (
-        yen_conversion_rate
-      )
-    `)
-    .not('expected_platform_points', 'is', null);
+    .select('quantity_in_stock')
+    .eq('status', 'in_stock');
 
   if (error) {
-    console.error('获取积分统计失败:', error);
-    return {
-      total_pending_count: 0,
-      total_received_count: 0,
-      total_expired_count: 0,
-      total_pending_points: 0,
-      total_received_points: 0,
-      total_value: 0,
-    };
+    console.error('获取在库数量失败:', error);
+    return 0;
   }
 
-  const stats = {
-    total_pending_count: 0,
-    total_received_count: 0,
-    total_expired_count: 0,
-    total_pending_points: 0,
-    total_received_points: 0,
-    total_value: 0,
-  };
+  return (data || []).reduce((sum, row) => sum + (row.quantity_in_stock || 0), 0);
+}
 
-  (data || []).forEach(record => {
-    const platformPointsValue = (record.expected_platform_points || 0) *
-      ((record.platform_points_platform as any)?.yen_conversion_rate || 1.0);
-    const cardPointsValue = (record.expected_card_points || 0) *
-      ((record.card_points_platform as any)?.yen_conversion_rate || 1.0);
-    const extraPlatformPointsValue = (record.extra_platform_points || 0) *
-      ((record.extra_platform_points_platform as any)?.yen_conversion_rate || 1.0);
-    const totalValue = platformPointsValue + cardPointsValue + extraPlatformPointsValue;
+/**
+ * 获取本月利润（本月 sales_records 的 total_profit 之和）
+ */
+export async function getMonthlyProfit(): Promise<number> {
+  const now = new Date();
+  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
 
-    if (record.point_status === 'pending') {
-      stats.total_pending_count++;
-      stats.total_pending_points += totalValue;
-    } else if (record.point_status === 'received') {
-      stats.total_received_count++;
-      stats.total_received_points += totalValue;
-      stats.total_value += totalValue;
-    } else if (record.point_status === 'expired') {
-      stats.total_expired_count++;
-    }
-  });
+  const { data, error } = await supabase
+    .from('sales_records')
+    .select('total_profit')
+    .gte('sale_date', startOfMonth)
+    .lte('sale_date', endOfMonthStr);
 
-  return stats;
+  if (error) {
+    console.error('获取本月利润失败:', error);
+    return 0;
+  }
+
+  return (data || []).reduce((sum, row) => sum + (row.total_profit || 0), 0);
+}
+
+/**
+ * 获取本月销售件数（本月 sales_records 的数量）
+ */
+export async function getMonthlySalesCount(): Promise<number> {
+  const now = new Date();
+  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+
+  const { count, error } = await supabase
+    .from('sales_records')
+    .select('*', { count: 'exact', head: true })
+    .gte('sale_date', startOfMonth)
+    .lte('sale_date', endOfMonthStr);
+
+  if (error) {
+    console.error('获取本月销售件数失败:', error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * 标记交易为已到着（pending → in_stock）
+ */
+export async function markTransactionArrived(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('transactions')
+    .update({ status: 'in_stock' })
+    .eq('id', id)
+    .eq('status', 'pending');
+
+  if (error) {
+    console.error('标记到着失败:', error);
+    return false;
+  }
+  return true;
 }
 
 /**
  * 获取仪表盘统计数据
  */
-export async function getDashboardStats() {
+export async function getDashboardStats(): Promise<{
+  inStockCount: number;
+  monthlyProfit: number;
+  monthlySalesCount: number;
+  upcomingPayments: UpcomingPayment[];
+  expiringCoupons: any[];
+  totalInvestment: number;
+  totalRecovered: number;
+  confirmedProfit: number;
+  unrealizedStockCost: number;
+  expectedPoints: number;
+}> {
   const [
-    waterLevel,
+    inStockCount,
+    monthlyProfit,
+    monthlySalesCount,
     upcomingPayments,
-    pendingPoints,
     expiringCoupons,
-    bankAccounts,
+    kpiData,
   ] = await Promise.all([
-    getWaterLevelData(),
+    getInStockCount(),
+    getMonthlyProfit(),
+    getMonthlySalesCount(),
     getUpcomingPayments(30),
-    getPendingPoints(),
     getExpiringCoupons(3),
-    getBankAccounts(),
+    getDashboardKPI(),
   ]);
 
   return {
-    waterLevel,
+    inStockCount,
+    monthlyProfit,
+    monthlySalesCount,
     upcomingPayments,
-    pendingPoints,
     expiringCoupons,
-    bankAccounts,
+    ...kpiData,
   };
+}
+
+/**
+ * 获取 KPI 数据：总投资、回收、确定利益、未回收在库、期待ポイント
+ */
+async function getDashboardKPI(): Promise<{
+  totalInvestment: number;
+  totalRecovered: number;
+  confirmedProfit: number;
+  unrealizedStockCost: number;
+  expectedPoints: number;
+}> {
+  const [transactionsRes, salesRes] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('purchase_price_total, status, quantity_in_stock, expected_platform_points, expected_card_points, extra_platform_points'),
+    supabase
+      .from('sales_records')
+      .select('sale_price, total_profit'),
+  ]);
+
+  const transactions = transactionsRes.data || [];
+  const sales = salesRes.data || [];
+
+  const totalInvestment = transactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
+  const totalRecovered = sales.reduce((sum, s) => sum + (s.sale_price || 0), 0);
+  const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
+
+  const unrealizedStockCost = transactions
+    .filter(t => t.status === 'in_stock' || t.status === 'pending')
+    .reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
+
+  const expectedPoints = transactions
+    .filter(t => t.status === 'in_stock' || t.status === 'pending')
+    .reduce((sum, t) => sum + (t.expected_platform_points || 0) + (t.expected_card_points || 0) + (t.extra_platform_points || 0), 0);
+
+  return { totalInvestment, totalRecovered, confirmedProfit, unrealizedStockCost, expectedPoints };
 }

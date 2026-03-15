@@ -1,22 +1,26 @@
 // app/transactions/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
+import { markTransactionArrived } from '@/lib/api/financial';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
 import TransactionRow from '@/components/TransactionRow';
+import { getPurchasePlatforms } from '@/lib/api/platforms';
+import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
   latest_sale_date?: string | null;
   aggregated_profit?: number | null;
   aggregated_roi?: number | null;
+  aggregated_actual_cash_spent?: number | null;
 }
 
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
@@ -28,21 +32,40 @@ interface PaymentMethodBasic {
   name: string;
 }
 
-export default function TransactionsPage() {
+function TransactionsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
+  const [purchasePlatforms, setPurchasePlatforms] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'sold' | 'returned'>('all');
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [dateSortMode, setDateSortMode] = useState<DateSortMode>('purchase'); // 日期排序模式
-  const [activeFilters, setActiveFilters] = useState<FilterValues | null>(null);
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'sold' | 'returned'>(
+    () => (searchParams.get('tab') as any) || 'all'
+  );
+  const [sortField, setSortField] = useState<SortField>(() => (searchParams.get('sort') as SortField) || 'date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() => (searchParams.get('order') as SortOrder) || 'desc');
+  const [dateSortMode, setDateSortMode] = useState<DateSortMode>(() => (searchParams.get('dsm') as DateSortMode) || 'purchase');
+  const [activeFilters, setActiveFilters] = useState<FilterValues | null>(() => {
+    // 从 URL 恢复高级筛选
+    const dateFrom = searchParams.get('df') || '';
+    const dateTo = searchParams.get('dt') || '';
+    const productName = searchParams.get('pn') || '';
+    const statusParam = searchParams.get('st');
+    const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
+    const paymentMethodId = searchParams.get('pm') || '';
+    const purchasePlatformId = searchParams.get('pp') || '';
+    if (dateFrom || dateTo || productName || status.length > 0 || paymentMethodId || purchasePlatformId) {
+      return { dateFrom, dateTo, productName, status, paymentMethodId, purchasePlatformId };
+    }
+    return null;
+  });
+  const [exporting, setExporting] = useState(false);
 
   // 统计数据
   const [stats, setStats] = useState({
     total: 0,
+    pending: 0,
     inStock: 0,
     sold: 0,
     returned: 0,
@@ -54,11 +77,38 @@ export default function TransactionsPage() {
   useEffect(() => {
     loadTransactions();
     loadPaymentMethods();
+    loadPurchasePlatforms();
   }, []);
 
   useEffect(() => {
     calculateStats();
   }, [transactions]);
+
+  // 筛选条件变化时同步到 URL
+  const syncFiltersToURL = useCallback(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('q', searchTerm);
+    if (statusFilter !== 'all') params.set('tab', statusFilter);
+    if (sortField !== 'date') params.set('sort', sortField);
+    if (sortOrder !== 'desc') params.set('order', sortOrder);
+    if (dateSortMode !== 'purchase') params.set('dsm', dateSortMode);
+    if (activeFilters) {
+      if (activeFilters.dateFrom) params.set('df', activeFilters.dateFrom);
+      if (activeFilters.dateTo) params.set('dt', activeFilters.dateTo);
+      if (activeFilters.productName) params.set('pn', activeFilters.productName);
+      if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
+      if (activeFilters.paymentMethodId) params.set('pm', activeFilters.paymentMethodId);
+      if (activeFilters.purchasePlatformId) params.set('pp', activeFilters.purchasePlatformId);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/transactions?${qs}` : '/transactions', { scroll: false });
+  }, [searchTerm, statusFilter, sortField, sortOrder, dateSortMode, activeFilters, router]);
+
+  useEffect(() => {
+    if (!loading) {
+      syncFiltersToURL();
+    }
+  }, [searchTerm, statusFilter, sortField, sortOrder, dateSortMode, activeFilters, loading]);
 
   const loadTransactions = async () => {
     setLoading(true);
@@ -79,22 +129,25 @@ export default function TransactionsPage() {
           // 获取该交易的所有销售记录
           const { data: salesRecords } = await supabase
             .from('sales_records')
-            .select('total_profit, roi, sale_date')
+            .select('total_profit, roi, actual_cash_spent, sale_date')
             .eq('transaction_id', transaction.id)
             .order('sale_date', { ascending: false });
 
           let latest_sale_date = null;
           let aggregated_profit = null;
           let aggregated_roi = null;
+          let aggregated_actual_cash_spent = null;
 
           if (salesRecords && salesRecords.length > 0) {
             // 获取最新销售日期
             latest_sale_date = salesRecords[0].sale_date;
 
-            // 计算累计利润和ROI（对所有有销售记录的商品）
+            // 计算累计利润和加权ROI（对所有有销售记录的商品）
             if (transaction.quantity_sold > 0) {
               aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
-              aggregated_roi = salesRecords.reduce((sum, r) => sum + (r.roi || 0), 0) / salesRecords.length;
+              const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
+              aggregated_actual_cash_spent = totalCashSpent;
+              aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
             }
           }
 
@@ -103,6 +156,7 @@ export default function TransactionsPage() {
             latest_sale_date,
             aggregated_profit,
             aggregated_roi,
+            aggregated_actual_cash_spent,
           };
         })
       );
@@ -127,19 +181,27 @@ export default function TransactionsPage() {
     }
   };
 
+  const loadPurchasePlatforms = async () => {
+    const data = await getPurchasePlatforms();
+    setPurchasePlatforms(data.map(p => ({ id: p.id, name: p.name })));
+  };
+
   const calculateStats = () => {
+    const pending = transactions.filter(t => t.status === 'pending');
     const inStock = transactions.filter(t => t.status === 'in_stock');
     const sold = transactions.filter(t => t.status === 'sold');
     const returned = transactions.filter(t => t.status === 'returned');
 
     const totalCost = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
     const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0);
-    const avgROI = sold.length > 0
-      ? sold.reduce((sum, t) => sum + (t.roi || 0), 0) / sold.length
+    const totalActualCashSpent = sold.reduce((sum, t) => sum + (t.aggregated_actual_cash_spent || 0), 0);
+    const avgROI = totalActualCashSpent > 0
+      ? (totalProfit / totalActualCashSpent) * 100
       : 0;
 
     setStats({
       total: transactions.length,
+      pending: pending.length,
       inStock: inStock.length,
       sold: sold.length,
       returned: returned.length,
@@ -183,6 +245,11 @@ export default function TransactionsPage() {
 
         // 支付方式筛选
         if (activeFilters.paymentMethodId && t.card_id !== activeFilters.paymentMethodId) {
+          return false;
+        }
+
+        // 購入先筛选
+        if (activeFilters.purchasePlatformId && t.purchase_platform_id !== activeFilters.purchasePlatformId) {
           return false;
         }
       }
@@ -247,6 +314,29 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const csv = await exportTransactionsToCSV();
+      downloadCSV(csv);
+    } catch (error: any) {
+      alert(error.message || 'CSV导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleMarkArrived = async (id: string) => {
+    const success = await markTransactionArrived(id);
+    if (success) {
+      setTransactions(prev =>
+        prev.map(t => t.id === id ? { ...t, status: 'in_stock' as const } : t)
+      );
+    } else {
+      alert('着荷処理に失敗しました');
+    }
+  };
+
   if (loading) {
     return (
       <div className={layout.page + ' flex items-center justify-center'}>
@@ -271,36 +361,39 @@ export default function TransactionsPage() {
               <h1 className={heading.h1 + ' mb-2'}>交易记录</h1>
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
-            <Link
-              href="/transactions/add"
-              className={button.primary + ' flex items-center gap-2'}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              记录新交易
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExportCSV}
+                disabled={exporting}
+                className={button.primary + ' flex items-center gap-2 !bg-gray-700 hover:!bg-gray-600'}
+              >
+                {exporting ? (
+                  <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                {exporting ? '导出中...' : 'CSV导出'}
+              </button>
+              <Link
+                href="/transactions/add"
+                className={button.primary + ' flex items-center gap-2'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                记录新交易
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
-          <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总交易</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
-          </div>
-          <div className={card.stat + ' border-emerald-500/30'}>
-            <div className="text-emerald-600 dark:text-emerald-300 text-sm mb-1">已售出</div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">{stats.sold}</div>
-          </div>
-          <div className={card.stat + ' border-amber-500/30'}>
-            <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">库存中</div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{stats.inStock}</div>
-          </div>
-          <div className={card.stat + ' border-red-500/30'}>
-            <div className="text-red-600 dark:text-red-300 text-sm mb-1">已退货</div>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-300">{stats.returned}</div>
-          </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalCost)}</div>
@@ -319,43 +412,54 @@ export default function TransactionsPage() {
           </div>
         </div>
 
+        {/* タブバー */}
+        <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
+          {([
+            { key: 'all', label: '全部', count: stats.total },
+            { key: 'in_stock', label: '在庫', count: stats.inStock, color: 'amber' },
+            { key: 'pending', label: '未着', count: stats.pending, color: 'teal' },
+            { key: 'sold', label: '売却済', count: stats.sold, color: 'emerald' },
+            { key: 'returned', label: '返品済', count: stats.returned, color: 'red' },
+          ] as const).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                statusFilter === tab.key
+                  ? 'bg-teal-600 text-white shadow-md'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              {tab.label}
+              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-teal-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* 高级筛选器 */}
         <TransactionFilters
           onApply={handleApplyFilters}
           onClear={handleClearFilters}
           paymentMethods={paymentMethods}
+          purchasePlatforms={purchasePlatforms}
+          initialValues={activeFilters}
         />
 
-        {/* 筛选和搜索 */}
+        {/* 搜索 */}
         <div className={card.primary + ' p-6 shadow-2xl mb-6'}>
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* 搜索框 */}
-            <div className="flex-1">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="搜索商品名称或备注..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={input.base + ' pl-12'}
-                />
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-
-            {/* 状态筛选 */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className={input.base}
-            >
-              <option value="all">全部状态</option>
-              <option value="in_stock">库存中</option>
-              <option value="sold">已售出</option>
-              <option value="returned">已退货</option>
-            </select>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="搜索商品名称或备注..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={input.base + ' pl-12 w-full'}
+            />
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
         </div>
 
@@ -383,6 +487,7 @@ export default function TransactionsPage() {
                   transaction={transaction}
                   dateSortMode={dateSortMode}
                   onDelete={deleteTransaction}
+                  onMarkArrived={handleMarkArrived}
                 />
               ))}
             </div>
@@ -473,6 +578,7 @@ export default function TransactionsPage() {
                           transaction={transaction}
                           dateSortMode={dateSortMode}
                           onDelete={deleteTransaction}
+                          onMarkArrived={handleMarkArrived}
                         />
                       ))}
                     </tbody>
@@ -484,5 +590,23 @@ export default function TransactionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={
+      <div className={layout.page + ' flex items-center justify-center'}>
+        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-xl">加载中...</span>
+        </div>
+      </div>
+    }>
+      <TransactionsContent />
+    </Suspense>
   );
 }

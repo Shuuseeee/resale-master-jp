@@ -39,3 +39,13 @@ next-env.d.ts
 
 # Supabase CLI 临时文件
 supabase/.temp/
+
+# 个人数据
+*.csv
+
+# 临时 SQL 脚本
+fix_*.sql
+
+# Claude Code 对话日志
+*command-messag*.txt
+中断*.txt

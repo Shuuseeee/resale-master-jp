@@ -1,19 +1,22 @@
 // app/transactions/add/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
-import type { PaymentMethod, TransactionFormData, PointsPlatform } from '@/types/database.types';
-import { useRouter } from 'next/navigation';
+import type { PaymentMethod, TransactionFormData, PointsPlatform, PurchasePlatform } from '@/types/database.types';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
 import { useCalculator } from '@/hooks/useCalculator';
+import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
+import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
 
-export default function AddTransactionPage() {
+function AddTransactionPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
@@ -31,6 +34,10 @@ export default function AddTransactionPage() {
     platform_points_platform_id: '',
     card_points_platform_id: '',
     extra_platform_points_platform_id: '',
+    jan_code: '',
+    unit_price: 0,
+    purchase_platform_id: '',
+    order_number: '',
     image_url: '',
     notes: '',
   });
@@ -38,10 +45,14 @@ export default function AddTransactionPage() {
   // UI 状态
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
+  const [purchasePlatforms, setPurchasePlatforms] = useState<PurchasePlatform[]>([]);
+  const [newPurchasePlatformName, setNewPurchasePlatformName] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPending, setIsPending] = useState(true); // 未着品トグル
+  const [amazonConfig, setAmazonConfig] = useState<AmazonPointConfig | null>(null);
 
   // Calculator refs for numeric inputs
   const quantityRef = useRef<HTMLInputElement>(null);
@@ -51,6 +62,7 @@ export default function AddTransactionPage() {
   const expectedPlatformPointsRef = useRef<HTMLInputElement>(null);
   const extraPlatformPointsRef = useRef<HTMLInputElement>(null);
   const expectedCardPointsRef = useRef<HTMLInputElement>(null);
+  const unitPriceRef = useRef<HTMLInputElement>(null);
 
   // Register inputs with calculator
   useCalculator(quantityRef);
@@ -60,12 +72,103 @@ export default function AddTransactionPage() {
   useCalculator(expectedPlatformPointsRef);
   useCalculator(extraPlatformPointsRef);
   useCalculator(expectedCardPointsRef);
+  useCalculator(unitPriceRef);
 
   // 加载支付方式列表和积分平台列表
   useEffect(() => {
     fetchPaymentMethods();
     fetchPointsPlatforms();
+    fetchPurchasePlatforms();
+    setAmazonConfig(loadAmazonPointConfig());
   }, []);
+
+  // 判断选择的购入先是否为 Amazon
+  const isAmazonPlatform = (platformId: string | undefined): boolean => {
+    if (!platformId) return false;
+    const platform = purchasePlatforms.find(p => p.id === platformId);
+    return platform?.name === 'Amazon';
+  };
+
+  // Amazon ポイント自動計算
+  const autoCalcAmazonPoints = (
+    total: number,
+    pointPaid: number,
+    cfg: AmazonPointConfig,
+  ) => {
+    // P(サイト) = Amazon ポイント + キャンペーン
+    const platformPoints = Math.floor(total * (cfg.amazon_point_rate + cfg.campaign_rate) / 100);
+    // P(カード) = カード還元 (ポイント使用分除外)
+    const cardPoints = Math.floor((total - pointPaid) * cfg.card_rate / 100);
+    // P(他) = d ポイント (上限あり)
+    const dPointsRaw = Math.floor(total * cfg.d_point_rate / 100);
+    const extraPoints = Math.min(dPointsRaw, cfg.d_point_cap);
+    return { platformPoints, cardPoints, extraPoints };
+  };
+
+  // Amazon自動計算をフォームに適用
+  const applyAmazonAutoCalc = (
+    total: number,
+    pointPaid: number,
+    cfg: AmazonPointConfig,
+    platforms: PointsPlatform[],
+  ) => {
+    const { platformPoints, cardPoints, extraPoints } = autoCalcAmazonPoints(total, pointPaid, cfg);
+
+    // ポイントプラットフォームを名前で自動選択
+    const amazonPlatform = platforms.find(p => p.display_name.includes('Amazon'));
+    const dPointPlatform = platforms.find(p => p.display_name.includes('d'));
+
+    setFormData(prev => ({
+      ...prev,
+      expected_platform_points: platformPoints,
+      expected_card_points: cardPoints,
+      extra_platform_points: extraPoints,
+      ...(amazonPlatform ? { platform_points_platform_id: amazonPlatform.id } : {}),
+      ...(dPointPlatform && extraPoints > 0 ? { extra_platform_points_platform_id: dPointPlatform.id } : {}),
+    }));
+  };
+
+  // 复制交易数据
+  useEffect(() => {
+    const copyId = searchParams.get('copy');
+    if (!copyId) return;
+
+    const loadSourceTransaction = async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', copyId)
+        .single();
+
+      if (error || !data) return;
+
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        product_name: data.product_name,
+        quantity: data.quantity,
+        purchase_price_total: data.purchase_price_total,
+        card_paid: data.card_paid,
+        point_paid: data.point_paid,
+        balance_paid: data.balance_paid,
+        card_id: data.card_id || '',
+        expected_platform_points: data.expected_platform_points,
+        expected_card_points: data.expected_card_points,
+        extra_platform_points: data.extra_platform_points,
+        platform_points_platform_id: data.platform_points_platform_id || '',
+        card_points_platform_id: data.card_points_platform_id || '',
+        extra_platform_points_platform_id: data.extra_platform_points_platform_id || '',
+        jan_code: data.jan_code || '',
+        unit_price: data.unit_price || 0,
+        purchase_platform_id: data.purchase_platform_id || '',
+        order_number: '',
+        image_url: '',
+        notes: data.notes || '',
+      });
+      setIsPending(false);
+    };
+
+    loadSourceTransaction();
+  }, [searchParams]);
 
   const fetchPaymentMethods = async () => {
     const { data, error } = await supabase
@@ -97,6 +200,22 @@ export default function AddTransactionPage() {
     setPointsPlatforms(data || []);
   };
 
+  const fetchPurchasePlatforms = async () => {
+    const data = await getPurchasePlatforms();
+    setPurchasePlatforms(data);
+  };
+
+  const handleAddPurchasePlatform = async () => {
+    const name = newPurchasePlatformName.trim();
+    if (!name) return;
+    const created = await createPurchasePlatform(name);
+    if (created) {
+      setPurchasePlatforms(prev => [...prev, created]);
+      setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
+      setNewPurchasePlatformName('');
+    }
+  };
+
   // 处理输入变化
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -124,6 +243,13 @@ export default function AddTransactionPage() {
           card_id: value,
           card_points_platform_id: selectedCard.card_points_platform_id || '',
         }));
+      }
+    }
+
+    // 購入先が Amazon に変更された場合、自動計算
+    if (name === 'purchase_platform_id' && value && amazonConfig?.auto_calc_enabled) {
+      if (isAmazonPlatform(value) && formData.purchase_price_total > 0) {
+        applyAmazonAutoCalc(formData.purchase_price_total, formData.point_paid, amazonConfig, pointsPlatforms);
       }
     }
 
@@ -183,6 +309,12 @@ export default function AddTransactionPage() {
       balance_paid: balancePaid,
       expected_card_points: cardPoints,
     });
+
+    // Amazon カード還元再計算 (ポイント使用分除外のため point_paid 変更時に再計算)
+    if (field === 'point_paid' && amazonConfig?.auto_calc_enabled && newFormData.purchase_platform_id && isAmazonPlatform(newFormData.purchase_platform_id) && newFormData.purchase_price_total > 0) {
+      const { cardPoints: amazonCardPoints } = autoCalcAmazonPoints(newFormData.purchase_price_total, numValue, amazonConfig);
+      setFormData(prev => ({ ...prev, expected_card_points: amazonCardPoints }));
+    }
   };
 
   // 处理图片选择
@@ -273,12 +405,17 @@ export default function AddTransactionPage() {
         .insert([
           {
             ...formData,
+            status: isPending ? 'pending' : 'in_stock',
             image_url: imageUrl,
             card_id: formData.card_id || null,
             platform_points_platform_id: formData.platform_points_platform_id || null,
             card_points_platform_id: formData.card_points_platform_id || null,
             extra_platform_points: formData.extra_platform_points || 0,
             extra_platform_points_platform_id: formData.extra_platform_points_platform_id || null,
+            jan_code: formData.jan_code || null,
+            unit_price: formData.unit_price || null,
+            purchase_platform_id: formData.purchase_platform_id || null,
+            order_number: formData.order_number || null,
           },
         ])
         .select()
@@ -323,7 +460,7 @@ export default function AddTransactionPage() {
             {/* 基本信息 */}
             <div className="space-y-5">
               <h2 className={heading.h3 + ' flex items-center gap-2'}>
-                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
                 基本信息
               </h2>
 
@@ -340,7 +477,7 @@ export default function AddTransactionPage() {
                         date: date ? date.toISOString().split('T')[0] : ''
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -354,7 +491,7 @@ export default function AddTransactionPage() {
                     value={formData.product_name}
                     onChange={handleInputChange}
                     placeholder="例: Nintendo Switch OLED"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     required
                   />
                   {errors.product_name && (
@@ -374,12 +511,153 @@ export default function AddTransactionPage() {
                     value={formData.quantity || 1}
                     onChange={handleNumberChange}
                     placeholder="1"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     required
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     批量进货时填写总数量，如30个
                   </p>
+                </div>
+
+                {/* 未着品トグル */}
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      未着品（未到着）
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      商品がまだ届いていない場合はONにしてください
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isPending}
+                    onClick={() => setIsPending(!isPending)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      isPending ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isPending ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 購入情報 */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+            <div className="space-y-5">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                購入情報
+              </h2>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    JANコード
+                  </label>
+                  <input
+                    type="text"
+                    name="jan_code"
+                    value={formData.jan_code || ''}
+                    onChange={handleInputChange}
+                    placeholder="4901234567890"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    注文番号
+                  </label>
+                  <input
+                    type="text"
+                    name="order_number"
+                    value={formData.order_number || ''}
+                    onChange={handleInputChange}
+                    placeholder="注文番号"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  単価 (¥)
+                </label>
+                <div className="relative">
+                  <input
+                    ref={unitPriceRef}
+                    type="text"
+                    inputMode="decimal"
+                    name="unit_price"
+                    value={formData.unit_price || ''}
+                    onChange={(e) => {
+                      const val = parseNumberInput(e.target.value, 0);
+                      const qty = formData.quantity || 1;
+                      const newTotal = Math.round(val * qty * 100) / 100;
+                      setFormData(prev => ({
+                        ...prev,
+                        unit_price: val,
+                        purchase_price_total: newTotal,
+                        balance_paid: calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid),
+                      }));
+                      // Amazon 自動計算
+                      if (amazonConfig?.auto_calc_enabled && isAmazonPlatform(formData.purchase_platform_id) && newTotal > 0) {
+                        applyAmazonAutoCalc(newTotal, formData.point_paid, amazonConfig, pointsPlatforms);
+                      }
+                    }}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  入力すると採購総価が自動計算されます（単価 × 数量）
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  購入先
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    name="purchase_platform_id"
+                    value={formData.purchase_platform_id || ''}
+                    onChange={handleInputChange}
+                    className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">選択してください</option>
+                    {purchasePlatforms.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}{p.is_builtin ? '' : ' (カスタム)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={newPurchasePlatformName}
+                    onChange={(e) => setNewPurchasePlatformName(e.target.value)}
+                    placeholder="新しい購入先を追加..."
+                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPurchasePlatform}
+                    disabled={!newPurchasePlatformName.trim()}
+                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+                  >
+                    追加
+                  </button>
                 </div>
               </div>
             </div>
@@ -413,6 +691,10 @@ export default function AddTransactionPage() {
                         formData.point_paid
                       );
                       setFormData((prev) => ({ ...prev, balance_paid: balancePaid }));
+                      // Amazon 自動計算
+                      if (amazonConfig?.auto_calc_enabled && isAmazonPlatform(formData.purchase_platform_id) && total > 0) {
+                        applyAmazonAutoCalc(total, formData.point_paid, amazonConfig, pointsPlatforms);
+                      }
                     }}
                     placeholder="0.00 或 3,000"
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
@@ -440,7 +722,7 @@ export default function AddTransactionPage() {
                         value={formData.card_paid || ''}
                         onChange={(e) => handlePaymentChange('card_paid', e.target.value)}
                         placeholder="0.00 或 3,000"
-                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                     </div>
@@ -448,7 +730,7 @@ export default function AddTransactionPage() {
                       name="card_id"
                       value={formData.card_id}
                       onChange={handleInputChange}
-                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       disabled={formData.card_paid === 0}
                     >
                       <option value="">选择卡片</option>
@@ -478,7 +760,7 @@ export default function AddTransactionPage() {
                       value={formData.point_paid || ''}
                       onChange={(e) => handlePaymentChange('point_paid', e.target.value)}
                       placeholder="0.00 或 3,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
@@ -577,7 +859,7 @@ export default function AddTransactionPage() {
                       value={formData.extra_platform_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -591,7 +873,7 @@ export default function AddTransactionPage() {
                     value={formData.extra_platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -626,7 +908,7 @@ export default function AddTransactionPage() {
                       value={formData.expected_card_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -641,7 +923,7 @@ export default function AddTransactionPage() {
                     value={formData.card_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_card_points === 0 || !formData.card_id}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -729,7 +1011,7 @@ export default function AddTransactionPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-teal-400 to-teal-500 rounded-full"></div>
                 备注
               </h2>
 
@@ -739,7 +1021,7 @@ export default function AddTransactionPage() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="添加备注信息..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
               />
             </div>
           </div>
@@ -754,7 +1036,7 @@ export default function AddTransactionPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -771,5 +1053,23 @@ export default function AddTransactionPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AddTransactionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-xl">加载中...</span>
+        </div>
+      </div>
+    }>
+      <AddTransactionPageContent />
+    </Suspense>
   );
 }
