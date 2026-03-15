@@ -240,9 +240,9 @@ export default function TransactionDetailPage() {
             <span className="font-medium">返回</span>
           </button>
 
-          <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl xs:text-3xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-3 xs:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
+          <div className="flex flex-col gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-3 sm:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
@@ -268,7 +268,7 @@ export default function TransactionDetailPage() {
             </div>
 
             {/* 操作按钮 */}
-            <div className="flex items-center gap-2 flex-wrap xs:flex-nowrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* 着荷按钮 - 仅当status=pending时显示 */}
               {transaction.status === 'pending' && (
                 <button
@@ -280,64 +280,59 @@ export default function TransactionDetailPage() {
                       alert('着荷処理に失敗しました');
                     }
                   }}
-                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="hidden xs:inline">着荷確認</span>
-                  <span className="xs:hidden">着荷</span>
+                  着荷確認
                 </button>
               )}
               {/* 批量商品显示批量销售按钮 */}
               {transaction.quantity > 1 && transaction.quantity_in_stock > 0 && !showBatchSaleForm && (
                 <button
                   onClick={() => setShowBatchSaleForm(true)}
-                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="hidden xs:inline">记录销售</span>
-                  <span className="xs:hidden">记录</span>
+                  记录销售
                 </button>
               )}
               {/* 单品显示原有的记录销售按钮 */}
               {transaction.quantity === 1 && transaction.status === 'in_stock' && !showSaleForm && (
                 <button
                   onClick={() => setShowSaleForm(true)}
-                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="hidden xs:inline">记录销售</span>
-                  <span className="xs:hidden">记录</span>
+                  记录销售
                 </button>
               )}
               {/* 退货按钮 - 有库存时显示 */}
               {transaction.quantity_in_stock > 0 && !showReturnForm && (
                 <button
                   onClick={() => setShowReturnForm(true)}
-                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
                   </svg>
-                  <span className="hidden xs:inline">标记为退货</span>
-                  <span className="xs:hidden">退货</span>
+                  退货
                 </button>
               )}
               {transaction.status === 'sold' && (
                 <button
                   onClick={cancelSale}
-                  className="px-3 py-2 xs:px-4 xs:py-2 sm:px-6 sm:py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 min-w-[100px] xs:min-w-[110px] whitespace-nowrap"
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
                 >
-                  <svg className="w-4 h-4 xs:w-5 xs:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
-                  <span className="hidden xs:inline">取消销售</span>
-                  <span className="xs:hidden">取消</span>
+                  取消销售
                 </button>
               )}
               <Link
