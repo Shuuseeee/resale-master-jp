@@ -534,7 +534,7 @@ function AddTransactionPageContent() {
                       未着品（未到着）
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      商品がまだ届いていない場合はONにしてください
+                      商品がまだ届いていない
                     </p>
                   </div>
                   <button
