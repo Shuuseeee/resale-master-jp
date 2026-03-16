@@ -6,17 +6,22 @@ import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import Link from 'next/link';
 import { layout, heading, button, input } from '@/lib/theme';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, type AmazonPointConfig } from '@/lib/amazon-point-config';
+import { loadKaitorixConfig, saveKaitorixConfig, ALL_STORES, type KaitorixConfig } from '@/lib/kaitorix-config';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [kaitorixConfig, setKaitorixConfig] = useState<KaitorixConfig>({ enabled: false, enabledStores: [] });
+  const [kaitorixSaving, setKaitorixSaving] = useState(false);
+  const [kaitorixSaveMessage, setKaitorixSaveMessage] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setConfig(loadAmazonPointConfig());
+    setKaitorixConfig(loadKaitorixConfig());
   }, []);
 
   const updateConfig = (field: keyof AmazonPointConfig, value: number | boolean) => {
@@ -29,6 +34,26 @@ export default function SettingsPage() {
     setSaveMessage('保存しました');
     setSaving(false);
     setTimeout(() => setSaveMessage(''), 2000);
+  };
+
+  const toggleKaitorixStore = (storeKey: string) => {
+    setKaitorixConfig(prev => {
+      const isEnabled = prev.enabledStores.includes(storeKey);
+      return {
+        ...prev,
+        enabledStores: isEnabled
+          ? prev.enabledStores.filter(k => k !== storeKey)
+          : [...prev.enabledStores, storeKey],
+      };
+    });
+  };
+
+  const saveKaitorixSettings = () => {
+    setKaitorixSaving(true);
+    saveKaitorixConfig(kaitorixConfig);
+    setKaitorixSaveMessage('保存しました');
+    setKaitorixSaving(false);
+    setTimeout(() => setKaitorixSaveMessage(''), 2000);
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,6 +235,94 @@ export default function SettingsPage() {
             </button>
             {saveMessage && (
               <span className="text-sm text-emerald-600 dark:text-emerald-400">{saveMessage}</span>
+            )}
+          </div>
+        </div>
+
+        {/* 買取価格チェック */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-8">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
+            買取価格チェック
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            KaitoriXから最新の買取価格を取得して見込利益を表示
+          </p>
+
+          {/* 機能トグル */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                買取価格チェックを有効化
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                取引一覧に買取価格と見込利益を表示します
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={kaitorixConfig.enabled}
+              onClick={() => setKaitorixConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                kaitorixConfig.enabled ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  kaitorixConfig.enabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* 店舗選択 */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              チェックする店舗を選択
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {ALL_STORES.map(store => {
+                const isChecked = kaitorixConfig.enabledStores.includes(store.key);
+                return (
+                  <button
+                    key={store.key}
+                    type="button"
+                    onClick={() => toggleKaitorixStore(store.key)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-colors ${
+                      isChecked
+                        ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 text-teal-700 dark:text-teal-300'
+                        : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
+                      isChecked
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-600'
+                    }`}>
+                      {isChecked && (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium">{store.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-6">
+            <button
+              onClick={saveKaitorixSettings}
+              disabled={kaitorixSaving}
+              className={button.primary + ' px-6 py-2'}
+            >
+              {kaitorixSaving ? '保存中...' : '保存'}
+            </button>
+            {kaitorixSaveMessage && (
+              <span className="text-sm text-emerald-600 dark:text-emerald-400">{kaitorixSaveMessage}</span>
             )}
           </div>
         </div>

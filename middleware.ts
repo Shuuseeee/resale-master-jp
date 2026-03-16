@@ -62,9 +62,10 @@ export async function middleware(req: NextRequest) {
   // 定义公开路径（不需要登录）
   const publicPaths = ['/auth/login', '/auth/register'];
   const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path));
+  const isApiPath = req.nextUrl.pathname.startsWith('/api/');
 
   // 如果用户未登录且访问受保护的路径
-  if (!session && !isPublicPath) {
+  if (!session && !isPublicPath && !isApiPath) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
     redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);

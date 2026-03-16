@@ -15,11 +15,19 @@ interface TransactionWithPayment extends Transaction {
   aggregated_roi?: number | null;
 }
 
+interface BuybackInfo {
+  maxPrice: number;
+  maxStore: string;
+  expectedProfit: number;
+  loading: boolean;
+}
+
 interface TransactionRowProps {
   transaction: TransactionWithPayment;
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  buybackInfo?: BuybackInfo;
 }
 
 export default function TransactionRow({
@@ -27,6 +35,7 @@ export default function TransactionRow({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  buybackInfo,
 }: TransactionRowProps) {
   const router = useRouter();
 
@@ -108,6 +117,34 @@ export default function TransactionRow({
         {(transaction as any).aggregated_roi !== null && (transaction as any).aggregated_roi !== undefined ? (
           <span className={(transaction as any).aggregated_roi >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
             {formatROI((transaction as any).aggregated_roi)}
+          </span>
+        ) : (
+          <span className="text-gray-500 dark:text-gray-500">-</span>
+        )}
+      </td>
+      <td className="px-6 py-4 text-right font-mono">
+        {buybackInfo?.loading ? (
+          <div className="flex flex-col items-end gap-1">
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
+          <div className="flex flex-col items-end">
+            <span className="text-teal-600 dark:text-teal-300">
+              {formatCurrency(buybackInfo.maxPrice)}
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{buybackInfo.maxStore}</span>
+          </div>
+        ) : (
+          <span className="text-gray-500 dark:text-gray-500">-</span>
+        )}
+      </td>
+      <td className="px-6 py-4 text-right font-mono">
+        {buybackInfo?.loading ? (
+          <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
+        ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
+          <span className={buybackInfo.expectedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
+            {formatCurrency(buybackInfo.expectedProfit)}
           </span>
         ) : (
           <span className="text-gray-500 dark:text-gray-500">-</span>

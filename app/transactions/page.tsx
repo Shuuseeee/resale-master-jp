@@ -14,6 +14,7 @@ import TransactionCard from '@/components/TransactionCard';
 import TransactionRow from '@/components/TransactionRow';
 import { getPurchasePlatforms } from '@/lib/api/platforms';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
+import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -23,7 +24,7 @@ interface TransactionWithPayment extends Transaction {
   aggregated_actual_cash_spent?: number | null;
 }
 
-type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi';
+type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 type SortOrder = 'asc' | 'desc';
 type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
 
@@ -62,6 +63,9 @@ function TransactionsContent() {
     return null;
   });
   const [exporting, setExporting] = useState(false);
+
+  // KaitoriX 買取価格
+  const buybackPrices = useKaitorixPrices(transactions);
 
   // 统计数据
   const [stats, setStats] = useState({
@@ -276,6 +280,12 @@ function TransactionsContent() {
           aValue = a.date;
           bValue = b.date;
         }
+      } else if (sortField === 'buyback_price') {
+        aValue = buybackPrices.get(a.id)?.maxPrice || 0;
+        bValue = buybackPrices.get(b.id)?.maxPrice || 0;
+      } else if (sortField === 'expected_profit') {
+        aValue = buybackPrices.get(a.id)?.expectedProfit || 0;
+        bValue = buybackPrices.get(b.id)?.expectedProfit || 0;
       } else {
         aValue = a[sortField];
         bValue = b[sortField];
@@ -495,6 +505,7 @@ function TransactionsContent() {
                   dateSortMode={dateSortMode}
                   onDelete={deleteTransaction}
                   onMarkArrived={handleMarkArrived}
+                  buybackInfo={buybackPrices.get(transaction.id)}
                 />
               ))}
             </div>
@@ -573,6 +584,32 @@ function TransactionsContent() {
                             )}
                           </div>
                         </th>
+                        <th
+                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                          onClick={() => toggleSort('buyback_price')}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            買取価格
+                            {sortField === 'buyback_price' && (
+                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                          onClick={() => toggleSort('expected_profit')}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            見込利益
+                            {sortField === 'expected_profit' && (
+                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </th>
                         <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           操作
                         </th>
@@ -586,6 +623,7 @@ function TransactionsContent() {
                           dateSortMode={dateSortMode}
                           onDelete={deleteTransaction}
                           onMarkArrived={handleMarkArrived}
+                          buybackInfo={buybackPrices.get(transaction.id)}
                         />
                       ))}
                     </tbody>

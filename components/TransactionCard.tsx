@@ -15,11 +15,19 @@ interface TransactionWithPayment extends Transaction {
   aggregated_roi?: number | null;
 }
 
+interface BuybackInfo {
+  maxPrice: number;
+  maxStore: string;
+  expectedProfit: number;
+  loading: boolean;
+}
+
 interface TransactionCardProps {
   transaction: TransactionWithPayment;
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  buybackInfo?: BuybackInfo;
 }
 
 export default function TransactionCard({
@@ -27,6 +35,7 @@ export default function TransactionCard({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  buybackInfo,
 }: TransactionCardProps) {
   const router = useRouter();
 
@@ -120,6 +129,36 @@ export default function TransactionCard({
               ? formatROI((transaction as any).aggregated_roi)
               : '-'}
           </p>
+        </div>
+        <div>
+          <span className="text-gray-600 dark:text-gray-400 text-xs">買取価格</span>
+          {buybackInfo?.loading ? (
+            <div className="flex flex-col gap-1">
+              <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            </div>
+          ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
+            <>
+              <p className="text-teal-600 font-medium font-mono">
+                {formatCurrency(buybackInfo.maxPrice)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{buybackInfo.maxStore}</p>
+            </>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-500 font-mono">-</p>
+          )}
+        </div>
+        <div>
+          <span className="text-gray-600 dark:text-gray-400 text-xs">見込利益</span>
+          {buybackInfo?.loading ? (
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
+            <p className={`font-medium font-mono ${buybackInfo.expectedProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {formatCurrency(buybackInfo.expectedProfit)}
+            </p>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-500 font-mono">-</p>
+          )}
         </div>
       </div>
 
