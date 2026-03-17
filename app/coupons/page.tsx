@@ -279,8 +279,6 @@ export default function CouponsPage() {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredCoupons.map((coupon) => {
                 const daysLeft = daysUntil(coupon.expiry_date);
-                const daysRight = daysUntil(coupon.start_date);
-                const isStarted = daysRight < 0;
                 const isExpired = daysLeft < 0;
                 const isExpiringSoon = daysLeft <= 7 && daysLeft >= 0;
 
@@ -322,24 +320,6 @@ export default function CouponsPage() {
                           满 {formatCurrency(coupon.min_purchase_amount)} 可用
                         </div>
                       )}
-                    </div>
-                    <div className="mb-4 text-sm">
-                      <div className="text-gray-600 dark:text-gray-400">
-                        开始日期: {coupon.start_date}
-                      </div>
-                      <div
-                        className={`font-medium ${
-                          isStarted
-                            ? "text-orange-600 dark:text-orange-300"
-                            : "text-green-600 dark:text-green-400"
-                        }`}
-                      >
-                        {isStarted
-                          ? ""
-                          : daysRight === 0
-                            ? "今天"
-                            : `还有 ${daysRight} 天`}
-                      </div>
                     </div>
                     <div className="mb-4 text-sm">
                       <div className="text-gray-600 dark:text-gray-400">
