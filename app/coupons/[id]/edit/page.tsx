@@ -1,19 +1,18 @@
 // app/coupons/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
-import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
-import { useCalculator } from '@/hooks/useCalculator';
 
 interface CouponFormData {
   name: string;
   discount_type: DiscountType;
   discount_value: number;
   min_purchase_amount: number;
+  start_date: string;
   expiry_date: string;
   platform: string;
   notes: string;
@@ -29,6 +28,7 @@ export default function EditCouponPage() {
     discount_type: 'percentage',
     discount_value: 0,
     min_purchase_amount: 0,
+    start_date: '',
     expiry_date: '',
     platform: '',
     notes: '',
@@ -36,14 +36,6 @@ export default function EditCouponPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Calculator refs
-  const discountValueRef = useRef<HTMLInputElement>(null);
-  const minPurchaseRef = useRef<HTMLInputElement>(null);
-
-  // Initialize calculator
-  useCalculator(discountValueRef);
-  useCalculator(minPurchaseRef);
 
   useEffect(() => {
     loadCoupon();
@@ -66,6 +58,7 @@ export default function EditCouponPage() {
           discount_type: data.discount_type,
           discount_value: data.discount_value,
           min_purchase_amount: data.min_purchase_amount,
+          start_date: data.start_date,
           expiry_date: data.expiry_date,
           platform: data.platform || '',
           notes: data.notes || '',
@@ -138,6 +131,7 @@ export default function EditCouponPage() {
           discount_type: formData.discount_type,
           discount_value: formData.discount_value,
           min_purchase_amount: formData.min_purchase_amount,
+          start_date: formData.start_date,
           expiry_date: formData.expiry_date,
           platform: formData.platform || null,
           notes: formData.notes || null,
@@ -257,7 +251,6 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      ref={discountValueRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       required
                     />
@@ -285,13 +278,31 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      ref={minPurchaseRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
                 </div>
-
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    开始日期
+                  </label>
+                  <DatePicker
+                    selected={formData.start_date ? new Date(formData.start_date) : null}
+                    onChange={(date) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        start_date: date ? date.toISOString().split('T')[0] : ''
+                      }));
+                    }}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  />
+                  {errors.start_date && (
+                    <p className="mt-1 text-sm text-red-300">{errors.start_date}</p>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     过期日期 <span className="text-red-300">*</span>
@@ -356,3 +367,5 @@ export default function EditCouponPage() {
     </div>
   );
 }
+
+

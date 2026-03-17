@@ -38,6 +38,8 @@ export default function TransactionCard({
   buybackInfo,
 }: TransactionCardProps) {
   const router = useRouter();
+  const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
+  const hasSoldOut = remainingQty <= 0;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -60,6 +62,8 @@ export default function TransactionCard({
       return <span className={badge.success + ' border border-emerald-500/30'}>已售出</span>;
     } else if (transaction.status === 'returned') {
       return <span className={badge.error + ' border border-red-500/30'}>已退货</span>;
+    } else if (transaction.status === 'awaiting_payment') {
+      return <span className={badge.awaiting + ' border border-indigo-500/30'}>入金待ち</span>;
     } else {
       return <span className={badge.pending + ' border border-amber-500/30'}>库存中</span>;
     }
@@ -132,7 +136,9 @@ export default function TransactionCard({
         </div>
         <div>
           <span className="text-gray-600 dark:text-gray-400 text-xs">買取価格</span>
-          {buybackInfo?.loading ? (
+          {hasSoldOut ? (
+            <p className="text-gray-500 dark:text-gray-500 font-mono">-</p>
+          ) : buybackInfo?.loading ? (
             <div className="flex flex-col gap-1">
               <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
               <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -150,7 +156,9 @@ export default function TransactionCard({
         </div>
         <div>
           <span className="text-gray-600 dark:text-gray-400 text-xs">見込利益</span>
-          {buybackInfo?.loading ? (
+          {hasSoldOut ? (
+            <p className="text-gray-500 dark:text-gray-500 font-mono">-</p>
+          ) : buybackInfo?.loading ? (
             <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
             <p className={`font-medium font-mono ${buybackInfo.expectedProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>

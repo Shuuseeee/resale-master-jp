@@ -3,7 +3,7 @@
 
 import { supabase } from '@/lib/supabase/client';
 import type { SalesRecord, SalesRecordFormData } from '@/types/database.types';
-import { calculateSuppliesCostAllocation } from '@/lib/api/supplies';
+
 
 /**
  * 创建销售记录
@@ -38,17 +38,11 @@ export async function createSalesRecord(
     const costPerUnit = transaction.purchase_price_total / transaction.quantity;
     const totalCost = costPerUnit * formData.quantity_sold;
 
-    // 计算耗材成本分摊
-    const suppliesCostAllocation = await calculateSuppliesCostAllocation(
-      transaction.date,
-      formData.quantity_sold
-    );
-
     // 计算总售价
     const totalSellingPrice = formData.selling_price_per_unit * formData.quantity_sold;
 
-    // 计算现金利润（包含耗材成本）
-    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee - suppliesCostAllocation;
+    // 计算现金利润
+    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee;
 
     // 计算积分价值（按比例分配）
     const pointsRatio = formData.quantity_sold / transaction.quantity;
@@ -72,9 +66,8 @@ export async function createSalesRecord(
     // 计算总利润
     const totalProfit = cashProfit + totalPointsValue;
 
-    // 计算实际现金支出（按比例，包含耗材成本）
-    // 积分支付不从成本中扣除，因为积分本身也有价值
-    const actualCashSpent = (transaction.purchase_price_total * pointsRatio) + suppliesCostAllocation;
+    // 计算实际现金支出（按比例）
+    const actualCashSpent = transaction.purchase_price_total * pointsRatio;
 
     // 计算 ROI
     const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
@@ -171,14 +164,9 @@ export async function updateSalesRecord(
     const costPerUnit = transaction.purchase_price_total / transaction.quantity;
     const totalCost = costPerUnit * formData.quantity_sold;
 
-    const suppliesCostAllocation = await calculateSuppliesCostAllocation(
-      transaction.date,
-      formData.quantity_sold
-    );
-
     const totalSellingPrice = formData.selling_price_per_unit * formData.quantity_sold;
 
-    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee - suppliesCostAllocation;
+    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee;
 
     const pointsRatio = formData.quantity_sold / transaction.quantity;
 
@@ -198,8 +186,7 @@ export async function updateSalesRecord(
     const totalPointsValue = platformPointsValue + cardPointsValue + extraPointsValue;
     const totalProfit = cashProfit + totalPointsValue;
 
-    // 积分支付不从成本中扣除，因为积分本身也有价值
-    const actualCashSpent = (transaction.purchase_price_total * pointsRatio) + suppliesCostAllocation;
+    const actualCashSpent = transaction.purchase_price_total * pointsRatio;
     const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
 
     const { data, error } = await supabase

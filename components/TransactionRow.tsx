@@ -1,12 +1,14 @@
 // components/TransactionRow.tsx - 桌面端表格行
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { badge } from '@/lib/theme';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { ProductImage } from '@/components/OptimizedImage';
+import Toast from '@/components/Toast';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -38,6 +40,16 @@ export default function TransactionRow({
   buybackInfo,
 }: TransactionRowProps) {
   const router = useRouter();
+  const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
+  const hasSoldOut = remainingQty <= 0;
+  const [showToast, setShowToast] = useState(false);
+
+  const copyToClipboard = (text: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      setShowToast(true);
+    });
+  };
 
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -54,12 +66,15 @@ export default function TransactionRow({
       return <span className={badge.success + ' border border-emerald-500/30'}>已售出</span>;
     } else if (transaction.status === 'returned') {
       return <span className={badge.error + ' border border-red-500/30'}>已退货</span>;
+    } else if (transaction.status === 'awaiting_payment') {
+      return <span className={badge.awaiting + ' border border-indigo-500/30'}>入金待ち</span>;
     } else {
       return <span className={badge.pending + ' border border-amber-500/30'}>库存中</span>;
     }
   };
 
   return (
+    <>
     <tr
       className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
       onClick={handleRowClick}
@@ -96,6 +111,19 @@ export default function TransactionRow({
       <td className="px-6 py-4 whitespace-nowrap">
         {getStatusBadge()}
       </td>
+      <td className="px-6 py-4 text-left">
+        {transaction.jan_code ? (
+          <button
+            onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
+            className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 font-mono text-sm transition-colors cursor-pointer"
+            title="点击复制"
+          >
+            {transaction.jan_code}
+          </button>
+        ) : (
+          <span className="text-gray-500 dark:text-gray-500">-</span>
+        )}
+      </td>
       <td className="px-6 py-4 text-right text-gray-900 dark:text-white font-mono">
         {formatCurrency(transaction.purchase_price_total)}
       </td>
@@ -123,7 +151,9 @@ export default function TransactionRow({
         )}
       </td>
       <td className="px-6 py-4 text-right font-mono">
-        {buybackInfo?.loading ? (
+        {hasSoldOut ? (
+          <span className="text-gray-500 dark:text-gray-500">-</span>
+        ) : buybackInfo?.loading ? (
           <div className="flex flex-col items-end gap-1">
             <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -140,7 +170,9 @@ export default function TransactionRow({
         )}
       </td>
       <td className="px-6 py-4 text-right font-mono">
-        {buybackInfo?.loading ? (
+        {hasSoldOut ? (
+          <span className="text-gray-500 dark:text-gray-500">-</span>
+        ) : buybackInfo?.loading ? (
           <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
         ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
           <span className={buybackInfo.expectedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
@@ -198,5 +230,7 @@ export default function TransactionRow({
         </div>
       </td>
     </tr>
+    {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
+    </>
   );
 }

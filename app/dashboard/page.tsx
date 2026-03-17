@@ -58,7 +58,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-900 dark:text-white text-xl">加載中...</div>
+        <div className="text-gray-900 dark:text-white text-xl">加载中...</div>
       </div>
     );
   }
@@ -68,8 +68,8 @@ export default function DashboardPage() {
       <div className={layout.container}>
         {/* 标题 */}
         <div className={layout.section}>
-          <h1 className={heading.h1 + ' mb-2'}>ダッシュボード</h1>
-          <p className="text-gray-600 dark:text-gray-400">ビジネスの概要を確認</p>
+          <h1 className={heading.h1 + ' mb-2'}>仪表盘</h1>
+          <p className="text-gray-600 dark:text-gray-400">查看业务概览</p>
         </div>
 
         {/* KPI カード */}
@@ -87,7 +87,7 @@ export default function DashboardPage() {
               <div className={`w-8 h-4 rounded-full relative transition-colors ${includePoints ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
                 <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${includePoints ? 'left-4' : 'left-0.5'}`} />
               </div>
-              ポイント価値含む
+              包含积分价值
             </button>
           </div>
 
@@ -95,43 +95,43 @@ export default function DashboardPage() {
             {/* 在庫数 */}
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 dark:text-gray-400 text-xs">在庫数</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">库存数</span>
                 <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
-              <div className="text-xs text-gray-500 mt-1">個</div>
+              <div className="text-xs text-gray-500 mt-1">个</div>
             </div>
 
             {/* 総投資額 */}
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 dark:text-gray-400 text-xs">総投資額</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">总投资额</span>
                 <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalInvestment)}</div>
-              <div className="text-xs text-gray-500 mt-1">全取引合計</div>
+              <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
             {/* 回収済み */}
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 dark:text-gray-400 text-xs">回収済み</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">已回收</span>
                 <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
               <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecovered)}</div>
-              <div className="text-xs text-gray-500 mt-1">売上合計</div>
+              <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
             {/* 確定利益 */}
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 dark:text-gray-400 text-xs">確定利益</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">确认利润</span>
                 <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -139,13 +139,13 @@ export default function DashboardPage() {
               <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrency(confirmedProfit)}
               </div>
-              <div className="text-xs text-gray-500 mt-1">売却済み分</div>
+              <div className="text-xs text-gray-500 mt-1">已售出部分</div>
             </div>
 
             {/* 未回収在庫原価 */}
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 dark:text-gray-400 text-xs">未回収在庫</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">未回收库存</span>
                 <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-xs">
-                  {includePoints ? '期待ポイント' : '今月の利益'}
+                  {includePoints ? '预期积分' : '本月利润'}
                 </span>
                 <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {includePoints ? (
@@ -178,7 +178,7 @@ export default function DashboardPage() {
                   <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrency(monthlyProfit)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}件</div>
+                  <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
                 </>
               )}
             </div>
@@ -191,13 +191,13 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-yellow-500 rounded-full"></div>
-                期限間近のクーポン
+                即将过期的优惠券
               </h2>
               <Link
                 href="/coupons"
                 className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
               >
-                すべて表示 →
+                全部显示 →
               </Link>
             </div>
 
@@ -206,7 +206,7 @@ export default function DashboardPage() {
                 <svg className="w-12 h-12 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div>期限間近のクーポンはありません</div>
+                <div>没有即将过期的优惠券</div>
               </div>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -222,17 +222,17 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-start mb-1">
                         <div className="font-semibold">{coupon.name}</div>
                         <div className="text-xs opacity-75">
-                          {days > 0 ? `あと${days}日` : days === 0 ? '本日期限' : '期限切れ'}
+                          {days > 0 ? `还有${days}天` : days === 0 ? '今日到期' : '已过期'}
                         </div>
                       </div>
                       <div className="text-sm opacity-75">
                         {coupon.discount_type === 'percentage' && `${coupon.discount_value}% OFF`}
                         {coupon.discount_type === 'fixed_amount' && `${formatCurrency(coupon.discount_value)} OFF`}
-                        {coupon.discount_type === 'free_shipping' && '送料無料'}
+                        {coupon.discount_type === 'free_shipping' && '免运费'}
                         {coupon.platform && ` · ${coupon.platform}`}
                       </div>
                       <div className="text-xs opacity-60 mt-1">
-                        有効期限: {coupon.expiry_date}
+                        有效期: {coupon.expiry_date}
                       </div>
                     </div>
                   );
@@ -251,7 +251,7 @@ export default function DashboardPage() {
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <div className="font-semibold">取引を記録</div>
+            <div className="font-semibold">记录交易</div>
           </Link>
 
           <Link
@@ -261,7 +261,7 @@ export default function DashboardPage() {
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <div className="font-semibold">取引一覧</div>
+            <div className="font-semibold">交易列表</div>
           </Link>
 
           <Link
@@ -271,7 +271,7 @@ export default function DashboardPage() {
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
             </svg>
-            <div className="font-semibold">クーポン</div>
+            <div className="font-semibold">优惠券</div>
           </Link>
 
           <Link
@@ -281,7 +281,7 @@ export default function DashboardPage() {
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-            <div className="font-semibold">データ分析</div>
+            <div className="font-semibold">数据分析</div>
           </Link>
         </div>
       </div>

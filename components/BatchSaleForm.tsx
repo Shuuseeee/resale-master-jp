@@ -3,13 +3,12 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
-import { useCalculator } from '@/hooks/useCalculator';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 
 interface BatchSaleFormProps {
@@ -36,18 +35,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   const [successCount, setSuccessCount] = useState(0);
   const [sellingPlatforms, setSellingPlatforms] = useState<SellingPlatform[]>([]);
   const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
-
-  // Calculator refs
-  const quantitySoldRef = useRef<HTMLInputElement>(null);
-  const sellingPriceRef = useRef<HTMLInputElement>(null);
-  const platformFeeRef = useRef<HTMLInputElement>(null);
-  const shippingFeeRef = useRef<HTMLInputElement>(null);
-
-  // Initialize calculator
-  useCalculator(quantitySoldRef);
-  useCalculator(sellingPriceRef);
-  useCalculator(platformFeeRef);
-  useCalculator(shippingFeeRef);
 
   useEffect(() => {
     getSellingPlatforms().then(setSellingPlatforms);
@@ -143,7 +130,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       {successCount > 0 && (
         <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
           <p className="text-sm text-emerald-800 dark:text-emerald-300">
-            已保存 {successCount} 条销售记录。売却先・単価・費用は前回の入力を保持しています。
+            已保存 {successCount} 条销售记录。销售平台、单价、费用保留了上次的输入。
           </p>
         </div>
       )}
@@ -167,7 +154,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             className={input.base}
             required
             placeholder="1"
-            ref={quantitySoldRef}
           />
         </div>
 
@@ -183,7 +169,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             className={input.base}
             required
             placeholder="0.00"
-            ref={sellingPriceRef}
           />
         </div>
       </div>
@@ -206,7 +191,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             onChange={(e) => setFormData({ ...formData, platform_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             placeholder="0.00"
-            ref={platformFeeRef}
           />
         </div>
 
@@ -221,7 +205,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             onChange={(e) => setFormData({ ...formData, shipping_fee: parseNumberInput(e.target.value, 0) })}
             className={input.base}
             placeholder="0.00"
-            ref={shippingFeeRef}
           />
         </div>
       </div>
@@ -240,14 +223,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            販売先
+            销售平台
           </label>
           <select
             value={formData.selling_platform_id || ''}
             onChange={(e) => setFormData({ ...formData, selling_platform_id: e.target.value })}
             className={input.base}
           >
-            <option value="">選択してください</option>
+            <option value="">请选择</option>
             {sellingPlatforms.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}{p.is_builtin ? '' : ' (カスタム)'}
@@ -259,8 +242,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
               type="text"
               value={newSellingPlatformName}
               onChange={(e) => setNewSellingPlatformName(e.target.value)}
-              placeholder="新しい販売先を追加..."
-              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              placeholder="添加新的销售平台..."
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
             />
             <button
               type="button"
@@ -268,14 +251,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
               disabled={!newSellingPlatformName.trim()}
               className="px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
             >
-              追加
+              添加
             </button>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            販売注文番号
+            销售订单号
           </label>
           <input
             type="text"
@@ -319,7 +302,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
           disabled={submitting}
           className={button.secondary + ' flex-1'}
         >
-          {successCount > 0 ? '完了' : '取消'}
+          {successCount > 0 ? '完成' : '取消'}
         </button>
       </div>
     </form>

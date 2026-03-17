@@ -62,7 +62,7 @@ export default function Navigation() {
       ),
     },
     {
-      name: '設定',
+      name: '设置',
       href: '/settings',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

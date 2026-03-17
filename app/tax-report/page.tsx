@@ -63,7 +63,7 @@ export default function TaxReportPage() {
 
   const exportToExcel = () => {
     if (!summary || details.length === 0) {
-      alert('エクスポートするデータがありません');
+      alert('没有可导出的数据');
       return;
     }
 
@@ -141,8 +141,8 @@ export default function TaxReportPage() {
       // ファイルをエクスポート
       XLSX.writeFile(workbook, `確定申告レポート_${summary.year}年度.xlsx`);
     } catch (error) {
-      console.error('Excelエクスポート失敗:', error);
-      alert('エクスポートに失敗しました。もう一度お試しください');
+      console.error('Excel导出失败:', error);
+      alert('导出失败，请重试');
     } finally {
       setExporting(false);
     }
@@ -150,7 +150,7 @@ export default function TaxReportPage() {
 
   const exportToPDF = async () => {
     if (!summary || details.length === 0) {
-      alert('エクスポートするデータがありません');
+      alert('没有可导出的数据');
       return;
     }
 
@@ -276,8 +276,8 @@ export default function TaxReportPage() {
 
       doc.save(`確定申告レポート_${summary.year}年度.pdf`);
     } catch (error) {
-      console.error('PDFエクスポート失敗:', error);
-      alert('エクスポートに失敗しました。もう一度お試しください');
+      console.error('PDF导出失败:', error);
+      alert('导出失败，请重试');
     } finally {
       setExporting(false);
     }
@@ -314,7 +314,7 @@ export default function TaxReportPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span className="text-xl">読み込み中...</span>
+          <span className="text-xl">加载中...</span>
         </div>
       </div>
     );
@@ -327,9 +327,9 @@ export default function TaxReportPage() {
         <div className={layout.section}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className={heading.h1 + ' mb-2'}>確定申告レポート</h1>
+              <h1 className={heading.h1 + ' mb-2'}>税务申报报告</h1>
               <p className="text-gray-600 dark:text-gray-400">
-                確定申告に必要な年度別収支報告書を作成
+                生成税务申报所需的年度收支报告书
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -376,7 +376,7 @@ export default function TaxReportPage() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    {exporting ? 'エクスポート中...' : 'Excelエクスポート'}
+                    {exporting ? '导出中...' : 'Excel导出'}
                   </button>
                   <button
                     onClick={exportToPDF}
@@ -396,7 +396,7 @@ export default function TaxReportPage() {
                         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                       />
                     </svg>
-                    {exporting ? 'エクスポート中...' : 'PDFエクスポート'}
+                    {exporting ? '导出中...' : 'PDF导出'}
                   </button>
                 </div>
               </div>
@@ -542,7 +542,7 @@ export default function TaxReportPage() {
                     />
                   </svg>
                   <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    該当年度の売却済み取引はありません
+                    该年度没有已售出的交易
                   </p>
                 </div>
               ) : (
@@ -642,8 +642,8 @@ export default function TaxReportPage() {
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         {(currentPage - 1) * itemsPerPage + 1} 〜{' '}
-                        {Math.min(currentPage * itemsPerPage, details.length)} 件を表示（全{' '}
-                        {details.length} 件）
+                        {Math.min(currentPage * itemsPerPage, details.length)} / 共{' '}
+                        {details.length} 条
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -651,7 +651,7 @@ export default function TaxReportPage() {
                           disabled={currentPage === 1}
                           className={button.secondary}
                         >
-                          前へ
+                          上一页
                         </button>
                         <span className="px-4 py-2 text-gray-900 dark:text-white">
                           {currentPage} / {totalPages}
@@ -661,7 +661,7 @@ export default function TaxReportPage() {
                           disabled={currentPage === totalPages}
                           className={button.secondary}
                         >
-                          次へ
+                          下一页
                         </button>
                       </div>
                     </div>

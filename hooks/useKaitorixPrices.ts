@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { fetchBuybackPrices, getBestPrice } from '@/lib/api/kaitorix';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { fetchBuybackPrices, getBestPrice, type FetchProgress } from '@/lib/api/kaitorix';
 import { loadKaitorixConfig } from '@/lib/kaitorix-config';
 
 interface Transaction {
@@ -8,33 +8,118 @@ interface Transaction {
   unit_price?: number | null;
   purchase_price_total: number;
   quantity: number;
+  expected_platform_points?: number | null;
+  expected_card_points?: number | null;
+  extra_platform_points?: number | null;
+  quantity_sold: number;
 }
 
-interface BuybackInfo {
+export interface BuybackInfo {
   maxPrice: number;
   maxStore: string;
   expectedProfit: number;
   loading: boolean;
 }
 
-export function useKaitorixPrices(
-  transactions: Transaction[]
-): Map<string, BuybackInfo> {
-  const [buybackMap, setBuybackMap] = useState<Map<string, BuybackInfo>>(
-    new Map()
-  );
+export interface KaitorixState {
+  buybackMap: Map<string, BuybackInfo>;
+  isLoading: boolean;
+  progress: FetchProgress | null;
+  enabled: boolean;
+  refresh: (transactionsToFetch?: Transaction[]) => void;
+  stop: () => void;
+}
 
+// Global cache stored in localStorage
+const CACHE_KEY = 'kaitorix_buyback_cache';
+const CACHE_VERSION = 1;
+
+interface CachedBuybackInfo extends BuybackInfo {
+  timestamp: number;
+}
+
+function loadCacheFromStorage(): Map<string, BuybackInfo> {
+  try {
+    const stored = localStorage.getItem(CACHE_KEY);
+    if (!stored) return new Map();
+
+    const parsed = JSON.parse(stored);
+    if (parsed.version !== CACHE_VERSION) return new Map();
+
+    const now = Date.now();
+    const TTL = 60 * 60 * 1000; // 1 hour
+
+    const map = new Map<string, BuybackInfo>();
+    Object.entries(parsed.data || {}).forEach(([id, info]: [string, any]) => {
+      // Check if cache is still valid
+      if (now - info.timestamp < TTL) {
+        map.set(id, {
+          maxPrice: info.maxPrice,
+          maxStore: info.maxStore,
+          expectedProfit: info.expectedProfit,
+          loading: false,
+        });
+      }
+    });
+
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+function saveCacheToStorage(map: Map<string, BuybackInfo>) {
+  try {
+    const data: Record<string, CachedBuybackInfo> = {};
+    const now = Date.now();
+
+    map.forEach((info, id) => {
+      data[id] = {
+        ...info,
+        timestamp: now,
+      };
+    });
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      version: CACHE_VERSION,
+      data,
+    }));
+  } catch (error) {
+    console.error('Failed to save KaitoriX cache:', error);
+  }
+}
+
+export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
+  const [buybackMap, setBuybackMap] = useState<Map<string, BuybackInfo>>(() => loadCacheFromStorage());
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState<FetchProgress | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const config = loadKaitorixConfig();
+  const enabled = config.enabled && config.enabledStores.length > 0;
+
+  // Save to localStorage whenever buybackMap changes
   useEffect(() => {
-    const config = loadKaitorixConfig();
-
-    if (!config.enabled || config.enabledStores.length === 0) {
-      setBuybackMap(new Map());
-      return;
+    if (buybackMap.size > 0) {
+      saveCacheToStorage(buybackMap);
     }
+  }, [buybackMap]);
 
-    // Collect unique JAN codes
+  const refresh = useCallback((transactionsToFetch?: Transaction[]) => {
+    if (!enabled || isLoading) return;
+
+    // Use provided transactions or fall back to all transactions
+    const targetTransactions = transactionsToFetch || transactions;
+
+    // Filter out transactions with no remaining stock (fully sold)
+    const transactionsWithStock = targetTransactions.filter(t => {
+      const remaining = t.quantity - (t.quantity_sold ?? 0);
+      return remaining > 0;
+    });
+
+    // Collect unique JAN codes from target transactions
     const janToTransactions = new Map<string, Transaction[]>();
-    transactions.forEach(t => {
+    transactionsWithStock.forEach(t => {
       if (t.jan_code) {
         const list = janToTransactions.get(t.jan_code) || [];
         list.push(t);
@@ -42,30 +127,23 @@ export function useKaitorixPrices(
       }
     });
 
-    const uniqueJans = Array.from(janToTransactions.keys());
+    const uniqueJans = Array.from(janToTransactions.keys()).sort();
+    if (uniqueJans.length === 0) return;
 
-    if (uniqueJans.length === 0) {
-      setBuybackMap(new Map());
-      return;
-    }
+    // Abort previous request
+    abortRef.current?.abort();
+    const abortController = new AbortController();
+    abortRef.current = abortController;
 
-    // Set loading state
-    const loadingMap = new Map<string, BuybackInfo>();
-    transactions.forEach(t => {
-      if (t.jan_code) {
-        loadingMap.set(t.id, {
-          maxPrice: 0,
-          maxStore: '',
-          expectedProfit: 0,
-          loading: true,
-        });
-      }
-    });
-    setBuybackMap(loadingMap);
+    setIsLoading(true);
+    setProgress({ completed: 0, total: uniqueJans.length, failed: 0, stopped: false });
 
-    // Fetch prices
-    fetchBuybackPrices(uniqueJans).then(results => {
-      const newMap = new Map<string, BuybackInfo>();
+    fetchBuybackPrices(
+      uniqueJans,
+      (p) => setProgress(p),
+      abortController.signal,
+    ).then(results => {
+      const newMap = new Map(buybackMap); // Start with existing cache
 
       janToTransactions.forEach((txList, jan) => {
         const result = results.get(jan);
@@ -77,7 +155,16 @@ export function useKaitorixPrices(
           if (bestPrice) {
             const costPerUnit =
               tx.unit_price ?? tx.purchase_price_total / tx.quantity;
-            const expectedProfit = bestPrice.maxPrice - costPerUnit;
+
+            const pointsPerUnit = (
+              (tx.expected_platform_points ?? 0) +
+              (tx.expected_card_points ?? 0) +
+              (tx.extra_platform_points ?? 0)
+            ) / tx.quantity;
+
+            const remainingQty = tx.quantity - (tx.quantity_sold ?? 0);
+            const expectedProfit = (bestPrice.maxPrice - costPerUnit + pointsPerUnit) * remainingQty;
+
 
             newMap.set(tx.id, {
               maxPrice: bestPrice.maxPrice,
@@ -97,8 +184,14 @@ export function useKaitorixPrices(
       });
 
       setBuybackMap(newMap);
+      setIsLoading(false);
     });
-  }, [transactions]);
+  }, [enabled, isLoading, transactions, config.enabledStores, buybackMap]);
 
-  return buybackMap;
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+  }, []);
+
+  return { buybackMap, isLoading, progress, enabled, refresh, stop };
 }

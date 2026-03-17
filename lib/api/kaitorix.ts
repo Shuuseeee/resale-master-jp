@@ -20,7 +20,7 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour (match server cache)
 const cache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<KaitorixResponse | null>>();
 
@@ -102,25 +102,61 @@ export async function fetchBuybackPrice(
   return request;
 }
 
+export interface FetchProgress {
+  completed: number;
+  total: number;
+  failed: number;
+  stopped: boolean; // circuit breaker triggered
+}
+
 export async function fetchBuybackPrices(
-  janCodes: string[]
+  janCodes: string[],
+  onProgress?: (progress: FetchProgress) => void,
+  abortSignal?: AbortSignal,
 ): Promise<Map<string, KaitorixResponse | null>> {
   const uniqueJans = [...new Set(janCodes)];
-
-  const results = await Promise.allSettled(
-    uniqueJans.map(jan => fetchBuybackPrice(jan))
-  );
-
   const resultMap = new Map<string, KaitorixResponse | null>();
 
-  uniqueJans.forEach((jan, index) => {
-    const result = results[index];
-    if (result.status === 'fulfilled') {
-      resultMap.set(jan, result.value);
-    } else {
-      resultMap.set(jan, null);
+  const BATCH_DELAY = 6000; // 6 seconds between each request
+  let failed = 0;
+
+  for (let i = 0; i < uniqueJans.length; i++) {
+    // Check abort
+    if (abortSignal?.aborted) {
+      break;
     }
-  });
+
+    const jan = uniqueJans[i];
+    const result = await fetchBuybackPrice(jan);
+    resultMap.set(jan, result);
+
+    if (!result) failed++;
+
+    // Report progress
+    onProgress?.({
+      completed: i + 1,
+      total: uniqueJans.length,
+      failed,
+      stopped: false,
+    });
+
+    // If 2+ consecutive failures, likely rate limited - stop early
+    if (failed >= 2 && i === failed - 1) {
+      // All requests so far have failed
+      onProgress?.({
+        completed: i + 1,
+        total: uniqueJans.length,
+        failed,
+        stopped: true,
+      });
+      break;
+    }
+
+    // Delay between requests (except for last one)
+    if (i < uniqueJans.length - 1 && !abortSignal?.aborted) {
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    }
+  }
 
   return resultMap;
 }

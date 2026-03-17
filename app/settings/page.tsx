@@ -31,7 +31,7 @@ export default function SettingsPage() {
   const saveConfig = () => {
     setSaving(true);
     localStorage.setItem('amazon_point_config', JSON.stringify(config));
-    setSaveMessage('保存しました');
+    setSaveMessage('已保存');
     setSaving(false);
     setTimeout(() => setSaveMessage(''), 2000);
   };
@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const saveKaitorixSettings = () => {
     setKaitorixSaving(true);
     saveKaitorixConfig(kaitorixConfig);
-    setKaitorixSaveMessage('保存しました');
+    setKaitorixSaveMessage('已保存');
     setKaitorixSaving(false);
     setTimeout(() => setKaitorixSaveMessage(''), 2000);
   };
@@ -77,8 +77,8 @@ export default function SettingsPage() {
     <div className={layout.page}>
       <div className={layout.container}>
         <div className={layout.section}>
-          <h1 className={heading.h1 + ' mb-2'}>設定</h1>
-          <p className="text-gray-600 dark:text-gray-400">ポイント還元率とデータ管理</p>
+          <h1 className={heading.h1 + ' mb-2'}>设置</h1>
+          <p className="text-gray-600 dark:text-gray-400">积分返还率和数据管理</p>
         </div>
 
         {/* ナビゲーション */}
@@ -87,7 +87,7 @@ export default function SettingsPage() {
             href="/settings/payment-methods"
             className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            支払い方法 →
+            支付方式 →
           </Link>
         </div>
 
@@ -95,20 +95,20 @@ export default function SettingsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
-            Amazon 返ポイント自動計算
+            Amazon 积分返还自动计算
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Amazon仕入れ時にポイントを自動計算するための還元率を設定
+            Amazon采购时自动计算积分的返还率设置
           </p>
 
-          {/* 自動計算トグル */}
+          {/* 自动计算トグル */}
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                新規仕入れ時に自動計算
+                新采购时自动计算
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                購入先がAmazonの場合、ポイントを自動入力します
+                当采购平台为Amazon时，自动填入积分
               </p>
             </div>
             <button
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             {/* Amazon ポイント */}
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
-                Amazon ポイント
+                Amazon 积分
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -151,7 +151,7 @@ export default function SettingsPage() {
             {/* キャンペーン */}
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
-                キャンペーン
+                活动
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -170,8 +170,8 @@ export default function SettingsPage() {
             {/* カード還元 */}
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
-                カード還元
-                <span className="block text-xs text-gray-500 dark:text-gray-400 font-normal">ポイント使用分除外</span>
+                信用卡返还
+                <span className="block text-xs text-gray-500 dark:text-gray-400 font-normal">不含积分使用部分</span>
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -190,7 +190,7 @@ export default function SettingsPage() {
             {/* d ポイント */}
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
-                d ポイント
+                d 积分
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -209,7 +209,7 @@ export default function SettingsPage() {
             {/* d ポイント上限 */}
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
-                d ポイント上限
+                d 积分上限
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -239,24 +239,24 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 買取価格チェック */}
+        {/* 买取价格检查 */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
-            買取価格チェック
+            买取价格检查
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            KaitoriXから最新の買取価格を取得して見込利益を表示
+            从KaitoriX获取最新买取价格并显示预期利润
           </p>
 
-          {/* 機能トグル */}
+          {/* 功能开关 */}
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                買取価格チェックを有効化
+                启用买取价格检查
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                取引一覧に買取価格と見込利益を表示します
+                在交易列表中显示买取价格和预期利润
               </p>
             </div>
             <button
@@ -276,10 +276,10 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {/* 店舗選択 */}
+          {/* 店铺选择 */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              チェックする店舗を選択
+              选择要检查的店铺
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {ALL_STORES.map(store => {
@@ -327,14 +327,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* CSVインポート */}
+        {/* CSV导入 */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
-            CSVインポート
+            CSV导入
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            purchases.csv形式のファイルから取引データを一括インポート
+            从purchases.csv格式文件批量导入交易数据
           </p>
 
           <div className="space-y-4">
@@ -360,12 +360,12 @@ export default function SettingsPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    インポート中...
+                    导入中...
                   </span>
-                ) : 'CSVファイルを選択'}
+                ) : '选择CSV文件'}
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                対応形式: 仕入日, 商品名, JAN, 仕入単価, 数量, 仕入先, 注文ID ...
+                支持格式: 仕入日, 商品名, JAN, 仕入単価, 数量, 仕入先, 注文ID ...
               </p>
             </div>
 
@@ -381,12 +381,12 @@ export default function SettingsPage() {
                   </span>
                   {importResult.skipped > 0 && (
                     <span className="text-sm text-gray-500">
-                      スキップ: {importResult.skipped}件
+                      跳过: {importResult.skipped}件
                     </span>
                   )}
                   {importResult.errors.length > 0 && (
                     <span className="text-sm text-red-600 dark:text-red-400">
-                      エラー: {importResult.errors.length}件
+                      错误: {importResult.errors.length}件
                     </span>
                   )}
                 </div>

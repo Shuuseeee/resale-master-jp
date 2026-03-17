@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   product_name TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'in_stock' CHECK (status IN ('pending', 'in_stock', 'sold', 'returned')),
+  status TEXT NOT NULL DEFAULT 'in_stock' CHECK (status IN ('pending', 'in_stock', 'awaiting_payment', 'sold', 'returned')),
 
   -- Purchase info
   purchase_price_total NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -362,7 +362,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_platform_points_platform ON transact
 CREATE INDEX IF NOT EXISTS idx_transactions_card_points_platform ON transactions(card_points_platform_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_extra_platform_points_platform ON transactions(extra_platform_points_platform_id);
 
-COMMENT ON COLUMN transactions.status IS '取引ステータス: pending=未着, in_stock=在庫中, sold=売却済, returned=返品済';
+COMMENT ON COLUMN transactions.status IS '取引ステータス: pending=未着, in_stock=在庫中, awaiting_payment=入金待ち, sold=売却済, returned=返品済';
 COMMENT ON COLUMN transactions.jan_code IS 'JAN码（商品条形码）';
 COMMENT ON COLUMN transactions.unit_price IS '商品単価';
 COMMENT ON COLUMN transactions.purchase_platform_id IS '仕入先プラットフォームID';
@@ -605,8 +605,8 @@ BEGIN
   FROM transactions
   WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
 
-  -- Don't auto-change 'pending' or 'returned' (managed by user / return trigger)
-  IF trans_status = 'pending' OR trans_status = 'returned' THEN
+  -- Don't auto-change 'pending', 'returned', or 'sold' (user-confirmed statuses)
+  IF trans_status IN ('pending', 'returned', 'sold') THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
@@ -616,10 +616,13 @@ BEGIN
   WHERE transaction_id = COALESCE(NEW.transaction_id, OLD.transaction_id);
 
   IF trans_quantity_sold >= trans_quantity THEN
+    -- 全部售出时，自动设为 awaiting_payment（而非 sold）
     UPDATE transactions
-    SET status = 'sold'
-    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+    SET status = 'awaiting_payment'
+    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id)
+      AND status != 'sold'; -- 不降级已确认的 sold
   ELSE
+    -- 部分售出或未售出时，设为 in_stock
     UPDATE transactions
     SET status = 'in_stock'
     WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
@@ -629,7 +632,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION update_transaction_status() IS '自動ステータス更新 - pending/returned は手動管理、in_stock/sold は sales_records から自動判定';
+COMMENT ON FUNCTION update_transaction_status() IS '自動ステータス更新 - pending/returned/sold は手動管理、in_stock/awaiting_payment は sales_records から自動判定';
 
 DROP TRIGGER IF EXISTS trigger_update_status_on_sale ON sales_records;
 CREATE TRIGGER trigger_update_status_on_sale

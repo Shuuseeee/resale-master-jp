@@ -2,7 +2,7 @@
 // Resale Master JP - TypeScript Type Definitions
 
 export type PaymentMethodType = 'card';
-export type TransactionStatus = 'pending' | 'in_stock' | 'sold' | 'returned';
+export type TransactionStatus = 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned';
 export type BillingCycle = 'monthly' | 'yearly';
 export type DiscountType = 'percentage' | 'fixed_amount' | 'free_shipping';
 

@@ -1,7 +1,7 @@
 // app/transactions/add/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
 import type { PaymentMethod, TransactionFormData, PointsPlatform, PurchasePlatform } from '@/types/database.types';
@@ -10,7 +10,6 @@ import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
-import { useCalculator } from '@/hooks/useCalculator';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
 
@@ -53,26 +52,6 @@ function AddTransactionPageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(true); // 未着品トグル
   const [amazonConfig, setAmazonConfig] = useState<AmazonPointConfig | null>(null);
-
-  // Calculator refs for numeric inputs
-  const quantityRef = useRef<HTMLInputElement>(null);
-  const purchasePriceTotalRef = useRef<HTMLInputElement>(null);
-  const cardPaidRef = useRef<HTMLInputElement>(null);
-  const pointPaidRef = useRef<HTMLInputElement>(null);
-  const expectedPlatformPointsRef = useRef<HTMLInputElement>(null);
-  const extraPlatformPointsRef = useRef<HTMLInputElement>(null);
-  const expectedCardPointsRef = useRef<HTMLInputElement>(null);
-  const unitPriceRef = useRef<HTMLInputElement>(null);
-
-  // Register inputs with calculator
-  useCalculator(quantityRef);
-  useCalculator(purchasePriceTotalRef);
-  useCalculator(cardPaidRef);
-  useCalculator(pointPaidRef);
-  useCalculator(expectedPlatformPointsRef);
-  useCalculator(extraPlatformPointsRef);
-  useCalculator(expectedCardPointsRef);
-  useCalculator(unitPriceRef);
 
   // 加载支付方式列表和积分平台列表
   useEffect(() => {
@@ -512,7 +491,6 @@ function AddTransactionPageContent() {
                     数量 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <input
-                    ref={quantityRef}
                     type="text"
                     inputMode="numeric"
                     name="quantity"
@@ -534,7 +512,7 @@ function AddTransactionPageContent() {
                       未着品（未到着）
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      商品がまだ届いていない
+                      商品尚未到达
                     </p>
                   </div>
                   <button
@@ -557,18 +535,18 @@ function AddTransactionPageContent() {
             </div>
           </div>
 
-          {/* 購入情報 */}
+          {/* 采购信息 */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
-                購入情報
+                采购信息
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    JANコード
+                    JAN代码
                   </label>
                   <input
                     type="text"
@@ -582,14 +560,14 @@ function AddTransactionPageContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    注文番号
+                    订单号
                   </label>
                   <input
                     type="text"
                     name="order_number"
                     value={formData.order_number || ''}
                     onChange={handleInputChange}
-                    placeholder="注文番号"
+                    placeholder="订单号"
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -597,11 +575,10 @@ function AddTransactionPageContent() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  単価 (¥)
+                  单价 (¥)
                 </label>
                 <div className="relative">
                   <input
-                    ref={unitPriceRef}
                     type="text"
                     inputMode="decimal"
                     name="unit_price"
@@ -627,13 +604,13 @@ function AddTransactionPageContent() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  入力すると採購総価が自動計算されます（単価 × 数量）
+                  输入后采购总价将自动计算（单价 × 数量）
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  購入先
+                  采购平台
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -642,10 +619,10 @@ function AddTransactionPageContent() {
                     onChange={handleInputChange}
                     className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   >
-                    <option value="">選択してください</option>
+                    <option value="">请选择</option>
                     {purchasePlatforms.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name}{p.is_builtin ? '' : ' (カスタム)'}
+                        {p.name}{p.is_builtin ? '' : ' (自定义)'}
                       </option>
                     ))}
                   </select>
@@ -655,7 +632,7 @@ function AddTransactionPageContent() {
                     type="text"
                     value={newPurchasePlatformName}
                     onChange={(e) => setNewPurchasePlatformName(e.target.value)}
-                    placeholder="新しい購入先を追加..."
+                    placeholder="添加新的采购平台..."
                     className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                   <button
@@ -664,7 +641,7 @@ function AddTransactionPageContent() {
                     disabled={!newPurchasePlatformName.trim()}
                     className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
                   >
-                    追加
+                    添加
                   </button>
                 </div>
               </div>
@@ -685,7 +662,6 @@ function AddTransactionPageContent() {
                 </label>
                 <div className="relative">
                   <input
-                    ref={purchasePriceTotalRef}
                     type="text"
                     inputMode="decimal"
                     name="purchase_price_total"
@@ -724,7 +700,6 @@ function AddTransactionPageContent() {
                   <div className="flex gap-3">
                     <div className="flex-1 relative">
                       <input
-                        ref={cardPaidRef}
                         type="text"
                         inputMode="decimal"
                         value={formData.card_paid || ''}
@@ -762,7 +737,6 @@ function AddTransactionPageContent() {
                   </label>
                   <div className="relative">
                     <input
-                      ref={pointPaidRef}
                       type="text"
                       inputMode="decimal"
                       value={formData.point_paid || ''}
@@ -815,7 +789,6 @@ function AddTransactionPageContent() {
                   </label>
                   <div className="relative">
                     <input
-                      ref={expectedPlatformPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="expected_platform_points"
@@ -860,7 +833,6 @@ function AddTransactionPageContent() {
                   </label>
                   <div className="relative">
                     <input
-                      ref={extraPlatformPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="extra_platform_points"
@@ -909,7 +881,6 @@ function AddTransactionPageContent() {
                   </label>
                   <div className="relative">
                     <input
-                      ref={expectedCardPointsRef}
                       type="text"
                       inputMode="numeric"
                       name="expected_card_points"
@@ -1079,7 +1050,7 @@ function AddTransactionPageContent() {
                   保存中...
                 </span>
               ) : (
-                '保存して続けて追加'
+                '保存并继续添加'
               )}
             </button>
           </div>

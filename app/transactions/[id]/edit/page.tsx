@@ -1,7 +1,7 @@
 // app/transactions/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
@@ -9,7 +9,6 @@ import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform, P
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
-import { useCalculator } from '@/hooks/useCalculator';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { parseNumberInput } from '@/lib/number-utils';
 
@@ -53,24 +52,6 @@ export default function EditTransactionPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [isPending, setIsPending] = useState(false); // 未着品トグル
-
-  // Calculator refs
-  const purchasePriceRef = useRef<HTMLInputElement>(null);
-  const cardPaidRef = useRef<HTMLInputElement>(null);
-  const pointPaidRef = useRef<HTMLInputElement>(null);
-  const platformPointsRef = useRef<HTMLInputElement>(null);
-  const extraPointsRef = useRef<HTMLInputElement>(null);
-  const cardPointsRef = useRef<HTMLInputElement>(null);
-  const unitPriceRef = useRef<HTMLInputElement>(null);
-
-  // Initialize calculator for each numeric input
-  useCalculator(purchasePriceRef);
-  useCalculator(cardPaidRef);
-  useCalculator(pointPaidRef);
-  useCalculator(platformPointsRef);
-  useCalculator(extraPointsRef);
-  useCalculator(cardPointsRef);
-  useCalculator(unitPriceRef);
 
   // 加载交易数据和支付方式列表
   useEffect(() => {
@@ -297,6 +278,10 @@ export default function EditTransactionPage() {
       newErrors.product_name = '请输入商品名称';
     }
 
+    if (!formData.quantity || formData.quantity < 1) {
+      newErrors.quantity = '数量必须大于0';
+    }
+
     if (formData.purchase_price_total <= 0) {
       newErrors.purchase_price_total = '采购总价必须大于0';
     }
@@ -350,6 +335,7 @@ export default function EditTransactionPage() {
       const updateData: Record<string, any> = {
           date: formData.date,
           product_name: formData.product_name,
+          quantity: formData.quantity,
           purchase_price_total: formData.purchase_price_total,
           card_paid: formData.card_paid,
           point_paid: formData.point_paid,
@@ -478,13 +464,15 @@ export default function EditTransactionPage() {
                   <input
                     type="number"
                     name="quantity"
-                    value={formData.quantity || 1}
-                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                    value={formData.quantity ?? ''}
+                    onChange={(e) => setFormData({...formData, quantity: e.target.value === '' ? '' as any : parseInt(e.target.value)})}
                     min="1"
                     disabled={!!(transaction && transaction.quantity_sold > 0)}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    required
                   />
+                  {errors.quantity && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.quantity}</p>
+                  )}
                   {transaction && transaction.quantity_sold > 0 && (
                     <p className="text-amber-500 text-sm mt-1">
                       该商品已售出 {transaction.quantity_sold} 件，无法修改总数量
@@ -568,7 +556,6 @@ export default function EditTransactionPage() {
                 </label>
                 <div className="relative">
                   <input
-                    ref={unitPriceRef}
                     type="text"
                     inputMode="decimal"
                     name="unit_price"
@@ -663,7 +650,6 @@ export default function EditTransactionPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    ref={purchasePriceRef}
                     className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                     required
                   />
@@ -690,7 +676,6 @@ export default function EditTransactionPage() {
                         min="0"
                         max={formData.purchase_price_total}
                         placeholder="0.00"
-                        ref={cardPaidRef}
                         className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -730,7 +715,6 @@ export default function EditTransactionPage() {
                       min="0"
                       max={formData.purchase_price_total}
                       placeholder="0.00"
-                      ref={pointPaidRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
@@ -785,7 +769,6 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      ref={platformPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -831,7 +814,6 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      ref={extraPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
@@ -881,7 +863,6 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      ref={cardPointsRef}
                       className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>

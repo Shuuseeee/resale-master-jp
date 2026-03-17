@@ -108,6 +108,23 @@ export async function markTransactionArrived(id: string): Promise<boolean> {
 }
 
 /**
+ * 确认入金（awaiting_payment → sold）
+ */
+export async function confirmPaymentReceived(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('transactions')
+    .update({ status: 'sold' })
+    .eq('id', id)
+    .eq('status', 'awaiting_payment');
+
+  if (error) {
+    console.error('入金確認失敗:', error);
+    return false;
+  }
+  return true;
+}
+
+/**
  * 获取仪表盘统计数据
  */
 export async function getDashboardStats(): Promise<{
@@ -171,11 +188,11 @@ async function getDashboardKPI(): Promise<{
   const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
 
   const unrealizedStockCost = transactions
-    .filter(t => t.status === 'in_stock' || t.status === 'pending')
+    .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
     .reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
 
   const expectedPoints = transactions
-    .filter(t => t.status === 'in_stock' || t.status === 'pending')
+    .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
     .reduce((sum, t) => sum + (t.expected_platform_points || 0) + (t.expected_card_points || 0) + (t.extra_platform_points || 0), 0);
 
   return { totalInvestment, totalRecovered, confirmedProfit, unrealizedStockCost, expectedPoints };

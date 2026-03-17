@@ -129,6 +129,22 @@
     overflow-wrap: break-word;
     line-break: auto;
   }
+
+  /* Toast animation */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
 
 /* 全局样式 */

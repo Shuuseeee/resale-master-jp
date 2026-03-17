@@ -50,6 +50,7 @@ export const badge = {
   error: 'px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-300',
   info: 'px-2 py-1 rounded-full text-xs font-medium bg-teal-500/20 text-teal-600 dark:text-teal-300',
   neutral: 'px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-600 dark:text-gray-300',
+  awaiting: 'px-2 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-600 dark:text-indigo-300',
 };
 
 /**

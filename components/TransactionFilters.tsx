@@ -12,7 +12,7 @@ export interface FilterValues {
   dateTo: string;
   productName: string;
   janCode: string;
-  status: ('pending' | 'in_stock' | 'sold' | 'returned')[];
+  status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
   paymentMethodId: string;
   purchasePlatformId: string;
 }
@@ -38,6 +38,7 @@ const emptyFilters: FilterValues = {
 const statusLabels: Record<string, string> = {
   pending: '未着',
   in_stock: '在庫',
+  awaiting_payment: '入金待ち',
   sold: '売却済',
   returned: '返品済',
 };
@@ -67,7 +68,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const toggleStatus = (status: 'pending' | 'in_stock' | 'sold' | 'returned') => {
+  const toggleStatus = (status: 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned') => {
     setFilters(prev => ({
       ...prev,
       status: prev.status.includes(status)
@@ -97,18 +98,18 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
 
   // Build active filter chips
   const activeChips: Array<{ key: keyof FilterValues; label: string; value?: string }> = [];
-  if (filters.dateFrom) activeChips.push({ key: 'dateFrom', label: `${filters.dateFrom} から` });
-  if (filters.dateTo) activeChips.push({ key: 'dateTo', label: `${filters.dateTo} まで` });
+  if (filters.dateFrom) activeChips.push({ key: 'dateFrom', label: `${filters.dateFrom} 起` });
+  if (filters.dateTo) activeChips.push({ key: 'dateTo', label: `${filters.dateTo} 至` });
   if (filters.productName) activeChips.push({ key: 'productName', label: `"${filters.productName}"` });
   if (filters.janCode) activeChips.push({ key: 'janCode', label: `JAN: ${filters.janCode}` });
   filters.status.forEach(s => activeChips.push({ key: 'status', label: statusLabels[s], value: s }));
   if (filters.paymentMethodId) {
     const pm = paymentMethods.find(p => p.id === filters.paymentMethodId);
-    activeChips.push({ key: 'paymentMethodId', label: pm?.name || '支払方法' });
+    activeChips.push({ key: 'paymentMethodId', label: pm?.name || '支付方式' });
   }
   if (filters.purchasePlatformId) {
     const pp = purchasePlatforms?.find(p => p.id === filters.purchasePlatformId);
-    activeChips.push({ key: 'purchasePlatformId', label: pp?.name || '購入先' });
+    activeChips.push({ key: 'purchasePlatformId', label: pp?.name || '采购平台' });
   }
 
   const hasActiveFilters = activeChips.length > 0;
@@ -124,14 +125,14 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
               ? 'bg-teal-600 text-white shadow-md'
               : hasActiveFilters
                 ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
           data-testid="filter-toggle"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          絞り込み
+          筛选
           {hasActiveFilters && (
             <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
               isExpanded ? 'bg-white/20 text-white' : 'bg-teal-600 text-white'
@@ -167,7 +168,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
             className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             data-testid="filter-clear-all"
           >
-            全てクリア
+            全部清除
           </button>
         )}
       </div>
@@ -179,23 +180,23 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
             {/* 日期范围 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                開始日
+                開始日期
               </label>
               <DatePicker
                 selected={filters.dateFrom ? new Date(filters.dateFrom) : null}
                 onChange={(date) => updateFilter('dateFrom', date ? date.toISOString().split('T')[0] : '')}
-                placeholder="開始日..."
+                placeholder="开始日期..."
                 maxDate={filters.dateTo ? new Date(filters.dateTo) : undefined}
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                終了日
+                结束日期
               </label>
               <DatePicker
                 selected={filters.dateTo ? new Date(filters.dateTo) : null}
                 onChange={(date) => updateFilter('dateTo', date ? date.toISOString().split('T')[0] : '')}
-                placeholder="終了日..."
+                placeholder="结束日期..."
                 minDate={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
               />
             </div>
@@ -203,14 +204,14 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
             {/* 商品名称 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                商品名
+                商品名称
               </label>
               <input
                 type="text"
                 value={filters.productName}
                 onChange={(e) => updateFilter('productName', e.target.value)}
                 className={input.base + ' w-full'}
-                placeholder="商品名で検索..."
+                placeholder="按商品名称搜索..."
                 data-testid="filter-product-name"
               />
             </div>
@@ -218,14 +219,14 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
             {/* JAN絞込 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                JAN絞込
+                JAN筛选
               </label>
               <input
                 type="text"
                 value={filters.janCode}
                 onChange={(e) => updateFilter('janCode', e.target.value)}
                 className={input.base + ' w-full'}
-                placeholder="JANコードで絞込..."
+                placeholder="按JAN代码筛选..."
                 data-testid="filter-jan-code"
               />
             </div>
@@ -233,10 +234,10 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
             {/* 状態 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                ステータス
+                状态
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {(['pending', 'in_stock', 'sold', 'returned'] as const).map(s => (
+                {(['pending', 'in_stock', 'awaiting_payment', 'sold', 'returned'] as const).map(s => (
                   <button
                     key={s}
                     type="button"
@@ -245,6 +246,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
                       filters.status.includes(s)
                         ? s === 'pending' ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 ring-1 ring-teal-400'
                         : s === 'in_stock' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400'
+                        : s === 'awaiting_payment' ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-400'
                         : s === 'sold' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400'
                         : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 ring-1 ring-red-400'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -257,10 +259,10 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
               </div>
             </div>
 
-            {/* 支払方法 */}
+            {/* 支付方式 */}
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                支払方法
+                支付方式
               </label>
               <select
                 value={filters.paymentMethodId}
@@ -268,18 +270,18 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
                 className={input.base + ' w-full'}
                 data-testid="filter-payment-method"
               >
-                <option value="">すべて</option>
+                <option value="">全部</option>
                 {paymentMethods.map(pm => (
                   <option key={pm.id} value={pm.id}>{pm.name}</option>
                 ))}
               </select>
             </div>
 
-            {/* 購入先 */}
+            {/* 采购平台 */}
             {purchasePlatforms && purchasePlatforms.length > 0 && (
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                  購入先
+                  采购平台
                 </label>
                 <select
                   value={filters.purchasePlatformId}
@@ -287,7 +289,7 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
                   className={input.base + ' w-full'}
                   data-testid="filter-purchase-platform"
                 >
-                  <option value="">すべて</option>
+                  <option value="">全部</option>
                   {purchasePlatforms.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}

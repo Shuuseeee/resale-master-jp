@@ -41,7 +41,7 @@ function TransactionsContent() {
   const [purchasePlatforms, setPurchasePlatforms] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'sold' | 'returned'>(
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
     () => (searchParams.get('tab') as any) || 'all'
   );
   const [sortField, setSortField] = useState<SortField>(() => (searchParams.get('sort') as SortField) || 'date');
@@ -64,14 +64,17 @@ function TransactionsContent() {
   });
   const [exporting, setExporting] = useState(false);
 
-  // KaitoriX 買取価格
-  const buybackPrices = useKaitorixPrices(transactions);
+  // KaitoriX 买取价格（手动触发）
+  // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
+  const kaitorixState = useKaitorixPrices(transactions);
+  const { buybackMap: buybackPrices, isLoading: kaitorixLoading, progress: kaitorixProgress, enabled: kaitorixEnabled, refresh: refreshKaitorix, stop: stopKaitorix } = kaitorixState;
 
   // 统计数据
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     inStock: 0,
+    awaitingPayment: 0,
     sold: 0,
     returned: 0,
     totalCost: 0,
@@ -195,6 +198,7 @@ function TransactionsContent() {
   const calculateStats = () => {
     const pending = transactions.filter(t => t.status === 'pending');
     const inStock = transactions.filter(t => t.status === 'in_stock');
+    const awaitingPayment = transactions.filter(t => t.status === 'awaiting_payment');
     const sold = transactions.filter(t => t.status === 'sold');
     const returned = transactions.filter(t => t.status === 'returned');
 
@@ -209,6 +213,7 @@ function TransactionsContent() {
       total: transactions.length,
       pending: pending.length,
       inStock: inStock.length,
+      awaitingPayment: awaitingPayment.length,
       sold: sold.length,
       returned: returned.length,
       totalCost,
@@ -350,7 +355,7 @@ function TransactionsContent() {
         prev.map(t => t.id === id ? { ...t, status: 'in_stock' as const } : t)
       );
     } else {
-      alert('着荷処理に失敗しました');
+      alert('到货处理失败');
     }
   };
 
@@ -379,10 +384,43 @@ function TransactionsContent() {
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* KaitoriX 买取价格刷新 */}
+              {kaitorixEnabled && (
+                <button
+                  onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    kaitorixLoading
+                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      : buybackPrices.size > 0
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {kaitorixLoading ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {kaitorixProgress
+                        ? `${kaitorixProgress.completed}/${kaitorixProgress.total}`
+                        : '加载中...'}
+                      <span className="text-xs opacity-70">停止</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      买取価格
+                    </>
+                  )}
+                </button>
+              )}
               <button
                 onClick={handleExportCSV}
                 disabled={exporting}
-                className={button.primary + ' flex items-center gap-2 !bg-gray-700 hover:!bg-gray-600'}
+                className={button.secondary + ' flex items-center gap-2'}
               >
                 {exporting ? (
                   <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -435,6 +473,7 @@ function TransactionsContent() {
             { key: 'all', label: '全部', count: stats.total },
             { key: 'in_stock', label: '在庫', count: stats.inStock, color: 'amber' },
             { key: 'pending', label: '未着', count: stats.pending, color: 'teal' },
+            { key: 'awaiting_payment', label: '入金待ち', count: stats.awaitingPayment, color: 'indigo' },
             { key: 'sold', label: '売却済', count: stats.sold, color: 'emerald' },
             { key: 'returned', label: '返品済', count: stats.returned, color: 'red' },
           ] as const).map((tab) => (
@@ -479,6 +518,38 @@ function TransactionsContent() {
             </svg>
           </div>
         </div>
+
+        {/* KaitoriX 加载进度条 */}
+        {kaitorixLoading && kaitorixProgress && (
+          <div className="mb-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                买取価格を取得中... {kaitorixProgress.completed}/{kaitorixProgress.total}
+                {kaitorixProgress.failed > 0 && (
+                  <span className="text-red-500 ml-2">({kaitorixProgress.failed} 失败)</span>
+                )}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                ~{Math.ceil((kaitorixProgress.total - kaitorixProgress.completed) * 6 / 60)} 分钟
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  kaitorixProgress.stopped
+                    ? 'bg-red-500'
+                    : 'bg-teal-500'
+                }`}
+                style={{ width: `${(kaitorixProgress.completed / kaitorixProgress.total) * 100}%` }}
+              />
+            </div>
+            {kaitorixProgress.stopped && (
+              <p className="text-xs text-red-500 mt-1">
+                请求被限制，已自动停止。已获取的价格数据仍然可用。
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 交易列表 */}
         {filteredTransactions.length === 0 ? (
@@ -544,6 +615,9 @@ function TransactionsContent() {
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           状态
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                          JAN
                         </th>
                         <th
                           className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
@@ -640,18 +714,20 @@ function TransactionsContent() {
 
 export default function TransactionsPage() {
   return (
-    <Suspense fallback={
-      <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-xl">加载中...</span>
+    <>
+      <Suspense fallback={
+        <div className={layout.page + ' flex items-center justify-center'}>
+          <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+            <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-xl">加载中...</span>
+          </div>
         </div>
-      </div>
-    }>
-      <TransactionsContent />
-    </Suspense>
+      }>
+        <TransactionsContent />
+      </Suspense>
+    </>
   );
 }
