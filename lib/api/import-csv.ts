@@ -35,6 +35,62 @@ export interface ImportResult {
 }
 
 /**
+ * 英文・中文の列名を日本語に正規化するマッピング
+ * key: 英文/中文の列名, value: 日本語の列名
+ */
+const HEADER_ALIASES: Record<string, string> = {
+  // 英文 → 日文
+  'Purchase Date': '仕入日',
+  'Product': '商品名',
+  'Unit Price': '仕入単価',
+  'Qty': '数量',
+  'Source': '仕入先',
+  'Order ID': '注文ID',
+  'Account': 'アカウント',
+  'Points Used': 'ポイント使用',
+  'Coupon': 'クーポン',
+  'Points (Site)': 'P(サイト)',
+  'Points (Card)': 'P(カード)',
+  'Points (Other)': 'P(他)',
+  'Received': '着荷',
+  'Memo': 'メモ',
+  'Sale Date': '売却日',
+  'Sold To': '売却先',
+  'Sale Price': '売却単価',
+  'Sale Qty': '売却数量',
+  'Deduction': '控除額',
+  'Sale Order ID': '売却注文ID',
+  'Sale Memo': '売却メモ',
+  // 中文 → 日文
+  '进货日期': '仕入日',
+  '进货单价': '仕入単価',
+  '进货来源': '仕入先',
+  '订单ID': '注文ID',
+  '账号': 'アカウント',
+  '使用积分': 'ポイント使用',
+  '优惠券': 'クーポン',
+  '积分(网站)': 'P(サイト)',
+  '积分(信用卡)': 'P(カード)',
+  '积分(其他)': 'P(他)',
+  '到货': '着荷',
+  '备注': 'メモ',
+  '出售日期': '売却日',
+  '出售对象': '売却先',
+  '出售单价': '売却単価',
+  '出售数量': '売却数量',
+  '扣除额': '控除額',
+  '出售订单ID': '売却注文ID',
+  '出售备注': '売却メモ',
+};
+
+/**
+ * 列名を日本語に正規化（日本語はそのまま、英文/中文はマッピング）
+ */
+function normalizeHeader(header: string): string {
+  return HEADER_ALIASES[header] || header;
+}
+
+/**
  * CSVテキストをパースして行配列に変換
  */
 function parseCSV(text: string): CSVRow[] {
@@ -43,7 +99,8 @@ function parseCSV(text: string): CSVRow[] {
   const lines = clean.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
 
-  const headers = parseCSVLine(lines[0]);
+  const rawHeaders = parseCSVLine(lines[0]);
+  const headers = rawHeaders.map(normalizeHeader);
   const rows: CSVRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -106,6 +163,68 @@ function parseNum(val: string): number {
   return isNaN(n) ? 0 : n;
 }
 
+interface PaymentMethodWithPlatform {
+  id: string;
+  name: string;
+  card_points_platform_id: string | null;
+}
+
+interface PointsPlatform {
+  id: string;
+  display_name: string;
+}
+
+/**
+ * 購入先と支払い方法から積分プラットフォームを推測
+ */
+function inferPointsPlatforms(
+  platformName: string,
+  cardId: string | null,
+  extraPoints: number,
+  paymentMethods: PaymentMethodWithPlatform[],
+  pointsPlatforms: PointsPlatform[]
+): {
+  platformPointsPlatformId: string | null;
+  cardPointsPlatformId: string | null;
+  extraPointsPlatformId: string | null;
+} {
+  // カード積分プラットフォーム - 支払い方法から取得
+  let cardPointsPlatformId: string | null = null;
+  if (cardId) {
+    const card = paymentMethods.find(pm => pm.id === cardId);
+    cardPointsPlatformId = card?.card_points_platform_id || null;
+  }
+
+  // プラットフォーム積分 - 購入先から推測
+  let platformPointsPlatformId: string | null = null;
+  if (platformName) {
+    const lowerName = platformName.toLowerCase();
+    if (lowerName.includes('amazon')) {
+      platformPointsPlatformId = pointsPlatforms.find(p =>
+        p.display_name.includes('Amazon')
+      )?.id || null;
+    } else if (lowerName.includes('楽天') || lowerName.includes('rakuten')) {
+      platformPointsPlatformId = pointsPlatforms.find(p =>
+        p.display_name.includes('楽天')
+      )?.id || null;
+    } else if (lowerName.includes('yahoo')) {
+      platformPointsPlatformId = pointsPlatforms.find(p =>
+        p.display_name.includes('Yahoo')
+      )?.id || null;
+    }
+  }
+
+  // 追加積分 - dポイント
+  let extraPointsPlatformId: string | null = null;
+  if (extraPoints > 0) {
+    extraPointsPlatformId = pointsPlatforms.find(p =>
+      p.display_name.includes('d')
+    )?.id || null;
+  }
+
+  return { platformPointsPlatformId, cardPointsPlatformId, extraPointsPlatformId };
+}
+
 /**
  * CSVファイルをインポート
  */
@@ -130,8 +249,14 @@ export async function importCSV(file: File): Promise<ImportResult> {
 
   const { data: paymentMethods } = await supabase
     .from('payment_methods')
-    .select('id, name')
+    .select('id, name, card_points_platform_id')
     .eq('user_id', user.id);
+
+  // 積分プラットフォームを取得（推測用）
+  const { data: pointsPlatforms } = await supabase
+    .from('points_platforms')
+    .select('id, display_name')
+    .eq('is_active', true);
 
   const platformMap = new Map((purchasePlatforms || []).map(p => [p.name, p.id]));
   const paymentMap = new Map((paymentMethods || []).map(p => [p.name, p.id]));
@@ -160,6 +285,16 @@ export async function importCSV(file: File): Promise<ImportResult> {
       const platformId = platformMap.get(row.仕入先) || null;
       const cardId = paymentMap.get(row.アカウント) || null;
 
+      // 積分プラットフォームを推測
+      const { platformPointsPlatformId, cardPointsPlatformId, extraPointsPlatformId } =
+        inferPointsPlatforms(
+          row.仕入先,
+          cardId,
+          parseNum(row['P(他)']),
+          (paymentMethods as PaymentMethodWithPlatform[]) || [],
+          (pointsPlatforms as PointsPlatform[]) || []
+        );
+
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         date: row.仕入日,
@@ -173,12 +308,15 @@ export async function importCSV(file: File): Promise<ImportResult> {
         expected_platform_points: parseNum(row['P(サイト)']),
         expected_card_points: parseNum(row['P(カード)']),
         extra_platform_points: parseNum(row['P(他)']),
+        platform_points_platform_id: platformPointsPlatformId,
+        card_points_platform_id: cardPointsPlatformId,
+        extra_platform_points_platform_id: extraPointsPlatformId,
         jan_code: janCode || null,
         unit_price: unitPrice || null,
         purchase_platform_id: platformId,
         order_number: row.注文ID || null,
         notes: row.メモ || null,
-        status: 'in_stock',
+        status: row.着荷 === '1' ? 'in_stock' : 'pending',
       });
 
       if (error) {

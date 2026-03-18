@@ -339,7 +339,8 @@ function TransactionsContent() {
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const csv = await exportTransactionsToCSV();
+      const ids = filteredTransactions.map(t => t.id);
+      const csv = await exportTransactionsToCSV(ids);
       downloadCSV(csv);
     } catch (error: any) {
       alert(error.message || 'CSV导出失败');

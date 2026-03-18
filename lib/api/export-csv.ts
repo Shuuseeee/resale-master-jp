@@ -44,19 +44,19 @@ function escapeCSV(value: string | number | null | undefined): string {
 }
 
 /**
- * JAN码をCSV用にフォーマット（Excelで数値化されないように ="xxx" 形式）
+ * JAN码をCSV用にフォーマット（MayMoney互換：プレーンテキスト）
  */
 function formatJAN(jan: string | null | undefined): string {
   if (!jan) return '';
-  return `"=""${jan}"""`;
+  return escapeCSV(jan);
 }
 
 /**
  * データベースからトランザクション+販売記録を取得してCSV文字列を生成
  */
-export async function exportTransactionsToCSV(): Promise<string> {
+export async function exportTransactionsToCSV(transactionIds?: string[]): Promise<string> {
   // 1. トランザクション + 関連データを取得
-  const { data: transactions, error: txError } = await supabase
+  let query = supabase
     .from('transactions')
     .select(`
       *,
@@ -64,6 +64,12 @@ export async function exportTransactionsToCSV(): Promise<string> {
       purchase_platform:purchase_platforms(name)
     `)
     .order('date', { ascending: true });
+
+  if (transactionIds && transactionIds.length > 0) {
+    query = query.in('id', transactionIds);
+  }
+
+  const { data: transactions, error: txError } = await query;
 
   if (txError) throw new Error(`取引データの取得に失敗: ${txError.message}`);
   if (!transactions || transactions.length === 0) throw new Error('エクスポートするデータがありません');
@@ -115,7 +121,7 @@ export async function exportTransactionsToCSV(): Promise<string> {
       escapeCSV(tx.expected_platform_points || 0),           // P(サイト)
       escapeCSV(tx.expected_card_points || 0),               // P(カード)
       escapeCSV(tx.extra_platform_points || 0),              // P(他)
-      '',                                                     // 着荷（DBに該当フィールドなし）
+      escapeCSV(tx.status === 'in_stock' ? '1' : ''),          // 着荷
       escapeCSV(tx.notes),                                   // メモ
     ];
 
