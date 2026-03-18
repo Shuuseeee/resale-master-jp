@@ -1,7 +1,7 @@
 // app/transactions/add/page.tsx
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
 import type { PaymentMethod, TransactionFormData, PointsPlatform, PurchasePlatform } from '@/types/database.types';
@@ -361,6 +361,7 @@ function AddTransactionPageContent() {
 
   // 提交表单（continueAdding=true 时保存后继续添加）
   const [continueAdding, setContinueAdding] = useState(false);
+  const continueAddingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,7 +405,7 @@ function AddTransactionPageContent() {
 
       if (error) throw error;
 
-      if (continueAdding && newRecord) {
+      if (continueAddingRef.current && newRecord) {
         // 继续添加：跳转到预填表单
         router.push(`/transactions/add?copy=${newRecord.id}`);
       } else {
@@ -417,6 +418,7 @@ function AddTransactionPageContent() {
     } finally {
       setIsSubmitting(false);
       setContinueAdding(false);
+      continueAddingRef.current = false;
     }
   };
 
@@ -1035,6 +1037,7 @@ function AddTransactionPageContent() {
               disabled={isSubmitting}
               onClick={() => {
                 setContinueAdding(true);
+                continueAddingRef.current = true;
                 // 通过 requestSubmit 触发表单提交（含验证）
                 const form = document.querySelector('form');
                 form?.requestSubmit();

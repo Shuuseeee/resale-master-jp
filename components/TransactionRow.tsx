@@ -182,7 +182,7 @@ export default function TransactionRow({
           <span className="text-gray-500 dark:text-gray-500">-</span>
         )}
       </td>
-      <td className="px-6 py-4 text-right">
+      <td className="px-6 py-4 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-2">
           {transaction.status === 'pending' && onMarkArrived && (
             <button
@@ -190,7 +190,7 @@ export default function TransactionRow({
                 e.stopPropagation();
                 onMarkArrived(transaction.id);
               }}
-              className="px-3 py-1.5 text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all active:scale-95"
+              className="px-3 py-1.5 text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all active:scale-95 whitespace-nowrap"
               title="着荷"
             >
               着荷

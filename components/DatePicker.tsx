@@ -70,24 +70,15 @@ export default function DatePicker({
   // 移动端使用原生日期选择器
   if (isMobile && useNativeOnMobile) {
     return (
-      <div className="relative w-full">
-        <input
-          type="date"
-          value={formatDateForInput(selected || null)}
-          onChange={(e) => onChange(parseDateFromInput(e.target.value))}
-          min={minDate ? formatDateForInput(minDate) : undefined}
-          max={maxDate ? formatDateForInput(maxDate) : undefined}
-          disabled={disabled}
-          className={className || input.base + ' cursor-pointer'}
-          placeholder={placeholder}
-        />
-        {/* 如果没有选择日期，显示占位符 */}
-        {!selected && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400 text-sm md:text-base">
-            {placeholder}
-          </div>
-        )}
-      </div>
+      <input
+        type="date"
+        value={formatDateForInput(selected || null)}
+        onChange={(e) => onChange(parseDateFromInput(e.target.value))}
+        min={minDate ? formatDateForInput(minDate) : undefined}
+        max={maxDate ? formatDateForInput(maxDate) : undefined}
+        disabled={disabled}
+        className={className || input.base + ' w-full cursor-pointer'}
+      />
     );
   }
 
@@ -141,22 +132,14 @@ export function NativeDatePicker({
   };
 
   return (
-    <div className="relative w-full">
-      <input
-        type="date"
-        value={formatDateForInput(selected || null)}
-        onChange={(e) => onChange(parseDateFromInput(e.target.value))}
-        min={minDate ? formatDateForInput(minDate) : undefined}
-        max={maxDate ? formatDateForInput(maxDate) : undefined}
-        disabled={disabled}
-        className={className || input.base + ' cursor-pointer'}
-        placeholder={placeholder}
-      />
-      {!selected && (
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400 text-sm md:text-base">
-          {placeholder}
-        </div>
-      )}
-    </div>
+    <input
+      type="date"
+      value={formatDateForInput(selected || null)}
+      onChange={(e) => onChange(parseDateFromInput(e.target.value))}
+      min={minDate ? formatDateForInput(minDate) : undefined}
+      max={maxDate ? formatDateForInput(maxDate) : undefined}
+      disabled={disabled}
+      className={className || input.base + ' w-full cursor-pointer'}
+    />
   );
 }

@@ -178,27 +178,29 @@ export default function TransactionFilters({ onApply, onClear, paymentMethods, p
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4" data-testid="filter-panel">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* 日期范围 */}
-            <div>
+            <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                開始日期
+                期間
               </label>
-              <DatePicker
-                selected={filters.dateFrom ? new Date(filters.dateFrom) : null}
-                onChange={(date) => updateFilter('dateFrom', date ? date.toISOString().split('T')[0] : '')}
-                placeholder="开始日期..."
-                maxDate={filters.dateTo ? new Date(filters.dateTo) : undefined}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-                结束日期
-              </label>
-              <DatePicker
-                selected={filters.dateTo ? new Date(filters.dateTo) : null}
-                onChange={(date) => updateFilter('dateTo', date ? date.toISOString().split('T')[0] : '')}
-                placeholder="结束日期..."
-                minDate={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-              />
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 min-w-0">
+                  <DatePicker
+                    selected={filters.dateFrom ? new Date(filters.dateFrom) : null}
+                    onChange={(date) => updateFilter('dateFrom', date ? date.toISOString().split('T')[0] : '')}
+                    placeholder="開始日"
+                    maxDate={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                  />
+                </div>
+                <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">〜</span>
+                <div className="flex-1 min-w-0">
+                  <DatePicker
+                    selected={filters.dateTo ? new Date(filters.dateTo) : null}
+                    onChange={(date) => updateFilter('dateTo', date ? date.toISOString().split('T')[0] : '')}
+                    placeholder="終了日"
+                    minDate={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 商品名称 */}

@@ -384,7 +384,7 @@ function TransactionsContent() {
               <h1 className={heading.h1 + ' mb-2'}>交易记录</h1>
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* KaitoriX 买取价格刷新 */}
               {kaitorixEnabled && (
                 <button
@@ -403,17 +403,19 @@ function TransactionsContent() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      {kaitorixProgress
-                        ? `${kaitorixProgress.completed}/${kaitorixProgress.total}`
-                        : '加载中...'}
-                      <span className="text-xs opacity-70">停止</span>
+                      <span className="hidden sm:inline">
+                        {kaitorixProgress
+                          ? `${kaitorixProgress.completed}/${kaitorixProgress.total}`
+                          : '加载中...'}
+                      </span>
+                      <span className="hidden sm:inline text-xs opacity-70">停止</span>
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      买取価格
+                      <span className="hidden sm:inline">买取価格</span>
                     </>
                   )}
                 </button>
@@ -421,7 +423,7 @@ function TransactionsContent() {
               <button
                 onClick={handleExportCSV}
                 disabled={exporting}
-                className={button.secondary + ' flex items-center gap-2'}
+                className={button.secondary + ' flex items-center gap-2 whitespace-nowrap'}
               >
                 {exporting ? (
                   <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -433,16 +435,16 @@ function TransactionsContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 )}
-                {exporting ? '导出中...' : 'CSV导出'}
+                {exporting ? '导出中...' : <><span className="sm:hidden">CSV</span><span className="hidden sm:inline">CSV導出</span></>}
               </button>
               <Link
                 href="/transactions/add"
-                className={button.primary + ' flex items-center gap-2'}
+                className={button.primary + ' flex items-center gap-2 whitespace-nowrap'}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                记录新交易
+                <span className="hidden sm:inline">记录新交易</span>
               </Link>
             </div>
           </div>
