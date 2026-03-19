@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { SuppliesCost, SuppliesCostFormData } from '@/types/database.types';
 import { layout, heading, card, button } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 // 耗材分类选项
 const CATEGORY_OPTIONS = [
@@ -23,7 +24,7 @@ export default function EditSupplyPage() {
   const [formData, setFormData] = useState<SuppliesCostFormData>({
     category: '包装材料',
     amount: 0,
-    purchase_date: new Date().toISOString().split('T')[0],
+    purchase_date: getTodayString(),
     description: '',
     notes: '',
   });
@@ -241,11 +242,11 @@ export default function EditSupplyPage() {
                     采购日期 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <DatePicker
-                    selected={formData.purchase_date ? new Date(formData.purchase_date) : null}
+                    selected={formData.purchase_date ? parseDateFromLocal(formData.purchase_date) : null}
                     onChange={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        purchase_date: date ? date.toISOString().split('T')[0] : ''
+                        purchase_date: formatDateToLocal(date)
                       }));
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"

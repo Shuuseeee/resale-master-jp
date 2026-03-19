@@ -11,6 +11,7 @@ import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { parseNumberInput } from '@/lib/number-utils';
+import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 export default function EditTransactionPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function EditTransactionPage() {
 
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayString(),
     product_name: '',
     purchase_price_total: 0,
     card_paid: 0,
@@ -428,11 +429,11 @@ export default function EditTransactionPage() {
                     日期 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <DatePicker
-                    selected={formData.date ? new Date(formData.date) : null}
+                    selected={formData.date ? parseDateFromLocal(formData.date) : null}
                     onChange={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        date: date ? date.toISOString().split('T')[0] : ''
+                        date: formatDateToLocal(date)
                       }));
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import type { Coupon } from "@/types/database.types";
 import { formatCurrency, daysUntil } from "@/lib/financial/calculator";
+import { getTodayString } from "@/lib/utils/dateUtils";
 import Link from "next/link";
 import { layout, heading, card, button, badge, tabs } from "@/lib/theme";
 
@@ -30,7 +31,7 @@ export default function CouponsPage() {
       if (error) throw error;
       setCoupons(data || []);
     } catch (error) {
-      console.error("加载优惠券失败:", error);
+      console.error("クーポン読み込みエラー:", error);
     } finally {
       setLoading(false);
     }
@@ -42,20 +43,20 @@ export default function CouponsPage() {
         .from("coupons")
         .update({
           is_used: true,
-          used_date: new Date().toISOString().split("T")[0],
+          used_date: getTodayString(),
         })
         .eq("id", id);
 
       if (error) throw error;
       await loadCoupons();
     } catch (error) {
-      console.error("标记失败:", error);
-      alert("标记失败，请重试");
+      console.error("マーク失敗:", error);
+      alert("使用済みマークに失敗しました");
     }
   };
 
   const deleteCoupon = async (id: string) => {
-    if (!confirm("确定要删除这张优惠券吗？")) return;
+    if (!confirm("このクーポンを削除しますか？")) return;
 
     try {
       const { error } = await supabase.from("coupons").delete().eq("id", id);
@@ -63,26 +64,29 @@ export default function CouponsPage() {
       if (error) throw error;
       await loadCoupons();
     } catch (error) {
-      console.error("删除失败:", error);
-      alert("删除失败，请重试");
+      console.error("削除失敗:", error);
+      alert("削除に失敗しました");
     }
   };
 
   const getDiscountLabel = (coupon: Coupon) => {
     switch (coupon.discount_type) {
       case "percentage":
-        return `${coupon.discount_value}% 折扣`;
+        const maxDiscountText = coupon.max_discount_amount > 0
+          ? ` (上限 ${formatCurrency(coupon.max_discount_amount)})`
+          : "";
+        return `${coupon.discount_value}% OFF${maxDiscountText}`;
       case "fixed_amount":
-        return `${formatCurrency(coupon.discount_value)} 优惠`;
-      case "free_shipping":
-        return "免运费";
+        return `${formatCurrency(coupon.discount_value)} OFF`;
+      case "point_multiply":
+        return `ポイント${coupon.discount_value}倍`;
       default:
         return "";
     }
   };
 
   const filteredCoupons = coupons.filter((coupon) => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayString();
     const daysLeft = daysUntil(coupon.expiry_date);
 
     switch (filter) {
@@ -101,7 +105,7 @@ export default function CouponsPage() {
     total: coupons.length,
     unused: coupons.filter(
       (c) =>
-        !c.is_used && c.expiry_date >= new Date().toISOString().split("T")[0],
+        !c.is_used && c.expiry_date >= getTodayString(),
     ).length,
     used: coupons.filter((c) => c.is_used).length,
     expiring: coupons.filter((c) => {
@@ -134,7 +138,7 @@ export default function CouponsPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span className="text-xl">加载中...</span>
+          <span className="text-xl">読み込み中...</span>
         </div>
       </div>
     );
@@ -143,13 +147,13 @@ export default function CouponsPage() {
   return (
     <div className={layout.page}>
       <div className={layout.container}>
-        {/* 标题区域 */}
+        {/* 標題区域 */}
         <div className={layout.section}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className={heading.h1 + " mb-2"}>优惠券管理</h1>
+              <h1 className={heading.h1 + " mb-2"}>クーポン管理</h1>
               <p className="text-gray-600 dark:text-gray-400">
-                管理您的优惠券和折扣码
+                クーポン・キャンペーンの管理
               </p>
             </div>
             <Link
@@ -169,16 +173,16 @@ export default function CouponsPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              添加优惠券
+              クーポン追加
             </Link>
           </div>
         </div>
 
-        {/* 统计卡片 */}
+        {/* 統計カード */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
-              全部
+              すべて
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.total}
@@ -194,7 +198,7 @@ export default function CouponsPage() {
           </div>
           <div className={card.stat + " border-amber-500/30"}>
             <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">
-              即将过期
+              期限間近
             </div>
             <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
               {stats.expiring}
@@ -202,7 +206,7 @@ export default function CouponsPage() {
           </div>
           <div className={card.stat + " border-gray-500/30"}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
-              已使用
+              使用済み
             </div>
             <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
               {stats.used}
@@ -210,7 +214,7 @@ export default function CouponsPage() {
           </div>
         </div>
 
-        {/* 筛选器 */}
+        {/* フィルター */}
         <div className={tabs.container + " mb-6"}>
           <div className="flex gap-2">
             <button
@@ -219,7 +223,7 @@ export default function CouponsPage() {
                 filter === "all" ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
-              全部
+              すべて
             </button>
             <button
               onClick={() => setFilter("unused")}
@@ -235,7 +239,7 @@ export default function CouponsPage() {
                 filter === "expiring" ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
-              即将过期
+              期限間近
             </button>
             <button
               onClick={() => setFilter("used")}
@@ -243,12 +247,12 @@ export default function CouponsPage() {
                 filter === "used" ? tabs.tab.active : tabs.tab.inactive
               }`}
             >
-              已使用
+              使用済み
             </button>
           </div>
         </div>
 
-        {/* 优惠券列表 */}
+        {/* クーポンリスト */}
         <div className={card.primary + " shadow-2xl overflow-hidden"}>
           {filteredCoupons.length === 0 ? (
             <div className="p-12 text-center">
@@ -266,13 +270,13 @@ export default function CouponsPage() {
                 />
               </svg>
               <p className="text-gray-600 dark:text-gray-400 text-lg">
-                暂无优惠券
+                クーポンがありません
               </p>
               <Link
                 href="/coupons/add"
                 className={button.primary + " inline-block mt-4"}
               >
-                添加第一张优惠券
+                最初のクーポンを追加
               </Link>
             </div>
           ) : (
@@ -301,15 +305,29 @@ export default function CouponsPage() {
                           {coupon.name}
                         </h3>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {coupon.platform || "通用"}
+                          {coupon.platform || "共通"}
                         </div>
                       </div>
                       {coupon.is_used && (
                         <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full">
-                          已使用
+                          使用済み
                         </span>
                       )}
                     </div>
+
+                    {coupon.coupon_code && (
+                      <div className="mb-3">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(coupon.coupon_code!);
+                            alert("コードをコピーしました");
+                          }}
+                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-mono rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                        >
+                          {coupon.coupon_code}
+                        </button>
+                      </div>
+                    )}
 
                     <div className="mb-3">
                       <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mb-1">
@@ -317,13 +335,14 @@ export default function CouponsPage() {
                       </div>
                       {coupon.min_purchase_amount > 0 && (
                         <div className="text-xs text-gray-600 dark:text-gray-400">
-                          满 {formatCurrency(coupon.min_purchase_amount)} 可用
+                          {formatCurrency(coupon.min_purchase_amount)}円以上で利用可
                         </div>
                       )}
                     </div>
                     <div className="mb-4 text-sm">
                       <div className="text-gray-600 dark:text-gray-400">
-                        过期日期: {coupon.expiry_date}
+                        {coupon.start_date && `${coupon.start_date} 〜 `}
+                        {coupon.expiry_date}
                       </div>
                       <div
                         className={`font-medium ${
@@ -335,10 +354,10 @@ export default function CouponsPage() {
                         }`}
                       >
                         {isExpired
-                          ? "已过期"
+                          ? "期限切れ"
                           : daysLeft === 0
-                            ? "今天过期"
-                            : `还有 ${daysLeft} 天`}
+                            ? "本日期限"
+                            : `残り${daysLeft}日`}
                       </div>
                     </div>
 
@@ -354,20 +373,20 @@ export default function CouponsPage() {
                           onClick={() => markAsUsed(coupon.id)}
                           className="flex-1 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors"
                         >
-                          标记已使用
+                          使用済みにする
                         </button>
                       )}
                       <Link
                         href={`/coupons/${coupon.id}/edit`}
                         className="px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
                       >
-                        编辑
+                        編集
                       </Link>
                       <button
                         onClick={() => deleteCoupon(coupon.id)}
                         className="px-3 py-2 bg-red-600 dark:bg-red-900/30 hover:bg-red-700 dark:hover:bg-red-900/50 text-white dark:text-red-300 text-sm font-medium rounded-lg transition-colors"
                       >
-                        删除
+                        削除
                       </button>
                     </div>
                   </div>

@@ -16,6 +16,7 @@ import ReturnRecordsList from '@/components/ReturnRecordsList';
 import { createReturnRecord } from '@/lib/api/return-records';
 import { parseNumberInput } from '@/lib/number-utils';
 import Toast from '@/components/Toast';
+import { getTodayString } from '@/lib/utils/dateUtils';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -40,7 +41,7 @@ export default function TransactionDetailPage() {
 
   const [returnData, setReturnData] = useState({
     quantity_returned: 1,
-    return_date: new Date().toISOString().split('T')[0],
+    return_date: getTodayString(),
     return_amount: 0,
     points_deducted: 0,
     return_reason: '',
@@ -163,7 +164,7 @@ export default function TransactionDetailPage() {
       setShowReturnForm(false);
       setReturnData({
         quantity_returned: 1,
-        return_date: new Date().toISOString().split('T')[0],
+        return_date: getTodayString(),
         return_amount: 0,
         points_deducted: 0,
         return_reason: '',

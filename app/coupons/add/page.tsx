@@ -7,14 +7,18 @@ import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 interface CouponFormData {
   name: string;
   discount_type: DiscountType;
   discount_value: number;
   min_purchase_amount: number;
+  start_date: string;
   expiry_date: string;
   platform: string;
+  coupon_code: string;
+  max_discount_amount: number;
   notes: string;
 }
 
@@ -25,8 +29,11 @@ export default function AddCouponPage() {
     discount_type: 'percentage',
     discount_value: 0,
     min_purchase_amount: 0,
+    start_date: '',
     expiry_date: '',
     platform: '',
+    coupon_code: '',
+    max_discount_amount: 0,
     notes: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,19 +63,19 @@ export default function AddCouponPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = '请输入优惠券名称';
+      newErrors.name = 'クーポン名を入力してください';
     }
 
     if (formData.discount_value <= 0) {
-      newErrors.discount_value = '折扣值必须大于0';
+      newErrors.discount_value = '割引値は0より大きい値を入力してください';
     }
 
     if (formData.discount_type === 'percentage' && formData.discount_value > 100) {
-      newErrors.discount_value = '百分比折扣不能超过100%';
+      newErrors.discount_value = '割引率は100%を超えることはできません';
     }
 
     if (!formData.expiry_date) {
-      newErrors.expiry_date = '请选择过期日期';
+      newErrors.expiry_date = '有効期限を選択してください';
     }
 
     setErrors(newErrors);
@@ -89,8 +96,11 @@ export default function AddCouponPage() {
           discount_type: formData.discount_type,
           discount_value: formData.discount_value,
           min_purchase_amount: formData.min_purchase_amount,
+          start_date: formData.start_date || null,
           expiry_date: formData.expiry_date,
           platform: formData.platform || null,
+          coupon_code: formData.coupon_code || null,
+          max_discount_amount: formData.max_discount_amount,
           notes: formData.notes || null,
           is_used: false,
         },
@@ -100,8 +110,8 @@ export default function AddCouponPage() {
 
       router.push('/coupons');
     } catch (error: any) {
-      console.error('保存失败:', error);
-      setErrors({ submit: error.message || '保存失败，请重试' });
+      console.error('保存失敗:', error);
+      setErrors({ submit: error.message || '保存に失敗しました' });
     } finally {
       setIsSubmitting(false);
     }
@@ -110,7 +120,7 @@ export default function AddCouponPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="relative max-w-2xl mx-auto px-4 py-8">
-        {/* 标题区域 */}
+        {/* 標題区域 */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
@@ -119,11 +129,11 @@ export default function AddCouponPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">返回</span>
+            <span className="font-medium">戻る</span>
           </button>
 
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">添加优惠券</h1>
-          <p className="text-gray-600 dark:text-gray-400">记录新的优惠券或折扣码</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">クーポン追加</h1>
+          <p className="text-gray-600 dark:text-gray-400">新しいクーポン・キャンペーンを記録</p>
         </div>
 
         {/* 表单 */}
@@ -132,19 +142,19 @@ export default function AddCouponPage() {
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
-                基本信息
+                基本情報
               </h2>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  优惠券名称 <span className="text-red-300">*</span>
+                  クーポン名 <span className="text-red-300">*</span>
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="例: 松屋85折券"
+                  placeholder="例: 楽天スーパーSALE 10%OFFクーポン"
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   required
                 />
@@ -153,14 +163,14 @@ export default function AddCouponPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  平台
+                  プラットフォーム
                 </label>
                 <input
                   type="text"
                   name="platform"
                   value={formData.platform}
                   onChange={handleInputChange}
-                  placeholder="例: Amazon, 楽天"
+                  placeholder="例: 楽天市場, Amazon, Yahoo!"
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -168,7 +178,7 @@ export default function AddCouponPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    折扣类型 <span className="text-red-300">*</span>
+                    割引タイプ <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="discount_type"
@@ -176,15 +186,15 @@ export default function AddCouponPage() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   >
-                    <option value="percentage">百分比折扣</option>
-                    <option value="fixed_amount">固定金额</option>
-                    <option value="free_shipping">免运费</option>
+                    <option value="percentage">割引率 (%)</option>
+                    <option value="fixed_amount">固定額 (¥)</option>
+                    <option value="point_multiply">ポイント倍率</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    折扣值 <span className="text-red-300">*</span>
+                    割引値 <span className="text-red-300">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -199,7 +209,7 @@ export default function AddCouponPage() {
                       required
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
-                      {formData.discount_type === 'percentage' ? '%' : '¥'}
+                      {formData.discount_type === 'percentage' ? '%' : formData.discount_type === 'point_multiply' ? '倍' : '¥'}
                     </span>
                   </div>
                   {errors.discount_value && (
@@ -208,10 +218,31 @@ export default function AddCouponPage() {
                 </div>
               </div>
 
+              {formData.discount_type === 'percentage' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    最大割引額
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="max_discount_amount"
+                      value={formData.max_discount_amount || ''}
+                      onChange={handleNumberChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="上限なしの場合は0"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    最低消费金额
+                    最低購入金額
                   </label>
                   <div className="relative">
                     <input
@@ -230,14 +261,46 @@ export default function AddCouponPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    过期日期 <span className="text-red-300">*</span>
+                    クーポンコード
+                  </label>
+                  <input
+                    type="text"
+                    name="coupon_code"
+                    value={formData.coupon_code}
+                    onChange={handleInputChange}
+                    placeholder="例: RAKUTEN500"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    開始日
                   </label>
                   <DatePicker
-                    selected={formData.expiry_date ? new Date(formData.expiry_date) : null}
+                    selected={formData.start_date ? parseDateFromLocal(formData.start_date) : null}
                     onChange={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        expiry_date: date ? date.toISOString().split('T')[0] : ''
+                        start_date: formatDateToLocal(date)
+                      }));
+                    }}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    有効期限 <span className="text-red-300">*</span>
+                  </label>
+                  <DatePicker
+                    selected={formData.expiry_date ? parseDateFromLocal(formData.expiry_date) : null}
+                    onChange={(date) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        expiry_date: formatDateToLocal(date)
                       }));
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
@@ -250,21 +313,21 @@ export default function AddCouponPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  备注
+                  メモ
                 </label>
                 <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
                   rows={3}
-                  placeholder="添加备注信息..."
+                  placeholder="メモを追加..."
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* 提交按钮 */}
+          {/* 送信ボタン */}
           {errors.submit && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
               <p className="text-sm text-red-300">{errors.submit}</p>
@@ -277,14 +340,14 @@ export default function AddCouponPage() {
               disabled={isSubmitting}
               className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isSubmitting ? '保存中...' : '保存优惠券'}
+              {isSubmitting ? '保存中...' : '保存'}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
               className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
             >
-              取消
+              キャンセル
             </button>
           </div>
         </form>

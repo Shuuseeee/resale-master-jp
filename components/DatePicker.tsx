@@ -60,10 +60,12 @@ export default function DatePicker({
     return `${year}-${month}-${day}`;
   };
 
-  // 解析日期字符串
+  // 解析日期字符串 (修复时区问题)
   const parseDateFromInput = (dateString: string) => {
     if (!dateString) return null;
-    const date = new Date(dateString);
+    // 使用本地时区解析日期，避免 UTC 偏移
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return isNaN(date.getTime()) ? null : date;
   };
 
@@ -127,7 +129,9 @@ export function NativeDatePicker({
 
   const parseDateFromInput = (dateString: string) => {
     if (!dateString) return null;
-    const date = new Date(dateString);
+    // 使用本地时区解析日期，避免 UTC 偏移
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return isNaN(date.getTime()) ? null : date;
   };
 

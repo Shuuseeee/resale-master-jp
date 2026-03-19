@@ -20,21 +20,24 @@ export function calculateCashProfit(
   return sellingPrice - platformFee - shippingFee - purchaseCost - suppliesCost;
 }
 
+import { daysUntil as daysUntilFromDateUtils } from '@/lib/utils/dateUtils';
+
 /**
  * 计算距离日期的天数
  * @param targetDate 目标日期
  * @returns 天数(负数表示已过期)
+ * @deprecated 使用 @/lib/utils/dateUtils 中的 daysUntil 代替
  */
 export function daysUntil(targetDate: Date | string): number {
-  const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  
-  const diffTime = target.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays;
+  // 如果是 Date 对象，先转换为字符串
+  if (targetDate instanceof Date) {
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
+    return daysUntilFromDateUtils(`${year}-${month}-${day}`);
+  }
+  // 如果是字符串，直接使用
+  return daysUntilFromDateUtils(targetDate);
 }
 
 /**

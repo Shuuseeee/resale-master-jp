@@ -12,6 +12,7 @@ import DatePicker from '@/components/DatePicker';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
+import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 function AddTransactionPageContent() {
   const router = useRouter();
@@ -19,7 +20,7 @@ function AddTransactionPageContent() {
 
   // 表单状态
   const [formData, setFormData] = useState<TransactionFormData>({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayString(),
     product_name: '',
     quantity: 1, // 默认数量为1
     purchase_price_total: 0,
@@ -122,7 +123,7 @@ function AddTransactionPageContent() {
       if (error || !data) return;
 
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayString(),
         product_name: data.product_name,
         quantity: data.quantity,
         purchase_price_total: data.purchase_price_total,
@@ -459,11 +460,11 @@ function AddTransactionPageContent() {
                     日期 <span className="text-red-600 dark:text-red-300">*</span>
                   </label>
                   <DatePicker
-                    selected={formData.date ? new Date(formData.date) : null}
+                    selected={formData.date ? parseDateFromLocal(formData.date) : null}
                     onChange={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        date: date ? date.toISOString().split('T')[0] : ''
+                        date: formatDateToLocal(date)
                       }));
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"

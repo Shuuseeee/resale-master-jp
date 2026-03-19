@@ -4,7 +4,26 @@
 export type PaymentMethodType = 'card';
 export type TransactionStatus = 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned';
 export type BillingCycle = 'monthly' | 'yearly';
-export type DiscountType = 'percentage' | 'fixed_amount' | 'free_shipping';
+export type DiscountType =
+  | 'percentage'      // 割引率 (10%OFF)
+  | 'fixed_amount'    // 固定額 (500円引き)
+  | 'point_multiply'  // ポイント倍率 (5倍)
+  | 'free_item'       // 無料商品 (ファミチキ無料)
+  | 'bogo'            // Buy One Get One (1個買うと1個無料)
+  | 'combo_deal'      // コンボ (2個で300円)
+  | 'cashback';       // 還元 (20%還元)
+
+export type RedemptionMethod =
+  | 'barcode'         // バーコード提示
+  | 'qr_code'         // QRコード
+  | 'coupon_code'     // クーポンコード入力
+  | 'automatic'       // 自動適用
+  | 'manual';         // 店員手動入力
+
+export type CashbackType =
+  | 'instant'         // 即時
+  | 'points'          // ポイント付与
+  | 'next_month';     // 翌月付与
 
 // 购入平台接口
 export interface PurchasePlatform {
@@ -147,17 +166,93 @@ export interface SuppliesCostFormData {
 
 export interface Coupon {
   id: string;
+  user_id: string;
   name: string;
   discount_type: DiscountType;
   discount_value: number;
   min_purchase_amount: number;
+  start_date: string | null;
   expiry_date: string;
   is_used: boolean;
   used_date: string | null;
   platform: string | null;
+  coupon_code: string | null;
+  max_discount_amount: number;
   notes: string | null;
+
+  // Free item specific fields
+  target_item_name: string | null;        // 対象商品名 (e.g., ファミチキ)
+  target_item_value: number;              // 商品価値 (e.g., 180円相当)
+
+  // Usage tracking
+  usage_limit: number;                    // 使用回数制限 (1=1回限り, -1=無制限)
+  usage_count: number;                    // 使用済み回数
+  monthly_usage_cap: number | null;       // 月間上限額
+  per_transaction_cap: number | null;     // 1回あたり上限額
+
+  // Time restrictions
+  time_restriction: string | null;        // 時間制限 (e.g., "11:00-15:00")
+  day_of_week_restriction: string | null; // 曜日制限 (e.g., "月,水,金")
+  recurring_dates: string | null;         // 定期開催日 (e.g., "20,30")
+
+  // Category and item restrictions
+  target_category: string | null;         // 対象カテゴリ
+  excluded_items: string | null;          // 除外商品
+
+  // Redemption
+  redemption_method: RedemptionMethod;    // 引換方法
+  barcode_value: string | null;           // バーコード番号
+
+  // Stacking rules
+  can_stack_with_other_coupons: boolean;      // 他クーポンと併用可能か
+  can_stack_with_point_multiplier: boolean;   // ポイント倍率と併用可能か
+  can_stack_with_sale_price: boolean;         // セール価格と併用可能か
+
+  // Member/app requirements
+  requires_membership: boolean;           // 会員限定か
+  membership_type: string | null;         // 会員種別
+  is_first_time_only: boolean;            // 初回限定か
+
+  // Location restrictions
+  store_restriction: string | null;       // 店舗制限
+  is_online_only: boolean;                // オンライン限定
+  is_offline_only: boolean;               // 店舗限定
+
+  // Combo deal specific
+  combo_quantity: number | null;          // コンボ数量
+  combo_price: number | null;             // コンボ価格
+
+  // Cashback specific
+  cashback_timing: string | null;         // 還元時期
+  cashback_type: CashbackType | null;     // 還元タイプ
+
+  // Campaign tracking
+  campaign_name: string | null;           // キャンペーン名
+  quantity_limit: number | null;          // 数���限定
+  quantity_used: number;                  // 使用済み数量
+
   created_at: string;
   updated_at: string;
+}
+
+// Coupon usage history
+export interface CouponUsageHistory {
+  id: string;
+  coupon_id: string;
+  user_id: string;
+  used_at: string;
+  discount_amount: number;
+  transaction_amount: number;
+  store_name: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+// Active coupon view (computed fields)
+export interface ActiveCoupon extends Coupon {
+  can_use: boolean;           // 使用可能か
+  is_expired: boolean;        // 期限切れか
+  remaining_uses: number;     // 残り使用回数
 }
 
 // Form Types
