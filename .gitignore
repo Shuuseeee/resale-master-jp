@@ -49,3 +49,6 @@ fix_*.sql
 # Claude Code 对话日志
 *command-messag*.txt
 中断*.txt
+
+# Claude Code 配置
+.claude/
