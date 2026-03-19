@@ -47,7 +47,7 @@ function loadCacheFromStorage(): Map<string, BuybackInfo> {
     if (parsed.version !== CACHE_VERSION) return new Map();
 
     const now = Date.now();
-    const TTL = 60 * 60 * 1000; // 1 hour
+    const TTL = 5 * 60 * 1000; // 5 minutes
 
     const map = new Map<string, BuybackInfo>();
     Object.entries(parsed.data || {}).forEach(([id, info]: [string, any]) => {

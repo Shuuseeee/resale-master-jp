@@ -342,6 +342,39 @@ export interface TransactionWithPaymentMethod extends Transaction {
   payment_method?: PaymentMethod;
 }
 
+// KaitoriX 買取価格キャッシュ
+export interface KaitorixCachedPrice {
+  store: string;
+  price: number;
+  url: string;
+  updated: string;
+}
+
+export interface KaitorixPriceCache {
+  id: string;
+  jan: string;
+  product_name: string | null;
+  max_price: number;
+  max_store: string | null;
+  prices: KaitorixCachedPrice[];
+  fetched_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ScrapeQueueStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface KaitorixScrapeQueue {
+  id: string;
+  jan: string;
+  user_id: string;
+  status: ScrapeQueueStatus;
+  attempts: number;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Database Response Types
 export type DatabaseError = {
   message: string;

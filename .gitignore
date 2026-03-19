@@ -50,5 +50,12 @@ fix_*.sql
 *command-messag*.txt
 中断*.txt
 
+# Scraper
+scraper/.env
+scraper/browser-data/
+scraper/logs/
+scraper/node_modules/
+scraper/debug-page.html
+
 # Claude Code 配置
 .claude/

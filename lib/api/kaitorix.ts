@@ -13,6 +13,7 @@ interface KaitorixResponse {
   max_price: number;
   max_store: string;
   prices: KaitorixPrice[];
+  _source?: string;
 }
 
 interface CacheEntry {
@@ -20,7 +21,7 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour (match server cache)
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const cache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<KaitorixResponse | null>>();
 
@@ -87,6 +88,11 @@ export async function fetchBuybackPrice(
         return null;
       }
 
+      // Don't cache pending/empty results
+      if (data.prices.length === 0 || data._source === 'pending') {
+        return data;
+      }
+
       // Cache the result
       cache.set(jan, { data, timestamp: Date.now() });
 
@@ -117,7 +123,7 @@ export async function fetchBuybackPrices(
   const uniqueJans = [...new Set(janCodes)];
   const resultMap = new Map<string, KaitorixResponse | null>();
 
-  const BATCH_DELAY = 6000; // 6 seconds between each request
+  const BATCH_DELAY = 500; // API route now returns instantly from cache/queue
   let failed = 0;
 
   for (let i = 0; i < uniqueJans.length; i++) {
