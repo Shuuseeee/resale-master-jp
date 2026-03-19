@@ -22,13 +22,11 @@ const USER_AGENTS = [
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 ];
 
-// Token pool - add more tokens if you have them
-const API_TOKENS = [
-  'maysedorisedori1',
-  // Add more tokens here if available:
-  'maysedorisedori2',
-  // 'token3',
-];
+// Token pool - loaded from environment variables
+const API_TOKENS = (process.env.KAITORIX_API_TOKENS || '')
+  .split(',')
+  .map(t => t.trim())
+  .filter(Boolean);
 
 // Circuit breaker: stop requests if too many failures
 interface CircuitBreakerState {
