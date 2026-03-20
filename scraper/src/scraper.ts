@@ -65,7 +65,7 @@ export async function scrapeProduct(jan: string): Promise<ScrapeResult | null> {
 
     // Extract product name
     const productName = await page.$eval(
-      '.product-top-row h1, .product-top-row h2, h1',
+      '#productName, .product-name, .product-top-row h2',
       el => el.textContent?.trim() || ''
     ).catch(() => '');
 

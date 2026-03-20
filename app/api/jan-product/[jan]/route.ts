@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } },
+);
+
+// GET: lookup product_name by JAN from kaitorix_price_cache
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ jan: string }> },
+) {
+  const { jan } = await params;
+
+  if (!jan || !/^\d+$/.test(jan)) {
+    return NextResponse.json({ error: 'Invalid JAN code' }, { status: 400 });
+  }
+
+  const { data } = await supabase
+    .from('kaitorix_price_cache')
+    .select('product_name')
+    .eq('jan', jan)
+    .single();
+
+  return NextResponse.json({ product_name: data?.product_name || '' });
+}
+
+// POST: seed product_name into cache (ON CONFLICT DO NOTHING to protect scraper data)
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ jan: string }> },
+) {
+  const { jan } = await params;
+
+  if (!jan || !/^\d+$/.test(jan)) {
+    return NextResponse.json({ error: 'Invalid JAN code' }, { status: 400 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const productName = body?.product_name;
+  if (!productName || typeof productName !== 'string') {
+    return NextResponse.json({ error: 'product_name required' }, { status: 400 });
+  }
+
+  // Insert only if row doesn't exist yet — scraper data takes priority
+  const { error } = await supabase
+    .from('kaitorix_price_cache')
+    .upsert(
+      { jan, product_name: productName },
+      { onConflict: 'jan', ignoreDuplicates: true },
+    );
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

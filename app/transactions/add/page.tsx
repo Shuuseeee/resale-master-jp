@@ -53,6 +53,7 @@ function AddTransactionPageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(true); // 未着品トグル
   const [amazonConfig, setAmazonConfig] = useState<AmazonPointConfig | null>(null);
+  const [janLooking, setJanLooking] = useState(false); // JAN lookup spinner
 
   // 加载支付方式列表和积分平台列表
   useEffect(() => {
@@ -193,6 +194,24 @@ function AddTransactionPageContent() {
       setPurchasePlatforms(prev => [...prev, created]);
       setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
       setNewPurchasePlatformName('');
+    }
+  };
+
+  // JAN コード → 商品名自動補完
+  const handleJanBlur = async () => {
+    const jan = formData.jan_code?.trim();
+    if (!jan || !/^\d+$/.test(jan)) return;
+
+    setJanLooking(true);
+    try {
+      const res = await fetch(`/api/jan-product/${jan}`);
+      if (!res.ok) return;
+      const { product_name } = await res.json();
+      if (product_name && !formData.product_name) {
+        setFormData(prev => ({ ...prev, product_name }));
+      }
+    } catch { /* ignore */ } finally {
+      setJanLooking(false);
     }
   };
 
@@ -406,6 +425,17 @@ function AddTransactionPageContent() {
 
       if (error) throw error;
 
+      // Fire-and-forget: seed JAN → product_name into cache
+      const jan = formData.jan_code?.trim();
+      const pName = formData.product_name?.trim();
+      if (jan && /^\d+$/.test(jan) && pName) {
+        fetch(`/api/jan-product/${jan}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_name: pName }),
+        }).catch(() => {});
+      }
+
       if (continueAddingRef.current && newRecord) {
         // 继续添加：跳转到预填表单
         router.push(`/transactions/add?copy=${newRecord.id}`);
@@ -469,6 +499,34 @@ function AddTransactionPageContent() {
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    JANコード
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="jan_code"
+                      value={formData.jan_code || ''}
+                      onChange={handleInputChange}
+                      onBlur={handleJanBlur}
+                      placeholder="4901234567890"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    />
+                    {janLooking && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="animate-spin h-5 w-5 text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    入力すると商品名を自動補完します
+                  </p>
                 </div>
 
                 <div>
@@ -546,34 +604,18 @@ function AddTransactionPageContent() {
                 采购信息
               </h2>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    JAN代码
-                  </label>
-                  <input
-                    type="text"
-                    name="jan_code"
-                    value={formData.jan_code || ''}
-                    onChange={handleInputChange}
-                    placeholder="4901234567890"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    订单号
-                  </label>
-                  <input
-                    type="text"
-                    name="order_number"
-                    value={formData.order_number || ''}
-                    onChange={handleInputChange}
-                    placeholder="订单号"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  订单号
+                </label>
+                <input
+                  type="text"
+                  name="order_number"
+                  value={formData.order_number || ''}
+                  onChange={handleInputChange}
+                  placeholder="订单号"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
               </div>
 
               <div>

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { CONFIG } from './config.js';
+import { CONFIG, jitter } from './config.js';
 import { launchBrowser, closeBrowser, scrapeProduct } from './scraper.js';
 import { log, logError } from './logger.js';
 
@@ -80,7 +80,7 @@ async function mainLoop() {
   while (running) {
     try {
       const hadWork = await pollQueue();
-      const delay = hadWork ? CONFIG.POLL_INTERVAL_BUSY : CONFIG.POLL_INTERVAL_IDLE;
+      const delay = jitter(hadWork ? CONFIG.POLL_INTERVAL_BUSY : CONFIG.POLL_INTERVAL_IDLE);
       if (!hadWork) log('Queue empty, waiting...');
 
       // Interruptible sleep
@@ -91,7 +91,7 @@ async function mainLoop() {
 
       // Add scrape delay between items
       if (hadWork && running) {
-        await new Promise(resolve => setTimeout(resolve, CONFIG.SCRAPE_DELAY));
+        await new Promise(resolve => setTimeout(resolve, jitter(CONFIG.SCRAPE_DELAY)));
       }
     } catch (err) {
       logError('Main loop error', err);
