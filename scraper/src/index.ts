@@ -32,8 +32,8 @@ async function pollQueue() {
 
   const result = await scrapeProduct(item.jan);
 
-  if (result) {
-    // Upsert into cache
+  if (result && result.max_price > 0) {
+    // Upsert into cache (only if max_price is valid)
     const { error: upsertErr } = await supabase
       .from('kaitorix_price_cache')
       .upsert({

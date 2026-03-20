@@ -20,11 +20,16 @@ export async function GET(
 
   const { data } = await supabase
     .from('kaitorix_price_cache')
-    .select('product_name')
+    .select('product_name, max_price')
     .eq('jan', jan)
     .single();
 
-  return NextResponse.json({ product_name: data?.product_name || '' });
+  // 只返回有效数据（max_price > 0）
+  if (data?.max_price && data.max_price > 0) {
+    return NextResponse.json({ product_name: data.product_name || '' });
+  }
+
+  return NextResponse.json({ product_name: '' });
 }
 
 // POST: seed product_name into cache (ON CONFLICT DO NOTHING to protect scraper data)
