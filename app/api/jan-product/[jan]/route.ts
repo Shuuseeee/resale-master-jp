@@ -29,6 +29,9 @@ export async function GET(
     return NextResponse.json({ product_name: data.product_name || '' });
   }
 
+  // 缓存无效或缺失 → 重新入队等待爬虫抓取
+  await supabase.rpc('enqueue_kaitorix_scrape', { p_jan: jan, p_user_id: null });
+
   return NextResponse.json({ product_name: '' });
 }
 
