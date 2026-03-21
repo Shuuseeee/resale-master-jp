@@ -64,5 +64,8 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 首次创建后立即入队，让爬虫补全价格数据
+  await supabase.rpc('enqueue_kaitorix_scrape', { p_jan: jan, p_user_id: null });
+
   return NextResponse.json({ ok: true });
 }
