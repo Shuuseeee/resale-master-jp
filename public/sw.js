@@ -1,4 +1,4 @@
-// Service Worker - cache shell for offline support
+// Service Worker - cache shell + Web Push handler
 const CACHE_NAME = 'resale-v1';
 const STATIC_ASSETS = ['/', '/dashboard', '/transactions'];
 
@@ -22,9 +22,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
-
   event.respondWith(
     fetch(event.request)
       .then((res) => {
@@ -33,5 +31,51 @@ self.addEventListener('fetch', (event) => {
         return res;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Web Push: show notification
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: '転売管理', body: event.data.text(), notificationId: null };
+  }
+
+  const { title, body, notificationId, type } = payload;
+  const options = {
+    body: body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: notificationId || type || 'default',
+    renotify: true,
+    data: { notificationId, url: notificationId ? `/notifications/${notificationId}` : '/notifications' },
+    actions: [
+      { action: 'open', title: '查看详情' },
+      { action: 'dismiss', title: '忽略' },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification click: open detail page
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'dismiss') return;
+
+  const targetUrl = event.notification.data?.url || '/notifications';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return clients.openWindow(targetUrl);
+    })
   );
 });
