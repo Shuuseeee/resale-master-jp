@@ -71,25 +71,23 @@ export async function POST() {
     }, { status: 500 });
   }
 
-  const results = [];
-  for (const sub of subs) {
+  const webpushModule = await import('web-push');
+  const webpush = webpushModule.default ?? webpushModule;
+  webpush.setVapidDetails('mailto:push@resale-app.local', vapidPublicKey, vapidPrivateKey);
+
+  const payload = JSON.stringify({ title: '🔔 テスト通知', body: 'プッシュ通知のテストです', notificationId, type: 'coupon_alert' });
+
+  const results = await Promise.all(subs.map(async (sub) => {
     try {
-      const webpushModule = await import('web-push');
-      const webpush = webpushModule.default ?? webpushModule;
-      webpush.setVapidDetails(
-        'mailto:push@resale-app.local',
-        vapidPublicKey,
-        vapidPrivateKey
-      );
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title: '🔔 テスト通知', body: 'プッシュ通知のテストです', notificationId, type: 'coupon_alert' })
+        payload
       );
-      results.push({ endpoint: sub.endpoint.slice(-20), status: 'sent' });
+      return { endpoint: sub.endpoint.slice(-20), status: 'sent' };
     } catch (e: any) {
-      results.push({ endpoint: sub.endpoint.slice(-20), status: 'failed', error: e?.message });
+      return { endpoint: sub.endpoint.slice(-20), status: 'failed', error: e?.message };
     }
-  }
+  }));
 
   return NextResponse.json({ ok: true, notificationId, results });
 }
