@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- 背景渐变：贴合项目中大量使用的 Teal-500 到 Teal-700 品牌色 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" /> 
+      <stop offset="100%" stop-color="#0F766E" />
+    </linearGradient>
+
+    <!-- 立体箱子：顶部亮色面 -->
+    <linearGradient id="boxTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="100%" stop-color="#F0FDFD" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- 立体箱子：左侧受光面 -->
+    <linearGradient id="boxLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CCFBF1" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#99F6E4" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- 立体箱子：右侧背光面 -->
+    <linearGradient id="boxRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0.85" />
+    </linearGradient>
+
+    <!-- 柔和的高级阴影效果，增加 iOS 质感 -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#042F2E" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- 1. 不透明的直角矩形背景 (iOS 规范要求不带圆角) -->
+  <rect width="1024" height="1024" fill="url(#bgGradient)" />
+
+  <!-- 2. 核心图形组合 (带阴影) -->
+  <g filter="url(#shadow)">
+    <!-- 立体箱子 (象征库存、进货、包裹) -->
+    <!-- 顶部 -->
+    <polygon points="512,380 760,500 512,620 264,500" fill="url(#boxTop)" />
+    <!-- 左侧 -->
+    <polygon points="264,500 512,620 512,860 264,740" fill="url(#boxLeft)" />
+    <!-- 右侧 -->
+    <polygon points="512,620 760,500 760,740 512,860" fill="url(#boxRight)" />
+    
+    <!-- 上升的折线箭头 (象征利润、销售、ROI) -->
+    <path d="M 264 450 L 450 280 L 560 380 L 780 180" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- 箭头头部 -->
+    <path d="M 580 180 L 780 180 L 780 380" fill="none" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

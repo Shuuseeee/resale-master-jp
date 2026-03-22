@@ -2,10 +2,21 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { ClientProviders } from '@/components/ClientProviders'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
-  title: '转卖账务管理系统',
-  description: '专为日本转卖业务设计的现代化账务管理系统',
+  title: '転売账务管理',
+  description: '日本転売業務账务管理システム',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '転売管理',
+    startupImage: '/icons/icon-512.png',
+  },
+  icons: {
+    apple: '/icons/icon-192.png',
+  },
 }
 
 export const viewport: Viewport = {
@@ -13,6 +24,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  themeColor: '#0d9488',
 }
 
 export default function RootLayout({
@@ -31,6 +43,9 @@ export default function RootLayout({
             </div>
           </div>
         </ClientProviders>
+        <Script id="sw-register" strategy="afterInteractive">
+          {`if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`}
+        </Script>
       </body>
     </html>
   )
