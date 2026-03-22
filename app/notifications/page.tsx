@@ -26,7 +26,9 @@ export default function NotificationsPage() {
     setTestResult('发送中...');
     try {
       const res = await fetch('/api/push/test', { method: 'POST' });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 200) }; }
       console.log('[Test Push] Result:', data);
       if (data.ok) {
         setTestResult(`✅ 已发送到 ${data.results.length} 个设备：${JSON.stringify(data.results)}`);

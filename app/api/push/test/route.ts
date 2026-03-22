@@ -74,7 +74,8 @@ export async function POST() {
   const results = [];
   for (const sub of subs) {
     try {
-      const webpush = (await import('web-push')).default;
+      const webpushModule = await import('web-push');
+      const webpush = webpushModule.default ?? webpushModule;
       webpush.setVapidDetails(
         'mailto:push@resale-app.local',
         vapidPublicKey,
