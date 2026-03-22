@@ -69,18 +69,31 @@ export default function DatePicker({
     return isNaN(date.getTime()) ? null : date;
   };
 
-  // 移动端使用原生日期选择器
+  // 移动端使用原生日期选择器（自定义样式包装）
   if (isMobile && useNativeOnMobile) {
+    const displayValue = selected
+      ? selected.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      : null;
     return (
-      <input
-        type="date"
-        value={formatDateForInput(selected || null)}
-        onChange={(e) => onChange(parseDateFromInput(e.target.value))}
-        min={minDate ? formatDateForInput(minDate) : undefined}
-        max={maxDate ? formatDateForInput(maxDate) : undefined}
-        disabled={disabled}
-        className={className || input.base + ' w-full cursor-pointer'}
-      />
+      <div className="relative">
+        <div className={`flex items-center gap-2 ${className || 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg'} ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className={displayValue ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
+            {displayValue || placeholder}
+          </span>
+        </div>
+        <input
+          type="date"
+          value={formatDateForInput(selected || null)}
+          onChange={(e) => onChange(parseDateFromInput(e.target.value))}
+          min={minDate ? formatDateForInput(minDate) : undefined}
+          max={maxDate ? formatDateForInput(maxDate) : undefined}
+          disabled={disabled}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
     );
   }
 

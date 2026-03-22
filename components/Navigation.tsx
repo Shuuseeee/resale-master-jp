@@ -10,6 +10,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
 
   // 等待组件挂载后再渲染用户相关内容，避免 hydration 错误
@@ -116,32 +117,54 @@ export default function Navigation() {
   return (
     <>
       {/* 桌面端侧边栏 */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 lg:bg-white dark:lg:bg-gray-800 lg:border-r lg:border-gray-200 dark:lg:border-gray-700">
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-gray-900 dark:text-white font-bold text-lg">Sales System</div>
-              <div className="text-gray-500 dark:text-gray-400 text-xs">For Internal Use Only</div>
-            </div>
-          </Link>
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:bg-white dark:lg:bg-gray-800 lg:border-r lg:border-gray-200 dark:lg:border-gray-700 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}>
+        {/* Logo + 折叠按钮 */}
+        <div className="h-16 flex items-center border-b border-gray-200 dark:border-gray-700 px-3 gap-2">
+          {!collapsed && (
+            <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-gray-900 dark:text-white font-bold text-base truncate">Sales System</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs truncate">For Internal Use Only</div>
+              </div>
+            </Link>
+          )}
+          {collapsed && (
+            <Link href="/dashboard" className="flex-1 flex justify-center">
+              <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+            </Link>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          >
+            <svg className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
 
         {/* 导航菜单 */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                title={collapsed ? item.name : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
+                  ${collapsed ? 'justify-center' : ''}
                   ${active
                     ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 font-medium'
                     : item.highlight
@@ -151,32 +174,32 @@ export default function Navigation() {
                 `}
               >
                 {item.icon}
-                <span>{item.name}</span>
+                {!collapsed && <span>{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
         {/* 用户信息和退出按钮 */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-          {/* 用户信息 */}
-          <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
-            <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
-              {mounted ? (user?.email || '未登录') : '加载中...'}
+        <div className="p-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          {!collapsed && (
+            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
+              <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
+                {mounted ? (user?.email || '未登录') : '加载中...'}
+              </div>
             </div>
-          </div>
-
-          {/* 退出按钮 */}
+          )}
           {mounted && (
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              title={collapsed ? '退出登录' : undefined}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className="text-sm font-medium">退出登录</span>
+              {!collapsed && <span className="text-sm font-medium">退出登录</span>}
             </button>
           )}
         </div>
@@ -264,6 +287,9 @@ export default function Navigation() {
 
       {/* 移动端顶部占位 */}
       <div className="lg:hidden h-16"></div>
+
+      {/* 桌面端侧边栏占位（撑开主内容区） */}
+      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`} aria-hidden="true" />
     </>
   );
 }

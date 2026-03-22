@@ -51,14 +51,15 @@ function TransactionsContent() {
     // 从 URL 恢复高级筛选
     const dateFrom = searchParams.get('df') || '';
     const dateTo = searchParams.get('dt') || '';
-    const productName = searchParams.get('pn') || '';
+    const productName = searchParams.get('pn') || searchParams.get('q') || '';
     const janCode = searchParams.get('jan') || '';
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodId = searchParams.get('pm') || '';
     const purchasePlatformId = searchParams.get('pp') || '';
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodId || purchasePlatformId) {
-      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId };
+    const orderNumber = searchParams.get('on') || '';
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodId || purchasePlatformId || orderNumber) {
+      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId, orderNumber };
     }
     return null;
   });
@@ -108,6 +109,7 @@ function TransactionsContent() {
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodId) params.set('pm', activeFilters.paymentMethodId);
       if (activeFilters.purchasePlatformId) params.set('pp', activeFilters.purchasePlatformId);
+      if (activeFilters.orderNumber) params.set('on', activeFilters.orderNumber);
     }
     const qs = params.toString();
     router.replace(qs ? `/transactions?${qs}` : '/transactions', { scroll: false });
@@ -233,10 +235,19 @@ function TransactionsContent() {
   // 筛选和排序
   const filteredTransactions = transactions
     .filter(t => {
-      // 原有的搜索和状态筛选
-      const matchesSearch = t.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           t.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+      // 全局搜索
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = t.product_name.toLowerCase().includes(term) ||
+          t.notes?.toLowerCase().includes(term) ||
+          (t.jan_code || '').toLowerCase().includes(term) ||
+          (t.order_number || '').toLowerCase().includes(term);
+        if (!matchesSearch) return false;
+      }
+
+      // 状态标签栏快速切换
       const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+      if (!matchesStatus) return false;
 
       // 高级筛选
       if (activeFilters) {
@@ -244,13 +255,18 @@ function TransactionsContent() {
         if (activeFilters.dateFrom && t.date < activeFilters.dateFrom) return false;
         if (activeFilters.dateTo && t.date > activeFilters.dateTo) return false;
 
-        // 商品名称筛选
-        if (activeFilters.productName && !t.product_name.toLowerCase().includes(activeFilters.productName.toLowerCase())) {
-          return false;
+        // 商品名称筛选（兼作搜索：同时匹配商品名、JAN、订单号、备注）
+        if (activeFilters.productName) {
+          const term = activeFilters.productName.toLowerCase();
+          const matchesProductSearch = t.product_name.toLowerCase().includes(term) ||
+            t.notes?.toLowerCase().includes(term) ||
+            (t.jan_code || '').toLowerCase().includes(term) ||
+            (t.order_number || '').toLowerCase().includes(term);
+          if (!matchesProductSearch) return false;
         }
 
-        // JAN码筛选
-        if (activeFilters.janCode && (!t.jan_code || !t.jan_code.includes(activeFilters.janCode))) {
+        // JAN码筛选（精确匹配，来自下拉选择）
+        if (activeFilters.janCode && t.jan_code !== activeFilters.janCode) {
           return false;
         }
 
@@ -268,9 +284,16 @@ function TransactionsContent() {
         if (activeFilters.purchasePlatformId && t.purchase_platform_id !== activeFilters.purchasePlatformId) {
           return false;
         }
+
+        // 订单号筛选
+        if (activeFilters.orderNumber) {
+          if (!t.order_number || !t.order_number.toLowerCase().includes(activeFilters.orderNumber.toLowerCase())) {
+            return false;
+          }
+        }
       }
 
-      return matchesSearch && matchesStatus;
+      return true;
     })
     .sort((a, b) => {
       let aValue: any;
@@ -503,23 +526,32 @@ function TransactionsContent() {
           onClear={handleClearFilters}
           paymentMethods={paymentMethods}
           purchasePlatforms={purchasePlatforms}
+          janCodes={[...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort()}
           initialValues={activeFilters}
         />
 
-        {/* 搜索 */}
-        <div className={card.primary + ' p-6 shadow-2xl mb-6'}>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="搜索商品名称或备注..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={input.base + ' pl-12 w-full'}
-            />
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+        {/* 全局搜索 */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="搜索商品名称、JAN、订单号..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={input.base + ' pl-10 w-full'}
+          />
+          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* KaitoriX 加载进度条 */}
@@ -580,6 +612,7 @@ function TransactionsContent() {
                   onDelete={deleteTransaction}
                   onMarkArrived={handleMarkArrived}
                   buybackInfo={buybackPrices.get(transaction.id)}
+                  purchasePlatforms={purchasePlatforms}
                 />
               ))}
             </div>
@@ -590,106 +623,66 @@ function TransactionsContent() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          商品
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          <div className="flex items-center gap-2">
+                      <tr className="border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-3 text-left">
+                          <div className="flex items-center gap-1">
                             <button
                               onClick={() => toggleSort('date')}
-                              className="flex items-center gap-1 hover:text-white transition-colors"
+                              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
-                              {dateSortMode === 'purchase' ? '购买日期' : '销售日期'}
+                              {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
                               {sortField === 'date' && (
-                                <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                                 </svg>
                               )}
                             </button>
                             <button
                               onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')}
-                              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                              className="px-1 py-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                               title="切换日期类型"
                             >
                               ⇄
                             </button>
                           </div>
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          状态
+                        <th className="px-3 py-3 text-left">商品名</th>
+                        <th className="px-3 py-3 text-left">
+                          <div>进货单价</div>
+                          <div className="text-[10px] text-gray-400 font-normal normal-case">(不含返点)</div>
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          JAN
-                        </th>
+                        <th className="px-3 py-3 text-left">来源渠道</th>
+                        <th className="px-3 py-3 text-left">订单号</th>
+                        <th className="px-3 py-3 text-left">账号</th>
+                        <th className="px-3 py-3 text-left">状态</th>
+                        <th className="px-2 py-3 text-center"></th>
                         <th
-                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                          onClick={() => toggleSort('purchase_price_total')}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            成本
-                            {sortField === 'purchase_price_total' && (
-                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                          className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                           onClick={() => toggleSort('total_profit')}
                         >
                           <div className="flex items-center justify-end gap-1">
-                            利润
+                            確定利润
                             {sortField === 'total_profit' && (
-                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                              <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                               </svg>
                             )}
                           </div>
                         </th>
                         <th
-                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                          onClick={() => toggleSort('roi')}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            ROI
-                            {sortField === 'roi' && (
-                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                          className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                           onClick={() => toggleSort('buyback_price')}
                         >
                           <div className="flex items-center justify-end gap-1">
-                            買取価格
+                            最高收购价
                             {sortField === 'buyback_price' && (
-                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                              <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                               </svg>
                             )}
                           </div>
                         </th>
-                        <th
-                          className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                          onClick={() => toggleSort('expected_profit')}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            見込利益
-                            {sortField === 'expected_profit' && (
-                              <svg className={`w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          操作
-                        </th>
+                        <th className="px-2 py-3 text-center">操作</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
@@ -701,6 +694,7 @@ function TransactionsContent() {
                           onDelete={deleteTransaction}
                           onMarkArrived={handleMarkArrived}
                           buybackInfo={buybackPrices.get(transaction.id)}
+                          purchasePlatforms={purchasePlatforms}
                         />
                       ))}
                     </tbody>

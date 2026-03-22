@@ -24,9 +24,11 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <ClientProviders>
-          <Navigation />
-          <div className="lg:pl-64">
-            {children}
+          <div className="lg:flex lg:min-h-screen">
+            <Navigation />
+            <div className="flex-1 min-w-0">
+              {children}
+            </div>
           </div>
         </ClientProviders>
       </body>

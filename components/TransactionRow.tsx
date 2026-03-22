@@ -1,13 +1,10 @@
-// components/TransactionRow.tsx - 桌面端表格行
+// components/TransactionRow.tsx - 桌面端紧凑表格行
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { badge } from '@/lib/theme';
+import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
-import { ProductImage } from '@/components/OptimizedImage';
 import Toast from '@/components/Toast';
 
 interface TransactionWithPayment extends Transaction {
@@ -30,6 +27,7 @@ interface TransactionRowProps {
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
   buybackInfo?: BuybackInfo;
+  purchasePlatforms?: Array<{ id: string; name: string }>;
 }
 
 export default function TransactionRow({
@@ -38,195 +36,193 @@ export default function TransactionRow({
   onDelete,
   onMarkArrived,
   buybackInfo,
+  purchasePlatforms = [],
 }: TransactionRowProps) {
-  const router = useRouter();
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
-  const hasSoldOut = remainingQty <= 0;
   const [showToast, setShowToast] = useState(false);
+  const platformName = purchasePlatforms.find(p => p.id === transaction.purchase_platform_id)?.name || null;
+
+  // 返点合计
+  const totalPoints = (transaction.expected_platform_points || 0)
+    + (transaction.expected_card_points || 0)
+    + (transaction.extra_platform_points || 0);
 
   const copyToClipboard = (text: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     navigator.clipboard.writeText(text).then(() => {
       setShowToast(true);
     });
   };
 
-  const handleRowClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isInteractiveElement = target.closest('a, button');
-    if (!isInteractiveElement) {
-      router.push(`/transactions/${transaction.id}`);
+  const getStatusBadge = () => {
+    switch (transaction.status) {
+      case 'pending':
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-300 rounded whitespace-nowrap">未到货</span>;
+      case 'in_stock':
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded whitespace-nowrap">库存{remainingQty}</span>;
+      case 'awaiting_payment':
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-300 rounded whitespace-nowrap">待入账</span>;
+      case 'sold':
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-green-600 bg-green-50 border border-green-300 rounded whitespace-nowrap">已完成</span>;
+      case 'returned':
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-red-600 bg-red-50 border border-red-300 rounded whitespace-nowrap">已退货</span>;
+      default:
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-300 rounded whitespace-nowrap">-</span>;
     }
   };
 
-  const getStatusBadge = () => {
-    if (transaction.status === 'pending') {
-      return <span className={badge.info + ' border border-teal-500/30'}>未着</span>;
-    } else if (transaction.status === 'sold') {
-      return <span className={badge.success + ' border border-emerald-500/30'}>已售出</span>;
-    } else if (transaction.status === 'returned') {
-      return <span className={badge.error + ' border border-red-500/30'}>已退货</span>;
-    } else if (transaction.status === 'awaiting_payment') {
-      return <span className={badge.awaiting + ' border border-indigo-500/30'}>入金待ち</span>;
-    } else {
-      return <span className={badge.pending + ' border border-amber-500/30'}>库存中</span>;
-    }
-  };
+  const displayDate = dateSortMode === 'sale' && transaction.latest_sale_date
+    ? new Date(transaction.latest_sale_date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    : new Date(transaction.date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   return (
     <>
-    <tr
-      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-      onClick={handleRowClick}
-    >
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-3">
-          {transaction.image_url && (
-            <ProductImage
-              src={transaction.image_url}
-              alt={transaction.product_name}
-              size="sm"
-              className="flex-shrink-0"
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="text-gray-900 dark:text-white font-medium line-clamp-2 break-cjk leading-snug">{transaction.product_name}</div>
-            {transaction.payment_method && (
-              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {transaction.payment_method.name}
-              </div>
-            )}
-          </div>
-        </div>
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-700/50 text-sm">
+      {/* 1. 进货日期 */}
+      <td className="px-3 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+        {displayDate}
       </td>
-      <td className="px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-        {dateSortMode === 'sale' && transaction.latest_sale_date ? (
-          <span>{new Date(transaction.latest_sale_date).toLocaleDateString('zh-CN')}</span>
-        ) : dateSortMode === 'sale' ? (
-          <span className="text-gray-500 dark:text-gray-500">未售出</span>
-        ) : (
-          new Date(transaction.date).toLocaleDateString('zh-CN')
-        )}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        {getStatusBadge()}
-      </td>
-      <td className="px-6 py-4 text-left">
-        {transaction.jan_code ? (
+
+      {/* 2. 商品名 + JAN */}
+      <td className="px-3 py-2">
+        <Link
+          href={`/transactions/${transaction.id}`}
+          className="text-blue-600 dark:text-blue-400 hover:underline line-clamp-2 break-cjk leading-snug text-sm"
+        >
+          {transaction.product_name}
+        </Link>
+        {transaction.jan_code && (
           <button
             onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-            className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 font-mono text-sm transition-colors cursor-pointer"
-            title="点击复制"
+            className="block mt-0.5 font-mono text-xs text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer"
+            title="点击复制JAN"
           >
             {transaction.jan_code}
           </button>
-        ) : (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
         )}
       </td>
-      <td className="px-6 py-4 text-right text-gray-900 dark:text-white font-mono">
-        {formatCurrency(transaction.purchase_price_total)}
+
+      {/* 3. 进货单价 + 数量 + 返点 */}
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-gray-900 dark:text-white font-medium">
+          {formatCurrency(transaction.unit_price || transaction.purchase_price_total)}
+        </div>
+        <div className="text-xs text-gray-400">
+          {transaction.quantity > 1 && <span>×{transaction.quantity} </span>}
+          {totalPoints > 0 && <span>返{formatCurrency(totalPoints)}</span>}
+        </div>
       </td>
-      <td className="px-6 py-4 text-right font-mono">
-        {(transaction as any).aggregated_profit !== null && (transaction as any).aggregated_profit !== undefined ? (
-          <div className="flex flex-col items-end">
-            <span className={(transaction as any).aggregated_profit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
+
+      {/* 4. 来源渠道 */}
+      <td className="px-3 py-2 whitespace-nowrap">
+        {platformName ? (
+          <span className="text-blue-600 dark:text-blue-400">{platformName}</span>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )}
+      </td>
+
+      {/* 5. 订单号 */}
+      <td className="px-3 py-2">
+        {transaction.order_number ? (
+          <button
+            onClick={(e) => copyToClipboard(transaction.order_number!, e)}
+            className="text-blue-600 dark:text-blue-400 hover:underline text-sm max-w-[100px] truncate block cursor-pointer"
+            title={transaction.order_number}
+          >
+            {transaction.order_number}
+          </button>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )}
+      </td>
+
+      {/* 6. 账号 */}
+      <td className="px-3 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap text-sm">
+        {transaction.payment_method?.name || '-'}
+      </td>
+
+      {/* 7. 状态 */}
+      <td className="px-3 py-2">
+        {getStatusBadge()}
+      </td>
+
+      {/* 8. 着荷 */}
+      <td className="px-2 py-2 text-center">
+        {transaction.status === 'pending' && onMarkArrived && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkArrived(transaction.id);
+            }}
+            className="px-2 py-1 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors whitespace-nowrap"
+          >
+            着荷
+          </button>
+        )}
+      </td>
+
+      {/* 9. 確定利润 + 预估 */}
+      <td className="px-3 py-2 whitespace-nowrap text-right">
+        <div>
+          {(transaction as any).aggregated_profit != null ? (
+            <span className={`font-medium ${(transaction as any).aggregated_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency((transaction as any).aggregated_profit)}
             </span>
-            {transaction.status === 'in_stock' && transaction.quantity_sold > 0 && (
-              <span className="text-xs text-teal-600 dark:text-teal-400">部分销售</span>
-            )}
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+        {buybackInfo && buybackInfo.maxPrice > 0 && buybackInfo.expectedProfit !== 0 && (
+          <div className="text-xs text-green-600">
+            ≈{formatCurrency(buybackInfo.expectedProfit)}
           </div>
-        ) : (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
         )}
       </td>
-      <td className="px-6 py-4 text-right font-mono">
-        {(transaction as any).aggregated_roi !== null && (transaction as any).aggregated_roi !== undefined ? (
-          <span className={(transaction as any).aggregated_roi >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
-            {formatROI((transaction as any).aggregated_roi)}
-          </span>
-        ) : (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
-        )}
-      </td>
-      <td className="px-6 py-4 text-right font-mono">
-        {hasSoldOut ? (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
-        ) : buybackInfo?.loading ? (
+
+      {/* 10. 当前最高收购价 + 店名 */}
+      <td className="px-3 py-2 whitespace-nowrap text-right">
+        {buybackInfo?.loading ? (
           <div className="flex flex-col items-end gap-1">
             <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           </div>
         ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
-          <div className="flex flex-col items-end">
-            <span className="text-teal-600 dark:text-teal-300">
+          <div>
+            <div className="text-gray-900 dark:text-white font-medium">
               {formatCurrency(buybackInfo.maxPrice)}
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{buybackInfo.maxStore}</span>
+            </div>
+            <div className="text-xs text-blue-600 dark:text-blue-400">
+              {buybackInfo.maxStore}
+            </div>
           </div>
         ) : (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
+          <span className="text-gray-400">-</span>
         )}
       </td>
-      <td className="px-6 py-4 text-right font-mono">
-        {hasSoldOut ? (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
-        ) : buybackInfo?.loading ? (
-          <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto"></div>
-        ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
-          <span className={buybackInfo.expectedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
-            {formatCurrency(buybackInfo.expectedProfit)}
-          </span>
-        ) : (
-          <span className="text-gray-500 dark:text-gray-500">-</span>
-        )}
-      </td>
-      <td className="px-6 py-4 text-right whitespace-nowrap">
-        <div className="flex items-center justify-end gap-2">
-          {transaction.status === 'pending' && onMarkArrived && (
+
+      {/* 11. 操作按钮 2×3 矩阵 */}
+      <td className="px-2 py-2">
+        <div className="flex flex-col gap-0.5 min-w-[90px]">
+          <div className="flex gap-1">
+            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-center transition-colors whitespace-nowrap">详情</Link>
+            <Link href={`/transactions/${transaction.id}/edit`} className="flex-1 px-1 py-0.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-center transition-colors whitespace-nowrap">编辑</Link>
+            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-center transition-colors whitespace-nowrap">出售</Link>
+          </div>
+          <div className="flex gap-1">
+            <Link href={`/transactions/add?copy=${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-center transition-colors whitespace-nowrap">复制</Link>
+            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-orange-500 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded text-center transition-colors whitespace-nowrap">退货</Link>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onMarkArrived(transaction.id);
+                onDelete(transaction.id);
               }}
-              className="px-3 py-1.5 text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-all active:scale-95 whitespace-nowrap"
-              title="着荷"
+              className="flex-1 px-1 py-0.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
             >
-              着荷
+              删除
             </button>
-          )}
-          <Link
-            href={`/transactions/${transaction.id}`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10 rounded-lg transition-all active:scale-95"
-            title="查看详情"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </Link>
-          <Link
-            href={`/transactions/${transaction.id}/edit`}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all active:scale-95"
-            title="编辑"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </Link>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(transaction.id);
-            }}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
-            title="删除"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+          </div>
         </div>
       </td>
     </tr>
