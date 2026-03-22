@@ -175,7 +175,7 @@ export default function TransactionRow({
           )}
         </div>
         {buybackInfo && buybackInfo.maxPrice > 0 && buybackInfo.expectedProfit !== 0 && (
-          <div className="text-xs text-green-600">
+          <div className={`text-xs ${buybackInfo.expectedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             ≈{formatCurrency(buybackInfo.expectedProfit)}
           </div>
         )}
