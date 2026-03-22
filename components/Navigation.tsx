@@ -10,7 +10,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
 
   // 等待组件挂载后再渲染用户相关内容，避免 hydration 错误
@@ -142,15 +142,6 @@ export default function Navigation() {
               </div>
             </Link>
           )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
-          >
-            <svg className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
-          </button>
         </div>
 
         {/* 导航菜单 */}
@@ -179,9 +170,18 @@ export default function Navigation() {
             );
           })}
         </nav>
-
+        
         {/* 用户信息和退出按钮 */}
         <div className="p-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors justify-center"
+            title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          >
+            <svg className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
           {!collapsed && (
             <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>

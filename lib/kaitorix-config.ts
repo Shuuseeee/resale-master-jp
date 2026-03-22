@@ -24,7 +24,7 @@ export interface KaitorixConfig {
 const STORAGE_KEY = 'kaitorix_config';
 
 const DEFAULT_CONFIG: KaitorixConfig = {
-  enabled: false,
+  enabled: true,
   enabledStores: ALL_STORES.map(s => s.key), // all enabled by default
 };
 
