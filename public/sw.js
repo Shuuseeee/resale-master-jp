@@ -36,12 +36,18 @@ self.addEventListener('fetch', (event) => {
 
 // Web Push: show notification
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
+  console.log('[SW] Push event received:', event);
+  if (!event.data) {
+    console.warn('[SW] Push event has no data');
+    return;
+  }
   let payload;
   try {
     payload = event.data.json();
+    console.log('[SW] Push payload:', JSON.stringify(payload));
   } catch {
     payload = { title: '転売管理', body: event.data.text(), notificationId: null };
+    console.log('[SW] Push payload (text fallback):', payload);
   }
 
   const { title, body, notificationId, type } = payload;
@@ -58,7 +64,12 @@ self.addEventListener('push', (event) => {
     ],
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  console.log('[SW] Showing notification:', title, options);
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+      .then(() => console.log('[SW] Notification shown successfully'))
+      .catch((e) => console.error('[SW] showNotification failed:', e))
+  );
 });
 
 // Notification click: open detail page

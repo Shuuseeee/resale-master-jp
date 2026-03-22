@@ -20,6 +20,24 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotification();
 
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  async function sendTestPush() {
+    setTestResult('发送中...');
+    try {
+      const res = await fetch('/api/push/test', { method: 'POST' });
+      const data = await res.json();
+      console.log('[Test Push] Result:', data);
+      if (data.ok) {
+        setTestResult(`✅ 已发送到 ${data.results.length} 个设备：${JSON.stringify(data.results)}`);
+      } else {
+        setTestResult(`❌ 失败：${data.error}${data.hint ? ' — ' + data.hint : ''}`);
+      }
+    } catch (e) {
+      setTestResult(`❌ 请求异常：${e}`);
+    }
+  }
+
   useEffect(() => { loadNotifications(); }, []);
 
   async function loadNotifications() {
@@ -73,6 +91,24 @@ export default function NotificationsPage() {
             {permission === 'denied' ? '通知已被拒绝' : subscribed ? '推送已开启' : '开启推送通知'}
           </button>
         </div>
+
+        {/* Debug: test push button */}
+        {subscribed && (
+          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">调试模式</span>
+              <button
+                onClick={sendTestPush}
+                className="px-3 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
+              >
+                发送测试推送
+              </button>
+            </div>
+            {testResult && (
+              <pre className="text-[10px] text-amber-800 dark:text-amber-200 whitespace-pre-wrap break-all">{testResult}</pre>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-gray-400 text-center py-16">加载中...</div>
