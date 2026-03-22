@@ -174,22 +174,22 @@ async function getDashboardKPI(): Promise<{
   const [transactionsRes, salesRes] = await Promise.all([
     supabase
       .from('transactions')
-      .select('purchase_price_total, status, quantity_in_stock, expected_platform_points, expected_card_points, extra_platform_points'),
+      .select('purchase_price_total, unit_price, status, quantity_in_stock, expected_platform_points, expected_card_points, extra_platform_points'),
     supabase
       .from('sales_records')
-      .select('sale_price, total_profit'),
+      .select('total_selling_price, total_profit'),
   ]);
 
   const transactions = transactionsRes.data || [];
   const sales = salesRes.data || [];
 
   const totalInvestment = transactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
-  const totalRecovered = sales.reduce((sum, s) => sum + (s.sale_price || 0), 0);
+  const totalRecovered = sales.reduce((sum, s) => sum + (s.total_selling_price || 0), 0);
   const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
 
   const unrealizedStockCost = transactions
     .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
-    .reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
+    .reduce((sum, t) => sum + ((t.unit_price || 0) * (t.quantity_in_stock || 0)), 0);
 
   const expectedPoints = transactions
     .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
