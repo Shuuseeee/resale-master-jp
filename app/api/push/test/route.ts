@@ -85,7 +85,7 @@ export async function POST() {
       );
       return { endpoint: sub.endpoint.slice(-20), status: 'sent' };
     } catch (e: any) {
-      return { endpoint: sub.endpoint.slice(-20), status: 'failed', error: e?.message };
+      return { endpoint: sub.endpoint.slice(-20), status: 'failed', error: e?.message, statusCode: e?.statusCode ?? null };
     }
   }));
 
