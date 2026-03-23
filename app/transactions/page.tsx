@@ -22,6 +22,7 @@ interface TransactionWithPayment extends Transaction {
   aggregated_profit?: number | null;
   aggregated_roi?: number | null;
   aggregated_actual_cash_spent?: number | null;
+  aggregated_selling_platform_ids?: string[];
 }
 
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
@@ -39,6 +40,7 @@ function TransactionsContent() {
   const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
   const [purchasePlatforms, setPurchasePlatforms] = useState<Array<{ id: string; name: string }>>([]);
+  const [sellingPlatforms, setSellingPlatforms] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
@@ -51,7 +53,7 @@ function TransactionsContent() {
     // 从 URL 恢复高级筛选
     const dateFrom = searchParams.get('df') || '';
     const dateTo = searchParams.get('dt') || '';
-    const productName = searchParams.get('pn') || searchParams.get('q') || '';
+    const productName = searchParams.get('pn') || '';
     const janCode = searchParams.get('jan') || '';
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
@@ -87,6 +89,7 @@ function TransactionsContent() {
     loadTransactions();
     loadPaymentMethods();
     loadPurchasePlatforms();
+    loadSellingPlatforms();
   }, []);
 
   useEffect(() => {
@@ -140,7 +143,7 @@ function TransactionsContent() {
           // 获取该交易的所有销售记录
           const { data: salesRecords } = await supabase
             .from('sales_records')
-            .select('total_profit, roi, actual_cash_spent, sale_date')
+            .select('total_profit, roi, actual_cash_spent, sale_date, selling_platform_id')
             .eq('transaction_id', transaction.id)
             .order('sale_date', { ascending: false });
 
@@ -148,6 +151,7 @@ function TransactionsContent() {
           let aggregated_profit = null;
           let aggregated_roi = null;
           let aggregated_actual_cash_spent = null;
+          let aggregated_selling_platform_ids: string[] = [];
 
           if (salesRecords && salesRecords.length > 0) {
             // 获取最新销售日期
@@ -160,6 +164,9 @@ function TransactionsContent() {
               aggregated_actual_cash_spent = totalCashSpent;
               aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
             }
+            aggregated_selling_platform_ids = Array.from(
+              new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
+            );
           }
 
           return {
@@ -168,6 +175,7 @@ function TransactionsContent() {
             aggregated_profit,
             aggregated_roi,
             aggregated_actual_cash_spent,
+            aggregated_selling_platform_ids,
           };
         })
       );
@@ -195,6 +203,16 @@ function TransactionsContent() {
   const loadPurchasePlatforms = async () => {
     const data = await getPurchasePlatforms();
     setPurchasePlatforms(data.map(p => ({ id: p.id, name: p.name })));
+  };
+
+  const loadSellingPlatforms = async () => {
+    const { data, error } = await supabase
+      .from('selling_platforms')
+      .select('id, name');
+
+    if (!error && data) {
+      setSellingPlatforms(data);
+    }
   };
 
   const calculateStats = () => {
@@ -231,17 +249,40 @@ function TransactionsContent() {
   const handleClearFilters = () => {
     setActiveFilters(null);
   };
-
+  // 在 filteredTransactions 逻辑之前定义
+  const platformMap = new Map(purchasePlatforms.map(p => [p.id, p.name.toLowerCase()]));
   // 筛选和排序
   const filteredTransactions = transactions
     .filter(t => {
       // 全局搜索
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
-        const matchesSearch = t.product_name.toLowerCase().includes(term) ||
+
+        // 反向映射：根据搜索词找出匹配的销售平台 ID 集合
+        const matchedSellingPlatformIds = sellingPlatforms
+          .filter(p => p.name.toLowerCase().includes(term))
+          .map(p => p.id);
+
+        // 正向映射：获取当前记录的购入平台名称
+        const purchasePlatformName = t.purchase_platform_id 
+          ? (platformMap.get(t.purchase_platform_id) || '') 
+          : '';
+
+        // 检查销售平台交集
+        const matchesSellingPlatform = t.aggregated_selling_platform_ids?.some(id => 
+          matchedSellingPlatformIds.includes(id)
+        ) ?? false;
+
+        // 综合匹配逻辑
+        const matchesSearch = 
+          t.product_name.toLowerCase().includes(term) ||
           t.notes?.toLowerCase().includes(term) ||
           (t.jan_code || '').toLowerCase().includes(term) ||
-          (t.order_number || '').toLowerCase().includes(term);
+          (t.order_number || '').toLowerCase().includes(term) ||
+          t.purchase_price_total.toString().includes(term) || // 金额匹配
+          purchasePlatformName.includes(term) ||              // 购入平台匹配
+          matchesSellingPlatform;                             // 销售平台匹配
+
         if (!matchesSearch) return false;
       }
 
@@ -438,7 +479,7 @@ function TransactionsContent() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      <span className="hidden sm:inline">买取価格</span>
+                      <span className="hidden sm:inline">获取买取价格</span>
                     </>
                   )}
                 </button>
@@ -458,7 +499,7 @@ function TransactionsContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 )}
-                {exporting ? '导出中...' : <><span className="sm:hidden">CSV</span><span className="hidden sm:inline">CSV導出</span></>}
+                {exporting ? '导出中...' : <><span className="sm:hidden">CSV</span><span className="hidden sm:inline">CSV导出</span></>}
               </button>
               <Link
                 href="/transactions/add"
@@ -661,7 +702,7 @@ function TransactionsContent() {
                           onClick={() => toggleSort('total_profit')}
                         >
                           <div className="flex items-center justify-end gap-1">
-                            確定利润
+                            利润
                             {sortField === 'total_profit' && (
                               <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -674,7 +715,7 @@ function TransactionsContent() {
                           onClick={() => toggleSort('buyback_price')}
                         >
                           <div className="flex items-center justify-end gap-1">
-                            最高收购价
+                            最高价
                             {sortField === 'buyback_price' && (
                               <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />

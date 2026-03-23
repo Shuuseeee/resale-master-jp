@@ -5,13 +5,13 @@ import { ClientProviders } from '@/components/ClientProviders'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
-  title: '転売账务管理',
-  description: '日本転売業務账务管理システム',
+  title: '账务管理',
+  description: '日本業務账务管理システム',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: '転売管理',
+    title: '账务管理',
     startupImage: '/icons/icon-512.png',
   },
   icons: {

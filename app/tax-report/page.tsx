@@ -361,7 +361,7 @@ export default function TaxReportPage() {
                   <button
                     onClick={exportToExcel}
                     disabled={exporting || details.length === 0}
-                    className={button.success + ' flex items-center gap-2'}
+                    className={button.primary + ' flex items-center gap-2'}
                   >
                     <svg
                       className="w-5 h-5"
@@ -381,7 +381,7 @@ export default function TaxReportPage() {
                   <button
                     onClick={exportToPDF}
                     disabled={exporting || details.length === 0}
-                    className={button.primary + ' flex items-center gap-2'}
+                    className={button.secondary + ' flex items-center gap-2'}
                   >
                     <svg
                       className="w-5 h-5"

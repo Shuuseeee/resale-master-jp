@@ -503,7 +503,7 @@ function AddTransactionPageContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    JANコード
+                    JAN
                   </label>
                   <div className="relative">
                     <input
@@ -525,7 +525,7 @@ function AddTransactionPageContent() {
                     )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    入力すると商品名を自動補完します
+                    输入JAN码后如果商品名称为空会自动补全（仅限部分常见商品）
                   </p>
                 </div>
 
@@ -570,7 +570,7 @@ function AddTransactionPageContent() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      未着品（未到着）
+                      未到货
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       商品尚未到达

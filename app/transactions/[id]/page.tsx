@@ -592,7 +592,7 @@ export default function TransactionDetailPage() {
                 <div className="space-y-3">
                   {transaction.purchase_platform && (
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">購入先</span>
+                      <span className="text-gray-600 dark:text-gray-400">进货平台</span>
                       <span className="text-gray-900 dark:text-white font-medium">{transaction.purchase_platform.name}</span>
                     </div>
                   )}
@@ -699,61 +699,7 @@ export default function TransactionDetailPage() {
               )}
             </div>
 
-            {/* 预期积分 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
-                预期积分
-              </h2>
-              <div className="space-y-3">
-                {/* 平台积分 */}
-                <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">平台积分</div>
-                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{transaction.expected_platform_points} P</div>
-                    </div>
-                    {transaction.platform_points_platform && (
-                      <div className="text-right">
-                        <div className="text-xs text-amber-600 dark:text-amber-300/90">{transaction.platform_points_platform.display_name}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 额外平台积分 */}
-                {transaction.extra_platform_points > 0 && (
-                  <div className="bg-teal-500/10 rounded-xl p-4 border border-teal-500/30">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-teal-700 text-sm mb-1">额外积分</div>
-                        <div className="text-2xl font-bold text-teal-700">{transaction.extra_platform_points} P</div>
-                      </div>
-                      {transaction.extra_platform_points_platform && (
-                        <div className="text-right">
-                          <div className="text-xs text-teal-700">{transaction.extra_platform_points_platform.display_name}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 信用卡积分 */}
-                <div className="bg-teal-500/10 rounded-xl p-4 border border-teal-500/30">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-teal-700 dark:text-teal-400 text-sm mb-1">信用卡积分</div>
-                      <div className="text-2xl font-bold text-teal-700 dark:text-teal-400">{transaction.expected_card_points} P</div>
-                    </div>
-                    {transaction.card_points_platform && (
-                      <div className="text-right">
-                        <div className="text-xs text-teal-700 dark:text-teal-400/70">{transaction.card_points_platform.display_name}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* 备注 */}
             {transaction.notes && (
@@ -833,7 +779,61 @@ export default function TransactionDetailPage() {
                 </div>
               </div>
             )}
+{/* 预期积分 */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
+                预期积分
+              </h2>
+              <div className="space-y-3">
+                {/* 平台积分 */}
+                <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/30">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">平台积分</div>
+                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{transaction.expected_platform_points} P</div>
+                    </div>
+                    {transaction.platform_points_platform && (
+                      <div className="text-right">
+                        <div className="text-xs text-amber-600 dark:text-amber-300/90">{transaction.platform_points_platform.display_name}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
+                {/* 额外平台积分 */}
+                {transaction.extra_platform_points > 0 && (
+                  <div className="bg-teal-500/10 rounded-xl p-4 border border-teal-500/30">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-teal-700 text-sm mb-1">额外积分</div>
+                        <div className="text-2xl font-bold text-teal-700">{transaction.extra_platform_points} P</div>
+                      </div>
+                      {transaction.extra_platform_points_platform && (
+                        <div className="text-right">
+                          <div className="text-xs text-teal-700">{transaction.extra_platform_points_platform.display_name}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 信用卡积分 */}
+                <div className="bg-teal-500/10 rounded-xl p-4 border border-teal-500/30">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-teal-700 dark:text-teal-400 text-sm mb-1">信用卡积分</div>
+                      <div className="text-2xl font-bold text-teal-700 dark:text-teal-400">{transaction.expected_card_points} P</div>
+                    </div>
+                    {transaction.card_points_platform && (
+                      <div className="text-right">
+                        <div className="text-xs text-teal-700 dark:text-teal-400/70">{transaction.card_points_platform.display_name}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* 支付信息 */}
             {transaction.payment_method && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
@@ -855,19 +855,6 @@ export default function TransactionDetailPage() {
                           {calculatedPaymentDate}
                         </span>
                       </div>
-                      {daysToPayment !== null && (
-                        <div className="p-3 rounded-lg bg-white dark:bg-gray-700">
-                          <div className="text-center">
-                            {daysToPayment < 0 ? (
-                              <span className="text-red-600 dark:text-red-300 font-medium">已逾期 {Math.abs(daysToPayment)} 天</span>
-                            ) : daysToPayment === 0 ? (
-                              <span className="text-amber-600 dark:text-amber-300 font-medium">今天到期</span>
-                            ) : (
-                              <span className="text-gray-700 dark:text-gray-300">还有 <span className="text-gray-900 dark:text-white font-bold">{daysToPayment}</span> 天</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>

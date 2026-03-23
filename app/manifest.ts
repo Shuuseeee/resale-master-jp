@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '転売账务管理',
-    short_name: '転売管理',
-    description: '日本転売業務账务管理システム',
+    name: '账务管理',
+    short_name: '账务管理',
+    description: '日本業務账务管理システム',
     start_url: '/',
     display: 'standalone',
     background_color: '#111827',

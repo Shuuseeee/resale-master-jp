@@ -486,10 +486,10 @@ export default function EditTransactionPage() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                     <div>
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        未着品（未到着）
+                        未到货
                       </label>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        商品がまだ届いていない場合���ONにしてください
+                        商品未到货
                       </p>
                     </div>
                     <button
@@ -518,13 +518,13 @@ export default function EditTransactionPage() {
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
-                購入情報
+                购买信息
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    JANコード
+                    JAN
                   </label>
                   <input
                     type="text"
@@ -538,7 +538,7 @@ export default function EditTransactionPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    注文番号
+                    订单号
                   </label>
                   <input
                     type="text"
@@ -553,7 +553,7 @@ export default function EditTransactionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  単価 (¥)
+                  单价 (¥)
                 </label>
                 <div className="relative">
                   <input
@@ -577,13 +577,13 @@ export default function EditTransactionPage() {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  入力すると採購総価が自動計算されます（単価 × 数量）
+                  输入单价后会自动计算总价和余额支付金额
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  購入先
+                  购买平台
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -592,7 +592,7 @@ export default function EditTransactionPage() {
                     onChange={handleInputChange}
                     className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   >
-                    <option value="">選択してください</option>
+                    <option value="">请选择</option>
                     {purchasePlatforms.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}{p.is_builtin ? '' : ' (カスタム)'}
@@ -605,7 +605,7 @@ export default function EditTransactionPage() {
                     type="text"
                     value={newPurchasePlatformName}
                     onChange={(e) => setNewPurchasePlatformName(e.target.value)}
-                    placeholder="新しい購入先を追加..."
+                    placeholder="请输入新的购买平台..."
                     className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                   <button
