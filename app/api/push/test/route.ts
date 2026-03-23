@@ -71,6 +71,9 @@ export async function POST() {
     }, { status: 500 });
   }
 
+  // DEBUG: confirm which key the server is actually using
+  const keyPreview = vapidPublicKey.slice(0, 20) + '...' + vapidPublicKey.slice(-10);
+
   const webpushModule = await import('web-push');
   const webpush = webpushModule.default ?? webpushModule;
   webpush.setVapidDetails('mailto:push@resale-app.local', vapidPublicKey, vapidPrivateKey);
@@ -89,5 +92,5 @@ export async function POST() {
     }
   }));
 
-  return NextResponse.json({ ok: true, notificationId, results });
+  return NextResponse.json({ ok: true, notificationId, keyPreview, results });
 }
