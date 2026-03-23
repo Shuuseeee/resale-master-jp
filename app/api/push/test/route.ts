@@ -1,20 +1,35 @@
 // app/api/push/test/route.ts
-// DEBUG ONLY: sends a test push with real coupon data
+// DEBUG ONLY: sends a test push with real coupon + weather data
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getTokyoWeather } from '@/lib/weather';
 
 function formatDiscount(c: any): string {
-  if (c.discount_type === 'percentage') return `${c.discount_value}%OFF`;
-  if (c.discount_type === 'point_multiply') return `${c.discount_value}倍`;
-  if (c.discount_type === 'fixed_amount') return `${c.discount_value}円OFF`;
-  if (c.discount_type === 'cashback') return `${c.discount_value}円還元`;
-  return `${c.discount_value}`;
+  const v = c.discount_value ?? 0;
+  const vStr = Number.isInteger(v) ? String(v) : String(v);
+  if (c.discount_type === 'percentage') return `${vStr}% OFF`;
+  if (c.discount_type === 'point_multiply') return `${vStr}倍`;
+  if (c.discount_type === 'cashback') return `${vStr}円還元`;
+  return `减 ${vStr} 円`;
 }
 
 function formatCondition(c: any): string {
-  if (c.min_purchase_amount > 0) return `${c.min_purchase_amount}円以上`;
-  return '条件なし';
+  const min = c.min_purchase_amount ?? 0;
+  return min > 0 ? `满 ${Number.isInteger(min) ? min : min} 円可用` : '无门槛';
+}
+
+function serializeCoupon(c: any) {
+  return {
+    platform: c.platform ?? '通用',
+    name: c.name ?? '未命名',
+    discount_str: formatDiscount(c),
+    condition_str: formatCondition(c),
+    coupon_code: c.coupon_code ?? null,
+    expiry_date: (c.expiry_date ?? '').split('T')[0],
+    is_online_only: c.is_online_only ?? false,
+    is_offline_only: c.is_offline_only ?? false,
+  };
 }
 
 export async function POST() {
@@ -33,7 +48,6 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Fetch subscriptions
   const { data: subs, error: subErr } = await supabase
     .from('push_subscriptions')
     .select('*')
@@ -44,68 +58,87 @@ export async function POST() {
     return NextResponse.json({ error: 'No subscriptions found', userId: user.id });
   }
 
-  // Fetch real coupon data
   const today = new Date().toISOString().split('T')[0];
   const in3days = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
 
-  const { data: coupons } = await supabase
-    .from('coupons')
-    .select('id,name,platform,discount_type,discount_value,min_purchase_amount,expiry_date,start_date,coupon_code,is_used')
-    .eq('user_id', user.id)
-    .eq('is_used', false)
-    .lte('expiry_date', in3days)
-    .gte('expiry_date', today)
-    .order('expiry_date', { ascending: true });
+  // Fetch real coupon data in parallel with weather
+  const [{ data: expiringRaw }, { data: startingRaw }, weatherInfo] = await Promise.all([
+    supabase
+      .from('coupons')
+      .select('id,name,platform,discount_type,discount_value,min_purchase_amount,expiry_date,start_date,coupon_code,is_used,is_online_only,is_offline_only,notes')
+      .eq('user_id', user.id)
+      .eq('is_used', false)
+      .lte('expiry_date', in3days)
+      .gte('expiry_date', today)
+      .order('expiry_date', { ascending: true }),
+    supabase
+      .from('coupons')
+      .select('id,name,platform,discount_type,discount_value,min_purchase_amount,expiry_date,start_date,coupon_code,is_used,is_online_only,is_offline_only,notes')
+      .eq('user_id', user.id)
+      .eq('is_used', false)
+      .eq('start_date', today)
+      .order('expiry_date', { ascending: true }),
+    getTokyoWeather(),
+  ]);
 
-  const { data: startingCoupons } = await supabase
-    .from('coupons')
-    .select('id,name,platform,discount_type,discount_value,min_purchase_amount,expiry_date,start_date,coupon_code,is_used')
-    .eq('user_id', user.id)
-    .eq('is_used', false)
-    .eq('start_date', today)
-    .order('expiry_date', { ascending: true });
-
-  const allCoupons = coupons ?? [];
-  const starting = (startingCoupons ?? []).map((c: any) => ({
-    platform: c.platform ?? '',
-    name: c.name,
-    discount_str: formatDiscount(c),
-    condition_str: formatCondition(c),
-    expiry_date: c.expiry_date,
-    coupon_code: c.coupon_code ?? '',
-  }));
+  const starting = (startingRaw ?? []).map(serializeCoupon);
 
   // Group expiring by days remaining
-  const expiring: Record<string, any[]> = {};
-  for (const c of allCoupons) {
+  const expiring: Record<string, ReturnType<typeof serializeCoupon>[]> = {};
+  for (const c of (expiringRaw ?? [])) {
     const diff = Math.ceil((new Date(c.expiry_date).getTime() - new Date(today).getTime()) / 86400000);
     const key = String(diff);
     if (!expiring[key]) expiring[key] = [];
-    expiring[key].push({
-      platform: c.platform ?? '',
-      name: c.name,
-      discount_str: formatDiscount(c),
-      condition_str: formatCondition(c),
-      expiry_date: c.expiry_date,
-    });
+    expiring[key].push(serializeCoupon(c));
   }
 
-  const totalCount = starting.length + allCoupons.length;
-  const title = totalCount > 0 ? `🎫 本日のクーポン情報 (${totalCount}件)` : '🔔 クーポン通知';
-  const body = totalCount > 0
-    ? `今日開始${starting.length}件・期限間近${allCoupons.length}件`
-    : 'アクティブなクーポンはありません';
+  const totalCount = starting.length + (expiringRaw?.length ?? 0);
 
-  // Save notification record
+  // Build title + body matching v2_push.py conventions (no emoji)
+  let title: string;
+  let body: string;
+  if (totalCount === 0) {
+    title = '优惠券日报';
+    body = '今日无需关注的优惠券，安心做自己吧';
+  } else {
+    const parts: string[] = [];
+    if (starting.length > 0) parts.push(`${starting.length}张今日生效`);
+    for (const [days, items] of Object.entries(expiring).sort((a, b) => Number(a[0]) - Number(b[0]))) {
+      const d = Number(days);
+      if (d === 0) parts.push(`${items.length}张今日到期`);
+      else if (d === 1) parts.push(`${items.length}张明日到期`);
+      else parts.push(`${items.length}张${d}天后到期`);
+    }
+    title = `优惠券日报 (${totalCount}张)`;
+    body = parts.join('、');
+  }
+
+  // Add weather summary to body
+  if (weatherInfo.current !== '-') {
+    body += `。东京中央区 ${weatherInfo.current}℃ ${weatherInfo.weather}`;
+  }
+
+  const notifData = {
+    target_date: today,
+    total_count: totalCount,
+    starting,
+    expiring,
+    weather: {
+      weather: weatherInfo.weather,
+      current: weatherInfo.current,
+      high: weatherInfo.high,
+      low: weatherInfo.low,
+      precip: weatherInfo.precip,
+      wind: weatherInfo.wind,
+      dress_morning: weatherInfo.dress_morning,
+      dress_daytime: weatherInfo.dress_daytime,
+      dress_evening: weatherInfo.dress_evening,
+    },
+  };
+
   const { data: notifRecord } = await supabase
     .from('notifications')
-    .insert({
-      user_id: user.id,
-      type: 'coupon_alert',
-      title,
-      body,
-      data: { target_date: today, total_count: totalCount, starting, expiring },
-    })
+    .insert({ user_id: user.id, type: 'coupon_alert', title, body, data: notifData })
     .select('id')
     .single();
 
@@ -136,5 +169,5 @@ export async function POST() {
     }
   }));
 
-  return NextResponse.json({ ok: true, notificationId, totalCount, starting: starting.length, expiring: Object.keys(expiring).length, results });
+  return NextResponse.json({ ok: true, notificationId, title, body, totalCount, results });
 }
