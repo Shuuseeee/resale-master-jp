@@ -150,7 +150,7 @@ export async function getTokyoWeather(): Promise<WeatherInfo> {
         return [...trHtml.matchAll(/<td([^>]*)>(.*?)<\/td>/gs)].map(([, attrs, td]) => {
           const isPast = attrs.includes('past');
           const altM = td.match(/<img[^>]+alt="([^"]+)"/);
-          const val = altM?.1]?.trim()
+          const val = altM?.[1]?.trim()
             ? altM[1].trim()
             : td.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
           return { isPast, val };
@@ -173,7 +173,7 @@ export async function getTokyoWeather(): Promise<WeatherInfo> {
       }
 
       if (idx !== -1) {
-        const m = temps[idx].val.match(/^(-?\d+(\.\d+)?)/)?;
+        const m = temps[idx].val.match(/^(-?\d+(\.\d+)?)/)?.at(0) ? temps[idx].val.match(/^(-?\d+(\.\d+)?)/) : null;
         if (m) {
           result.current = m[1];
           let windDir = dirs[idx]?.val?.replace(/\n/g, '').trim() || '静穏';
