@@ -26,9 +26,9 @@ interface NotificationData {
     low: string;
     precip: string;
     wind: string;
-    dress_morning?: string;
-    dress_daytime?: string;
-    dress_evening?: string;
+    dress_morning?: any;
+    dress_daytime?: any;
+    dress_evening?: any;
   };
   starting?: CouponItem[];
   expiring?: Record<string, CouponItem[]>;
@@ -120,6 +120,36 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
 
   const expiringEntries = Object.entries(d.expiring || {}).sort((a, b) => Number(a[0]) - Number(b[0]));
 
+  const renderDress = (dress: any) => {
+    if (!dress) return <span>-</span>;
+    if (typeof dress === 'string') return <div dangerouslySetInnerHTML={{ __html: dress }} />;
+    if (typeof dress === 'object') {
+      if (dress.img) {
+        return (
+          <div className="flex flex-col items-center gap-1 mt-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={dress.img} alt="dress index" className="w-10 h-10 object-contain" />
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[10px] leading-tight text-center max-w-[85px] text-gray-600 dark:text-gray-300">
+                {dress.text_cn || dress.text_jp}
+              </span>
+              {dress.text_cn && dress.text_jp && (
+                <span className="text-[8px] leading-tight text-center max-w-[85px] text-gray-400 dark:text-gray-500">
+                  {dress.text_jp}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+      if (dress.html) return <div dangerouslySetInnerHTML={{ __html: dress.html }} />;
+      if (dress.text) return <span>{dress.text}</span>;
+      if (dress.label) return <span>{dress.label}</span>;
+      return <span className="text-[10px] break-all">{JSON.stringify(dress)}</span>;
+    }
+    return <span>-</span>;
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] dark:bg-gray-900 pb-12">
       <div className="max-w-lg mx-auto px-4 pt-4">
@@ -174,20 +204,20 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
             
             {/* Dressing Index */}
             {(d.weather.dress_morning || d.weather.dress_daytime || d.weather.dress_evening) && (
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center text-sm text-gray-700 dark:text-gray-300">
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-stretch text-sm text-gray-700 dark:text-gray-300">
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">早上</span>
-                  {d.weather.dress_morning ? <div dangerouslySetInnerHTML={{ __html: d.weather.dress_morning }} /> : <span>-</span>}
+                  {renderDress(d.weather.dress_morning)}
                 </div>
-                <div className="w-px h-8 bg-gray-100 dark:bg-gray-700"></div>
+                <div className="w-px bg-gray-100 dark:bg-gray-700 my-1 mx-1"></div>
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">白天</span>
-                  {d.weather.dress_daytime ? <div dangerouslySetInnerHTML={{ __html: d.weather.dress_daytime }} /> : <span>-</span>}
+                  {renderDress(d.weather.dress_daytime)}
                 </div>
-                <div className="w-px h-8 bg-gray-100 dark:bg-gray-700"></div>
+                <div className="w-px bg-gray-100 dark:bg-gray-700 my-1 mx-1"></div>
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">晚上</span>
-                  {d.weather.dress_evening ? <div dangerouslySetInnerHTML={{ __html: d.weather.dress_evening }} /> : <span>-</span>}
+                  {renderDress(d.weather.dress_evening)}
                 </div>
               </div>
             )}
