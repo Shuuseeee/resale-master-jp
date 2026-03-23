@@ -76,7 +76,7 @@ export async function POST() {
 
   const webpushModule = await import('web-push');
   const webpush = webpushModule.default ?? webpushModule;
-  webpush.setVapidDetails('mailto:admin@resale-master-jp.vercel.app', vapidPublicKey, vapidPrivateKey);
+  webpush.setVapidDetails('mailto:syuletyoucryjp@gmail.com', vapidPublicKey, vapidPrivateKey);
 
   const payload = JSON.stringify({ title: '🔔 テスト通知', body: 'プッシュ通知のテストです', notificationId, type: 'coupon_alert' });
 
