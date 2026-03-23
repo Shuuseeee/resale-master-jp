@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { getTokyoWeather } from '@/lib/weather';
 
 function formatDiscount(c: any): string {
@@ -167,6 +168,10 @@ export async function POST() {
       return { endpoint: sub.endpoint.slice(-20), status: 'failed', error: e?.message, statusCode: e?.statusCode ?? null };
     }
   }));
+
+  // 清除服务端的路由缓存，确保前端重新拉取时能获取到最新的通知数据
+  // 建议根据你的实际情况，将 '/' 替换为对应的通知页路径（例如 '/notifications'）
+  revalidatePath('/', 'layout');
 
   return NextResponse.json({ ok: true, notificationId, title, body, totalCount, results });
 }
