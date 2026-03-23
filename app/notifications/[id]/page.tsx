@@ -205,7 +205,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
         {d.total_count === 0 && (
           <div className="text-center py-12 text-gray-400">
             <div className="text-4xl mb-3">☕</div>
-            <div className="text-sm">今日无需关注的优惠券，安心做自己吧</div>
+            <div className="text-sm">今日无需关注的优惠券</div>
           </div>
         )}
 

@@ -99,7 +99,7 @@ export async function POST() {
   let body: string;
   if (totalCount === 0) {
     title = '优惠券日报';
-    body = '今日无需关注的优惠券，安心做自己吧';
+    body = '今日无需关注的优惠券';
   } else {
     const parts: string[] = [];
     if (starting.length > 0) parts.push(`${starting.length}张今日生效`);
