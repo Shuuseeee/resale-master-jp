@@ -116,7 +116,7 @@ export default function NotificationsPage() {
           <div className="text-gray-400 text-center py-16">加载中...</div>
         ) : notifications.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <div className="text-5xl mb-4">🔔</div>
+            <div className="text-5xl mb-4"></div>
             <div>暂无通知</div>
           </div>
         ) : (
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
                 className="block bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-teal-400 dark:hover:border-teal-600 transition-colors shadow-sm"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{typeIcon[n.type] || '🔔'}</span>
+                  <span className="text-2xl">{typeIcon[n.type] || ''}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold text-gray-900 dark:text-white text-sm">{n.title}</p>
