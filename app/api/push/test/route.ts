@@ -94,28 +94,27 @@ export async function POST() {
 
   const totalCount = starting.length + (expiringRaw?.length ?? 0);
 
-  // Build title + body matching v2_push.py conventions (no emoji)
-  let title: string;
-  let body: string;
-  if (totalCount === 0) {
-    title = '优惠券日报';
-    body = '今日无需关注的优惠券';
-  } else {
+  // Build coupon summary for the body
+  let body = '今日无需关注的优惠券，安心做自己吧';
+  if (totalCount > 0) {
     const parts: string[] = [];
     if (starting.length > 0) parts.push(`${starting.length}张今日生效`);
     for (const [days, items] of Object.entries(expiring).sort((a, b) => Number(a[0]) - Number(b[0]))) {
       const d = Number(days);
+      if (items.length === 0) continue;
       if (d === 0) parts.push(`${items.length}张今日到期`);
       else if (d === 1) parts.push(`${items.length}张明日到期`);
       else parts.push(`${items.length}张${d}天后到期`);
     }
-    title = `优惠券日报 (${totalCount}张)`;
     body = parts.join('、');
   }
 
-  // Add weather summary to body
-  if (weatherInfo.current !== '-') {
-    body += `。东京中央区 ${weatherInfo.current}℃ ${weatherInfo.weather}`;
+  // Build weather summary for the title
+  let title = '优惠券提醒';
+  if (weatherInfo && weatherInfo.current !== '-') {
+    title = `东京 ${weatherInfo.current}℃ ${weatherInfo.weather}`;
+  } else if (totalCount > 0) {
+    title = `优惠券提醒 (${totalCount}张)`;
   }
 
   const notifData = {
@@ -123,7 +122,7 @@ export async function POST() {
     total_count: totalCount,
     starting,
     expiring,
-    weather: {
+    weather: weatherInfo ? {
       weather: weatherInfo.weather,
       current: weatherInfo.current,
       high: weatherInfo.high,
@@ -133,7 +132,7 @@ export async function POST() {
       dress_morning: weatherInfo.dress_morning,
       dress_daytime: weatherInfo.dress_daytime,
       dress_evening: weatherInfo.dress_evening,
-    },
+    } : undefined,
   };
 
   const { data: notifRecord } = await supabase
