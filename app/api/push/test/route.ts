@@ -155,7 +155,13 @@ export async function POST() {
   const webpush = webpushModule.default ?? webpushModule;
   webpush.setVapidDetails('mailto:syuletyoucryjp@gmail.com', vapidPublicKey, vapidPrivateKey);
 
-  const payload = JSON.stringify({ title, body, notificationId, type: 'coupon_alert' });
+  const payload = JSON.stringify({ 
+    title, 
+    body, 
+    notificationId, 
+    type: 'coupon_alert',
+    url: notificationId ? `/notifications/${notificationId}` : '/notifications'
+  });
 
   const results = await Promise.all(subs.map(async (sub: any) => {
     try {
