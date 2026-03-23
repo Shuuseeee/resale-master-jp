@@ -94,39 +94,6 @@ export async function POST() {
 
   const totalCount = starting.length + (expiringRaw?.length ?? 0);
 
-  async function sendTestPush() {
-    setTestResult('发送中...');
-    try {
-      const res = await fetch('/api/push/test', { method: 'POST' });
-      const data = await res.json();
-      console.log('[Test Push] Result:', data);
-      if (data.ok) {
-        setTestResult(`✅ 已发送到 ${data.results.length} 个设备：${JSON.stringify(data.results)}`);
-        
-        // 追加这一行：发送成功后立刻重新拉取最新通知列表
-        loadNotifications(); 
-        
-      } else {
-        setTestResult(`❌ 失败：${data.error}${data.hint ? ' — ' + data.hint : ''}`);
-      }
-    } catch (e) {  useEffect(() => {
-        // 首次加载拉取
-        loadNotifications();
-    
-        // 当用户从系统桌面、通知栏或其他 App 切回 PWA 时，自动刷新通知列表
-        const handleFocus = () => {
-          loadNotifications();
-        };
-        
-        window.addEventListener('focus', handleFocus);
-        return () => {
-          window.removeEventListener('focus', handleFocus);
-        };
-      }, []);
-    
-      setTestResult(`❌ 请求异常：`);
-    }
-  }
   // Build coupon summary for the body
   let body = '今日无需关注的优惠券，安心做自己吧';
   if (totalCount > 0) {
