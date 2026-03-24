@@ -28,6 +28,7 @@ interface TransactionWithPayment extends Transaction {
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 type SortOrder = 'asc' | 'desc';
 type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
+type ProfitSortMode = 'actual' | 'expected'; // 利润排序模式
 
 interface PaymentMethodBasic {
   id: string;
@@ -49,6 +50,7 @@ function TransactionsContent() {
   const [sortField, setSortField] = useState<SortField>(() => (searchParams.get('sort') as SortField) || 'date');
   const [sortOrder, setSortOrder] = useState<SortOrder>(() => (searchParams.get('order') as SortOrder) || 'desc');
   const [dateSortMode, setDateSortMode] = useState<DateSortMode>(() => (searchParams.get('dsm') as DateSortMode) || 'purchase');
+  const [profitSortMode, setProfitSortMode] = useState<ProfitSortMode>('actual');
   const [activeFilters, setActiveFilters] = useState<FilterValues | null>(() => {
     // 从 URL 恢复高级筛选
     const dateFrom = searchParams.get('df') || '';
@@ -61,7 +63,7 @@ function TransactionsContent() {
     const purchasePlatformId = searchParams.get('pp') || '';
     const orderNumber = searchParams.get('on') || '';
     if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodId || purchasePlatformId || orderNumber) {
-      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId, orderNumber };
+      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId, orderNumber, buybackStore: '' };
     }
     return null;
   });
@@ -332,6 +334,14 @@ function TransactionsContent() {
             return false;
           }
         }
+
+        // 买取店铺筛选（仅对已加载买取数据的记录有效）
+        if (activeFilters.buybackStore) {
+          const buyback = buybackPrices.get(t.id);
+          if (!buyback) return false;
+          const storeTerm = activeFilters.buybackStore.toLowerCase();
+          if (!buyback.maxStore?.toLowerCase().includes(storeTerm)) return false;
+        }
       }
 
       return true;
@@ -352,9 +362,14 @@ function TransactionsContent() {
       } else if (sortField === 'buyback_price') {
         aValue = buybackPrices.get(a.id)?.maxPrice || 0;
         bValue = buybackPrices.get(b.id)?.maxPrice || 0;
-      } else if (sortField === 'expected_profit') {
-        aValue = buybackPrices.get(a.id)?.expectedProfit || 0;
-        bValue = buybackPrices.get(b.id)?.expectedProfit || 0;
+      } else if (sortField === 'total_profit' || sortField === 'expected_profit') {
+        if (profitSortMode === 'expected') {
+          aValue = buybackPrices.get(a.id)?.expectedProfit || 0;
+          bValue = buybackPrices.get(b.id)?.expectedProfit || 0;
+        } else {
+          aValue = a.total_profit;
+          bValue = b.total_profit;
+        }
       } else {
         aValue = a[sortField];
         bValue = b[sortField];
@@ -569,6 +584,7 @@ function TransactionsContent() {
           purchasePlatforms={purchasePlatforms}
           janCodes={[...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort()}
           initialValues={activeFilters}
+          hasBuybackData={buybackPrices.size > 0}
         />
 
         {/* 全局搜索 */}
@@ -697,24 +713,33 @@ function TransactionsContent() {
                         <th className="px-3 py-3 text-left">账号</th>
                         <th className="px-3 py-3 text-left">状态</th>
                         <th className="px-2 py-3 text-center"></th>
-                        <th
-                          className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-                          onClick={() => toggleSort('total_profit')}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            利润
-                            {sortField === 'total_profit' && (
-                              <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            )}
+                        <th className="px-3 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                            <button
+                              onClick={() => toggleSort('total_profit')}
+                              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
+                            >
+                              {profitSortMode === 'actual' ? '利润' : '预估利润'}
+                              {sortField === 'total_profit' && (
+                                <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')}
+                              className="px-1 py-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                              title="切换利润类型"
+                            >
+                              ⇄
+                            </button>
                           </div>
                         </th>
                         <th
                           className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                           onClick={() => toggleSort('buyback_price')}
                         >
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             最高价
                             {sortField === 'buyback_price' && (
                               <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">

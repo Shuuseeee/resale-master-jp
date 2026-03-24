@@ -15,6 +15,7 @@ export interface FilterValues {
   paymentMethodId: string;
   purchasePlatformId: string;
   orderNumber: string;
+  buybackStore: string;
 }
 
 interface TransactionFiltersProps {
@@ -24,6 +25,8 @@ interface TransactionFiltersProps {
   purchasePlatforms?: Array<{ id: string; name: string }>;
   janCodes?: string[];
   initialValues?: FilterValues | null;
+  /** If true, shows buyback price filter inputs */
+  hasBuybackData?: boolean;
 }
 
 const emptyFilters: FilterValues = {
@@ -35,6 +38,7 @@ const emptyFilters: FilterValues = {
   paymentMethodId: '',
   purchasePlatformId: '',
   orderNumber: '',
+  buybackStore: '',
 };
 
 const statusOptions = [
@@ -55,6 +59,7 @@ export default function TransactionFilters({
   purchasePlatforms,
   janCodes = [],
   initialValues,
+  hasBuybackData = false,
 }: TransactionFiltersProps) {
   const [filters, setFilters] = useState<FilterValues>(initialValues || { ...emptyFilters });
   const isFirstRender = useRef(true);
@@ -68,7 +73,7 @@ export default function TransactionFilters({
       isFirstRender.current = false;
       return;
     }
-    const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode || filters.status.length > 0 || filters.paymentMethodId || filters.purchasePlatformId || filters.orderNumber;
+    const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode || filters.status.length > 0 || filters.paymentMethodId || filters.purchasePlatformId || filters.orderNumber || filters.buybackStore;
     if (hasAny) {
       onApply(filters);
     } else {
@@ -314,6 +319,33 @@ export default function TransactionFilters({
           )}
         </div>
       </div>
+
+      {/* Row 2: 买取店铺筛选（仅当已加载买取数据时显示） */}
+      {hasBuybackData && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">买取</span>
+          <div className="relative">
+            <input
+              type="text"
+              value={filters.buybackStore}
+              onChange={(e) => updateFilter('buybackStore', e.target.value)}
+              className={inputClass + ' w-[140px]' + (filters.buybackStore ? ' pr-7' : '')}
+              placeholder="店铺名"
+            />
+            {filters.buybackStore && (
+              <button
+                onClick={() => updateFilter('buybackStore', '')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                type="button"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
