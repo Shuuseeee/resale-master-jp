@@ -96,7 +96,7 @@ export default function TransactionDetailPage() {
           setShowSaleForm(true);
         }
       }
-      if (autoReturn && data && (data.quantity_in_stock ?? 0) > 0) {
+      if (autoReturn && data && (data.status === 'in_stock' || data.status === 'pending')) {
         setShowReturnForm(true);
       }
     } catch (error) {

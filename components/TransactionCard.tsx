@@ -244,27 +244,22 @@ export default function TransactionCard({
 
       {/* 操作栏 */}
       <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1">
-            {!hasSoldOut && (
-              <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">出售</Link>
-            )}
-            {(transaction.quantity_sold ?? 0) > 0 && (
-              <Link href={`/transactions/${transaction.id}?action=return`} className="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-colors">退货</Link>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Link href={`/transactions/${transaction.id}`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">详情</Link>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(transaction.id);
-              }}
-              className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"
-            >
-              删除
-            </button>
-          </div>
+        <div className="flex items-center justify-end gap-1">
+          <Link href={`/transactions/${transaction.id}/edit`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">编辑</Link>
+          <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">出售</Link>
+          {(transaction.status === 'in_stock' || transaction.status === 'pending') && (
+            <Link href={`/transactions/${transaction.id}?action=return`} className="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-colors">退货</Link>
+          )}
+          <Link href={`/transactions/add?copy=${transaction.id}`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">复制</Link>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(transaction.id);
+            }}
+            className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"
+          >
+            删除
+          </button>
         </div>
       </div>
     </div>
