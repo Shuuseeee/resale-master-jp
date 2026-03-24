@@ -21,6 +21,7 @@ interface BuybackInfo {
   maxStore: string;
   expectedProfit: number;
   loading: boolean;
+  allPrices?: Array<{ store: string; price: number; url: string }>;
 }
 
 interface TransactionCardProps {
@@ -30,6 +31,9 @@ interface TransactionCardProps {
   onMarkArrived?: (id: string) => void;
   buybackInfo?: BuybackInfo;
   purchasePlatforms?: Array<{ id: string; name: string }>;
+  compareMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export default function TransactionCard({
@@ -39,6 +43,9 @@ export default function TransactionCard({
   onMarkArrived,
   buybackInfo,
   purchasePlatforms = [],
+  compareMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: TransactionCardProps) {
   const router = useRouter();
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
@@ -49,14 +56,6 @@ export default function TransactionCard({
   const totalPoints = (transaction.expected_platform_points || 0)
     + (transaction.expected_card_points || 0)
     + (transaction.extra_platform_points || 0);
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isInteractiveElement = target.closest('a, button');
-    if (!isInteractiveElement) {
-      router.push(`/transactions/${transaction.id}`);
-    }
-  };
 
   const copyToClipboard = (text: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,12 +87,44 @@ export default function TransactionCard({
     }
   };
 
+  const canCompare = !!buybackInfo && buybackInfo.maxPrice > 0;
+
+  const handleCardClick = compareMode
+    ? (e: React.MouseEvent) => { e.stopPropagation(); if (canCompare) onToggleSelect?.(transaction.id); }
+    : undefined;
+
   return (
     <>
     <div
-      className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700 transition-colors"
-      onClick={handleCardClick}
+      className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border transition-colors relative
+        ${compareMode
+          ? canCompare
+            ? isSelected
+              ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
+              : 'border-gray-200 dark:border-gray-700 cursor-pointer hover:border-teal-300 dark:hover:border-teal-600'
+            : 'border-gray-200 dark:border-gray-700 opacity-40 cursor-not-allowed'
+          : 'border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'
+        }`}
+      onClick={compareMode ? handleCardClick : (e) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('a, button')) router.push(`/transactions/${transaction.id}`);
+      }}
     >
+      {/* 选择模式复选框 */}
+      {compareMode && canCompare && (
+        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10
+          ${isSelected
+            ? 'bg-teal-500 border-teal-500'
+            : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500'
+          }`}
+        >
+          {isSelected && (
+            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </div>
+      )}
       {/* 顶部：图片 + 商品名 + 状态 */}
       <div className="flex gap-3 mb-2">
         {transaction.image_url && (

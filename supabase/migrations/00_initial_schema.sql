@@ -1,10 +1,22 @@
 -- ============================================
 -- 00_initial_schema_consolidated.sql
--- Complete database schema (consolidated with 04 & 05 coupon updates)
+-- Complete database schema (consolidated: 00 ~ 07)
 -- ============================================
 -- This file represents the FINAL state of the database schema.
 -- It is suitable for deploying to new environments from scratch.
 -- ============================================
+
+-- ============================================
+-- PART 0: Shared Utility Functions
+-- ============================================
+
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- ============================================
 -- PART 1: Base Tables
@@ -20,15 +32,15 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   payment_same_month BOOLEAN NOT NULL DEFAULT false,
   point_rate NUMERIC(5, 2) NOT NULL DEFAULT 1.0,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 1.2 coupons (Enhanced schema)
 CREATE TABLE IF NOT EXISTS coupons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  
+
   -- Core Discount Info
   discount_type TEXT NOT NULL DEFAULT 'fixed_amount' CHECK (discount_type IN (
     'percentage', 'fixed_amount', 'point_multiply', 'free_item', 'bogo', 'combo_deal', 'cashback'
@@ -36,15 +48,15 @@ CREATE TABLE IF NOT EXISTS coupons (
   discount_value NUMERIC(10, 2) NOT NULL DEFAULT 0,
   max_discount_amount NUMERIC(10, 2) DEFAULT 0,
   min_purchase_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  
+
   -- Target Item Info
   target_item_name TEXT,
   target_item_value NUMERIC(10, 2) DEFAULT 0,
-  
+
   -- Validity Dates
   start_date DATE,
   expiry_date DATE NOT NULL,
-  
+
   -- Usage Tracking
   usage_limit INTEGER DEFAULT 1,
   usage_count INTEGER DEFAULT 0,
@@ -52,7 +64,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   per_transaction_cap NUMERIC(10, 2),
   is_used BOOLEAN NOT NULL DEFAULT false,
   used_date DATE,
-  
+
   -- Restrictions
   time_restriction TEXT,
   day_of_week_restriction TEXT,
@@ -62,42 +74,42 @@ CREATE TABLE IF NOT EXISTS coupons (
   store_restriction TEXT,
   is_online_only BOOLEAN DEFAULT false,
   is_offline_only BOOLEAN DEFAULT false,
-  
+
   -- Redemption Method
   redemption_method TEXT DEFAULT 'barcode' CHECK (redemption_method IN (
     'barcode', 'qr_code', 'coupon_code', 'automatic', 'manual'
   )),
   coupon_code TEXT,
   barcode_value TEXT,
-  
+
   -- Stacking Rules
   can_stack_with_other_coupons BOOLEAN DEFAULT false,
   can_stack_with_point_multiplier BOOLEAN DEFAULT true,
   can_stack_with_sale_price BOOLEAN DEFAULT false,
-  
+
   -- Membership Requirements
   requires_membership BOOLEAN DEFAULT false,
   membership_type TEXT,
   is_first_time_only BOOLEAN DEFAULT false,
-  
+
   -- Combo Deal Specifics
   combo_quantity INTEGER,
   combo_price NUMERIC(10, 2),
-  
+
   -- Cashback Specifics
   cashback_timing TEXT,
   cashback_type TEXT CHECK (cashback_type IS NULL OR cashback_type IN ('instant', 'points', 'next_month')),
-  
+
   -- Campaign Tracking
   campaign_name TEXT,
   quantity_limit INTEGER,
   quantity_used INTEGER DEFAULT 0,
-  
+
   -- Metadata
   platform TEXT,
   notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Column Comments for coupons
@@ -131,13 +143,12 @@ COMMENT ON COLUMN coupons.quantity_used IS '使用済み数量';
 CREATE TABLE IF NOT EXISTS coupon_usage_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   coupon_id UUID NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
-  -- user_id reference is added in PART 5 for consistency
-  used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  used_at TIMESTAMPTZ DEFAULT now(),
   discount_amount NUMERIC(10, 2),
   transaction_amount NUMERIC(10, 2),
   store_name TEXT,
   notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_history_coupon_id ON coupon_usage_history(coupon_id);
@@ -152,8 +163,8 @@ CREATE TABLE IF NOT EXISTS supplies_costs (
   purchase_date DATE NOT NULL DEFAULT CURRENT_DATE,
   description TEXT,
   notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE supplies_costs ENABLE ROW LEVEL SECURITY;
@@ -178,8 +189,8 @@ CREATE TABLE IF NOT EXISTS fixed_costs (
   is_active BOOLEAN NOT NULL DEFAULT true,
   category TEXT,
   notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE fixed_costs ENABLE ROW LEVEL SECURITY;
@@ -202,8 +213,8 @@ CREATE TABLE IF NOT EXISTS points_platforms (
   yen_conversion_rate NUMERIC(10, 4) NOT NULL DEFAULT 1.0,
   description TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 INSERT INTO points_platforms (name, display_name, yen_conversion_rate, description) VALUES
@@ -222,17 +233,9 @@ ALTER TABLE points_platforms ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can view points platforms"
   ON points_platforms FOR SELECT TO authenticated USING (true);
 
-CREATE OR REPLACE FUNCTION update_points_platforms_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_points_platforms_updated_at
+CREATE TRIGGER set_updated_at_points_platforms
   BEFORE UPDATE ON points_platforms
-  FOR EACH ROW EXECUTE FUNCTION update_points_platforms_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE INDEX IF NOT EXISTS idx_points_platforms_name ON points_platforms(name);
 CREATE INDEX IF NOT EXISTS idx_points_platforms_active ON points_platforms(is_active);
@@ -252,8 +255,8 @@ CREATE TABLE IF NOT EXISTS purchase_platforms (
   name TEXT NOT NULL,
   is_builtin BOOLEAN NOT NULL DEFAULT false,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 INSERT INTO purchase_platforms (name, is_builtin, is_active) VALUES
@@ -271,12 +274,9 @@ CREATE POLICY "Users can delete their own purchase platforms" ON purchase_platfo
 CREATE INDEX IF NOT EXISTS idx_purchase_platforms_user_id ON purchase_platforms(user_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_platforms_builtin ON purchase_platforms(is_builtin);
 
-CREATE OR REPLACE FUNCTION update_purchase_platforms_updated_at()
-RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_purchase_platforms_updated_at
+CREATE TRIGGER set_updated_at_purchase_platforms
   BEFORE UPDATE ON purchase_platforms
-  FOR EACH ROW EXECUTE FUNCTION update_purchase_platforms_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- 3.2 selling_platforms
 CREATE TABLE IF NOT EXISTS selling_platforms (
@@ -285,8 +285,8 @@ CREATE TABLE IF NOT EXISTS selling_platforms (
   name TEXT NOT NULL,
   is_builtin BOOLEAN NOT NULL DEFAULT false,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 INSERT INTO selling_platforms (name, is_builtin, is_active) VALUES
@@ -304,12 +304,9 @@ CREATE POLICY "Users can delete their own selling platforms" ON selling_platform
 CREATE INDEX IF NOT EXISTS idx_selling_platforms_user_id ON selling_platforms(user_id);
 CREATE INDEX IF NOT EXISTS idx_selling_platforms_builtin ON selling_platforms(is_builtin);
 
-CREATE OR REPLACE FUNCTION update_selling_platforms_updated_at()
-RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_selling_platforms_updated_at
+CREATE TRIGGER set_updated_at_selling_platforms
   BEFORE UPDATE ON selling_platforms
-  FOR EACH ROW EXECUTE FUNCTION update_selling_platforms_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ============================================
 -- PART 4: Transactions Table
@@ -355,11 +352,12 @@ CREATE TABLE IF NOT EXISTS transactions (
 
   image_url TEXT,
   notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_transactions_quantity_in_stock ON transactions(quantity_in_stock);
+CREATE INDEX IF NOT EXISTS idx_transactions_card_id ON transactions(card_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_purchase_platform ON transactions(purchase_platform_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_jan_code ON transactions(jan_code);
 CREATE INDEX IF NOT EXISTS idx_transactions_platform_points_platform ON transactions(platform_points_platform_id);
@@ -410,27 +408,27 @@ CREATE POLICY "Users can insert their own payment methods" ON payment_methods FO
 CREATE POLICY "Users can update their own payment methods" ON payment_methods FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own payment methods" ON payment_methods FOR DELETE USING (auth.uid() = user_id);
 
--- transactions RLS
+-- transactions RLS — uses (SELECT auth.uid()) to evaluate once per statement on large tables
 DROP POLICY IF EXISTS "Users can view their own transactions" ON transactions;
 DROP POLICY IF EXISTS "Users can insert their own transactions" ON transactions;
 DROP POLICY IF EXISTS "Users can update their own transactions" ON transactions;
 DROP POLICY IF EXISTS "Users can delete their own transactions" ON transactions;
 
-CREATE POLICY "Users can view their own transactions" ON transactions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own transactions" ON transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own transactions" ON transactions FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own transactions" ON transactions FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own transactions" ON transactions FOR SELECT USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can insert their own transactions" ON transactions FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can update their own transactions" ON transactions FOR UPDATE USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can delete their own transactions" ON transactions FOR DELETE USING ((SELECT auth.uid()) = user_id);
 
--- coupons RLS
+-- coupons RLS — uses (SELECT auth.uid()) to evaluate once per statement on large tables
 DROP POLICY IF EXISTS "Users can view their own coupons" ON coupons;
 DROP POLICY IF EXISTS "Users can insert their own coupons" ON coupons;
 DROP POLICY IF EXISTS "Users can update their own coupons" ON coupons;
 DROP POLICY IF EXISTS "Users can delete their own coupons" ON coupons;
 
-CREATE POLICY "Users can view their own coupons" ON coupons FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own coupons" ON coupons FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own coupons" ON coupons FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own coupons" ON coupons FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view their own coupons" ON coupons FOR SELECT USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can insert their own coupons" ON coupons FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can update their own coupons" ON coupons FOR UPDATE USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can delete their own coupons" ON coupons FOR DELETE USING ((SELECT auth.uid()) = user_id);
 
 -- coupon_usage_history RLS
 DROP POLICY IF EXISTS "Users can view own coupon usage history" ON coupon_usage_history;
@@ -439,7 +437,7 @@ DROP POLICY IF EXISTS "Users can insert own coupon usage history" ON coupon_usag
 CREATE POLICY "Users can view own coupon usage history" ON coupon_usage_history FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own coupon usage history" ON coupon_usage_history FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Auto-set user_id function and triggers
+-- Auto-set user_id on insert
 DROP FUNCTION IF EXISTS set_user_id() CASCADE;
 
 CREATE OR REPLACE FUNCTION set_user_id()
@@ -503,8 +501,8 @@ CREATE TABLE IF NOT EXISTS sales_records (
   actual_cash_spent DECIMAL(10, 2),
   notes TEXT,
 
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_sales_records_transaction_id ON sales_records(transaction_id);
@@ -523,7 +521,7 @@ COMMENT ON TABLE sales_records IS '販売記録テーブル - バッチ商品の
 COMMENT ON COLUMN sales_records.selling_platform_id IS '販売先プラットフォームID';
 COMMENT ON COLUMN sales_records.sale_order_number IS '販売注文番号';
 
--- 6.1 Trigger: auto-update quantity_sold on transactions
+-- 6.1 Trigger: sync quantity_sold on transactions
 CREATE OR REPLACE FUNCTION update_transaction_quantity_sold()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -547,7 +545,8 @@ CREATE TRIGGER trigger_update_quantity_sold_on_update AFTER UPDATE ON sales_reco
 DROP TRIGGER IF EXISTS trigger_update_quantity_sold_on_delete ON sales_records;
 CREATE TRIGGER trigger_update_quantity_sold_on_delete AFTER DELETE ON sales_records FOR EACH ROW EXECUTE FUNCTION update_transaction_quantity_sold();
 
--- 6.2 Trigger: auto-update transaction status (in_stock <-> sold)
+-- 6.2 Trigger: auto-update transaction status (in_stock <-> awaiting_payment)
+-- pending/returned/sold are managed manually; in_stock/awaiting_payment are derived from sales_records
 CREATE OR REPLACE FUNCTION update_transaction_status()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -571,8 +570,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION update_transaction_status() IS '自動ステータス更新 - pending/returned/sold は手動管理、in_stock/awaiting_payment は sales_records から自動判定';
-
 DROP TRIGGER IF EXISTS trigger_update_status_on_sale ON sales_records;
 CREATE TRIGGER trigger_update_status_on_sale AFTER INSERT OR UPDATE OR DELETE ON sales_records FOR EACH ROW EXECUTE FUNCTION update_transaction_status();
 
@@ -592,8 +589,8 @@ CREATE TABLE IF NOT EXISTS return_records (
   return_reason TEXT,
   notes TEXT,
 
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_return_records_transaction_id ON return_records(transaction_id);
@@ -607,15 +604,14 @@ CREATE POLICY "Users can insert their own return records" ON return_records FOR 
 CREATE POLICY "Users can update their own return records" ON return_records FOR UPDATE TO authenticated USING (user_id = (SELECT auth.uid())) WITH CHECK (user_id = (SELECT auth.uid()));
 CREATE POLICY "Users can delete their own return records" ON return_records FOR DELETE TO authenticated USING (user_id = (SELECT auth.uid()));
 
-CREATE OR REPLACE FUNCTION update_return_records_updated_at() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-CREATE TRIGGER update_return_records_updated_at BEFORE UPDATE ON return_records FOR EACH ROW EXECUTE FUNCTION update_return_records_updated_at();
+CREATE TRIGGER set_updated_at_return_records BEFORE UPDATE ON return_records FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 COMMENT ON TABLE return_records IS '返品記録テーブル - バッチ商品の個別返品を追跡';
 COMMENT ON COLUMN return_records.quantity_returned IS '返品数量';
 COMMENT ON COLUMN return_records.return_amount IS '返金額';
 COMMENT ON COLUMN return_records.points_deducted IS '返品時に差し引かれたポイント';
 
--- 7.1 Trigger: auto-update quantity_returned
+-- 7.1 Trigger: sync quantity_returned and status on transactions
 CREATE OR REPLACE FUNCTION update_transaction_quantity_returned()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -674,7 +670,7 @@ ORDER BY t.expected_payment_date ASC;
 
 COMMENT ON VIEW upcoming_payments IS '支払い予定サマリー - 支払い方法と支払日ごとに集計';
 
--- active_coupons: 可用优惠券视图
+-- active_coupons: 当前用户可用优惠券
 CREATE OR REPLACE VIEW active_coupons AS
 SELECT
   c.*,
@@ -689,8 +685,8 @@ SELECT
   END AS is_expired,
   (c.usage_limit - c.usage_count) AS remaining_uses
 FROM coupons c
-WHERE
-  (c.usage_limit = -1 OR c.usage_count < c.usage_limit)
+WHERE c.user_id = auth.uid()
+  AND (c.usage_limit = -1 OR c.usage_count < c.usage_limit)
   AND c.expiry_date >= CURRENT_DATE
   AND (c.quantity_limit IS NULL OR c.quantity_used < c.quantity_limit);
 
@@ -711,10 +707,148 @@ CREATE POLICY "Users can update receipt images" ON storage.objects FOR UPDATE TO
 -- PART 10: Cleanup Operations (Legacy Platforms)
 -- ============================================
 
+-- Migrate references from removed generic_card_3to1 to generic_card_1to1
+-- Safe to run on fresh installs (no-op if old platform doesn't exist)
 UPDATE payment_methods SET card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1) WHERE card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
 UPDATE transactions SET card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1) WHERE card_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
 UPDATE transactions SET platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1) WHERE platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
 UPDATE transactions SET extra_platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_1to1' LIMIT 1) WHERE extra_platform_points_platform_id = (SELECT id FROM points_platforms WHERE name = 'generic_card_3to1' LIMIT 1);
 DELETE FROM points_platforms WHERE name = 'generic_card_3to1';
+
+-- ============================================
+-- PART 11: KaitoriX Price Cache & Scrape Queue
+-- ============================================
+
+-- 11.1 价格缓存表（共享，无 user_id）
+CREATE TABLE IF NOT EXISTS kaitorix_price_cache (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  jan TEXT NOT NULL UNIQUE,
+  product_name TEXT,
+  max_price INTEGER DEFAULT 0,
+  max_store TEXT,
+  prices JSONB DEFAULT '[]'::jsonb,
+  fetched_at TIMESTAMPTZ DEFAULT now(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 11.2 抓取队列表
+CREATE TABLE IF NOT EXISTS kaitorix_scrape_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  jan TEXT NOT NULL,
+  user_id UUID,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  attempts INTEGER DEFAULT 0,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scrape_queue_status ON kaitorix_scrape_queue(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_scrape_queue_jan ON kaitorix_scrape_queue(jan);
+CREATE INDEX IF NOT EXISTS idx_scrape_queue_user_status ON kaitorix_scrape_queue(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_price_cache_jan ON kaitorix_price_cache(jan);
+
+CREATE TRIGGER set_updated_at_kaitorix_price_cache
+  BEFORE UPDATE ON kaitorix_price_cache
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER set_updated_at_kaitorix_scrape_queue
+  BEFORE UPDATE ON kaitorix_scrape_queue
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- 11.3 去重入队函数
+CREATE OR REPLACE FUNCTION enqueue_kaitorix_scrape(p_jan TEXT, p_user_id UUID)
+RETURNS UUID AS $$
+DECLARE
+  existing_id UUID;
+  new_id UUID;
+BEGIN
+  SELECT id INTO existing_id
+  FROM kaitorix_scrape_queue
+  WHERE jan = p_jan AND status IN ('pending', 'processing')
+  LIMIT 1;
+
+  IF existing_id IS NOT NULL THEN
+    RETURN existing_id;
+  END IF;
+
+  INSERT INTO kaitorix_scrape_queue (jan, user_id, status)
+  VALUES (p_jan, p_user_id, 'pending')
+  RETURNING id INTO new_id;
+
+  RETURN new_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 11.4 清理旧队列记录
+CREATE OR REPLACE FUNCTION cleanup_kaitorix_queue()
+RETURNS INTEGER AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM kaitorix_scrape_queue
+  WHERE status IN ('completed', 'failed')
+    AND updated_at < now() - INTERVAL '24 hours';
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 11.5 RLS
+ALTER TABLE kaitorix_price_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kaitorix_scrape_queue ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "kaitorix_price_cache_select"
+  ON kaitorix_price_cache FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "kaitorix_scrape_queue_insert"
+  ON kaitorix_scrape_queue FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "kaitorix_scrape_queue_select"
+  ON kaitorix_scrape_queue FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- ============================================
+-- PART 12: Push Notifications
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, endpoint)
+);
+
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own subscriptions" ON push_subscriptions
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'coupon_alert',
+  title TEXT NOT NULL,
+  body TEXT,
+  data JSONB DEFAULT '{}',
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users read own notifications" ON notifications
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, read) WHERE read = false;
 
 -- Schema setup complete!

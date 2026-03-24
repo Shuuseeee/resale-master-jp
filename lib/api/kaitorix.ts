@@ -167,6 +167,20 @@ export async function fetchBuybackPrices(
   return resultMap;
 }
 
+export function getFilteredPrices(
+  result: KaitorixResponse | null,
+  enabledStoreKeys: string[]
+): Array<{ store: string; price: number; url: string }> {
+  if (!result?.prices?.length) return [];
+  const enabledSet = new Set(enabledStoreKeys);
+  return result.prices
+    .filter(p => {
+      const key = STORE_NAME_TO_KEY[p.store];
+      return key && enabledSet.has(key);
+    })
+    .map(p => ({ store: p.store, price: p.price, url: p.url }));
+}
+
 export function getBestPrice(
   result: KaitorixResponse | null,
   enabledStoreKeys: string[]

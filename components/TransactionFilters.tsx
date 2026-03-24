@@ -27,6 +27,7 @@ interface TransactionFiltersProps {
   initialValues?: FilterValues | null;
   /** If true, shows buyback price filter inputs */
   hasBuybackData?: boolean;
+  buybackStores?: string[];
 }
 
 const emptyFilters: FilterValues = {
@@ -60,6 +61,7 @@ export default function TransactionFilters({
   janCodes = [],
   initialValues,
   hasBuybackData = false,
+  buybackStores = [],
 }: TransactionFiltersProps) {
   const [filters, setFilters] = useState<FilterValues>(initialValues || { ...emptyFilters });
   const isFirstRender = useRef(true);
@@ -325,13 +327,16 @@ export default function TransactionFilters({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">买取</span>
           <div className="relative">
-            <input
-              type="text"
+            <select
               value={filters.buybackStore}
               onChange={(e) => updateFilter('buybackStore', e.target.value)}
-              className={inputClass + ' w-[140px]' + (filters.buybackStore ? ' pr-7' : '')}
-              placeholder="店铺名"
-            />
+              className={inputClass + ' w-[140px]' + (filters.buybackStore ? ' pr-8' : '')}
+            >
+              <option value="">店铺名</option>
+              {buybackStores.map(store => (
+                <option key={store} value={store}>{store}</option>
+              ))}
+            </select>
             {filters.buybackStore && (
               <button
                 onClick={() => updateFilter('buybackStore', '')}

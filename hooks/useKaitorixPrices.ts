@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { fetchBuybackPrices, getBestPrice, type FetchProgress } from '@/lib/api/kaitorix';
+import { fetchBuybackPrices, getBestPrice, getFilteredPrices, type FetchProgress } from '@/lib/api/kaitorix';
 import { loadKaitorixConfig } from '@/lib/kaitorix-config';
 
 interface Transaction {
@@ -19,6 +19,7 @@ export interface BuybackInfo {
   maxStore: string;
   expectedProfit: number;
   loading: boolean;
+  allPrices?: Array<{ store: string; price: number; url: string }>;
 }
 
 export interface KaitorixState {
@@ -58,6 +59,7 @@ function loadCacheFromStorage(): Map<string, BuybackInfo> {
           maxStore: info.maxStore,
           expectedProfit: info.expectedProfit,
           loading: false,
+          allPrices: info.allPrices || [],
         });
       }
     });
@@ -171,6 +173,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
               maxStore: bestPrice.maxStore,
               expectedProfit,
               loading: false,
+              allPrices: getFilteredPrices(result ?? null, config.enabledStores),
             });
           } else {
             newMap.set(tx.id, {

@@ -12,6 +12,7 @@ import { layout, heading, card, button, input } from '@/lib/theme';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
 import TransactionRow from '@/components/TransactionRow';
+import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import { getPurchasePlatforms } from '@/lib/api/platforms';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
@@ -68,6 +69,9 @@ function TransactionsContent() {
     return null;
   });
   const [exporting, setExporting] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showComparison, setShowComparison] = useState(false);
 
   // KaitoriX 买取价格（手动触发）
   // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
@@ -253,6 +257,14 @@ function TransactionsContent() {
   };
   // 在 filteredTransactions 逻辑之前定义
   const platformMap = new Map(purchasePlatforms.map(p => [p.id, p.name.toLowerCase()]));
+
+  // 提取所有买取店铺名称用于筛选下拉列表
+  const storeNames = Array.from(
+    new Set(
+      Array.from(buybackPrices.values()).flatMap(info => info.allPrices?.map(p => p.store) || [])
+    )
+  ).sort();
+
   // 筛选和排序
   const filteredTransactions = transactions
     .filter(t => {
@@ -428,6 +440,20 @@ function TransactionsContent() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setSelectedIds(new Set());
+    setShowComparison(false);
+  };
+
   const handleMarkArrived = async (id: string) => {
     const success = await markTransactionArrived(id);
     if (success) {
@@ -465,6 +491,22 @@ function TransactionsContent() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* KaitoriX 买取价格刷新 */}
+              {/* 比较买取价按钮 */}
+              {kaitorixEnabled && buybackPrices.size > 0 && (
+                <button
+                  onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                    compareMode
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="hidden sm:inline">{compareMode ? '退出比较' : '比较'}</span>
+                </button>
+              )}
               {kaitorixEnabled && (
                 <button
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
@@ -514,7 +556,7 @@ function TransactionsContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 )}
-                {exporting ? '导出中...' : <><span className="sm:hidden">CSV</span><span className="hidden sm:inline">CSV导出</span></>}
+                {exporting ? '导出中...' : <><span className="hidden sm:inline">CSV导出</span></>}
               </button>
               <Link
                 href="/transactions/add"
@@ -585,6 +627,7 @@ function TransactionsContent() {
           janCodes={[...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort()}
           initialValues={activeFilters}
           hasBuybackData={buybackPrices.size > 0}
+          buybackStores={storeNames}
         />
 
         {/* 全局搜索 */}
@@ -670,6 +713,9 @@ function TransactionsContent() {
                   onMarkArrived={handleMarkArrived}
                   buybackInfo={buybackPrices.get(transaction.id)}
                   purchasePlatforms={purchasePlatforms}
+                  compareMode={compareMode}
+                  isSelected={selectedIds.has(transaction.id)}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
             </div>
@@ -761,6 +807,9 @@ function TransactionsContent() {
                           onMarkArrived={handleMarkArrived}
                           buybackInfo={buybackPrices.get(transaction.id)}
                           purchasePlatforms={purchasePlatforms}
+                          compareMode={compareMode}
+                          isSelected={selectedIds.has(transaction.id)}
+                          onToggleSelect={toggleSelect}
                         />
                       ))}
                     </tbody>
@@ -771,6 +820,56 @@ function TransactionsContent() {
           </>
         )}
       </div>
+
+      {/* 比较模式悬浮操作栏 */}
+      {compareMode && (
+        <div className="fixed bottom-20 md:bottom-6 inset-x-0 flex justify-center px-4 z-40 pointer-events-none">
+          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-sm w-full border border-gray-700">
+            <div className="flex-1 text-sm">
+              {selectedIds.size === 0
+                ? <span className="text-gray-400">请选择有买取价的商品</span>
+                : <span>已选 <span className="font-bold text-teal-400">{selectedIds.size}</span> 件</span>
+              }
+            </div>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-xs text-gray-400 hover:text-white transition-colors px-2"
+              >
+                清空
+              </button>
+            )}
+            <button
+              disabled={selectedIds.size < 2}
+              onClick={() => setShowComparison(true)}
+              className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                selectedIds.size >= 2
+                  ? 'bg-teal-500 hover:bg-teal-400 text-white'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              开始比较
+            </button>
+            <button
+              onClick={exitCompareMode}
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
+              aria-label="退出比较模式"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 比较结果 Modal */}
+      <BuybackComparisonModal
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+        selectedTransactions={filteredTransactions.filter(t => selectedIds.has(t.id))}
+        buybackMap={buybackPrices}
+      />
     </div>
   );
 }

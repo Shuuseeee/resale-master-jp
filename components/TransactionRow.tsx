@@ -28,6 +28,9 @@ interface TransactionRowProps {
   onMarkArrived?: (id: string) => void;
   buybackInfo?: BuybackInfo;
   purchasePlatforms?: Array<{ id: string; name: string }>;
+  compareMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export default function TransactionRow({
@@ -37,6 +40,9 @@ export default function TransactionRow({
   onMarkArrived,
   buybackInfo,
   purchasePlatforms = [],
+  compareMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: TransactionRowProps) {
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
   const [showToast, setShowToast] = useState(false);
@@ -76,12 +82,43 @@ export default function TransactionRow({
     ? new Date(transaction.latest_sale_date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
     : new Date(transaction.date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
+  const canCompare = !!buybackInfo && buybackInfo.maxPrice > 0;
+
+  const handleRowClick = compareMode
+    ? (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // 如果点击的是链接或按钮则不触发选中逻辑
+        if (target.closest('a, button')) return;
+        if (canCompare) onToggleSelect?.(transaction.id);
+      }
+    : undefined;
+
   return (
     <>
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-700/50 text-sm">
+    <tr
+      onClick={handleRowClick}
+      className={`border-b border-gray-100 dark:border-gray-700/50 text-sm transition-colors ${
+        compareMode
+          ? canCompare
+            ? isSelected
+              ? 'bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
+              : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            : 'opacity-40 cursor-not-allowed'
+          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+      }`}
+    >
       {/* 1. 进货日期 */}
       <td className="px-3 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-        {displayDate}
+        <div className="flex items-center gap-2">
+          {compareMode && canCompare && (
+            <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+              isSelected ? 'bg-teal-500 border-teal-500' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+            }`}>
+              {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+            </div>
+          )}
+          <span>{displayDate}</span>
+        </div>
       </td>
 
       {/* 2. 商品名 + JAN */}

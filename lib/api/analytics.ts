@@ -158,8 +158,10 @@ function getDateRange(timeRange: TimeRange, startDate?: string, endDate?: string
       start.setFullYear(end.getFullYear() - 1);
       break;
     case 'custom':
-      start = startDate ? new Date(startDate) : new Date(end);
-      start.setMonth(end.getMonth() - 1);
+      start = startDate ? new Date(startDate) : new Date(end.getTime());
+      if (!startDate) {
+        start.setMonth(end.getMonth() - 1);
+      }
       break;
     default:
       start = new Date(end);
@@ -219,7 +221,7 @@ function buildQuery(filters: AnalyticsFilters) {
 /**
  * 计算核心指标（基于销售记录）
  */
-async function calculateCoreMetrics(salesRecords: any[]): Promise<CoreMetrics> {
+async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<string, any>): Promise<CoreMetrics> {
   const totalSales = salesRecords.reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
   const totalProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
 
@@ -244,7 +246,7 @@ async function calculateCoreMetrics(salesRecords: any[]): Promise<CoreMetrics> {
   const totalShippingFees = salesRecords.reduce((sum, r) => sum + (r.shipping_fee || 0), 0);
   const totalSuppliesCosts = 0; // 耗材成本已包含在销售记录的利润计算中
 
-  // 计算积分价值（按销售比例，all points 1:1）
+  // 计算积分价值（按销售比例，使用各平台的 yen_conversion_rate）
   const totalPointsValue = salesRecords.reduce((sum, r) => {
     const transaction = r.transaction as any;
     if (!transaction) return sum;
@@ -255,17 +257,20 @@ async function calculateCoreMetrics(salesRecords: any[]): Promise<CoreMetrics> {
 
     // 平台积分
     if (transaction.expected_platform_points && transaction.platform_points_platform_id) {
-      pointsValue += (transaction.expected_platform_points * pointsRatio);
+      const rate = platformsMap?.get(transaction.platform_points_platform_id)?.yen_conversion_rate ?? 1;
+      pointsValue += (transaction.expected_platform_points * pointsRatio * rate);
     }
 
     // 信用卡积分
     if (transaction.expected_card_points && transaction.card_points_platform_id) {
-      pointsValue += (transaction.expected_card_points * pointsRatio);
+      const rate = platformsMap?.get(transaction.card_points_platform_id)?.yen_conversion_rate ?? 1;
+      pointsValue += (transaction.expected_card_points * pointsRatio * rate);
     }
 
     // 额外平台积分
     if (transaction.extra_platform_points && transaction.extra_platform_points_platform_id) {
-      pointsValue += (transaction.extra_platform_points * pointsRatio);
+      const rate = platformsMap?.get(transaction.extra_platform_points_platform_id)?.yen_conversion_rate ?? 1;
+      pointsValue += (transaction.extra_platform_points * pointsRatio * rate);
     }
 
     return sum + pointsValue;
@@ -375,6 +380,12 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
     const { data: prevData, error: prevError } = await buildQuery(prevFilters);
     if (prevError) throw prevError;
 
+    // 获取积分平台转换率
+    const { data: platforms } = await supabase
+      .from('points_platforms')
+      .select('id, yen_conversion_rate');
+    const platformsMap = new Map((platforms || []).map((p: any) => [p.id, p]));
+
     // 应用支付方式筛选
     const filterByPaymentMethod = (records: any[]) => {
       if (!filters.paymentMethods || filters.paymentMethods.length === 0) {
@@ -386,14 +397,14 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
       });
     };
 
-    const current = await calculateCoreMetrics(filterByPaymentMethod(currentData || []));
-    const previous = await calculateCoreMetrics(filterByPaymentMethod(prevData || []));
+    const current = await calculateCoreMetrics(filterByPaymentMethod(currentData || []), platformsMap);
+    const previous = await calculateCoreMetrics(filterByPaymentMethod(prevData || []), platformsMap);
 
     const salesChange = previous.totalSales > 0
       ? ((current.totalSales - previous.totalSales) / previous.totalSales) * 100
       : 0;
-    const profitChange = previous.totalProfit > 0
-      ? ((current.totalProfit - previous.totalProfit) / previous.totalProfit) * 100
+    const profitChange = previous.totalProfit !== 0
+      ? ((current.totalProfit - previous.totalProfit) / Math.abs(previous.totalProfit)) * 100
       : 0;
     const roiChange = previous.avgROI > 0
       ? ((current.avgROI - previous.avgROI) / previous.avgROI) * 100
@@ -506,10 +517,10 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
     const { data, error } = await buildQuery(filters);
     if (error) throw error;
 
-    // 获取积分平台显示名称
+    // 获取积分平台显示名称和转换率
     const { data: platforms } = await supabase
       .from('points_platforms')
-      .select('id, display_name');
+      .select('id, display_name, yen_conversion_rate');
 
     const platformsMap = new Map((platforms || []).map(p => [p.id, p]));
 
@@ -541,6 +552,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
         if (platform) {
           const platformId = platform.id;
           const platformName = platform.display_name;
+          const conversionRate = (platform as any).yen_conversion_rate ?? 1;
           const points = transaction.expected_platform_points * pointsRatio;
 
           if (!platformMap.has(platformId)) {
@@ -556,7 +568,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
           const entry = platformMap.get(platformId)!;
           entry.transactionCount += 1;
           entry.totalPoints += points;
-          entry.totalPointsValue += points;
+          entry.totalPointsValue += points * conversionRate;
         }
       }
 
@@ -566,6 +578,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
         if (platform) {
           const platformId = platform.id;
           const platformName = platform.display_name;
+          const conversionRate = (platform as any).yen_conversion_rate ?? 1;
           const points = transaction.expected_card_points * pointsRatio;
 
           if (!platformMap.has(platformId)) {
@@ -581,7 +594,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
           const entry = platformMap.get(platformId)!;
           entry.transactionCount += 1;
           entry.totalPoints += points;
-          entry.totalPointsValue += points;
+          entry.totalPointsValue += points * conversionRate;
         }
       }
 
@@ -591,6 +604,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
         if (platform) {
           const platformId = platform.id;
           const platformName = platform.display_name;
+          const conversionRate = (platform as any).yen_conversion_rate ?? 1;
           const points = transaction.extra_platform_points * pointsRatio;
 
           if (!platformMap.has(platformId)) {
@@ -606,7 +620,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
           const entry = platformMap.get(platformId)!;
           entry.transactionCount += 1;
           entry.totalPoints += points;
-          entry.totalPointsValue += points;
+          entry.totalPointsValue += points * conversionRate;
         }
       }
     });

@@ -171,10 +171,11 @@ export default function AnalyticsPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 时间范围
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2" data-testid="time-range-selector">
                 {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as TimeRange[]).map(range => (
                   <button
                     key={range}
+                    data-testid={`time-range-${range}`}
                     onClick={() => setTimeRange(range)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       timeRange === range
@@ -190,7 +191,7 @@ export default function AnalyticsPage() {
 
             {/* 自定义日期范围 */}
             {timeRange === 'custom' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" data-testid="custom-date-range">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     开始日期
@@ -200,6 +201,7 @@ export default function AnalyticsPage() {
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className={input.base + ' w-full'}
+                    data-testid="date-start"
                   />
                 </div>
                 <div>
@@ -211,8 +213,14 @@ export default function AnalyticsPage() {
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className={input.base + ' w-full'}
+                    data-testid="date-end"
                   />
                 </div>
+                {startDate && endDate && startDate > endDate && (
+                  <div className="col-span-full text-sm text-red-600 dark:text-red-400" data-testid="date-range-error">
+                    开始日期不能晚于结束日期
+                  </div>
+                )}
               </div>
             )}
 
@@ -242,8 +250,8 @@ export default function AnalyticsPage() {
 
         {/* 核心指标卡片 */}
         {comparison && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className={card.stat}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-testid="metrics-grid">
+            <div className={card.stat} data-testid="metric-total-sales">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总销售额</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {formatCurrency(comparison.current.totalSales)}
@@ -253,7 +261,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-total-profit">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {formatCurrency(comparison.current.totalProfit)}
@@ -263,7 +271,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-avg-roi">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {formatROI(comparison.current.avgROI)}
@@ -273,7 +281,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-transaction-count">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">交易数量</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {comparison.current.transactionCount}
@@ -283,28 +291,28 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-avg-profit-per-transaction">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均单笔利润</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.avgProfitPerTransaction)}
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-total-cost">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalCost)}
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-total-points-value">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">积分回报</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalPointsValue)}
               </div>
             </div>
 
-            <div className={card.stat}>
+            <div className={card.stat} data-testid="metric-total-fees">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总费用</div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(
