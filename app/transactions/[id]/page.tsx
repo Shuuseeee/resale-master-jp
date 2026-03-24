@@ -32,6 +32,7 @@ export default function TransactionDetailPage() {
   const searchParams = useSearchParams();
   const id = params.id as string;
   const autoSale = searchParams.get('action') === 'sale';
+  const autoReturn = searchParams.get('action') === 'return';
 
   const [transaction, setTransaction] = useState<TransactionWithPayment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,9 @@ export default function TransactionDetailPage() {
         } else if (data.status === 'in_stock') {
           setShowSaleForm(true);
         }
+      }
+      if (autoReturn && data && (data.quantity_in_stock ?? 0) > 0) {
+        setShowReturnForm(true);
       }
     } catch (error) {
       console.error('加载交易详情失败:', error);
