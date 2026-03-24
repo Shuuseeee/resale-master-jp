@@ -247,7 +247,7 @@ export default function TransactionCard({
         <div className="flex items-center justify-end gap-1">
           <Link href={`/transactions/${transaction.id}`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">详情</Link>
           <Link href={`/transactions/${transaction.id}/edit`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">编辑</Link>
-          <Link href={`/transactions/${transaction.id}`} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">出售</Link>
+          <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">出售</Link>
           <Link href={`/transactions/add?copy=${transaction.id}`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">复制</Link>
           <button
             onClick={(e) => {

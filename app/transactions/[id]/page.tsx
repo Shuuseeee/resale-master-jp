@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
 import { formatCurrency, formatROI, daysUntil, calculatePaymentDate } from '@/lib/financial/calculator';
@@ -29,7 +29,9 @@ interface TransactionWithPayment extends Transaction {
 export default function TransactionDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const autoSale = searchParams.get('action') === 'sale';
 
   const [transaction, setTransaction] = useState<TransactionWithPayment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,13 @@ export default function TransactionDetailPage() {
       if (error) throw error;
 
       setTransaction(data);
+      if (autoSale && data) {
+        if (data.quantity > 1) {
+          setShowBatchSaleForm(true);
+        } else if (data.status === 'in_stock') {
+          setShowSaleForm(true);
+        }
+      }
     } catch (error) {
       console.error('加载交易详情失败:', error);
       alert('加载失败，请重试');
