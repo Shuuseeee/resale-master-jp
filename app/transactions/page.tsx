@@ -1,7 +1,7 @@
 // app/transactions/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
@@ -78,29 +78,12 @@ function TransactionsContent() {
   const kaitorixState = useKaitorixPrices(transactions);
   const { buybackMap: buybackPrices, isLoading: kaitorixLoading, progress: kaitorixProgress, enabled: kaitorixEnabled, refresh: refreshKaitorix, stop: stopKaitorix } = kaitorixState;
 
-  // 统计数据
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    inStock: 0,
-    awaitingPayment: 0,
-    sold: 0,
-    returned: 0,
-    totalCost: 0,
-    totalProfit: 0,
-    avgROI: 0,
-  });
-
   useEffect(() => {
     loadTransactions();
     loadPaymentMethods();
     loadPurchasePlatforms();
     loadSellingPlatforms();
   }, []);
-
-  useEffect(() => {
-    calculateStats();
-  }, [transactions]);
 
   // 筛选条件变化时同步到 URL
   const syncFiltersToURL = useCallback(() => {
@@ -142,49 +125,58 @@ function TransactionsContent() {
         .order('date', { ascending: false });
 
       if (error) throw error;
+      const txList = data || [];
 
-      // 对于有销售记录的商品，计算累计利润和ROI，并获取最新销售日期
-      const transactionsWithPartialProfit = await Promise.all(
-        (data || []).map(async (transaction) => {
-          // 获取该交易的所有销售记录
-          const { data: salesRecords } = await supabase
+      // 一次性批量拉取所有 sales_records，避免 N+1 查询
+      const ids = txList.map(t => t.id);
+      const { data: allSalesRecords } = ids.length > 0
+        ? await supabase
             .from('sales_records')
-            .select('total_profit, roi, actual_cash_spent, sale_date, selling_platform_id')
-            .eq('transaction_id', transaction.id)
-            .order('sale_date', { ascending: false });
+            .select('transaction_id, total_profit, actual_cash_spent, sale_date, selling_platform_id')
+            .in('transaction_id', ids)
+            .order('sale_date', { ascending: false })
+        : { data: [] };
 
-          let latest_sale_date = null;
-          let aggregated_profit = null;
-          let aggregated_roi = null;
-          let aggregated_actual_cash_spent = null;
-          let aggregated_selling_platform_ids: string[] = [];
+      // 按 transaction_id 分组
+      const salesByTx = new Map<string, typeof allSalesRecords>();
+      (allSalesRecords || []).forEach(r => {
+        const list = salesByTx.get(r.transaction_id) || [];
+        list.push(r);
+        salesByTx.set(r.transaction_id, list);
+      });
 
-          if (salesRecords && salesRecords.length > 0) {
-            // 获取最新销售日期
-            latest_sale_date = salesRecords[0].sale_date;
+      const transactionsWithPartialProfit = txList.map(transaction => {
+        const salesRecords = salesByTx.get(transaction.id) || [];
 
-            // 计算累计利润和加权ROI（对所有有销售记录的商品）
-            if (transaction.quantity_sold > 0) {
-              aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
-              const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
-              aggregated_actual_cash_spent = totalCashSpent;
-              aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
-            }
-            aggregated_selling_platform_ids = Array.from(
-              new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
-            );
+        let latest_sale_date = null;
+        let aggregated_profit = null;
+        let aggregated_roi = null;
+        let aggregated_actual_cash_spent = null;
+        let aggregated_selling_platform_ids: string[] = [];
+
+        if (salesRecords.length > 0) {
+          latest_sale_date = salesRecords[0].sale_date;
+
+          if (transaction.quantity_sold > 0) {
+            aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+            const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
+            aggregated_actual_cash_spent = totalCashSpent;
+            aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
           }
+          aggregated_selling_platform_ids = Array.from(
+            new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
+          );
+        }
 
-          return {
-            ...transaction,
-            latest_sale_date,
-            aggregated_profit,
-            aggregated_roi,
-            aggregated_actual_cash_spent,
-            aggregated_selling_platform_ids,
-          };
-        })
-      );
+        return {
+          ...transaction,
+          latest_sale_date,
+          aggregated_profit,
+          aggregated_roi,
+          aggregated_actual_cash_spent,
+          aggregated_selling_platform_ids,
+        };
+      });
 
       setTransactions(transactionsWithPartialProfit);
     } catch (error) {
@@ -221,32 +213,23 @@ function TransactionsContent() {
     }
   };
 
-  const calculateStats = () => {
-    const pending = transactions.filter(t => t.status === 'pending');
-    const inStock = transactions.filter(t => t.status === 'in_stock');
-    const awaitingPayment = transactions.filter(t => t.status === 'awaiting_payment');
+  const stats = useMemo(() => {
     const sold = transactions.filter(t => t.status === 'sold');
-    const returned = transactions.filter(t => t.status === 'returned');
-
     const totalCost = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
     const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0);
-    const totalActualCashSpent = sold.reduce((sum, t) => sum + (t.aggregated_actual_cash_spent || 0), 0);
-    const avgROI = totalActualCashSpent > 0
-      ? (totalProfit / totalActualCashSpent) * 100
-      : 0;
-
-    setStats({
+    const totalActualCashSpent = sold.reduce((sum, t) => sum + ((t as any).aggregated_actual_cash_spent || 0), 0);
+    return {
       total: transactions.length,
-      pending: pending.length,
-      inStock: inStock.length,
-      awaitingPayment: awaitingPayment.length,
+      pending: transactions.filter(t => t.status === 'pending').length,
+      inStock: transactions.filter(t => t.status === 'in_stock').length,
+      awaitingPayment: transactions.filter(t => t.status === 'awaiting_payment').length,
       sold: sold.length,
-      returned: returned.length,
+      returned: transactions.filter(t => t.status === 'returned').length,
       totalCost,
       totalProfit,
-      avgROI,
-    });
-  };
+      avgROI: totalActualCashSpent > 0 ? (totalProfit / totalActualCashSpent) * 100 : 0,
+    };
+  }, [transactions]);
 
   const handleApplyFilters = (filters: FilterValues) => {
     setActiveFilters(filters);
@@ -255,18 +238,25 @@ function TransactionsContent() {
   const handleClearFilters = () => {
     setActiveFilters(null);
   };
-  // 在 filteredTransactions 逻辑之前定义
-  const platformMap = new Map(purchasePlatforms.map(p => [p.id, p.name.toLowerCase()]));
+  const platformMap = useMemo(
+    () => new Map(purchasePlatforms.map(p => [p.id, p.name.toLowerCase()])),
+    [purchasePlatforms]
+  );
 
-  // 提取所有买取店铺名称用于筛选下拉列表
-  const storeNames = Array.from(
-    new Set(
+  const storeNames = useMemo(() =>
+    Array.from(new Set(
       Array.from(buybackPrices.values()).flatMap(info => info.allPrices?.map(p => p.store) || [])
-    )
-  ).sort();
+    )).sort(),
+    [buybackPrices]
+  );
+
+  const janCodes = useMemo(() =>
+    [...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort(),
+    [transactions]
+  );
 
   // 筛选和排序
-  const filteredTransactions = transactions
+  const filteredTransactions = useMemo(() => transactions
     .filter(t => {
       // 全局搜索
       if (searchTerm) {
@@ -396,7 +386,15 @@ function TransactionsContent() {
       } else {
         return aValue < bValue ? 1 : -1;
       }
-    });
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, searchTerm, statusFilter, activeFilters, sortField, sortOrder, dateSortMode, profitSortMode, buybackPrices, platformMap, sellingPlatforms]
+  );
+
+  const selectedTransactions = useMemo(
+    () => filteredTransactions.filter(t => selectedIds.has(t.id)),
+    [filteredTransactions, selectedIds]
+  );
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -407,7 +405,7 @@ function TransactionsContent() {
     }
   };
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransaction = useCallback(async (id: string) => {
     if (!confirm('确定要删除这条交易记录吗？此操作无法撤销。')) {
       return;
     }
@@ -420,12 +418,12 @@ function TransactionsContent() {
 
       if (error) throw error;
 
-      setTransactions(transactions.filter(t => t.id !== id));
+      setTransactions(prev => prev.filter(t => t.id !== id));
     } catch (error) {
       console.error('删除失败:', error);
       alert('删除失败，请重试');
     }
-  };
+  }, []);
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -440,21 +438,21 @@ function TransactionsContent() {
     }
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const exitCompareMode = () => {
+  const exitCompareMode = useCallback(() => {
     setCompareMode(false);
     setSelectedIds(new Set());
     setShowComparison(false);
-  };
+  }, []);
 
-  const handleMarkArrived = async (id: string) => {
+  const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
     if (success) {
       setTransactions(prev =>
@@ -463,7 +461,7 @@ function TransactionsContent() {
     } else {
       alert('到货处理失败');
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -624,7 +622,7 @@ function TransactionsContent() {
           onClear={handleClearFilters}
           paymentMethods={paymentMethods}
           purchasePlatforms={purchasePlatforms}
-          janCodes={[...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort()}
+          janCodes={janCodes}
           initialValues={activeFilters}
           hasBuybackData={buybackPrices.size > 0}
           buybackStores={storeNames}
@@ -867,7 +865,7 @@ function TransactionsContent() {
       <BuybackComparisonModal
         isOpen={showComparison}
         onClose={() => setShowComparison(false)}
-        selectedTransactions={filteredTransactions.filter(t => selectedIds.has(t.id))}
+        selectedTransactions={selectedTransactions}
         buybackMap={buybackPrices}
       />
     </div>

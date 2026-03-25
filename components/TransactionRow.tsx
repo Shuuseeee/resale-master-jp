@@ -1,7 +1,7 @@
 // components/TransactionRow.tsx - 桌面端紧凑表格行
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
@@ -33,7 +33,7 @@ interface TransactionRowProps {
   onToggleSelect?: (id: string) => void;
 }
 
-export default function TransactionRow({
+const TransactionRow = memo(function TransactionRow({
   transaction,
   dateSortMode,
   onDelete,
@@ -266,4 +266,6 @@ export default function TransactionRow({
     {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
     </>
   );
-}
+});
+
+export default TransactionRow;

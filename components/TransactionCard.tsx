@@ -1,7 +1,7 @@
 // components/TransactionCard.tsx - 移动端卡片
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -36,7 +36,7 @@ interface TransactionCardProps {
   onToggleSelect?: (id: string) => void;
 }
 
-export default function TransactionCard({
+const TransactionCard = memo(function TransactionCard({
   transaction,
   dateSortMode,
   onDelete,
@@ -266,4 +266,6 @@ export default function TransactionCard({
     {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
     </>
   );
-}
+});
+
+export default TransactionCard;
