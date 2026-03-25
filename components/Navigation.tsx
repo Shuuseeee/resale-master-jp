@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function Navigation() {
   const pathname = usePathname();
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [showFabMenu, setShowFabMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
@@ -27,9 +28,10 @@ export default function Navigation() {
     });
   }, [user, pathname]);
 
-  // 路由变化时关闭抽屉
+  // 路由变化时关闭抽屉和 FAB 菜单
   useEffect(() => {
     setShowMoreSheet(false);
+    setShowFabMenu(false);
   }, [pathname]);
 
   const isAuthPage = pathname?.startsWith('/auth');
@@ -278,7 +280,7 @@ export default function Navigation() {
       <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`} aria-hidden="true" />
 
       {/* ── 移动端顶部栏（精简版） ── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-700/80">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between h-12 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-teal-600 rounded-lg flex items-center justify-center">
@@ -308,10 +310,10 @@ export default function Navigation() {
 
       {/* ── 移动端底部导航栏 ── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-700/80"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-end h-16">
+        <div className="flex p-4 items-end h-16">
           {/* ホーム */}
           <Link
             href="/dashboard"
@@ -322,7 +324,7 @@ export default function Navigation() {
             <svg className="w-5 h-5" fill={isActive('/dashboard') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 0 : 2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span className={`text-[10px] font-medium ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>ホーム</span>
+            <span className={`text-[10px] font-medium ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>首页</span>
           </Link>
 
           {/* 取引 */}
@@ -335,21 +337,28 @@ export default function Navigation() {
             <svg className="w-5 h-5" fill={isActive('/transactions') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/transactions') ? 0 : 2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
-            <span className={`text-[10px] font-medium ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>取引</span>
+            <span className={`text-[10px] font-medium ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>交易列表</span>
           </Link>
 
-          {/* ＋ 中央 FAB */}
-          <div className="flex-1 flex flex-col items-center justify-end pb-2">
-            <Link
-              href="/transactions/add"
-              className="w-13 h-13 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 transition-all active:scale-95"
+          {/* ＋ 中央 FAB（Speed Dial） */}
+          <div className="flex-1 flex flex-col items-center justify-end pb-2 relative">
+            <button
+              onClick={() => setShowFabMenu(v => !v)}
+              className={`rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${
+                showFabMenu
+                  ? 'bg-gray-700 dark:bg-gray-600 shadow-gray-500/30'
+                  : 'bg-teal-500 hover:bg-teal-600 shadow-teal-500/30'
+              }`}
               style={{ width: 52, height: 52, marginTop: -16 }}
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className={`w-6 h-6 text-white transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
-            </Link>
-            <span className={`text-[10px] font-medium mt-0.5 ${isActive('/transactions/add') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>追加</span>
+            </button>
+            <span className="text-[10px] font-medium mt-0.5 text-gray-500 dark:text-gray-400">追加</span>
           </div>
 
           {/* クーポン */}
@@ -362,7 +371,7 @@ export default function Navigation() {
             <svg className="w-5 h-5" fill={isActive('/coupons') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/coupons') ? 0 : 2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
             </svg>
-            <span className={`text-[10px] font-medium ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>クーポン</span>
+            <span className={`text-[10px] font-medium ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}>优惠券</span>
           </Link>
 
           {/* もっと */}
@@ -375,15 +384,82 @@ export default function Navigation() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <span className="text-[10px] font-medium">もっと</span>
+            <span className="text-[10px] font-medium">更多</span>
           </button>
         </div>
       </div>
 
 
+      {/* ── FAB 弹出菜单卡片 ── */}
+      {showFabMenu && (
+        <div
+          className="lg:hidden fixed inset-0 z-[10000] flex items-end justify-center"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
+          onClick={() => setShowFabMenu(false)}
+        >
+          {/* 遮罩 */}
+          <div className="absolute inset-0 bg-black/30" />
+
+          {/* 卡片菜单（flex 居中） */}
+          <div
+            className="relative w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-fab-item"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {[
+              {
+                href: '/transactions/add',
+                label: '新增交易',
+                iconBg: 'bg-teal-100 dark:bg-teal-900/40',
+                iconColor: 'text-teal-600 dark:text-teal-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                ),
+              },
+              {
+                href: '/coupons/add',
+                label: '新增优惠券',
+                iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                  </svg>
+                ),
+              },
+              {
+                href: '/supplies/add',
+                label: '新增耗材',
+                iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+                iconColor: 'text-purple-600 dark:text-purple-400',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                ),
+              },
+            ].map((item, i, arr) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors ${
+                  i < arr.length - 1 ? 'border-b border-gray-100 dark:border-gray-700/60' : ''
+                }`}
+              >
+                <div className={`w-8 h-8 ${item.iconBg} ${item.iconColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  {item.icon}
+                </div>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── もっと 上滑抽屉 ── */}
       {showMoreSheet && (
-        <div className="lg:hidden fixed inset-0 z-[60]" onClick={() => setShowMoreSheet(false)}>
+        <div className="lg:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
           {/* 背景遮罩 */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 

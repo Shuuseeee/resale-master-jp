@@ -150,6 +150,22 @@
       opacity: 1;
     }
   }
+
+  /* FAB Speed Dial item animation */
+  .animate-fab-item {
+    animation: fabItemIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes fabItemIn {
+    from {
+      transform: translateY(16px) scale(0.8);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
 }
 
 /* 全局样式 */

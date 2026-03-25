@@ -853,7 +853,7 @@ function TransactionsContent() {
 
       {/* 選択モード浮動操作バー */}
       {compareMode && (
-        <div className="fixed bottom-20 md:bottom-6 inset-x-0 flex justify-center px-4 z-40 pointer-events-none">
+        <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-4 z-[9998] pointer-events-none">
           <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-2 max-w-lg w-full border border-gray-700">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
