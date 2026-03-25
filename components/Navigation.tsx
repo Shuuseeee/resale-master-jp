@@ -154,8 +154,8 @@ export default function Navigation() {
                 </svg>
               </div>
               <div className="min-w-0">
-                <div className="text-gray-900 dark:text-white font-bold text-base truncate">Sales System</div>
-                <div className="text-gray-500 dark:text-gray-400 text-xs truncate">For Internal Use Only</div>
+                <div className="text-gray-900 dark:text-white font-bold text-base truncate">管理系统</div>
+                <div className="text-gray-500 dark:text-gray-400 text-xs truncate">仅供内部使用</div>
               </div>
             </Link>
           )}
@@ -240,7 +240,7 @@ export default function Navigation() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-            <span className="text-gray-900 dark:text-white font-bold">Sales</span>
+            <span className="text-gray-900 dark:text-white font-bold">管理系统</span>
           </Link>
 
           <button

@@ -68,12 +68,10 @@ export default function DashboardPage() {
       <div className={layout.container}>
         {/* 标题 */}
         <div className={layout.section}>
-          <h1 className={heading.h1 + ' mb-2'}>仪表盘</h1>
-          <p className="text-gray-600 dark:text-gray-400">查看业务概览</p>
+          <h1 className={heading.h2 + ' mb-2'}>仪表盘</h1>
         </div>
-
-        {/* KPI カード */}
-        <div className="mb-8">
+{/* KPI カード */}
+        <div className="hidden lg:inline-block lg:mb-8">
           {/* ポイント含むトグル */}
           <div className="flex justify-end mb-3">
             <button
@@ -284,6 +282,123 @@ export default function DashboardPage() {
             <div className="font-semibold">数据分析</div>
           </Link>
         </div>
+
+        <div className={layout.section}>
+          <h1 className={heading.h2 + ' mb-2'}></h1>
+        </div>
+        {/* KPI カード */}
+        <div className="lg:hidden mb-8">
+          {/* ポイント含むトグル */}
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setIncludePoints(!includePoints)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                includePoints
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
+              }`}
+            >
+              <div className={`w-8 h-4 rounded-full relative transition-colors ${includePoints ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${includePoints ? 'left-4' : 'left-0.5'}`} />
+              </div>
+              包含积分价值
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* 在庫数 */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">库存数</span>
+                <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
+              <div className="text-xs text-gray-500 mt-1">个</div>
+            </div>
+
+            {/* 総投資額 */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">总投资额</span>
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalInvestment)}</div>
+              <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
+            </div>
+
+            {/* 回収済み */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">已回收</span>
+                <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecovered)}</div>
+              <div className="text-xs text-gray-500 mt-1">销售总额</div>
+            </div>
+
+            {/* 確定利益 */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">确认利润</span>
+                <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {formatCurrency(confirmedProfit)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">已售出部分</div>
+            </div>
+
+            {/* 未回収在庫原価 */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">未回收库存</span>
+                <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(unrealizedStockCost)}</div>
+              <div className="text-xs text-gray-500 mt-1">在庫+未着</div>
+            </div>
+
+            {/* 今月の利益 / 期待ポイント */}
+            <div className={card.primary + ' p-4'}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-600 dark:text-gray-400 text-xs">
+                  {includePoints ? '预期积分' : '本月利润'}
+                </span>
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {includePoints ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  )}
+                </svg>
+              </div>
+              {includePoints ? (
+                <>
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">pt（在庫+未着）</div>
+                </>
+              ) : (
+                <>
+                  <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {formatCurrency(monthlyProfit)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
