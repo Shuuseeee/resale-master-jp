@@ -38,7 +38,7 @@ export default function RootLayout({
         <ClientProviders>
           <div className="lg:flex lg:min-h-screen">
             <Navigation />
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pb-0">
               {children}
             </div>
           </div>

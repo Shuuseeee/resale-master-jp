@@ -130,6 +130,11 @@
     line-break: auto;
   }
 
+  /* 移动端底部导航安全区域 - 防止内容被底部导航遮挡 */
+  .mobile-bottom-pad {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
   /* Toast animation */
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
