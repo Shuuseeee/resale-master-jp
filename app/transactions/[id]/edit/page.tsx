@@ -9,6 +9,7 @@ import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform, P
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import BarcodeScanner from '@/components/BarcodeScanner';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
@@ -53,6 +54,8 @@ export default function EditTransactionPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [isPending, setIsPending] = useState(false); // 未着品トグル
+  const [janLooking, setJanLooking] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   // 加载交易数据和支付方式列表
   useEffect(() => {
@@ -156,6 +159,23 @@ export default function EditTransactionPage() {
       setPurchasePlatforms(prev => [...prev, created]);
       setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
       setNewPurchasePlatformName('');
+    }
+  };
+
+  // JAN コード → 商品名自動補完
+  const handleJanBlur = async (janOverride?: string) => {
+    const jan = (janOverride ?? formData.jan_code)?.trim();
+    if (!jan || !/^\d+$/.test(jan)) return;
+    setJanLooking(true);
+    try {
+      const res = await fetch(`/api/jan-product/${jan}`);
+      if (!res.ok) return;
+      const { product_name } = await res.json();
+      if (product_name && !formData.product_name) {
+        setFormData(prev => ({ ...prev, product_name }));
+      }
+    } catch { /* ignore */ } finally {
+      setJanLooking(false);
     }
   };
 
@@ -526,14 +546,36 @@ export default function EditTransactionPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     JAN
                   </label>
-                  <input
-                    type="text"
-                    name="jan_code"
-                    value={formData.jan_code || ''}
-                    onChange={handleInputChange}
-                    placeholder="4901234567890"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="jan_code"
+                      value={formData.jan_code || ''}
+                      onChange={handleInputChange}
+                      onBlur={() => handleJanBlur()}
+                      placeholder="4901234567890"
+                      className="w-full px-4 py-3 pr-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {janLooking ? (
+                        <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowScanner(true)}
+                          className="p-0.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                          title="バーコードをスキャン"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -1017,6 +1059,16 @@ export default function EditTransactionPage() {
           </div>
         </form>
       </div>
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={(code) => {
+            setFormData(prev => ({ ...prev, jan_code: code }));
+            setShowScanner(false);
+            setTimeout(() => handleJanBlur(code), 100);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 }

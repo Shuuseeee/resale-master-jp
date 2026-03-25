@@ -82,14 +82,11 @@ const TransactionRow = memo(function TransactionRow({
     ? new Date(transaction.latest_sale_date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
     : new Date(transaction.date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-  const canCompare = !!buybackInfo && buybackInfo.maxPrice > 0;
-
   const handleRowClick = compareMode
     ? (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        // 如果点击的是链接或按钮则不触发选中逻辑
         if (target.closest('a, button')) return;
-        if (canCompare) onToggleSelect?.(transaction.id);
+        onToggleSelect?.(transaction.id);
       }
     : undefined;
 
@@ -99,18 +96,16 @@ const TransactionRow = memo(function TransactionRow({
       onClick={handleRowClick}
       className={`border-b border-gray-100 dark:border-gray-700/50 text-sm transition-colors ${
         compareMode
-          ? canCompare
-            ? isSelected
-              ? 'bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
-              : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            : 'opacity-40 cursor-not-allowed'
+          ? isSelected
+            ? 'bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
+            : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
           : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
       }`}
     >
       {/* 1. 进货日期 */}
       <td className="px-3 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          {compareMode && canCompare && (
+          {compareMode && (
             <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
               isSelected ? 'bg-teal-500 border-teal-500' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
             }`}>

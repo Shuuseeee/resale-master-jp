@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import BarcodeScanner from '@/components/BarcodeScanner';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
 import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
@@ -54,6 +55,7 @@ function AddTransactionPageContent() {
   const [isPending, setIsPending] = useState(true); // 未着品トグル
   const [amazonConfig, setAmazonConfig] = useState<AmazonPointConfig | null>(null);
   const [janLooking, setJanLooking] = useState(false); // JAN lookup spinner
+  const [showScanner, setShowScanner] = useState(false);
 
   // 加载支付方式列表和积分平台列表
   useEffect(() => {
@@ -513,16 +515,27 @@ function AddTransactionPageContent() {
                       onChange={handleInputChange}
                       onBlur={handleJanBlur}
                       placeholder="4901234567890"
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
-                    {janLooking && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {janLooking ? (
                         <svg className="animate-spin h-5 w-5 text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                      </div>
-                    )}
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowScanner(true)}
+                          className="p-0.5 text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                          title="バーコードをスキャン"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     输入JAN码后如果商品名称为空会自动补全（仅限部分常见商品）
@@ -1102,6 +1115,17 @@ function AddTransactionPageContent() {
           </div>
         </form>
       </div>
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={(code) => {
+            setFormData(prev => ({ ...prev, jan_code: code }));
+            setShowScanner(false);
+            // 商品名自動補完を遅延実行
+            setTimeout(() => handleJanBlur(), 100);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 }

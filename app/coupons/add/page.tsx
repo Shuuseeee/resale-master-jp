@@ -41,7 +41,6 @@ export default function AddCouponPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
-  const [showOcrMenu, setShowOcrMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,10 +196,10 @@ export default function AddCouponPage() {
               </p>
             </div>
             {/* OCR 相机按钮 */}
-            <div className="relative mt-1">
+            <div className="mt-1">
               <button
                 type="button"
-                onClick={() => setShowOcrMenu(v => !v)}
+                onClick={() => fileInputRef.current?.click()}
                 disabled={isRecognizing}
                 className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="写真から自動入力"
@@ -217,50 +216,6 @@ export default function AddCouponPage() {
                   </svg>
                 )}
               </button>
-              {showOcrMenu && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-10 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowOcrMenu(false);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.setAttribute('capture', 'environment');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    カメラで撮影
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowOcrMenu(false);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.removeAttribute('capture');
-                        fileInputRef.current.click();
-                      }
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    ライブラリから選択
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowOcrMenu(false)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700"
-                  >
-                    キャンセル
-                  </button>
-                </div>
-              )}
               <input
                 ref={fileInputRef}
                 type="file"

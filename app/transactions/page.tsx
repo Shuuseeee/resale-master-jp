@@ -452,6 +452,41 @@ function TransactionsContent() {
     setShowComparison(false);
   }, []);
 
+  const handleBatchArrival = useCallback(async () => {
+    const pendingIds = [...selectedIds].filter(id =>
+      transactions.find(t => t.id === id && t.status === 'pending')
+    );
+    if (pendingIds.length === 0) return;
+    const { error } = await supabase
+      .from('transactions')
+      .update({ status: 'in_stock' })
+      .in('id', pendingIds);
+    if (!error) {
+      setTransactions(prev =>
+        prev.map(t => pendingIds.includes(t.id) ? { ...t, status: 'in_stock' as const } : t)
+      );
+      setSelectedIds(new Set());
+    } else {
+      alert('到货处理失败');
+    }
+  }, [selectedIds, transactions]);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`選択した ${selectedIds.size} 件を削除してよろしいですか？`)) return;
+    const ids = [...selectedIds];
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .in('id', ids);
+    if (!error) {
+      setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
+      exitCompareMode();
+    } else {
+      alert('削除に失敗しました');
+    }
+  }, [selectedIds, exitCompareMode]);
+
   const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
     if (success) {
@@ -488,23 +523,20 @@ function TransactionsContent() {
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* KaitoriX 买取价格刷新 */}
-              {/* 比较买取价按钮 */}
-              {kaitorixEnabled && buybackPrices.size > 0 && (
-                <button
-                  onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                    compareMode
-                      ? 'bg-teal-600 text-white border-teal-600'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span className="hidden sm:inline">{compareMode ? '退出比较' : '比较'}</span>
-                </button>
-              )}
+              {/* 選択モードボタン */}
+              <button
+                onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  compareMode
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                <span className="hidden sm:inline">{compareMode ? '選択中' : '選択'}</span>
+              </button>
               {kaitorixEnabled && (
                 <button
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
@@ -819,39 +851,60 @@ function TransactionsContent() {
         )}
       </div>
 
-      {/* 比较模式悬浮操作栏 */}
+      {/* 選択モード浮動操作バー */}
       {compareMode && (
         <div className="fixed bottom-20 md:bottom-6 inset-x-0 flex justify-center px-4 z-40 pointer-events-none">
-          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-sm w-full border border-gray-700">
-            <div className="flex-1 text-sm">
+          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-2 max-w-lg w-full border border-gray-700">
+            <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
-                ? <span className="text-gray-400">请选择有买取价的商品</span>
+                ? <span className="text-gray-400 text-xs">タップして選択</span>
                 : <span>已选 <span className="font-bold text-teal-400">{selectedIds.size}</span> 件</span>
               }
             </div>
+            {/* 一括到着 */}
+            {[...selectedIds].some(id => transactions.find(t => t.id === id && t.status === 'pending')) && (
+              <button
+                onClick={handleBatchArrival}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-500 hover:bg-orange-400 text-white transition-all whitespace-nowrap"
+              >
+                一括到着
+              </button>
+            )}
+            {/* 一括削除 */}
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleBatchDelete}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-500 text-white transition-all whitespace-nowrap"
+              >
+                削除
+              </button>
+            )}
+            {/* 买取比较 */}
+            {kaitorixEnabled && buybackPrices.size > 0 && (
+              <button
+                disabled={selectedIds.size < 2}
+                onClick={() => setShowComparison(true)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                  selectedIds.size >= 2
+                    ? 'bg-teal-500 hover:bg-teal-400 text-white'
+                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                比較
+              </button>
+            )}
             {selectedIds.size > 0 && (
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-xs text-gray-400 hover:text-white transition-colors px-2"
+                className="text-xs text-gray-400 hover:text-white transition-colors px-1"
               >
-                清空
+                クリア
               </button>
             )}
             <button
-              disabled={selectedIds.size < 2}
-              onClick={() => setShowComparison(true)}
-              className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                selectedIds.size >= 2
-                  ? 'bg-teal-500 hover:bg-teal-400 text-white'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              开始比较
-            </button>
-            <button
               onClick={exitCompareMode}
-              className="p-1.5 text-gray-400 hover:text-white transition-colors"
-              aria-label="退出比较模式"
+              className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+              aria-label="選択モード終了"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

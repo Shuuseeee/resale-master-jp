@@ -87,10 +87,8 @@ const TransactionCard = memo(function TransactionCard({
     }
   };
 
-  const canCompare = !!buybackInfo && buybackInfo.maxPrice > 0;
-
   const handleCardClick = compareMode
-    ? (e: React.MouseEvent) => { e.stopPropagation(); if (canCompare) onToggleSelect?.(transaction.id); }
+    ? (e: React.MouseEvent) => { e.stopPropagation(); onToggleSelect?.(transaction.id); }
     : undefined;
 
   return (
@@ -98,11 +96,9 @@ const TransactionCard = memo(function TransactionCard({
     <div
       className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border transition-colors relative
         ${compareMode
-          ? canCompare
-            ? isSelected
-              ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
-              : 'border-gray-200 dark:border-gray-700 cursor-pointer hover:border-teal-300 dark:hover:border-teal-600'
-            : 'border-gray-200 dark:border-gray-700 opacity-40 cursor-not-allowed'
+          ? isSelected
+            ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
+            : 'border-gray-200 dark:border-gray-700 cursor-pointer hover:border-teal-300 dark:hover:border-teal-600'
           : 'border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'
         }`}
       onClick={compareMode ? handleCardClick : (e) => {
@@ -111,7 +107,7 @@ const TransactionCard = memo(function TransactionCard({
       }}
     >
       {/* 选择模式复选框 */}
-      {compareMode && canCompare && (
+      {compareMode && (
         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10
           ${isSelected
             ? 'bg-teal-500 border-teal-500'
