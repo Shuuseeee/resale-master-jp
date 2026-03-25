@@ -80,6 +80,8 @@ export default function CouponsPage() {
         return `${formatCurrency(coupon.discount_value)} OFF`;
       case "point_multiply":
         return `ポイント${coupon.discount_value}倍`;
+      case "free_item":
+        return "無料引換";
       default:
         return "";
     }

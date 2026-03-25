@@ -107,7 +107,7 @@ export default function EditCouponPage() {
       newErrors.name = 'クーポン名を入力してください';
     }
 
-    if (formData.discount_value <= 0) {
+    if (formData.discount_type !== 'free_item' && formData.discount_value <= 0) {
       newErrors.discount_value = '割引値は0より大きい値を入力してください';
     }
 
@@ -244,9 +244,11 @@ export default function EditCouponPage() {
                     <option value="percentage">割引率 (%)</option>
                     <option value="fixed_amount">固定額 (¥)</option>
                     <option value="point_multiply">ポイント倍率</option>
+                    <option value="free_item">無料引換</option>
                   </select>
                 </div>
 
+                {formData.discount_type !== 'free_item' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     割引値 <span className="text-red-300">*</span>
@@ -271,6 +273,7 @@ export default function EditCouponPage() {
                     <p className="mt-1 text-sm text-red-300">{errors.discount_value}</p>
                   )}
                 </div>
+                )}
               </div>
 
               {formData.discount_type === 'percentage' && (

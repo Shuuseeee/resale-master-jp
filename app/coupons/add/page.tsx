@@ -1,13 +1,14 @@
 // app/coupons/add/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
+import { processImageForUpload, isValidImageFile } from '@/lib/image-utils';
 
 interface CouponFormData {
   name: string;
@@ -38,6 +39,60 @@ export default function AddCouponPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [showOcrMenu, setShowOcrMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!isValidImageFile(file)) {
+      setOcrError('画像ファイルを選択してください');
+      return;
+    }
+
+    setIsRecognizing(true);
+    setOcrError(null);
+
+    try {
+      const compressed = await processImageForUpload(file, 1200, 1200, 0.85);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressed);
+      });
+
+      const res = await fetch('/api/ocr/coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mediaType: 'image/jpeg' }),
+      });
+
+      if (!res.ok) throw new Error('認識に失敗しました');
+      const data = await res.json();
+
+      setFormData(prev => ({
+        ...prev,
+        name: data.name || prev.name,
+        discount_type: (['percentage', 'fixed_amount', 'point_multiply', 'free_item'].includes(data.discount_type) ? data.discount_type : prev.discount_type) as DiscountType,
+        discount_value: typeof data.discount_value === 'number' ? data.discount_value : prev.discount_value,
+        expiry_date: data.expiry_date || prev.expiry_date,
+        start_date: data.start_date || prev.start_date,
+        platform: data.platform || prev.platform,
+        coupon_code: data.coupon_code || prev.coupon_code,
+        min_purchase_amount: typeof data.min_purchase_amount === 'number' ? data.min_purchase_amount : prev.min_purchase_amount,
+        max_discount_amount: typeof data.max_discount_amount === 'number' ? data.max_discount_amount : prev.max_discount_amount,
+        notes: data.notes || prev.notes,
+      }));
+    } catch (err: any) {
+      setOcrError(err.message || '認識に失敗しました');
+    } finally {
+      setIsRecognizing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -66,7 +121,7 @@ export default function AddCouponPage() {
       newErrors.name = 'クーポン名を入力してください';
     }
 
-    if (formData.discount_value <= 0) {
+    if (formData.discount_type !== 'free_item' && formData.discount_value <= 0) {
       newErrors.discount_value = '割引値は0より大きい値を入力してください';
     }
 
@@ -132,12 +187,94 @@ export default function AddCouponPage() {
             <span className="font-medium">戻る</span>
           </button>
 
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">クーポン追加</h1>
-          <p className="text-gray-600 dark:text-gray-400">新しいクーポン・キャンペーンを記録</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">クーポン追加</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {ocrError
+                  ? <span className="text-red-500 dark:text-red-400 text-sm">{ocrError}</span>
+                  : '新しいクーポン・キャンペーンを記録'}
+              </p>
+            </div>
+            {/* OCR 相机按钮 */}
+            <div className="relative mt-1">
+              <button
+                type="button"
+                onClick={() => setShowOcrMenu(v => !v)}
+                disabled={isRecognizing}
+                className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="写真から自動入力"
+              >
+                {isRecognizing ? (
+                  <svg className="animate-spin w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+              </button>
+              {showOcrMenu && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-10 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOcrMenu(false);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.setAttribute('capture', 'environment');
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    カメラで撮影
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOcrMenu(false);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.removeAttribute('capture');
+                        fileInputRef.current.click();
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    ライブラリから選択
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowOcrMenu(false)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageCapture}
+                className="hidden"
+              />
+            </div>
+          </div>
         </div>
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
+
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -189,9 +326,11 @@ export default function AddCouponPage() {
                     <option value="percentage">割引率 (%)</option>
                     <option value="fixed_amount">固定額 (¥)</option>
                     <option value="point_multiply">ポイント倍率</option>
+                    <option value="free_item">無料引換</option>
                   </select>
                 </div>
 
+                {formData.discount_type !== 'free_item' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     割引値 <span className="text-red-300">*</span>
@@ -216,6 +355,7 @@ export default function AddCouponPage() {
                     <p className="mt-1 text-sm text-red-300">{errors.discount_value}</p>
                   )}
                 </div>
+                )}
               </div>
 
               {formData.discount_type === 'percentage' && (
