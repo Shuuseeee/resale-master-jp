@@ -15,7 +15,6 @@ export interface FilterValues {
   status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
   paymentMethodIds: string[];
   purchasePlatformIds: string[];
-  orderNumber: string;
   buybackStore: string;
 }
 
@@ -38,7 +37,6 @@ export const emptyFilters: FilterValues = {
   status: [],
   paymentMethodIds: [],
   purchasePlatformIds: [],
-  orderNumber: '',
   buybackStore: '',
 };
 
@@ -61,7 +59,7 @@ interface MultiSelectProps {
   minWidth?: string;
 }
 
-function MultiSelect({ options, selected, onChange, placeholder, minWidth = '120px' }: MultiSelectProps) {
+function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140px' }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -77,56 +75,77 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '120
     onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]);
   };
 
-  const displayLabel = selected.length === 0
-    ? placeholder
-    : selected.length === 1
-      ? options.find(o => o.value === selected[0])?.label ?? selected[0]
-      : `${placeholder} (${selected.length})`;
-
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         style={{ minWidth }}
-        className={`${inputClass} flex items-center gap-1 ${selected.length > 0 ? 'pr-8' : ''}`}
+        className={`${inputClass} flex items-center gap-1`}
       >
-        <span className={`truncate ${selected.length > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
-          {displayLabel}
-        </span>
+        {selected.length === 0 ? (
+          <span className="text-gray-400 dark:text-gray-500 truncate">{placeholder}</span>
+        ) : (
+          <div className="flex items-center gap-1 overflow-hidden flex-1 min-w-0">
+            {selected.slice(0, 2).map(val => {
+              const label = options.find(o => o.value === val)?.label ?? val;
+              return (
+                <span key={val} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs rounded flex-shrink-0">
+                  {label}
+                  <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); toggle(val); }}
+                    className="ml-0.5 hover:text-teal-900 dark:hover:text-teal-100 leading-none cursor-pointer"
+                  >×</span>
+                </span>
+              );
+            })}
+            {selected.length > 2 && (
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">+{selected.length - 2}</span>
+            )}
+          </div>
+        )}
         <svg className="w-3.5 h-3.5 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
-      {selected.length > 0 && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onChange([]); }}
-          className="absolute right-6 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-
       {open && (
         <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
-          {options.map(opt => (
-            <label
-              key={opt.value}
-              className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(opt.value)}
-                onChange={() => toggle(opt.value)}
-                className="w-3.5 h-3.5 rounded accent-teal-600 flex-shrink-0"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{opt.label}</span>
-            </label>
-          ))}
+          {options.map(opt => {
+            const isChecked = selected.includes(opt.value);
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
+                  isChecked
+                    ? 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggle(opt.value)}
+                  className="w-3.5 h-3.5 rounded accent-teal-600 flex-shrink-0"
+                />
+                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-teal-700 dark:text-teal-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {opt.label}
+                </span>
+              </label>
+            );
+          })}
+          {selected.length > 0 && (
+            <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-1.5">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onChange([]); setOpen(false); }}
+                className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              >
+                リセット
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -154,7 +173,7 @@ export default function TransactionFilters({
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode
       || filters.status.length > 0 || filters.paymentMethodIds.length > 0
-      || filters.purchasePlatformIds.length > 0 || filters.orderNumber || filters.buybackStore;
+      || filters.purchasePlatformIds.length > 0 || filters.buybackStore;
     if (hasAny) { onApply(filters); } else { onClear(); }
   }, [filters]);
 
@@ -274,22 +293,6 @@ export default function TransactionFilters({
           minWidth="100px"
         />
 
-        {/* 订单ID */}
-        <div className="relative">
-          <input
-            type="text"
-            value={filters.orderNumber}
-            onChange={(e) => updateFilter('orderNumber', e.target.value)}
-            className={inputClass + ' w-[140px]' + (filters.orderNumber ? ' pr-8' : '')}
-            placeholder="订单ID"
-            data-testid="filter-order-number"
-          />
-          {filters.orderNumber && (
-            <button onClick={() => updateFilter('orderNumber', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" type="button">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Row 2: 买取店铺筛选 */}

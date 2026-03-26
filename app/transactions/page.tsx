@@ -62,9 +62,8 @@ function TransactionsContent() {
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
     const purchasePlatformIds = (searchParams.get('pp') || '').split(',').filter(Boolean);
-    const orderNumber = searchParams.get('on') || '';
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || orderNumber) {
-      return { dateFrom, dateTo, productName, janCode, status, paymentMethodIds, purchasePlatformIds, orderNumber, buybackStore: '' };
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0) {
+      return { dateFrom, dateTo, productName, janCode, status, paymentMethodIds, purchasePlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -101,7 +100,6 @@ function TransactionsContent() {
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
       if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
-      if (activeFilters.orderNumber) params.set('on', activeFilters.orderNumber);
     }
     const qs = params.toString();
     router.replace(qs ? `/transactions?${qs}` : '/transactions', { scroll: false });
@@ -328,13 +326,6 @@ function TransactionsContent() {
         // 購入先筛选
         if (activeFilters.purchasePlatformIds.length > 0 && !activeFilters.purchasePlatformIds.includes(t.purchase_platform_id || '')) {
           return false;
-        }
-
-        // 订单号筛选
-        if (activeFilters.orderNumber) {
-          if (!t.order_number || !t.order_number.toLowerCase().includes(activeFilters.orderNumber.toLowerCase())) {
-            return false;
-          }
         }
 
         // 买取店铺筛选（仅对已加载买取数据的记录有效）
