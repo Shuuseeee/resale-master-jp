@@ -566,7 +566,7 @@ function AddTransactionPageContent() {
                     type="text"
                     inputMode="numeric"
                     name="quantity"
-                    value={formData.quantity || 1}
+                    value={formData.quantity || ''}
                     onChange={handleNumberChange}
                     placeholder="1"
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"

@@ -5,11 +5,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import ScanArrivalModal from '@/components/ScanArrivalModal';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
+  const [showScanArrival, setShowScanArrival] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
@@ -322,7 +324,7 @@ export default function Navigation() {
             }`}
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 2.5 : 1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 2 : 1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             <span className={`text-[10px] font-medium ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
           </Link>
@@ -335,7 +337,7 @@ export default function Navigation() {
             }`}
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/transactions') ? 2.5 : 1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/transactions') ? 2 : 1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
             <span className={`text-[10px] font-medium ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
           </Link>
@@ -368,7 +370,7 @@ export default function Navigation() {
             }`}
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/coupons') ? 2.5 : 1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/coupons') ? 2 : 1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
             </svg>
             <span className={`text-[10px] font-medium ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
           </Link>
@@ -452,6 +454,18 @@ export default function Navigation() {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
               </Link>
             ))}
+            {/* スキャン着荷 */}
+            <button
+              onClick={() => { setShowFabMenu(false); setShowScanArrival(true); }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors border-t border-gray-100 dark:border-gray-700/60"
+            >
+              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">スキャン着荷</span>
+            </button>
           </div>
         </div>
       )}
@@ -526,6 +540,11 @@ export default function Navigation() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* スキャン着荷 モーダル */}
+      {showScanArrival && (
+        <ScanArrivalModal onClose={() => setShowScanArrival(false)} />
       )}
     </>
   );

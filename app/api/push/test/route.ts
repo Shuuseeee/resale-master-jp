@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getTokyoWeather } from '@/lib/weather';
+import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
 
 function formatDiscount(c: any): string {
   const v = c.discount_value ?? 0;
@@ -59,8 +60,8 @@ export async function POST() {
     return NextResponse.json({ error: 'No subscriptions found', userId: user.id });
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  const in3days = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
+  const today = getTodayString();
+  const in3days = formatDateToLocal(new Date(Date.now() + 3 * 86400000));
 
   // Fetch real coupon data in parallel with weather
   const [{ data: expiringRaw }, { data: startingRaw }, weatherInfo] = await Promise.all([

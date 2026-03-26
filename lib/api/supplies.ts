@@ -3,6 +3,7 @@
 
 import { supabase } from '@/lib/supabase/client';
 import type { SuppliesCost, SuppliesCostFormData } from '@/types/database.types';
+import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 /**
  * 获取所有耗材成本记录
@@ -151,7 +152,7 @@ export async function deleteSuppliesCost(id: string): Promise<boolean> {
  */
 export async function getMonthlySuppliesCost(year: number, month: number): Promise<number> {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+  const endDate = formatDateToLocal(new Date(year, month, 0));
 
   const { data, error } = await supabase
     .from('supplies_costs')
@@ -174,7 +175,7 @@ export async function calculateSuppliesCostAllocation(
   transactionDate: string,
   transactionCount: number = 1
 ): Promise<number> {
-  const date = new Date(transactionDate);
+  const date = parseDateFromLocal(transactionDate) ?? new Date();
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
 
@@ -183,7 +184,7 @@ export async function calculateSuppliesCostAllocation(
 
   // 获取当月交易总数
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+  const endDate = formatDateToLocal(new Date(year, month, 0));
 
   const { count, error } = await supabase
     .from('transactions')

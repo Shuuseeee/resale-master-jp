@@ -7,6 +7,7 @@ import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import { layout, heading, card, button, badge } from '@/lib/theme';
+import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 const CATEGORY_LABELS: Record<string, string> = {
   '包装材料': '包装材料',
@@ -114,7 +115,7 @@ export default function SuppliesPage() {
           <div className={card.stat}>
             <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">本月耗材</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(monthlyStats[new Date().toISOString().substring(0, 7)] || 0)}
+              {formatCurrency(monthlyStats[formatDateToLocal(new Date()).substring(0, 7)] || 0)}
             </div>
           </div>
           <div className={card.stat}>
@@ -195,7 +196,7 @@ export default function SuppliesPage() {
                   {filteredSupplies.map((supply) => (
                     <tr key={supply.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {new Date(supply.purchase_date).toLocaleDateString('zh-CN')}
+                        {parseDateFromLocal(supply.purchase_date)?.toLocaleDateString('zh-CN') ?? supply.purchase_date}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={badge.info}>

@@ -3,6 +3,7 @@
 
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction } from '@/types/database.types';
+import { parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 /**
  * 税務レポート明細記録
@@ -271,7 +272,7 @@ export async function getAvailableYears(): Promise<number[]> {
 
     // 全年度を抽出して重複を削除
     const years = data
-      .map(t => new Date(t.date).getFullYear())
+      .map(t => (parseDateFromLocal(t.date) ?? new Date()).getFullYear())
       .filter((year, index, self) => self.indexOf(year) === index)
       .sort((a, b) => b - a); // 降順
 

@@ -2,6 +2,34 @@
 // 财务数据 API 函数
 
 import { supabase } from '@/lib/supabase/client';
+import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
+
+export interface PendingArrivalTransaction {
+  id: string;
+  product_name: string;
+  date: string;
+  quantity: number;
+  order_number: string | null;
+  purchase_platforms: { name: string } | null;
+}
+
+/**
+ * 根据 JAN 码查找未着荷的交易
+ */
+export async function getTransactionsByJanCode(janCode: string): Promise<PendingArrivalTransaction[]> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id, product_name, date, quantity, order_number, purchase_platforms!purchase_platform_id(name)')
+    .eq('jan_code', janCode)
+    .eq('status', 'pending')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('JAN码查询失败:', error);
+    return [];
+  }
+  return (data ?? []) as unknown as PendingArrivalTransaction[];
+}
 
 /**
  * 获取即将过期的优惠券
@@ -15,8 +43,8 @@ export async function getExpiringCoupons(days: number = 3) {
     .from('coupons')
     .select('*')
     .eq('is_used', false)
-    .gte('expiry_date', new Date().toISOString().split('T')[0])
-    .lte('expiry_date', targetDate.toISOString().split('T')[0])
+    .gte('expiry_date', getTodayString())
+    .lte('expiry_date', formatDateToLocal(targetDate))
     .order('expiry_date', { ascending: true });
 
   if (error) {

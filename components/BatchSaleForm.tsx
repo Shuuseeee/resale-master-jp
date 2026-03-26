@@ -8,6 +8,7 @@ import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 
@@ -24,7 +25,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
     selling_price_per_unit: 0,
     platform_fee: 0,
     shipping_fee: 0,
-    sale_date: new Date().toISOString().split('T')[0],
+    sale_date: getTodayString(),
     selling_platform_id: '',
     sale_order_number: '',
     notes: '',
@@ -214,8 +215,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
           销售日期
         </label>
         <DatePicker
-          selected={formData.sale_date ? new Date(formData.sale_date) : new Date()}
-          onChange={(date) => setFormData({ ...formData, sale_date: date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] })}
+          selected={formData.sale_date ? parseDateFromLocal(formData.sale_date) : new Date()}
+          onChange={(date) => setFormData({ ...formData, sale_date: date ? formatDateToLocal(date) : getTodayString() })}
           placeholder="选择销售日期"
         />
       </div>

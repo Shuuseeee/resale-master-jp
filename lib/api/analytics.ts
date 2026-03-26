@@ -2,6 +2,7 @@
 // 数据分析 API 函数
 
 import { supabase } from '@/lib/supabase/client';
+import { formatDateToLocal } from '@/lib/utils/dateUtils';
 
 /**
  * 时间范围类型
@@ -209,8 +210,8 @@ function buildQuery(filters: AnalyticsFilters) {
       )
     `)
     .not('sale_date', 'is', null)
-    .gte('sale_date', start.toISOString().split('T')[0])
-    .lte('sale_date', end.toISOString().split('T')[0]);
+    .gte('sale_date', formatDateToLocal(start))
+    .lte('sale_date', formatDateToLocal(end));
 
   // 注意：支付方式筛选需要通过transaction关联查询
   // Supabase不支持深层次筛选，所以我们在获取数据后再筛选
@@ -373,8 +374,8 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
     const prevFilters = {
       ...filters,
       timeRange: 'custom' as TimeRange,
-      startDate: prevStart.toISOString().split('T')[0],
-      endDate: prevEnd.toISOString().split('T')[0],
+      startDate: formatDateToLocal(prevStart),
+      endDate: formatDateToLocal(prevEnd),
     };
 
     const { data: prevData, error: prevError } = await buildQuery(prevFilters);

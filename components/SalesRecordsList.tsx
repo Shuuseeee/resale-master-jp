@@ -9,6 +9,7 @@ import { getSalesRecords, deleteSalesRecord, updateSalesRecord } from '@/lib/api
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { card, button, badge, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
+import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 interface SalesRecordsListProps {
   transactionId: string;
@@ -43,7 +44,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
   const handleEdit = (record: SalesRecord) => {
     setEditingRecord(record);
     setEditFormData({
-      sale_date: record.sale_date || new Date().toISOString().split('T')[0],
+      sale_date: record.sale_date || getTodayString(),
       quantity_sold: record.quantity_sold,
       selling_price_per_unit: record.selling_price_per_unit,
       platform_fee: record.platform_fee,
@@ -152,8 +153,8 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                   销售日期 <span className="text-red-600 dark:text-red-300">*</span>
                 </label>
                 <DatePicker
-                  selected={editFormData.sale_date ? new Date(editFormData.sale_date) : null}
-                  onChange={(date) => setEditFormData({ ...editFormData, sale_date: date ? date.toISOString().split('T')[0] : '' })}
+                  selected={editFormData.sale_date ? parseDateFromLocal(editFormData.sale_date) : null}
+                  onChange={(date) => setEditFormData({ ...editFormData, sale_date: date ? formatDateToLocal(date) : '' })}
                   placeholder="选择销售日期"
                 />
               </div>

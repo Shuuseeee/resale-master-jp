@@ -240,8 +240,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* クイックアクション */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* クイックアクション - 桌面端显示 */}
+        <div className="mt-8 hidden lg:grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link
             href="/transactions/add"
             className="bg-teal-600 hover:bg-teal-700 rounded-xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-lg text-white"

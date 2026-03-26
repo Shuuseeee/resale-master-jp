@@ -60,11 +60,11 @@ function TransactionsContent() {
     const janCode = searchParams.get('jan') || '';
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
-    const paymentMethodId = searchParams.get('pm') || '';
-    const purchasePlatformId = searchParams.get('pp') || '';
+    const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
+    const purchasePlatformIds = (searchParams.get('pp') || '').split(',').filter(Boolean);
     const orderNumber = searchParams.get('on') || '';
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodId || purchasePlatformId || orderNumber) {
-      return { dateFrom, dateTo, productName, janCode, status, paymentMethodId, purchasePlatformId, orderNumber, buybackStore: '' };
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || orderNumber) {
+      return { dateFrom, dateTo, productName, janCode, status, paymentMethodIds, purchasePlatformIds, orderNumber, buybackStore: '' };
     }
     return null;
   });
@@ -99,8 +99,8 @@ function TransactionsContent() {
       if (activeFilters.productName) params.set('pn', activeFilters.productName);
       if (activeFilters.janCode) params.set('jan', activeFilters.janCode);
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
-      if (activeFilters.paymentMethodId) params.set('pm', activeFilters.paymentMethodId);
-      if (activeFilters.purchasePlatformId) params.set('pp', activeFilters.purchasePlatformId);
+      if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
+      if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
       if (activeFilters.orderNumber) params.set('on', activeFilters.orderNumber);
     }
     const qs = params.toString();
@@ -321,12 +321,12 @@ function TransactionsContent() {
         }
 
         // 支付方式筛选
-        if (activeFilters.paymentMethodId && t.card_id !== activeFilters.paymentMethodId) {
+        if (activeFilters.paymentMethodIds.length > 0 && !activeFilters.paymentMethodIds.includes(t.card_id || '')) {
           return false;
         }
 
         // 購入先筛选
-        if (activeFilters.purchasePlatformId && t.purchase_platform_id !== activeFilters.purchasePlatformId) {
+        if (activeFilters.purchasePlatformIds.length > 0 && !activeFilters.purchasePlatformIds.includes(t.purchase_platform_id || '')) {
           return false;
         }
 
