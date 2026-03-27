@@ -24,6 +24,7 @@ interface TransactionWithPayment extends Transaction {
   aggregated_roi?: number | null;
   aggregated_actual_cash_spent?: number | null;
   aggregated_selling_platform_ids?: string[];
+  aggregated_sale_order_numbers?: string[];
 }
 
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
@@ -130,7 +131,7 @@ function TransactionsContent() {
       const { data: allSalesRecords } = ids.length > 0
         ? await supabase
             .from('sales_records')
-            .select('transaction_id, total_profit, actual_cash_spent, sale_date, selling_platform_id')
+            .select('transaction_id, total_profit, actual_cash_spent, sale_date, selling_platform_id, sale_order_number')
             .in('transaction_id', ids)
             .order('sale_date', { ascending: false })
         : { data: [] };
@@ -166,6 +167,10 @@ function TransactionsContent() {
           );
         }
 
+        const aggregated_sale_order_numbers = salesRecords
+          .map(r => r.sale_order_number)
+          .filter(Boolean) as string[];
+
         return {
           ...transaction,
           latest_sale_date,
@@ -173,6 +178,7 @@ function TransactionsContent() {
           aggregated_roi,
           aggregated_actual_cash_spent,
           aggregated_selling_platform_ids,
+          aggregated_sale_order_numbers,
         };
       });
 
@@ -276,14 +282,19 @@ function TransactionsContent() {
         ) ?? false;
 
         // 综合匹配逻辑
-        const matchesSearch = 
+        const matchesSaleOrderNumber = t.aggregated_sale_order_numbers?.some(
+          n => n.toLowerCase().includes(term)
+        ) ?? false;
+
+        const matchesSearch =
           t.product_name.toLowerCase().includes(term) ||
           t.notes?.toLowerCase().includes(term) ||
           (t.jan_code || '').toLowerCase().includes(term) ||
           (t.order_number || '').toLowerCase().includes(term) ||
           t.purchase_price_total.toString().includes(term) || // 金额匹配
           purchasePlatformName.includes(term) ||              // 购入平台匹配
-          matchesSellingPlatform;                             // 销售平台匹配
+          matchesSellingPlatform ||                           // 销售平台匹配
+          matchesSaleOrderNumber;                             // 销售注文番号匹配
 
         if (!matchesSearch) return false;
       }
