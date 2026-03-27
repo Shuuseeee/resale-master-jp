@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { getDashboardStats } from '@/lib/api/financial';
 import {
   formatCurrency,
+  formatCurrencyCompact,
   daysUntil,
   getUrgencyLevel
 } from '@/lib/financial/calculator';
@@ -110,7 +111,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalInvestment)}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -122,7 +123,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecovered)}</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -135,7 +136,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                {formatCurrency(confirmedProfit)}
+                {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
             </div>
@@ -148,7 +149,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(unrealizedStockCost)}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着</div>
             </div>
 
@@ -174,7 +175,7 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {formatCurrency(monthlyProfit)}
+                    {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
                 </>
@@ -326,7 +327,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalInvestment)}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -338,7 +339,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalRecovered)}</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -351,7 +352,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                {formatCurrency(confirmedProfit)}
+                {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
             </div>
@@ -364,7 +365,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(unrealizedStockCost)}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着</div>
             </div>
 
@@ -390,7 +391,7 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {formatCurrency(monthlyProfit)}
+                    {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
                 </>

@@ -113,6 +113,24 @@ export function formatCurrency(amount: number | null | undefined, currency: stri
   })}`;
 }
 
+// 紧凑显示：超过1万用「万」，超过1億用「億」，适合卡片等空间有限场景
+export function formatCurrencyCompact(amount: number | null | undefined, currency: string = '¥'): string {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return `${currency}0`;
+  }
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (abs >= 100_000_000) {
+    const val = abs / 100_000_000;
+    return `${sign}${currency}${val % 1 === 0 ? val : val.toFixed(1)}億`;
+  }
+  if (abs >= 10_000) {
+    const val = abs / 10_000;
+    return `${sign}${currency}${val % 1 === 0 ? val : val.toFixed(1)}万`;
+  }
+  return `${sign}${currency}${abs.toLocaleString('ja-JP')}`;
+}
+
 /**
  * 格式化 ROI
  * @param roi ROI 百分比
