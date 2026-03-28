@@ -11,6 +11,7 @@ import {
 } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import { layout, heading, card, button, badge } from '@/lib/theme';
+import PullToRefresh from '@/components/PullToRefresh';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => loadData();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
 
   const loadData = async () => {
@@ -65,6 +72,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={loadData}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题 */}
@@ -402,5 +410,6 @@ export default function DashboardPage() {
 
       </div>
     </div>
+    </PullToRefresh>
   );
 }

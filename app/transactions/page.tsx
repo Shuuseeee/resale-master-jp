@@ -16,6 +16,7 @@ import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import { getPurchasePlatforms } from '@/lib/api/platforms';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
+import PullToRefresh from '@/components/PullToRefresh';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -83,6 +84,12 @@ function TransactionsContent() {
     loadPaymentMethods();
     loadPurchasePlatforms();
     loadSellingPlatforms();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => loadTransactions();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
 
   // 筛选条件变化时同步到 URL
@@ -515,6 +522,7 @@ function TransactionsContent() {
   }
 
   return (
+    <PullToRefresh onRefresh={loadTransactions}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
@@ -924,6 +932,7 @@ function TransactionsContent() {
         buybackMap={buybackPrices}
       />
     </div>
+    </PullToRefresh>
   );
 }
 

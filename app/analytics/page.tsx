@@ -41,6 +41,7 @@ import {
 } from '@/lib/api/analytics';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { layout, heading, card, button, badge, input } from '@/lib/theme';
+import PullToRefresh from '@/components/PullToRefresh';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -81,6 +82,12 @@ export default function AnalyticsPage() {
   useEffect(() => {
     loadAnalyticsData();
   }, [timeRange, startDate, endDate, selectedPaymentMethods]);
+
+  useEffect(() => {
+    const handler = () => loadAnalyticsData();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
+  }, []);
 
   const loadPaymentMethods = async () => {
     const methods = await getAllPaymentMethods();
@@ -166,6 +173,7 @@ export default function AnalyticsPage() {
   ].filter(item => item.value > 0) : [];
 
   return (
+    <PullToRefresh onRefresh={loadAnalyticsData}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题和筛选器 */}
@@ -768,5 +776,6 @@ export default function AnalyticsPage() {
         )}
       </div>
     </div>
+    </PullToRefresh>
   );
 }

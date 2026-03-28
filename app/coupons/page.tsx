@@ -8,6 +8,7 @@ import { formatCurrency, daysUntil } from "@/lib/financial/calculator";
 import { getTodayString } from "@/lib/utils/dateUtils";
 import Link from "next/link";
 import { layout, heading, card, button, badge, tabs } from "@/lib/theme";
+import PullToRefresh from "@/components/PullToRefresh";
 
 type FilterType = "all" | "unused" | "used" | "expiring";
 
@@ -18,6 +19,12 @@ export default function CouponsPage() {
 
   useEffect(() => {
     loadCoupons();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => loadCoupons();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
 
   const loadCoupons = async () => {
@@ -147,6 +154,7 @@ export default function CouponsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={loadCoupons}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 標題区域 */}
@@ -399,6 +407,7 @@ export default function CouponsPage() {
         </div>
       </div>
     </div>
+    </PullToRefresh>
   );
 }
 

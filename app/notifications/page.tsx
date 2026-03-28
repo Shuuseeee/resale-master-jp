@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { layout, heading } from '@/lib/theme';
+import PullToRefresh from '@/components/PullToRefresh';
 import { usePushNotification } from '@/hooks/usePushNotification';
 
 interface Notification {
@@ -121,6 +122,12 @@ export default function NotificationsPage() {
   }
 
   useEffect(() => {
+    const handler = () => loadNotifications();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
+  }, []);
+
+  useEffect(() => {
     loadNotifications();
 
     // Realtime: new notifications auto-appear at top
@@ -182,6 +189,7 @@ export default function NotificationsPage() {
   const groups = groupOrder.filter(g => groupMap.has(g)).map(g => ({ label: g, items: groupMap.get(g)! }));
 
   return (
+    <PullToRefresh onRefresh={loadNotifications}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* Header */}
@@ -346,5 +354,6 @@ export default function NotificationsPage() {
         </div>
       </div>
     </div>
+    </PullToRefresh>
   );
 }

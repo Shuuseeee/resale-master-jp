@@ -7,6 +7,7 @@ import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import { layout, heading, card, button, badge } from '@/lib/theme';
+import PullToRefresh from '@/components/PullToRefresh';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -23,6 +24,12 @@ export default function SuppliesPage() {
 
   useEffect(() => {
     loadSupplies();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => loadSupplies();
+    window.addEventListener('bfcache-restore', handler);
+    return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
 
   const loadSupplies = async () => {
@@ -75,6 +82,7 @@ export default function SuppliesPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={loadSupplies}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
@@ -261,5 +269,6 @@ export default function SuppliesPage() {
         )}
       </div>
     </div>
+    </PullToRefresh>
   );
 }
