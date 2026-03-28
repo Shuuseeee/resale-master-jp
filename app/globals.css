@@ -168,6 +168,12 @@
   }
 }
 
+/* 消除 Recharts 图表点击时的 focus 轮廓 */
+.recharts-wrapper:focus,
+.recharts-wrapper svg:focus {
+  outline: none;
+}
+
 /* 全局样式 */
 body {
   @apply bg-ocean-cream text-gray-900;

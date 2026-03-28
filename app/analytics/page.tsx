@@ -44,32 +44,20 @@ import { layout, heading, card, button, badge, input } from '@/lib/theme';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-// 饼图标签渲染：占比 < 4% 或移动端时不显示外部标签（移动端列表已提供详情）
-const makePieLabel = (isMobile: boolean) => (entry: any) => {
-  if (isMobile || entry.percent < 0.04) return null;
-  const label = entry.paymentMethodName ?? entry.platformName ?? entry.name ?? '';
-  return `${label} (${(entry.percent * 100).toFixed(1)}%)`;
-};
 
-// 成本结构饼图标签
-const makeCostLabel = (totalCost: number, isMobile: boolean) => (entry: any) => {
-  if (isMobile) return null;
-  const pct = totalCost > 0 ? (entry.value / totalCost) * 100 : 0;
-  if (pct < 4) return null;
-  return `${entry.name} (${pct.toFixed(1)}%)`;
-};
-
-// 统一 Tooltip 样式（亮/暗色自适应由 Tailwind 控制，此处用半透明浅色底）
+// 统一 Tooltip 样式
 const tooltipStyle = {
   backgroundColor: 'rgba(31,41,55,0.95)',
   border: '1px solid #374151',
   borderRadius: '0.5rem',
   color: '#f3f4f6',
 };
+// Recharts item/label 默认用切片 fill 色覆盖文字颜色，需显式强制为白色
+const tooltipItemStyle = { color: '#f3f4f6' };
+const tooltipLabelStyle = { color: '#d1d5db' };
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -85,12 +73,6 @@ export default function AnalyticsPage() {
   const [purchasePlatformData, setPurchasePlatformData] = useState<PurchasePlatformAnalysis[]>([]);
   const [sellingPlatformData, setSellingPlatformData] = useState<SellingPlatformAnalysis[]>([]);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -371,12 +353,9 @@ export default function AnalyticsPage() {
                 />
                 <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
                 <Area
@@ -404,12 +383,9 @@ export default function AnalyticsPage() {
                 />
                 <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
                 <Line
@@ -437,12 +413,9 @@ export default function AnalyticsPage() {
                 />
                 <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                   formatter={(value) => `${(value as number).toFixed(2)}%`}
                 />
                 <Line
@@ -470,12 +443,9 @@ export default function AnalyticsPage() {
                 />
                 <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                 />
                 <Bar dataKey="transactions" fill="#8b5cf6" name="交易数量" />
               </BarChart>
@@ -497,7 +467,7 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={makePieLabel(isMobile)}
+                  labelLine={false}
                 >
                   {paymentMethodData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -505,6 +475,8 @@ export default function AnalyticsPage() {
                 </Pie>
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
               </PieChart>
@@ -559,12 +531,9 @@ export default function AnalyticsPage() {
                   width={100}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
                 <Bar dataKey="totalPointsValue" fill="#06b6d4" name="积分价值" />
@@ -616,7 +585,7 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={makePieLabel(isMobile)}
+                      labelLine={false}
                     >
                       {purchasePlatformData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -624,6 +593,8 @@ export default function AnalyticsPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={tooltipStyle}
+                      itemStyle={tooltipItemStyle}
+                      labelStyle={tooltipLabelStyle}
                       formatter={(value) => formatCurrency(value as number)}
                     />
                   </PieChart>
@@ -683,7 +654,7 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={makePieLabel(isMobile)}
+                      labelLine={false}
                     >
                       {sellingPlatformData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -691,6 +662,8 @@ export default function AnalyticsPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={tooltipStyle}
+                      itemStyle={tooltipItemStyle}
+                      labelStyle={tooltipLabelStyle}
                       formatter={(value) => formatCurrency(value as number)}
                     />
                   </PieChart>
@@ -751,7 +724,7 @@ export default function AnalyticsPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label={makeCostLabel(costStructure.totalCost, isMobile)}
+                    labelLine={false}
                   >
                     {costPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -759,6 +732,8 @@ export default function AnalyticsPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
+                    labelStyle={tooltipLabelStyle}
                     formatter={(value) => formatCurrency(value as number)}
                   />
                 </PieChart>
