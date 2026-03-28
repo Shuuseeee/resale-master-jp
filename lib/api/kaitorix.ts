@@ -38,7 +38,7 @@ const STORE_NAME_TO_KEY: Record<string, string> = {
 };
 
 // Use XHR to avoid Next.js fetch interception in dev mode
-function xhrGet(url: string): Promise<{ ok: boolean; status: number; text: string }> {
+function xhrGet(url: string, signal?: AbortSignal): Promise<{ ok: boolean; status: number; text: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url);
@@ -50,6 +50,11 @@ function xhrGet(url: string): Promise<{ ok: boolean; status: number; text: strin
       });
     };
     xhr.onerror = () => reject(new Error('Network error'));
+    xhr.onabort = () => reject(new DOMException('Aborted', 'AbortError'));
+    if (signal) {
+      if (signal.aborted) { xhr.abort(); return; }
+      signal.addEventListener('abort', () => xhr.abort(), { once: true });
+    }
     xhr.send();
   });
 }
@@ -72,7 +77,7 @@ export async function fetchBuybackPrice(
   // Create new request
   const request = (async () => {
     try {
-      const response = await xhrGet('/api/kaitorix/' + encodeURIComponent(jan));
+      const response = await xhrGet('/api/kaitorix/' + encodeURIComponent(jan), undefined);
       if (!response.ok) {
         return null;
       }
@@ -125,6 +130,7 @@ export async function fetchBuybackPrices(
 
   const BATCH_DELAY = 500; // API route now returns instantly from cache/queue
   let failed = 0;
+  let consecutiveFailures = 0;
 
   for (let i = 0; i < uniqueJans.length; i++) {
     // Check abort
@@ -136,7 +142,12 @@ export async function fetchBuybackPrices(
     const result = await fetchBuybackPrice(jan);
     resultMap.set(jan, result);
 
-    if (!result) failed++;
+    if (!result) {
+      failed++;
+      consecutiveFailures++;
+    } else {
+      consecutiveFailures = 0;
+    }
 
     // Report progress
     onProgress?.({
@@ -146,9 +157,8 @@ export async function fetchBuybackPrices(
       stopped: false,
     });
 
-    // If 2+ consecutive failures, likely rate limited - stop early
-    if (failed >= 2 && i === failed - 1) {
-      // All requests so far have failed
+    // 3 consecutive failures likely means rate limited - stop early
+    if (consecutiveFailures >= 3) {
       onProgress?.({
         completed: i + 1,
         total: uniqueJans.length,

@@ -74,10 +74,10 @@ function TransactionsContent() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showComparison, setShowComparison] = useState(false);
 
-  // KaitoriX 买取价格（手动触发）
+  // KaitoriX 买取价格
   // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
   const kaitorixState = useKaitorixPrices(transactions);
-  const { buybackMap: buybackPrices, isLoading: kaitorixLoading, progress: kaitorixProgress, enabled: kaitorixEnabled, refresh: refreshKaitorix, stop: stopKaitorix } = kaitorixState;
+  const { buybackMap: buybackPrices, isLoading: kaitorixLoading, progress: kaitorixProgress, enabled: kaitorixEnabled, refresh: refreshKaitorix, refreshMissing: refreshMissingKaitorix, stop: stopKaitorix } = kaitorixState;
 
   useEffect(() => {
     loadTransactions();
@@ -91,6 +91,14 @@ function TransactionsContent() {
     window.addEventListener('bfcache-restore', handler);
     return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
+
+  // 交易加载完成后自动补查缺失的买取价格（有缓存的跳过，不增加爬虫压力）
+  useEffect(() => {
+    if (transactions.length > 0 && kaitorixEnabled) {
+      refreshMissingKaitorix();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions.length, kaitorixEnabled]);
 
   // 筛选条件变化时同步到 URL
   const syncFiltersToURL = useCallback(() => {

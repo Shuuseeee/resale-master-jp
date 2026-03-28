@@ -4,15 +4,12 @@ import { launchBrowser, closeBrowser, scrapeProduct } from './scraper.js';
 import { log, logError } from './logger.js';
 
 let running = true;
+let loopCount = 0;
+const CLEANUP_EVERY = 100; // cleanup completed/failed queue rows every 100 loops
 
 async function pollQueue() {
-  // Fetch oldest pending item
-  const { data: items, error } = await supabase
-    .from('kaitorix_scrape_queue')
-    .select('*')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true })
-    .limit(1);
+  // Atomically dequeue one pending item (FOR UPDATE SKIP LOCKED prevents race conditions)
+  const { data: items, error } = await supabase.rpc('dequeue_kaitorix_scrape');
 
   if (error) {
     logError('Failed to poll queue', error);
@@ -22,13 +19,7 @@ async function pollQueue() {
   if (!items || items.length === 0) return false;
 
   const item = items[0];
-  log(`Processing queue item: JAN=${item.jan} (attempt ${item.attempts + 1}/${CONFIG.MAX_ATTEMPTS})`);
-
-  // Mark as processing
-  await supabase
-    .from('kaitorix_scrape_queue')
-    .update({ status: 'processing', attempts: item.attempts + 1 })
-    .eq('id', item.id);
+  log(`Processing queue item: JAN=${item.jan} (attempt ${item.attempts}/${CONFIG.MAX_ATTEMPTS})`);
 
   const result = await scrapeProduct(item.jan);
 
@@ -57,8 +48,8 @@ async function pollQueue() {
 
     log(`Completed: JAN=${item.jan}`);
   } else {
-    // Failed
-    const newStatus = item.attempts + 1 >= CONFIG.MAX_ATTEMPTS ? 'failed' : 'pending';
+    // Failed (attempts already incremented by dequeue_kaitorix_scrape)
+    const newStatus = item.attempts >= CONFIG.MAX_ATTEMPTS ? 'failed' : 'pending';
     await supabase
       .from('kaitorix_scrape_queue')
       .update({
@@ -79,6 +70,12 @@ async function mainLoop() {
 
   while (running) {
     try {
+      loopCount++;
+      if (loopCount % CLEANUP_EVERY === 0) {
+        const { data: cleaned } = await supabase.rpc('cleanup_kaitorix_queue');
+        if (cleaned > 0) log(`Cleaned up ${cleaned} old queue records`);
+      }
+
       const hadWork = await pollQueue();
       const delay = jitter(hadWork ? CONFIG.POLL_INTERVAL_BUSY : CONFIG.POLL_INTERVAL_IDLE);
       if (!hadWork) log('Queue empty, waiting...');

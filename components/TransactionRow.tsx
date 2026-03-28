@@ -19,6 +19,7 @@ interface BuybackInfo {
   maxStore: string;
   expectedProfit: number;
   loading: boolean;
+  source?: 'cache' | 'stale' | 'pending';
 }
 
 interface TransactionRowProps {
@@ -224,11 +225,16 @@ const TransactionRow = memo(function TransactionRow({
           <div>
             <div className="text-gray-900 dark:text-white font-medium">
               {formatCurrency(buybackInfo.maxPrice)}
+              {buybackInfo.source === 'stale' && (
+                <span className="ml-1 text-[10px] text-amber-400" title="キャッシュが古い可能性があります">旧</span>
+              )}
             </div>
             <div className="text-xs text-blue-600 dark:text-blue-400">
               {buybackInfo.maxStore}
             </div>
           </div>
+        ) : buybackInfo?.source === 'pending' ? (
+          <span className="text-xs text-gray-400 animate-pulse">取得中...</span>
         ) : (
           <span className="text-gray-400">-</span>
         )}

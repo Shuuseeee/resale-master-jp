@@ -24,11 +24,13 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
 
   // Directly update indicator DOM — zero React overhead
   const setIndicator = (py: number) => {
-    if (!indicatorRef.current || !iconRef.current) return;
-    const progress = Math.min(py / THRESHOLD, 1);
+    if (!indicatorRef.current) return;
     indicatorRef.current.style.height = py > 4 ? `${py}px` : '0px';
-    iconRef.current.style.opacity = String(progress);
-    iconRef.current.style.transform = progress >= 1 ? 'rotate(180deg)' : `rotate(${progress * 180}deg)`;
+    if (iconRef.current) {
+      const progress = Math.min(py / THRESHOLD, 1);
+      iconRef.current.style.opacity = String(progress);
+      iconRef.current.style.transform = progress >= 1 ? 'rotate(180deg)' : `rotate(${progress * 180}deg)`;
+    }
   };
 
   useEffect(() => {
