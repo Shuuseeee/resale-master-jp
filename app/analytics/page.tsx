@@ -44,8 +44,32 @@ import { layout, heading, card, button, badge, input } from '@/lib/theme';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
+// 饼图标签渲染：占比 < 4% 或移动端时不显示外部标签（移动端列表已提供详情）
+const makePieLabel = (isMobile: boolean) => (entry: any) => {
+  if (isMobile || entry.percent < 0.04) return null;
+  const label = entry.paymentMethodName ?? entry.platformName ?? entry.name ?? '';
+  return `${label} (${(entry.percent * 100).toFixed(1)}%)`;
+};
+
+// 成本结构饼图标签
+const makeCostLabel = (totalCost: number, isMobile: boolean) => (entry: any) => {
+  if (isMobile) return null;
+  const pct = totalCost > 0 ? (entry.value / totalCost) * 100 : 0;
+  if (pct < 4) return null;
+  return `${entry.name} (${pct.toFixed(1)}%)`;
+};
+
+// 统一 Tooltip 样式（亮/暗色自适应由 Tailwind 控制，此处用半透明浅色底）
+const tooltipStyle = {
+  backgroundColor: 'rgba(31,41,55,0.95)',
+  border: '1px solid #374151',
+  borderRadius: '0.5rem',
+  color: '#f3f4f6',
+};
+
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -60,6 +84,13 @@ export default function AnalyticsPage() {
   const [costStructure, setCostStructure] = useState<CostStructure | null>(null);
   const [purchasePlatformData, setPurchasePlatformData] = useState<PurchasePlatformAnalysis[]>([]);
   const [sellingPlatformData, setSellingPlatformData] = useState<SellingPlatformAnalysis[]>([]);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -466,19 +497,14 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry: any) => `${entry.paymentMethodName} (${entry.percentage.toFixed(1)}%)`}
+                  label={makePieLabel(isMobile)}
                 >
                   {paymentMethodData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: '#f3f4f6',
-                  }}
+                  contentStyle={tooltipStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
               </PieChart>
@@ -590,19 +616,14 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={(entry: any) => `${entry.platformName} (${entry.percentage.toFixed(1)}%)`}
+                      label={makePieLabel(isMobile)}
                     >
                       {purchasePlatformData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1f2937',
-                        border: '1px solid #374151',
-                        borderRadius: '0.5rem',
-                        color: '#f3f4f6',
-                      }}
+                      contentStyle={tooltipStyle}
                       formatter={(value) => formatCurrency(value as number)}
                     />
                   </PieChart>
@@ -662,19 +683,14 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={(entry: any) => `${entry.platformName} (${entry.percentage.toFixed(1)}%)`}
+                      label={makePieLabel(isMobile)}
                     >
                       {sellingPlatformData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1f2937',
-                        border: '1px solid #374151',
-                        borderRadius: '0.5rem',
-                        color: '#f3f4f6',
-                      }}
+                      contentStyle={tooltipStyle}
                       formatter={(value) => formatCurrency(value as number)}
                     />
                   </PieChart>
@@ -735,22 +751,14 @@ export default function AnalyticsPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label={(entry: any) => {
-                      const percentage = (entry.value / costStructure.totalCost) * 100;
-                      return `${entry.name} (${percentage.toFixed(1)}%)`;
-                    }}
+                    label={makeCostLabel(costStructure.totalCost, isMobile)}
                   >
                     {costPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '0.5rem',
-                      color: '#f3f4f6',
-                    }}
+                    contentStyle={tooltipStyle}
                     formatter={(value) => formatCurrency(value as number)}
                   />
                 </PieChart>
