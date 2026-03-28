@@ -19,10 +19,14 @@ self.addEventListener('activate', (event) => {
 });
 
 // Network first, fallback to cache
+// API routes, auth, and Supabase calls are never cached — always fresh
+const NO_CACHE_PATTERNS = ['/api/', '/_next/data/', '/auth/'];
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (NO_CACHE_PATTERNS.some((p) => url.pathname.startsWith(p))) return;
   event.respondWith(
     fetch(event.request)
       .then((res) => {
