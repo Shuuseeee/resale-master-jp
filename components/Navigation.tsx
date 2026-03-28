@@ -30,6 +30,26 @@ export default function Navigation() {
     });
   }, [user, pathname]);
 
+  // Realtime: keep unread badge in sync without needing page navigation
+  useEffect(() => {
+    if (!user) return;
+    let cleanup: (() => void) | null = null;
+    import('@/lib/supabase/client').then(({ supabase }) => {
+      const refresh = () =>
+        supabase.from('notifications').select('id', { count: 'exact', head: true })
+          .eq('read', false)
+          .then(({ count }) => setUnreadCount(count ?? 0));
+
+      const channel = supabase
+        .channel('nav-notifications-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, refresh)
+        .subscribe();
+
+      cleanup = () => { supabase.removeChannel(channel); };
+    });
+    return () => { cleanup?.(); };
+  }, [user]);
+
   // 路由变化时关闭抽屉和 FAB 菜单
   useEffect(() => {
     setShowMoreSheet(false);

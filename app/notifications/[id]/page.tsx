@@ -168,7 +168,11 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">{notification.title}</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{dateStr}</p>
             </div>
-            <span className="text-3xl">🎫</span>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              </svg>
+            </div>
           </div>
           {d.total_count != null && (
             <div className="mt-3 inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium px-3 py-1.5 rounded-lg">
@@ -257,8 +261,12 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
 
         {d.total_count === 0 && (
           <div className="text-center py-12 text-gray-400">
-            <div className="text-4xl mb-3">☕</div>
-            <div className="text-sm">今日无需关注的优惠券</div>
+            <div className="flex justify-center mb-3">
+              <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+              </svg>
+            </div>
+            <div className="text-sm">今日有効なクーポンはありません</div>
           </div>
         )}
 
