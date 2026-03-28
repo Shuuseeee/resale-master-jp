@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const THRESHOLD = 72; // px needed to trigger refresh
+const THRESHOLD = 72; // px to trigger refresh
 const MAX_PULL = 100; // max visual pull distance
 
 interface Props {
@@ -13,74 +13,77 @@ interface Props {
 export default function PullToRefresh({ onRefresh, children }: Props) {
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const startYRef = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const canPull = useCallback(() => {
-    // Only allow pull when already at top of scroll
-    return (containerRef.current?.scrollTop ?? 0) === 0;
-  }, []);
+  // Refs hold mutable values so touch handlers are registered once (empty deps)
+  const startYRef = useRef<number | null>(null);
+  const pullYRef = useRef(0);
+  const refreshingRef = useRef(false);
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
     const onTouchStart = (e: TouchEvent) => {
-      if (!canPull()) return;
+      if (refreshingRef.current) return;
+      if (window.scrollY > 0) return;
       startYRef.current = e.touches[0].clientY;
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (startYRef.current === null || refreshing) return;
+      if (startYRef.current === null || refreshingRef.current) return;
+      if (window.scrollY > 0) { startYRef.current = null; return; }
       const dy = e.touches[0].clientY - startYRef.current;
       if (dy <= 0) { startYRef.current = null; return; }
-      if (!canPull()) return;
       e.preventDefault();
-      // Apply rubber-band feel: diminishing returns past threshold
       const clamped = Math.min(dy * 0.5, MAX_PULL);
+      pullYRef.current = clamped;
       setPullY(clamped);
     };
 
     const onTouchEnd = async () => {
       if (startYRef.current === null) return;
+      const captured = pullYRef.current;
       startYRef.current = null;
-      if (pullY >= THRESHOLD) {
+      if (captured >= THRESHOLD) {
+        refreshingRef.current = true;
         setRefreshing(true);
-        setPullY(THRESHOLD); // hold at threshold while refreshing
+        setPullY(THRESHOLD);
         try {
-          await onRefresh();
+          await onRefreshRef.current();
         } finally {
+          refreshingRef.current = false;
           setRefreshing(false);
+          pullYRef.current = 0;
           setPullY(0);
         }
       } else {
+        pullYRef.current = 0;
         setPullY(0);
       }
     };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
+    // Listen on window — works regardless of which element is the scroll container
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
     return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [pullY, refreshing, onRefresh, canPull]);
+  }, []); // Empty — refs handle all dynamic values, no re-registration needed
 
   const progress = Math.min(pullY / THRESHOLD, 1);
   const showIndicator = pullY > 4;
 
   return (
-    <div ref={containerRef} className="h-full overflow-y-auto">
-      {/* Pull indicator */}
+    <div>
       <div
-        className="flex items-center justify-center overflow-hidden transition-all duration-200"
+        className="flex items-center justify-center overflow-hidden transition-[height] duration-200"
         style={{ height: showIndicator ? `${pullY}px` : 0 }}
       >
         <div
-          className="w-8 h-8 rounded-full border-2 border-teal-500 flex items-center justify-center transition-transform"
-          style={{ transform: `rotate(${progress * 360}deg)`, opacity: progress }}
+          className="w-8 h-8 rounded-full border-2 border-teal-500 flex items-center justify-center"
+          style={{ opacity: progress }}
         >
           {refreshing ? (
             <svg className="w-4 h-4 text-teal-500 animate-spin" fill="none" viewBox="0 0 24 24">
