@@ -77,7 +77,7 @@ export default function DashboardPage() {
       <div className={layout.container}>
         {/* 标题 */}
         <div className={layout.section}>
-          <h1 className={heading.h2 + ' mb-2'}>仪表盘</h1>
+          <h1 className={'hidden lg:inline-block '+ heading.h2 + ' lg:mb-8'}>仪表盘</h1>
         </div>
 {/* KPI カード */}
         <div className="hidden lg:inline-block lg:mb-8">

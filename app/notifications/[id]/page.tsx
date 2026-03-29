@@ -266,7 +266,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
               </svg>
             </div>
-            <div className="text-sm">今日有効なクーポンはありません</div>
+            <div className="text-sm">今日无需注意的优惠券</div>
           </div>
         )}
 

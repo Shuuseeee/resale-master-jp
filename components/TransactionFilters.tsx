@@ -266,7 +266,7 @@ export default function TransactionFilters({
                   : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
-              含む
+              包含
             </button>
             <button
               type="button"
@@ -327,7 +327,7 @@ export default function TransactionFilters({
               options={janCodes.map(j => ({ value: j, label: j }))}
               selected={filters.excludeJanCodes}
               onChange={(vals) => updateFilter('excludeJanCodes', vals)}
-              placeholder="除外するJAN"
+              placeholder="除外JAN"
               minWidth="160px"
             />
           )}
@@ -355,14 +355,13 @@ export default function TransactionFilters({
       {/* Row 2: 买取店铺筛选 */}
       {hasBuybackData && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">买取</span>
           <div className="relative">
             <select
               value={filters.buybackStore}
               onChange={(e) => updateFilter('buybackStore', e.target.value)}
               className={inputClass + ' w-[140px]' + (filters.buybackStore ? ' pr-8' : '')}
             >
-              <option value="">店铺名</option>
+              <option value="">买取店</option>
               {buybackStores.map(store => (
                 <option key={store} value={store}>{store}</option>
               ))}

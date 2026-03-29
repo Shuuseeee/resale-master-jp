@@ -665,10 +665,6 @@ function TransactionsContent() {
         {/* 标题区域 */}
         <div className={layout.section}>
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className={heading.h1 + ' mb-2'}>交易记录</h1>
-              <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
-            </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               {/* 分组/平铺切换按钮 */}
               <button
@@ -703,7 +699,7 @@ function TransactionsContent() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                <span className="hidden sm:inline">{compareMode ? '選択中' : '選択'}</span>
+                <span className="hidden sm:inline">{compareMode ? '选择中' : '多选'}</span>
               </button>
               {kaitorixEnabled && (
                 <button
@@ -1059,7 +1055,7 @@ function TransactionsContent() {
           <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-2 max-w-lg w-full border border-gray-700">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
-                ? <span className="text-gray-400 text-xs">タップして選択</span>
+                ? <span className="text-gray-400 text-xs">请选择</span>
                 : <span>已选 <span className="font-bold text-teal-400">{selectedIds.size}</span> 件</span>
               }
             </div>
@@ -1092,7 +1088,7 @@ function TransactionsContent() {
                     : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                比較
+                比较
               </button>
             )}
             {selectedIds.size > 0 && (
@@ -1100,7 +1096,7 @@ function TransactionsContent() {
                 onClick={() => setSelectedIds(new Set())}
                 className="text-xs text-gray-400 hover:text-white transition-colors px-1"
               >
-                クリア
+                清空
               </button>
             )}
             <button
