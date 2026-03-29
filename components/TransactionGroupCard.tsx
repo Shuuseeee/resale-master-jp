@@ -107,8 +107,11 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         </div>
       </button>
 
-      {/* 展開時：子カード一覧 */}
-      {isExpanded && (
+      {/* 展開時：子カード一覧（max-height アニメーション） */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isExpanded ? `${group.transactions.length * 320}px` : '0px' }}
+      >
         <div className="border-t border-teal-200 dark:border-teal-800 divide-y divide-gray-100 dark:divide-gray-800">
           {group.transactions.map(tx => (
             <div key={tx.id} className="pl-3 border-l-4 border-teal-400 dark:border-teal-600 bg-white dark:bg-gray-900">
@@ -126,7 +129,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
             </div>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 });

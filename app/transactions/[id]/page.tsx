@@ -26,6 +26,54 @@ interface TransactionWithPayment extends Transaction {
   purchase_platform?: PurchasePlatform;
 }
 
+interface HistoryEntry {
+  id: string;
+  changed_at: string;
+  old_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  product_name: '商品名',
+  date: '購入日',
+  purchase_price_total: '合計金額',
+  unit_price: '単価',
+  quantity: '数量',
+  card_paid: 'カード払い',
+  point_paid: 'ポイント払い',
+  balance_paid: '残高払い',
+  expected_platform_points: 'PF積分',
+  expected_card_points: 'カード積分',
+  extra_platform_points: '追加積分',
+  jan_code: 'JANコード',
+  order_number: '注文番号',
+  notes: 'メモ',
+  status: 'ステータス',
+  image_url: '画像',
+  purchase_platform_id: '購入先',
+  card_id: 'カード',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: '未着',
+  in_stock: '在庫',
+  awaiting_payment: '入金待ち',
+  sold: '売済',
+  returned: '返品',
+};
+
+function formatHistoryValue(field: string, value: unknown): string {
+  if (value === null || value === undefined) return '-';
+  if (field === 'status') return STATUS_LABELS[String(value)] || String(value);
+  if (field === 'image_url') return '(画像)';
+  if (['purchase_platform_id', 'card_id'].includes(field)) return '(変更)';
+  if (['purchase_price_total', 'unit_price', 'card_paid', 'point_paid', 'balance_paid',
+    'expected_platform_points', 'expected_card_points', 'extra_platform_points'].includes(field)) {
+    return `¥${Number(value).toLocaleString()}`;
+  }
+  return String(value);
+}
+
 export default function TransactionDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -41,6 +89,7 @@ export default function TransactionDetailPage() {
   const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
   const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const [returnData, setReturnData] = useState({
     quantity_returned: 1,
@@ -59,7 +108,18 @@ export default function TransactionDetailPage() {
 
   useEffect(() => {
     loadTransaction();
+    loadHistory();
   }, [id]);
+
+  const loadHistory = async () => {
+    const { data } = await supabase
+      .from('transaction_history')
+      .select('id, changed_at, old_values, new_values')
+      .eq('transaction_id', id)
+      .order('changed_at', { ascending: false })
+      .limit(50);
+    if (data) setHistory(data as HistoryEntry[]);
+  };
 
   const loadTransaction = async () => {
     setLoading(true);
@@ -892,6 +952,51 @@ export default function TransactionDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* 编辑历史 */}
+            {history.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  編集履歴
+                </h3>
+                <div className="space-y-4">
+                  {history.map((entry) => {
+                    const changedFields = Object.keys(entry.new_values);
+                    return (
+                      <div key={entry.id} className="relative pl-5 border-l-2 border-gray-200 dark:border-gray-700">
+                        <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
+                        <p className="text-xs text-gray-400 mb-1.5">
+                          {new Date(entry.changed_at).toLocaleString('ja-JP', {
+                            month: 'numeric', day: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </p>
+                        <div className="space-y-1">
+                          {changedFields.map((field) => (
+                            <div key={field} className="text-xs">
+                              <span className="text-gray-500 dark:text-gray-400 font-medium">
+                                {FIELD_LABELS[field] || field}
+                              </span>
+                              <span className="text-gray-400 mx-1">:</span>
+                              <span className="text-red-500 line-through">
+                                {formatHistoryValue(field, entry.old_values[field])}
+                              </span>
+                              <span className="text-gray-400 mx-1">→</span>
+                              <span className="text-green-600 dark:text-green-400">
+                                {formatHistoryValue(field, entry.new_values[field])}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
