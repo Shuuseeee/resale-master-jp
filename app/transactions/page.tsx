@@ -512,7 +512,7 @@ function TransactionsContent() {
 
     const items: DisplayItem[] = [];
     janMap.forEach((txs, jan) => {
-      if (txs.length < 3) {
+      if (txs.length < 2) {
         txs.forEach(t => items.push({ type: 'transaction', data: t }));
       } else {
         items.push({ type: 'group', data: buildGroupSummary(jan, txs) });
