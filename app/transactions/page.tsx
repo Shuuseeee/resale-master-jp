@@ -754,12 +754,12 @@ function TransactionsContent() {
               </button>
               <Link
                 href="/transactions/add"
-                className={button.primary + ' flex items-center gap-2 whitespace-nowrap'}
+                className={button.primary + ' hidden lg:flex items-center gap-2 whitespace-nowrap'}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="hidden sm:inline">记录新交易</span>
+                记录新交易
               </Link>
             </div>
           </div>

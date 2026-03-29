@@ -16,9 +16,15 @@ export default function Navigation() {
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDark(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
@@ -55,6 +61,37 @@ export default function Navigation() {
     setShowMoreSheet(false);
     setShowFabMenu(false);
   }, [pathname]);
+
+  // 震动反馈工具函数
+  // Android: navigator.vibrate
+  // iOS Safari 17.4+: 隐藏的 <input type="checkbox" switch> trick 触发 Taptic Engine
+  const triggerHaptic = (type: 'light' | 'medium') => {
+    if (typeof window === 'undefined') return;
+    // Android Chrome
+    if (window.navigator?.vibrate) {
+      window.navigator.vibrate(type === 'light' ? 25 : [30, 50, 30]);
+      return;
+    }
+    // iOS Safari 17.4+ — label + switch checkbox 触发 Taptic Engine
+    // 必须点 label 而非 input 本身
+    try {
+      const fire = () => {
+        const label = document.createElement('label');
+        label.ariaHidden = 'true';
+        label.style.display = 'none';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.setAttribute('switch', '');
+        label.appendChild(input);
+        document.head.appendChild(label);
+        label.click();
+        document.head.removeChild(label);
+      };
+      fire();
+      // medium 延迟再触发一次模拟更重的反馈
+      if (type === 'medium') setTimeout(fire, 80);
+    } catch (_) { /* 静默降级 */ }
+  };
 
   const isAuthPage = pathname?.startsWith('/auth');
   if (isAuthPage) return null;
@@ -330,86 +367,124 @@ export default function Navigation() {
       {/* 移动端顶部占位 */}
       <div className="lg:hidden h-12" />
 
-      {/* ── 移动端底部导航栏 ── */}
+      {/* ── 移动端底部导航栏 (iOS 26 Floating Glass Style) ── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="lg:hidden fixed bottom-5 left-4 right-4 z-[9999] rounded-[32px] overflow-hidden"
+        style={{
+          marginBottom: 'env(safe-area-inset-bottom)',
+          background: isDark
+            ? 'rgba(20, 20, 30, 0.45)'
+            : 'rgba(255, 255, 255, 0.18)',
+          backdropFilter: 'blur(48px) saturate(220%) brightness(108%) contrast(108%)',
+          WebkitBackdropFilter: 'blur(48px) saturate(220%) brightness(108%) contrast(108%)',
+          border: isDark
+            ? '1px solid rgba(255,255,255,0.12)'
+            : '1px solid rgba(255,255,255,0.55)',
+          boxShadow: isDark
+            ? '0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
+            : '0 8px 40px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.04)',
+        }}
       >
-        <div className="flex p-4 items-end h-16">
-          {/* ホーム */}
-          <Link
-            href="/dashboard"
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-              isActive('/dashboard') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 2 : 1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className={`text-[10px] font-medium ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
-          </Link>
+        {/* 5列布局：各列中心点在 10% 30% 50% 70% 90%，pill left = center% - 22px */}
+        {(() => {
+          const pillPos = isActive('/dashboard') ? 10
+            : isActive('/transactions') ? 30
+            : isActive('/coupons') ? 70
+            : showMoreSheet ? 90
+            : -1;
+          const pillVisible = pillPos >= 0;
+          return (
+            <div className="relative flex items-center h-16">
+              {/* 滑动玻璃 pill — 绝对定位，在图标层之下 */}
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  width: 44,
+                  height: 44,
+                  top: '50%',
+                  left: `calc(${pillVisible ? pillPos : 50}% - 22px)`,
+                  transform: 'translateY(-50%)',
+                  transition: 'left 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease',
+                  opacity: pillVisible ? 1 : 0,
+                  pointerEvents: 'none',
+                  borderRadius: 14,
+                  zIndex: 0,
+                  background: isDark
+                    ? 'rgba(255,255,255,0.18)'
+                    : 'rgba(255,255,255,0.72)',
+                  border: isDark
+                    ? '1px solid rgba(255,255,255,0.28)'
+                    : '1px solid rgba(255,255,255,0.95)',
+                  boxShadow: isDark
+                    ? '0 2px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.15)'
+                    : '0 2px 10px rgba(0,0,0,0.1), inset 0 1.5px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.06)',
+                }}
+              />
 
-          {/* 取引 */}
-          <Link
-            href="/transactions"
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-              isActive('/transactions') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/transactions') ? 2 : 1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>
-            <span className={`text-[10px] font-medium ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
-          </Link>
-
-          {/* ＋ 中央 FAB（Speed Dial） */}
-          <div className="flex-1 flex flex-col items-center justify-end pb-2 relative">
-            <button
-              onClick={() => setShowFabMenu(v => !v)}
-              className={`rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${
-                showFabMenu
-                  ? 'bg-gray-700 dark:bg-gray-600 shadow-gray-500/30'
-                  : 'bg-teal-500 hover:bg-teal-600 shadow-teal-500/30'
-              }`}
-              style={{ width: 52, height: 52, marginTop: -16 }}
-            >
-              <svg
-                className={`w-6 h-6 text-white transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              {/* 图标层 */}
+              <Link
+                href="/dashboard"
+                onClick={() => triggerHaptic('light')}
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                style={{ height: 44 }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/dashboard') ? 2.2 : 1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </Link>
 
-          {/* クーポン */}
-          <Link
-            href="/coupons"
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-              isActive('/coupons') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/coupons') ? 2 : 1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-            </svg>
-            <span className={`text-[10px] font-medium ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'}`}></span>
-          </Link>
+              <Link
+                href="/transactions"
+                onClick={() => triggerHaptic('light')}
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                style={{ height: 44 }}
+              >
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/transactions') ? 2.2 : 1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </Link>
 
-          {/* もっと */}
-          <button
-            onClick={() => setShowMoreSheet(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-              showMoreSheet ? 'text-teal-600 dark:text-teal-400' : 'text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span className="text-[10px] font-medium"></span>
-          </button>
-        </div>
+              <div className="flex-1 flex items-center justify-center relative z-10">
+                <button
+                  onClick={() => { triggerHaptic('medium'); setShowFabMenu(v => !v); }}
+                  className={`rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${
+                    showFabMenu
+                      ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 scale-90'
+                      : 'bg-teal-500 text-white shadow-teal-500/30'
+                  }`}
+                  style={{ width: 48, height: 48 }}
+                >
+                  <svg className={`w-6 h-6 transition-transform duration-300 ${showFabMenu ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+
+              <Link
+                href="/coupons"
+                onClick={() => triggerHaptic('light')}
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                style={{ height: 44 }}
+              >
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive('/coupons') ? 2.2 : 1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+              </Link>
+
+              <button
+                onClick={() => { triggerHaptic('light'); setShowMoreSheet(true); }}
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                style={{ height: 44 }}
+              >
+                <svg className={`w-6 h-6 transition-colors duration-200 ${showMoreSheet ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          );
+        })()}
       </div>
-
 
       {/* ── FAB 弹出菜单卡片 ── */}
       {showFabMenu && (
@@ -418,12 +493,18 @@ export default function Navigation() {
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
           onClick={() => setShowFabMenu(false)}
         >
-          {/* 遮罩 */}
-          <div className="absolute inset-0 bg-black/30" />
-
-          {/* 卡片菜单（flex 居中） */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
-            className="relative mb-4 w-52 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-fab-item"
+            className="relative mb-4 w-52 rounded-2xl shadow-2xl overflow-hidden"
+            style={{
+              background: isDark ? 'rgba(20,20,30,0.55)' : 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
+              WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
+              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.6)',
+              boxShadow: isDark
+                ? '0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)'
+                : '0 12px 40px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -464,8 +545,9 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors ${
-                  i < arr.length - 1 ? 'border-b border-gray-100 dark:border-gray-700/60' : ''
+                onClick={() => triggerHaptic('light')}
+                className={`flex items-center gap-3 px-4 py-3.5 active:bg-white/40 dark:active:bg-white/10 transition-colors ${
+                  i < arr.length - 1 ? 'border-b border-gray-100/50 dark:border-gray-700/60' : ''
                 }`}
               >
                 <div className={`w-8 h-8 ${item.iconBg} ${item.iconColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -474,17 +556,16 @@ export default function Navigation() {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
               </Link>
             ))}
-            {/* スキャン着荷 */}
             <button
-              onClick={() => { setShowFabMenu(false); setShowScanArrival(true); }}
-              className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors border-t border-gray-100 dark:border-gray-700/60"
+              onClick={() => { triggerHaptic('light'); setShowFabMenu(false); setShowScanArrival(true); }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/40 dark:active:bg-white/10 transition-colors border-t border-gray-100/50 dark:border-gray-700/60"
             >
               <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">スキャン着荷</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">扫码到货</span>
             </button>
           </div>
         </div>
@@ -493,21 +574,27 @@ export default function Navigation() {
       {/* ── もっと 上滑抽屉 ── */}
       {showMoreSheet && (
         <div className="lg:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
-          {/* 背景遮罩 */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-
-          {/* 抽屉内容 */}
           <div
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
+            className="absolute bottom-0 left-0 right-0 rounded-t-[32px] shadow-2xl flex flex-col"
+            style={{
+              maxHeight: '65vh',
+              background: isDark ? 'rgba(20,20,30,0.55)' : 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
+              WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
+              borderTop: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.6)',
+              boxShadow: isDark
+                ? '0 -8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
+                : '0 -8px 40px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.75)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 拖拽指示条 */}
-            <div className="flex justify-center pt-3 pb-1">
+            {/* 拖拽指示条 — 固定 */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
             </div>
-
-            {/* 次要功能 2×2 网格 */}
+            {/* 图标网格 — 可滚动 */}
+            <div className="overflow-y-auto flex-1">
             <div className="grid grid-cols-4 gap-1 px-4 py-3">
               {moreItems.map((item) => {
                 const active = isActive(item.href);
@@ -515,10 +602,11 @@ export default function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => triggerHaptic('light')}
                     className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl transition-colors ${
                       active
                         ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/5 active:bg-gray-100'
                     }`}
                   >
                     {item.icon}
@@ -527,12 +615,12 @@ export default function Navigation() {
                 );
               })}
             </div>
-
-            {/* 分隔线 */}
-            <div className="mx-4 border-t border-gray-100 dark:border-gray-700" />
-
-            {/* 用户信息 + 退出 */}
-            <div className="px-4 py-3 flex items-center justify-between gap-3">
+            </div>{/* end overflow */}
+            {/* 用户信息栏 — 固定在底部 */}
+            <div className="flex-shrink-0 mx-4 border-t border-gray-100/50 dark:border-gray-700" />
+            <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
+            >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-9 h-9 bg-teal-100 dark:bg-teal-900/40 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -562,7 +650,6 @@ export default function Navigation() {
         </div>
       )}
 
-      {/* スキャン着荷 モーダル */}
       {showScanArrival && (
         <ScanArrivalModal onClose={() => setShowScanArrival(false)} />
       )}
