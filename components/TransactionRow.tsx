@@ -32,6 +32,7 @@ interface TransactionRowProps {
   compareMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
+  isGroupChild?: boolean;
 }
 
 const TransactionRow = memo(function TransactionRow({
@@ -44,6 +45,7 @@ const TransactionRow = memo(function TransactionRow({
   compareMode = false,
   isSelected = false,
   onToggleSelect,
+  isGroupChild = false,
 }: TransactionRowProps) {
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
   const [showToast, setShowToast] = useState(false);
@@ -96,6 +98,8 @@ const TransactionRow = memo(function TransactionRow({
     <tr
       onClick={handleRowClick}
       className={`border-b border-gray-100 dark:border-gray-700/50 text-sm transition-colors ${
+        isGroupChild ? 'border-l-4 border-l-teal-400 dark:border-l-teal-600 bg-gray-50/50 dark:bg-gray-800/30' : ''
+      } ${
         compareMode
           ? isSelected
             ? 'bg-teal-50 dark:bg-teal-900/20 cursor-pointer'

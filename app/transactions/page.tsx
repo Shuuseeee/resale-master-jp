@@ -12,6 +12,8 @@ import { layout, heading, card, button, input } from '@/lib/theme';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
 import TransactionRow from '@/components/TransactionRow';
+import TransactionGroupCard from '@/components/TransactionGroupCard';
+import TransactionGroupRow from '@/components/TransactionGroupRow';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import { getPurchasePlatforms } from '@/lib/api/platforms';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
@@ -27,6 +29,26 @@ interface TransactionWithPayment extends Transaction {
   aggregated_selling_platform_ids?: string[];
   aggregated_sale_order_numbers?: string[];
 }
+
+export interface TransactionGroup {
+  janCode: string;
+  productName: string;
+  imageUrl: string | null;
+  transactions: TransactionWithPayment[];
+  totalQuantity: number;
+  totalInStock: number;
+  totalSold: number;
+  totalPurchasePrice: number;
+  totalProfit: number | null;
+  bestBuybackPrice: number;
+  bestBuybackStore: string;
+  bestExpectedProfit: number;
+  latestDate: string;
+}
+
+type DisplayItem =
+  | { type: 'transaction'; data: TransactionWithPayment }
+  | { type: 'group'; data: TransactionGroup };
 
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 type SortOrder = 'asc' | 'desc';
@@ -64,8 +86,10 @@ function TransactionsContent() {
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
     const purchasePlatformIds = (searchParams.get('pp') || '').split(',').filter(Boolean);
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0) {
-      return { dateFrom, dateTo, productName, janCode, status, paymentMethodIds, purchasePlatformIds, buybackStore: '' };
+    const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
+    const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || excludeJanCodes.length > 0) {
+      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -73,6 +97,8 @@ function TransactionsContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showComparison, setShowComparison] = useState(false);
+  const [isGrouped, setIsGrouped] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // KaitoriX 买取价格
   // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
@@ -116,6 +142,8 @@ function TransactionsContent() {
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
       if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
+      if (activeFilters.janFilterMode === 'exclude') params.set('jfm', 'exclude');
+      if (activeFilters.excludeJanCodes.length > 0) params.set('ejc', activeFilters.excludeJanCodes.join(','));
     }
     const qs = params.toString();
     router.replace(qs ? `/transactions?${qs}` : '/transactions', { scroll: false });
@@ -334,9 +362,15 @@ function TransactionsContent() {
           if (!matchesProductSearch) return false;
         }
 
-        // JAN码筛选（精确匹配，来自下拉选择）
-        if (activeFilters.janCode && t.jan_code !== activeFilters.janCode) {
-          return false;
+        // JAN码筛选（含む: 精确匹配 / 除外: 多选排除）
+        if (activeFilters.janFilterMode === 'exclude') {
+          if (activeFilters.excludeJanCodes.length > 0 && activeFilters.excludeJanCodes.includes(t.jan_code || '')) {
+            return false;
+          }
+        } else {
+          if (activeFilters.janCode && t.jan_code !== activeFilters.janCode) {
+            return false;
+          }
         }
 
         // 状态筛选（多选）
@@ -412,6 +446,101 @@ function TransactionsContent() {
     () => filteredTransactions.filter(t => selectedIds.has(t.id)),
     [filteredTransactions, selectedIds]
   );
+
+  // 分组汇总辅助函数
+  const buildGroupSummary = useCallback((janCode: string, txs: TransactionWithPayment[]): TransactionGroup => {
+    let totalQuantity = 0, totalInStock = 0, totalSold = 0, totalPurchasePrice = 0;
+    let totalProfit: number | null = null;
+    let bestBuybackPrice = 0, bestBuybackStore = '', bestExpectedProfit = 0;
+    let latestDate = '';
+
+    txs.forEach(tx => {
+      totalQuantity += tx.quantity;
+      totalInStock += tx.quantity_in_stock ?? Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+      totalSold += tx.quantity_sold ?? 0;
+      totalPurchasePrice += tx.purchase_price_total;
+      if (tx.aggregated_profit != null) {
+        totalProfit = (totalProfit ?? 0) + tx.aggregated_profit;
+      }
+      if (tx.date > latestDate) latestDate = tx.date;
+
+      const bb = buybackPrices.get(tx.id);
+      if (bb && bb.maxPrice > bestBuybackPrice) {
+        bestBuybackPrice = bb.maxPrice;
+        bestBuybackStore = bb.maxStore;
+        bestExpectedProfit = bb.expectedProfit;
+      }
+    });
+
+    return {
+      janCode,
+      productName: txs[0].product_name,
+      imageUrl: txs.find(t => t.image_url)?.image_url ?? null,
+      transactions: txs,
+      totalQuantity,
+      totalInStock,
+      totalSold,
+      totalPurchasePrice,
+      totalProfit,
+      bestBuybackPrice,
+      bestBuybackStore,
+      bestExpectedProfit,
+      latestDate,
+    };
+  }, [buybackPrices]);
+
+  // displayItems: filteredTransactions を分組/平铺に変換
+  const displayItems = useMemo((): DisplayItem[] => {
+    if (!isGrouped) {
+      return filteredTransactions.map(t => ({ type: 'transaction' as const, data: t }));
+    }
+
+    // JAN ごとにグループ化
+    const janMap = new Map<string, TransactionWithPayment[]>();
+    const ungrouped: TransactionWithPayment[] = [];
+
+    filteredTransactions.forEach(t => {
+      if (!t.jan_code) { ungrouped.push(t); return; }
+      const list = janMap.get(t.jan_code) || [];
+      list.push(t);
+      janMap.set(t.jan_code, list);
+    });
+
+    // 各 JAN の最初の要素の位置でソート順を維持
+    const positionMap = new Map<string, number>();
+    filteredTransactions.forEach((t, i) => positionMap.set(t.id, i));
+
+    const items: DisplayItem[] = [];
+    janMap.forEach((txs, jan) => {
+      if (txs.length < 3) {
+        txs.forEach(t => items.push({ type: 'transaction', data: t }));
+      } else {
+        items.push({ type: 'group', data: buildGroupSummary(jan, txs) });
+      }
+    });
+    ungrouped.forEach(t => items.push({ type: 'transaction', data: t }));
+
+    // filteredTransactions の順序を保持
+    items.sort((a, b) => {
+      const posA = a.type === 'transaction'
+        ? (positionMap.get(a.data.id) ?? 0)
+        : Math.min(...a.data.transactions.map(t => positionMap.get(t.id) ?? Infinity));
+      const posB = b.type === 'transaction'
+        ? (positionMap.get(b.data.id) ?? 0)
+        : Math.min(...b.data.transactions.map(t => positionMap.get(t.id) ?? Infinity));
+      return posA - posB;
+    });
+
+    return items;
+  }, [filteredTransactions, isGrouped, buildGroupSummary]);
+
+  const toggleGroupExpand = useCallback((janCode: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(janCode)) next.delete(janCode); else next.add(janCode);
+      return next;
+    });
+  }, []);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -541,6 +670,27 @@ function TransactionsContent() {
               <p className="text-gray-600 dark:text-gray-400">管理您的所有转卖交易</p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* 分组/平铺切换按钮 */}
+              <button
+                onClick={() => setIsGrouped(v => !v)}
+                title={isGrouped ? '平铺显示' : '分组显示'}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  isGrouped
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                {isGrouped ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                )}
+                <span className="hidden sm:inline">{isGrouped ? '平铺' : '分组'}</span>
+              </button>
               {/* 選択モードボタン */}
               <button
                 onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
@@ -752,20 +902,37 @@ function TransactionsContent() {
           <>
             {/* 移动端：卡片列表 */}
             <div className="md:hidden space-y-3">
-              {filteredTransactions.map((transaction) => (
-                <TransactionCard
-                  key={transaction.id}
-                  transaction={transaction}
-                  dateSortMode={dateSortMode}
-                  onDelete={deleteTransaction}
-                  onMarkArrived={handleMarkArrived}
-                  buybackInfo={buybackPrices.get(transaction.id)}
-                  purchasePlatforms={purchasePlatforms}
-                  compareMode={compareMode}
-                  isSelected={selectedIds.has(transaction.id)}
-                  onToggleSelect={toggleSelect}
-                />
-              ))}
+              {displayItems.map((item) =>
+                item.type === 'group' ? (
+                  <TransactionGroupCard
+                    key={item.data.janCode}
+                    group={item.data}
+                    isExpanded={expandedGroups.has(item.data.janCode)}
+                    onToggle={() => toggleGroupExpand(item.data.janCode)}
+                    dateSortMode={dateSortMode}
+                    onDelete={deleteTransaction}
+                    onMarkArrived={handleMarkArrived}
+                    buybackPrices={buybackPrices}
+                    purchasePlatforms={purchasePlatforms}
+                    compareMode={compareMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={toggleSelect}
+                  />
+                ) : (
+                  <TransactionCard
+                    key={item.data.id}
+                    transaction={item.data}
+                    dateSortMode={dateSortMode}
+                    onDelete={deleteTransaction}
+                    onMarkArrived={handleMarkArrived}
+                    buybackInfo={buybackPrices.get(item.data.id)}
+                    purchasePlatforms={purchasePlatforms}
+                    compareMode={compareMode}
+                    isSelected={selectedIds.has(item.data.id)}
+                    onToggleSelect={toggleSelect}
+                  />
+                )
+              )}
             </div>
 
             {/* 桌面端：表格 */}
@@ -846,20 +1013,37 @@ function TransactionsContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {filteredTransactions.map((transaction) => (
-                        <TransactionRow
-                          key={transaction.id}
-                          transaction={transaction}
-                          dateSortMode={dateSortMode}
-                          onDelete={deleteTransaction}
-                          onMarkArrived={handleMarkArrived}
-                          buybackInfo={buybackPrices.get(transaction.id)}
-                          purchasePlatforms={purchasePlatforms}
-                          compareMode={compareMode}
-                          isSelected={selectedIds.has(transaction.id)}
-                          onToggleSelect={toggleSelect}
-                        />
-                      ))}
+                      {displayItems.map((item) =>
+                        item.type === 'group' ? (
+                          <TransactionGroupRow
+                            key={item.data.janCode}
+                            group={item.data}
+                            isExpanded={expandedGroups.has(item.data.janCode)}
+                            onToggle={() => toggleGroupExpand(item.data.janCode)}
+                            dateSortMode={dateSortMode}
+                            onDelete={deleteTransaction}
+                            onMarkArrived={handleMarkArrived}
+                            buybackPrices={buybackPrices}
+                            purchasePlatforms={purchasePlatforms}
+                            compareMode={compareMode}
+                            selectedIds={selectedIds}
+                            onToggleSelect={toggleSelect}
+                          />
+                        ) : (
+                          <TransactionRow
+                            key={item.data.id}
+                            transaction={item.data}
+                            dateSortMode={dateSortMode}
+                            onDelete={deleteTransaction}
+                            onMarkArrived={handleMarkArrived}
+                            buybackInfo={buybackPrices.get(item.data.id)}
+                            purchasePlatforms={purchasePlatforms}
+                            compareMode={compareMode}
+                            isSelected={selectedIds.has(item.data.id)}
+                            onToggleSelect={toggleSelect}
+                          />
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>

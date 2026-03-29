@@ -12,6 +12,8 @@ export interface FilterValues {
   dateTo: string;
   productName: string;
   janCode: string;
+  janFilterMode: 'include' | 'exclude';
+  excludeJanCodes: string[];
   status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
   paymentMethodIds: string[];
   purchasePlatformIds: string[];
@@ -34,6 +36,8 @@ export const emptyFilters: FilterValues = {
   dateTo: '',
   productName: '',
   janCode: '',
+  janFilterMode: 'include',
+  excludeJanCodes: [],
   status: [],
   paymentMethodIds: [],
   purchasePlatformIds: [],
@@ -172,6 +176,7 @@ export default function TransactionFilters({
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode
+      || filters.excludeJanCodes.length > 0
       || filters.status.length > 0 || filters.paymentMethodIds.length > 0
       || filters.purchasePlatformIds.length > 0 || filters.buybackStore;
     if (hasAny) { onApply(filters); } else { onClear(); }
@@ -190,6 +195,16 @@ export default function TransactionFilters({
   };
 
   const filteredJanCodes = janCodes.filter(j => !janSearch || j.includes(janSearch));
+
+  const switchJanMode = (mode: 'include' | 'exclude') => {
+    setFilters(prev => ({
+      ...prev,
+      janFilterMode: mode,
+      // clear the other mode's selection when switching
+      janCode: mode === 'exclude' ? '' : prev.janCode,
+      excludeJanCodes: mode === 'include' ? [] : prev.excludeJanCodes,
+    }));
+  };
 
   return (
     <div className="mb-4 space-y-2" data-testid="filter-panel">
@@ -238,41 +253,83 @@ export default function TransactionFilters({
           />
         )}
 
-        {/* JAN 单选下拉（含搜索） */}
-        <div className="relative" ref={janRef}>
-          <button
-            type="button"
-            onClick={() => setJanDropdownOpen(!janDropdownOpen)}
-            className={inputClass + ' flex items-center gap-1 min-w-[120px]'}
-          >
-            <span className={filters.janCode ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
-              {filters.janCode || 'JAN'}
-            </span>
-            <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {filters.janCode && (
-            <button onClick={(e) => { e.stopPropagation(); updateFilter('janCode', ''); setJanSearch(''); }} className="absolute right-7 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" type="button">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        {/* JAN 筛选（含む/除外切换） */}
+        <div className="flex items-center gap-1">
+          {/* 模式切换 */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 text-xs">
+            <button
+              type="button"
+              onClick={() => switchJanMode('include')}
+              className={`px-2 py-1.5 transition-colors ${
+                filters.janFilterMode === 'include'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              含む
             </button>
-          )}
-          {janDropdownOpen && (
-            <div className="absolute z-50 top-full left-0 mt-1 w-[200px] max-h-[280px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
-              <div className="p-1.5 border-b border-gray-200 dark:border-gray-700">
-                <input type="text" value={janSearch} onChange={(e) => setJanSearch(e.target.value)} placeholder="搜索JAN..." className="w-full px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none" autoFocus />
-              </div>
-              <div className="overflow-y-auto max-h-[220px]">
-                {filteredJanCodes.length === 0
-                  ? <div className="px-3 py-2 text-sm text-gray-400">无匹配</div>
-                  : filteredJanCodes.map(jan => (
-                    <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.janCode === jan ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {jan}
-                    </button>
-                  ))
-                }
-              </div>
+            <button
+              type="button"
+              onClick={() => switchJanMode('exclude')}
+              className={`px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                filters.janFilterMode === 'exclude'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              除外
+            </button>
+          </div>
+
+          {/* include モード: 単一選択 */}
+          {filters.janFilterMode === 'include' && (
+            <div className="relative" ref={janRef}>
+              <button
+                type="button"
+                onClick={() => setJanDropdownOpen(!janDropdownOpen)}
+                className={inputClass + ' flex items-center gap-1 min-w-[120px]'}
+              >
+                <span className={filters.janCode ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
+                  {filters.janCode || 'JAN'}
+                </span>
+                <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {filters.janCode && (
+                <button onClick={(e) => { e.stopPropagation(); updateFilter('janCode', ''); setJanSearch(''); }} className="absolute right-7 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" type="button">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
+              {janDropdownOpen && (
+                <div className="absolute z-50 top-full left-0 mt-1 w-[200px] max-h-[280px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
+                  <div className="p-1.5 border-b border-gray-200 dark:border-gray-700">
+                    <input type="text" value={janSearch} onChange={(e) => setJanSearch(e.target.value)} placeholder="搜索JAN..." className="w-full px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none" autoFocus />
+                  </div>
+                  <div className="overflow-y-auto max-h-[220px]">
+                    {filteredJanCodes.length === 0
+                      ? <div className="px-3 py-2 text-sm text-gray-400">无匹配</div>
+                      : filteredJanCodes.map(jan => (
+                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.janCode === jan ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {jan}
+                        </button>
+                      ))
+                    }
+                  </div>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* exclude モード: 多選 */}
+          {filters.janFilterMode === 'exclude' && (
+            <MultiSelect
+              options={janCodes.map(j => ({ value: j, label: j }))}
+              selected={filters.excludeJanCodes}
+              onChange={(vals) => updateFilter('excludeJanCodes', vals)}
+              placeholder="除外するJAN"
+              minWidth="160px"
+            />
           )}
         </div>
 
