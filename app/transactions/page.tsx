@@ -926,6 +926,7 @@ function TransactionsContent() {
                     compareMode={compareMode}
                     isSelected={selectedIds.has(item.data.id)}
                     onToggleSelect={toggleSelect}
+                    onLongPress={(id) => { setCompareMode(true); toggleSelect(id); }}
                   />
                 )
               )}

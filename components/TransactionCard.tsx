@@ -1,8 +1,9 @@
 // components/TransactionCard.tsx - 移动端卡片
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
+import { triggerHaptic } from '@/lib/haptic';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
@@ -36,6 +37,7 @@ interface TransactionCardProps {
   compareMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
+  onLongPress?: (id: string) => void;
 }
 
 const TransactionCard = memo(function TransactionCard({
@@ -48,9 +50,31 @@ const TransactionCard = memo(function TransactionCard({
   compareMode = false,
   isSelected = false,
   onToggleSelect,
+  onLongPress,
 }: TransactionCardProps) {
   const router = useRouter();
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
+
+  // 长按检测
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (compareMode || !onLongPress) return;
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      triggerHaptic('medium');
+      onLongPress(transaction.id);
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
   const hasSoldOut = remainingQty <= 0;
   const [showToast, setShowToast] = useState(false);
   const platformName = purchasePlatforms.find(p => p.id === transaction.purchase_platform_id)?.name || null;
@@ -89,24 +113,32 @@ const TransactionCard = memo(function TransactionCard({
     }
   };
 
-  const handleCardClick = compareMode
-    ? (e: React.MouseEvent) => { e.stopPropagation(); onToggleSelect?.(transaction.id); }
-    : undefined;
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (compareMode) {
+      e.stopPropagation();
+      onToggleSelect?.(transaction.id);
+      return;
+    }
+    if (didLongPress.current) { didLongPress.current = false; return; }
+    const target = e.target as HTMLElement;
+    if (!target.closest('a, button')) router.push(`/transactions/${transaction.id}`);
+  };
 
   return (
     <>
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border transition-colors relative
+      className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border transition-colors relative select-none
         ${compareMode
           ? isSelected
             ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
             : 'border-gray-200 dark:border-gray-700 cursor-pointer hover:border-teal-300 dark:hover:border-teal-600'
           : 'border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'
         }`}
-      onClick={compareMode ? handleCardClick : (e) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest('a, button')) router.push(`/transactions/${transaction.id}`);
-      }}
+      onClick={handleCardClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onPointerLeave={cancelLongPress}
     >
       {/* 选择模式复选框 */}
       {compareMode && (

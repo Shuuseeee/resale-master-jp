@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import ScanArrivalModal from '@/components/ScanArrivalModal';
+import { triggerHaptic } from '@/lib/haptic';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -62,36 +63,6 @@ export default function Navigation() {
     setShowFabMenu(false);
   }, [pathname]);
 
-  // 震动反馈工具函数
-  // Android: navigator.vibrate
-  // iOS Safari 17.4+: 隐藏的 <input type="checkbox" switch> trick 触发 Taptic Engine
-  const triggerHaptic = (type: 'light' | 'medium') => {
-    if (typeof window === 'undefined') return;
-    // Android Chrome
-    if (window.navigator?.vibrate) {
-      window.navigator.vibrate(type === 'light' ? 25 : [30, 50, 30]);
-      return;
-    }
-    // iOS Safari 17.4+ — label + switch checkbox 触发 Taptic Engine
-    // 必须点 label 而非 input 本身
-    try {
-      const fire = () => {
-        const label = document.createElement('label');
-        label.ariaHidden = 'true';
-        label.style.display = 'none';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.setAttribute('switch', '');
-        label.appendChild(input);
-        document.head.appendChild(label);
-        label.click();
-        document.head.removeChild(label);
-      };
-      fire();
-      // medium 延迟再触发一次模拟更重的反馈
-      if (type === 'medium') setTimeout(fire, 80);
-    } catch (_) { /* 静默降级 */ }
-  };
 
   const isAuthPage = pathname?.startsWith('/auth');
   if (isAuthPage) return null;
