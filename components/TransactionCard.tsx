@@ -23,6 +23,7 @@ interface BuybackInfo {
   loading: boolean;
   allPrices?: Array<{ store: string; price: number; url: string }>;
   source?: 'cache' | 'stale' | 'pending';
+  fetchedAt?: number;
 }
 
 interface TransactionCardProps {
@@ -219,9 +220,11 @@ const TransactionCard = memo(function TransactionCard({
               <span className="text-gray-400 text-xs">買取価格</span>
               <p className="text-xs font-medium font-mono text-gray-900 dark:text-white">
                 {formatCurrency(buybackInfo.maxPrice)}
-                {buybackInfo.source === 'stale' && (
-                  <span className="ml-1 text-[10px] text-amber-400" title="キャッシュが古い可能性があります">旧</span>
-                )}
+                {buybackInfo.source === 'stale' && buybackInfo.fetchedAt && (() => {
+                  const mins = Math.floor((Date.now() - buybackInfo.fetchedAt) / 60000);
+                  const label = mins < 1 ? 'たった今' : mins < 60 ? `${mins}分前` : `${Math.floor(mins / 60)}時間前`;
+                  return <span className="ml-1 text-[10px] text-amber-400">{label}</span>;
+                })()}
               </p>
               <p className="text-[10px] text-blue-600 dark:text-blue-400">{buybackInfo.maxStore}</p>
             </div>

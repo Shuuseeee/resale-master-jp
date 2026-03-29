@@ -157,6 +157,8 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
 }
 // ─────────────────────────────────────────────────────────
 
+const FILTER_PIN_KEY = 'tx_filter_panel_pinned';
+
 export default function TransactionFilters({
   onApply,
   onClear,
@@ -172,6 +174,32 @@ export default function TransactionFilters({
   const [janDropdownOpen, setJanDropdownOpen] = useState(false);
   const [janSearch, setJanSearch] = useState('');
   const janRef = useRef<HTMLDivElement>(null);
+
+  // 折叠面板 & pin 偏好
+  const [pinned, setPinned] = useState(() => {
+    try { return localStorage.getItem(FILTER_PIN_KEY) === '1'; } catch { return false; }
+  });
+  const [isExpanded, setIsExpanded] = useState(() => {
+    try { return localStorage.getItem(FILTER_PIN_KEY) === '1'; } catch { return false; }
+  });
+
+  const togglePin = () => {
+    const next = !pinned;
+    setPinned(next);
+    try { localStorage.setItem(FILTER_PIN_KEY, next ? '1' : '0'); } catch {}
+    if (next) setIsExpanded(true);
+  };
+
+  // 激活的筛选条件数量
+  const activeCount = [
+    !!(filters.dateFrom || filters.dateTo),
+    !!filters.productName,
+    !!(filters.janCode || filters.excludeJanCodes.length > 0),
+    filters.status.length > 0,
+    filters.paymentMethodIds.length > 0,
+    filters.purchasePlatformIds.length > 0,
+    !!filters.buybackStore,
+  ].filter(Boolean).length;
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
@@ -208,6 +236,48 @@ export default function TransactionFilters({
 
   return (
     <div className="mb-4 space-y-2" data-testid="filter-panel">
+      {/* 折叠面板头部 (仅移动端显示) */}
+      <div className="flex items-center gap-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setIsExpanded(v => !v)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-1"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+          </svg>
+          <span>筛选条件</span>
+          {activeCount > 0 && (
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-500 text-white text-[10px] font-bold">
+              {activeCount}
+            </span>
+          )}
+          <svg
+            className={`w-4 h-4 ml-auto text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {/* Pin 按钮 */}
+        <button
+          type="button"
+          onClick={togglePin}
+          title={pinned ? '取消固定（下次默认折叠）' : '固定展开（下次默认展开）'}
+          className={`p-1.5 rounded-lg border transition-colors ${
+            pinned
+              ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400'
+              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+          }`}
+        >
+          <svg className="w-4 h-4" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* 筛选内容：移动端受折叠控制，桌面端始终展开 */}
+      <div className={`space-y-2 lg:block ${isExpanded ? 'block' : 'hidden'}`}>
       {/* Row 1 */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Date range */}
@@ -374,6 +444,7 @@ export default function TransactionFilters({
           </div>
         </div>
       )}
+      </div>{/* end 折叠内容 */}
     </div>
   );
 }

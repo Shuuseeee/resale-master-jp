@@ -20,6 +20,7 @@ interface BuybackInfo {
   expectedProfit: number;
   loading: boolean;
   source?: 'cache' | 'stale' | 'pending';
+  fetchedAt?: number;
 }
 
 interface TransactionRowProps {
@@ -229,9 +230,14 @@ const TransactionRow = memo(function TransactionRow({
           <div>
             <div className="text-gray-900 dark:text-white font-medium">
               {formatCurrency(buybackInfo.maxPrice)}
-              {buybackInfo.source === 'stale' && (
-                <span className="ml-1 text-[10px] text-amber-400" title="キャッシュが古い可能性があります">旧</span>
-              )}
+              {buybackInfo.source === 'stale' && buybackInfo.fetchedAt && (() => {
+                const d = new Date(buybackInfo.fetchedAt);
+                const isToday = d.toDateString() === new Date().toDateString();
+                const label = isToday
+                  ? d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                  : `${d.getMonth() + 1}/${d.getDate()} ${d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`;
+                return <span className="ml-1 text-[10px] text-amber-400" title="キャッシュ時刻">{label}</span>;
+              })()}
             </div>
             <div className="text-xs text-blue-600 dark:text-blue-400">
               {buybackInfo.maxStore}

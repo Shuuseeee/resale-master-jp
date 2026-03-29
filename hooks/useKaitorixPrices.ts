@@ -20,6 +20,7 @@ export interface BuybackInfo {
   loading: boolean;
   allPrices?: Array<{ store: string; price: number; url: string }>;
   source?: 'cache' | 'stale' | 'pending'; // price data freshness
+  fetchedAt?: number; // unix ms — when this data was fetched/cached
 }
 
 export interface KaitorixState {
@@ -61,6 +62,7 @@ function loadCacheFromStorage(): Map<string, BuybackInfo> {
           loading: false,
           allPrices: info.allPrices || [],
           source: info.source,
+          fetchedAt: info.timestamp,
         });
       }
     });
@@ -135,6 +137,7 @@ function runFetch(
             loading: false,
             allPrices: getFilteredPrices(result ?? null, config.enabledStores),
             source: (result?._source as BuybackInfo['source']) ?? 'cache',
+            fetchedAt: Date.now(),
           });
         } else {
           newMap.set(tx.id, {
