@@ -128,51 +128,31 @@ export async function fetchBuybackPrices(
   const uniqueJans = [...new Set(janCodes)];
   const resultMap = new Map<string, KaitorixResponse | null>();
 
-  const BATCH_DELAY = 500; // API route now returns instantly from cache/queue
+  if (uniqueJans.length === 0) return resultMap;
+
+  // Requests hit our own API route (Supabase cache read + queue insert only).
+  // The scraper worker controls its own pace against kaitorix.app — parallel here is safe.
+  let completed = 0;
   let failed = 0;
-  let consecutiveFailures = 0;
 
-  for (let i = 0; i < uniqueJans.length; i++) {
-    // Check abort
-    if (abortSignal?.aborted) {
-      break;
-    }
+  await Promise.all(
+    uniqueJans.map(async (jan) => {
+      if (abortSignal?.aborted) return;
 
-    const jan = uniqueJans[i];
-    const result = await fetchBuybackPrice(jan);
-    resultMap.set(jan, result);
+      const result = await fetchBuybackPrice(jan);
+      resultMap.set(jan, result);
 
-    if (!result) {
-      failed++;
-      consecutiveFailures++;
-    } else {
-      consecutiveFailures = 0;
-    }
+      if (!result) failed++;
+      completed++;
 
-    // Report progress
-    onProgress?.({
-      completed: i + 1,
-      total: uniqueJans.length,
-      failed,
-      stopped: false,
-    });
-
-    // 3 consecutive failures likely means rate limited - stop early
-    if (consecutiveFailures >= 3) {
       onProgress?.({
-        completed: i + 1,
+        completed,
         total: uniqueJans.length,
         failed,
-        stopped: true,
+        stopped: false,
       });
-      break;
-    }
-
-    // Delay between requests (except for last one)
-    if (i < uniqueJans.length - 1 && !abortSignal?.aborted) {
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-    }
-  }
+    })
+  );
 
   return resultMap;
 }
