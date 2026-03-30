@@ -11,21 +11,22 @@ export function triggerHaptic(type: 'light' | 'medium' = 'light') {
     return;
   }
 
-  // iOS Safari 17.4+: input[type=checkbox][switch] 切换触发 Taptic Engine
-  // 元素必须在 viewport 内渲染（display:none / opacity:0 / 屏外都不触发）
+  // iOS Safari 17.4+: label 包裹 input[type=checkbox][switch]，label.click() 触发 Taptic Engine
+  // 必须用 label.click()，直接 input.click() 无效；display:none 也无效，用屏外定位
   try {
     const fire = () => {
+      const label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;overflow:hidden;opacity:0.01;';
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.setAttribute('switch', '');
-      // 1×1px，视口内，极低不透明度（0 不行，需要可见）
-      input.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0.01;border:none;padding:0;margin:0;';
-      document.body.appendChild(input);
-      input.click();
-      // 延迟移除，确保 iOS 有时间触发震动再销毁元素
-      setTimeout(() => { if (input.parentNode) input.parentNode.removeChild(input); }, 150);
+      label.appendChild(input);
+      document.body.appendChild(label);
+      label.click();
+      document.body.removeChild(label);
     };
     fire();
-    if (type === 'medium') setTimeout(fire, 100);
+    if (type === 'medium') setTimeout(fire, 80);
   } catch (_) {}
 }
