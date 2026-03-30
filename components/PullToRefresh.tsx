@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { triggerHaptic } from '@/lib/haptic';
 
 const THRESHOLD = 72;
 const MAX_PULL = 100;
@@ -57,6 +58,7 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
       pullYRef.current = 0;
 
       if (captured >= THRESHOLD) {
+        triggerHaptic('medium');
         refreshingRef.current = true;
         setRefreshing(true); // only now we use setState
         // Hold indicator open while refreshing

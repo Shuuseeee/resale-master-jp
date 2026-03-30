@@ -60,10 +60,11 @@ const TransactionCard = memo(function TransactionCard({
   const didLongPress = useRef(false);
   const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (compareMode || !onLongPress) return;
     didLongPress.current = false;
-    pointerStartPos.current = { x: e.clientX, y: e.clientY };
+    const touch = e.touches[0];
+    pointerStartPos.current = { x: touch.clientX, y: touch.clientY };
     longPressTimer.current = setTimeout(() => {
       didLongPress.current = true;
       triggerHaptic('medium');
@@ -71,10 +72,11 @@ const TransactionCard = memo(function TransactionCard({
     }, 500);
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     if (!pointerStartPos.current) return;
-    const dx = Math.abs(e.clientX - pointerStartPos.current.x);
-    const dy = Math.abs(e.clientY - pointerStartPos.current.y);
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - pointerStartPos.current.x);
+    const dy = Math.abs(touch.clientY - pointerStartPos.current.y);
     // 手指移动超过 8px 视为滚动，取消长按
     if (dx > 8 || dy > 8) cancelLongPress();
   };
@@ -147,10 +149,10 @@ const TransactionCard = memo(function TransactionCard({
           : 'border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'
         }`}
       onClick={handleCardClick}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={cancelLongPress}
-      onPointerCancel={cancelLongPress}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={cancelLongPress}
+      onTouchCancel={cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: 'none' } as React.CSSProperties}
     >
