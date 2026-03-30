@@ -88,6 +88,12 @@ const TransactionCard = memo(function TransactionCard({
     }
     pointerStartPos.current = null;
   };
+
+  // touchEnd 在用户手势上下文内——若长按已触发，在此补一次震动作为保底
+  const handleTouchEnd = () => {
+    if (didLongPress.current) triggerHaptic('medium');
+    cancelLongPress();
+  };
   const hasSoldOut = remainingQty <= 0;
   const [showToast, setShowToast] = useState(false);
   const platformName = purchasePlatforms.find(p => p.id === transaction.purchase_platform_id)?.name || null;
@@ -151,7 +157,7 @@ const TransactionCard = memo(function TransactionCard({
       onClick={handleCardClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      onTouchEnd={cancelLongPress}
+      onTouchEnd={handleTouchEnd}
       onTouchCancel={cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: 'none' } as React.CSSProperties}
