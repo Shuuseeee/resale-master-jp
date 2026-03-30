@@ -274,41 +274,29 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-testid="metrics-grid">
             <div className={card.stat} data-testid="metric-total-sales">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总销售额</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalSales)}
-              </div>
-              <div className="text-sm">
-                环比: {formatChangePercentage(comparison.salesChange)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-total-profit">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalProfit)}
-              </div>
-              <div className="text-sm">
-                环比: {formatChangePercentage(comparison.profitChange)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-avg-roi">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatROI(comparison.current.avgROI)}
-              </div>
-              <div className="text-sm">
-                环比: {formatChangePercentage(comparison.roiChange)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-transaction-count">
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">交易数量</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {comparison.current.transactionCount}
-              </div>
-              <div className="text-sm">
-                环比: {formatChangePercentage(comparison.transactionChange)}
               </div>
             </div>
 

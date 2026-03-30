@@ -545,53 +545,49 @@ export default function Navigation() {
       {/* ── もっと 上滑抽屉 ── */}
       {showMoreSheet && (
         <div className="lg:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+          {/* 悬浮在导航栏上方，与导航栏同款间距和圆角 */}
           <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-[32px] shadow-2xl flex flex-col"
+            className="absolute left-4 right-4 rounded-[32px] overflow-hidden flex flex-col"
             style={{
-              maxHeight: '65vh',
-              background: isDark ? 'rgba(20,20,30,0.55)' : 'rgba(255,255,255,0.22)',
+              bottom: 'calc(env(safe-area-inset-bottom) + 96px)',
+              maxHeight: '60vh',
+              background: isDark ? 'rgba(20,20,30,0.65)' : 'rgba(255,255,255,0.28)',
               backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
               WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
-              borderTop: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.6)',
+              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.65)',
               boxShadow: isDark
-                ? '0 -8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
-                : '0 -8px 40px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.75)',
+                ? '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)'
+                : '0 8px 40px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.85)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 拖拽指示条 — 固定 */}
-            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
-            </div>
             {/* 图标网格 — 可滚动 */}
             <div className="overflow-y-auto flex-1">
-            <div className="grid grid-cols-4 gap-1 px-4 py-3">
-              {moreItems.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => triggerHaptic('light')}
-                    className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl transition-colors ${
-                      active
-                        ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/5 active:bg-gray-100'
-                    }`}
-                  >
-                    {item.icon}
-                    <span className="text-[11px] font-medium text-center leading-tight">{item.name}</span>
-                  </Link>
-                );
-              })}
+              <div className="grid grid-cols-4 gap-1 px-4 pt-4 pb-3">
+                {moreItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => triggerHaptic('light')}
+                      className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl transition-colors ${
+                        active
+                          ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/5 active:bg-gray-100'
+                      }`}
+                    >
+                      {item.icon}
+                      <span className="text-[11px] font-medium text-center leading-tight">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-            </div>{/* end overflow */}
-            {/* 用户信息栏 — 固定在底部 */}
-            <div className="flex-shrink-0 mx-4 border-t border-gray-100/50 dark:border-gray-700" />
-            <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3"
-              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
-            >
+            {/* 用户信息栏 */}
+            <div className="flex-shrink-0 mx-4 border-t border-gray-200/50 dark:border-gray-700/60" />
+            <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-9 h-9 bg-teal-100 dark:bg-teal-900/40 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
