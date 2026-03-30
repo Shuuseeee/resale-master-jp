@@ -191,7 +191,13 @@ function buildQuery(filters: AnalyticsFilters) {
   let query = supabase
     .from('sales_records')
     .select(`
-      *,
+      sale_date,
+      quantity_sold,
+      total_selling_price,
+      total_profit,
+      actual_cash_spent,
+      platform_fee,
+      shipping_fee,
       transaction:transaction_id(
         id,
         date,
@@ -722,7 +728,9 @@ export async function getPurchasePlatformAnalysis(filters: AnalyticsFilters): Pr
     const { data, error } = await supabase
       .from('sales_records')
       .select(`
-        *,
+        quantity_sold,
+        total_profit,
+        actual_cash_spent,
         transaction:transaction_id(
           id,
           purchase_price_total,
@@ -805,7 +813,10 @@ export async function getSellingPlatformAnalysis(filters: AnalyticsFilters): Pro
     const { data, error } = await supabase
       .from('sales_records')
       .select(`
-        *,
+        selling_platform_id,
+        total_selling_price,
+        total_profit,
+        actual_cash_spent,
         selling_platform:selling_platform_id(id, name)
       `)
       .not('sale_date', 'is', null)

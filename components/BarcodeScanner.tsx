@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BarcodeDetector } from 'barcode-detector';
+import { triggerHaptic } from '@/lib/haptic';
 
 interface BarcodeScannerProps {
   onDetected: (code: string) => void;
@@ -42,6 +43,7 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
               const code = barcodes[0].rawValue;
               if (code) {
                 cleanup();
+                triggerHaptic('medium');
                 onDetected(code);
               }
             }

@@ -58,10 +58,12 @@ const TransactionCard = memo(function TransactionCard({
   // 长按检测
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
+  const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (compareMode || !onLongPress) return;
     didLongPress.current = false;
+    pointerStartPos.current = { x: e.clientX, y: e.clientY };
     longPressTimer.current = setTimeout(() => {
       didLongPress.current = true;
       triggerHaptic('medium');
@@ -69,11 +71,20 @@ const TransactionCard = memo(function TransactionCard({
     }, 500);
   };
 
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!pointerStartPos.current) return;
+    const dx = Math.abs(e.clientX - pointerStartPos.current.x);
+    const dy = Math.abs(e.clientY - pointerStartPos.current.y);
+    // 手指移动超过 8px 视为滚动，取消长按
+    if (dx > 8 || dy > 8) cancelLongPress();
+  };
+
   const cancelLongPress = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+    pointerStartPos.current = null;
   };
   const hasSoldOut = remainingQty <= 0;
   const [showToast, setShowToast] = useState(false);
@@ -86,6 +97,7 @@ const TransactionCard = memo(function TransactionCard({
   const copyToClipboard = (text: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(text).then(() => {
+      triggerHaptic('light');
       setShowToast(true);
     });
   };
@@ -136,9 +148,11 @@ const TransactionCard = memo(function TransactionCard({
         }`}
       onClick={handleCardClick}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
       onPointerUp={cancelLongPress}
       onPointerCancel={cancelLongPress}
-      onPointerLeave={cancelLongPress}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ WebkitTouchCallout: 'none' } as React.CSSProperties}
     >
       {/* 选择模式复选框 */}
       {compareMode && (
@@ -184,6 +198,7 @@ const TransactionCard = memo(function TransactionCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  triggerHaptic('medium');
                   onMarkArrived(transaction.id);
                 }}
                 className="px-2 py-0.5 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors"
@@ -295,6 +310,7 @@ const TransactionCard = memo(function TransactionCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              triggerHaptic('medium');
               onDelete(transaction.id);
             }}
             className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"

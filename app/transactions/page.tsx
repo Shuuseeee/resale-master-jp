@@ -170,7 +170,7 @@ function TransactionsContent() {
         .from('transactions')
         .select(`
           *,
-          payment_method:payment_methods(*)
+          payment_method:payment_methods(id, name)
         `)
         .order('date', { ascending: false });
 
@@ -754,7 +754,7 @@ function TransactionsContent() {
                   <button
                     onClick={() => handleExportCSV('filtered')}
                     disabled={exporting}
-                    className={button.secondary + ' flex items-center gap-2 whitespace-nowrap rounded-r-none border-r-0'}
+                    className={button.secondary + ' flex items-center gap-2 whitespace-nowrap' + (filteredTransactions.length < transactions.length ? ' rounded-r-none border-r-0' : '')}
                   >
                     {exporting ? (
                       <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
