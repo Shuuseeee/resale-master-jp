@@ -62,7 +62,7 @@ function loadCacheFromStorage(): Map<string, BuybackInfo> {
           loading: false,
           allPrices: info.allPrices || [],
           source: info.source,
-          fetchedAt: info.timestamp,
+          fetchedAt: info.fetchedAt ?? info.timestamp, // prefer original scrape time, fall back to save time
         });
       }
     });
@@ -79,6 +79,7 @@ function saveCacheToStorage(map: Map<string, BuybackInfo>) {
     const now = Date.now();
 
     map.forEach((info, id) => {
+      // timestamp = save time, used for TTL; fetchedAt = actual scrape time, preserved as-is
       data[id] = { ...info, timestamp: now };
     });
 
@@ -130,6 +131,12 @@ function runFetch(
           const remainingQty = tx.quantity - (tx.quantity_sold ?? 0);
           const expectedProfit = (bestPrice.maxPrice - costPerUnit) * remainingQty;
 
+          // fetchedAt: use server's _fetched_at for stale data so the UI shows correct age;
+          // for fresh cache/new data use current time
+          const fetchedAt = result?._source === 'stale' && result._fetched_at
+            ? new Date(result._fetched_at).getTime()
+            : Date.now();
+
           newMap.set(tx.id, {
             maxPrice: bestPrice.maxPrice,
             maxStore: bestPrice.maxStore,
@@ -137,7 +144,7 @@ function runFetch(
             loading: false,
             allPrices: getFilteredPrices(result ?? null, config.enabledStores),
             source: (result?._source as BuybackInfo['source']) ?? 'cache',
-            fetchedAt: Date.now(),
+            fetchedAt,
           });
         } else {
           newMap.set(tx.id, {

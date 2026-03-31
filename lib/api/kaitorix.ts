@@ -14,6 +14,7 @@ interface KaitorixResponse {
   max_store: string;
   prices: KaitorixPrice[];
   _source?: string;
+  _fetched_at?: string; // ISO string — actual time data was scraped (only present for stale)
 }
 
 interface CacheEntry {

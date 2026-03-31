@@ -57,6 +57,7 @@ export async function GET(
       max_store: cached.max_store || '',
       prices: cached.prices || [],
       _source: 'stale',
+      _fetched_at: cached.fetched_at,
     });
   }
 
