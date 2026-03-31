@@ -94,8 +94,9 @@ export async function fetchBuybackPrice(
         return null;
       }
 
-      // Don't cache pending/empty results
-      if (data.prices.length === 0 || data._source === 'pending') {
+      // Only cache fresh server-side results; stale/pending must always hit server
+      // so the server can re-enqueue a scrape on every request
+      if (data.prices.length === 0 || data._source === 'pending' || data._source === 'stale') {
         return data;
       }
 
