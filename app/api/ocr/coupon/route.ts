@@ -60,7 +60,14 @@ export async function POST(request: Request) {
 - 読み取れない項目はnullまたは0にしてください
 - 日付は必ずYYYY-MM-DD形式に変換してください
 - discount_typeの判断基準：%OFFや割引率→percentage、○円引き→fixed_amount、ポイント倍率→point_multiply、無料引換や商品プレゼント→free_item
-- 【重要】日付の解釈：「26/3/31」や「26年3月31日」のような2桁年は西暦20XX年として解釈する（例: 26/3/31 → 2026-03-31）。現在は令和時代であり平成（1989-2019）ではない`,
+- 【最重要・日付ルール】元号の明示がない2桁年は「西暦20XX年」として解釈すること：
+  - 「26/3/31」→ 2026-03-31（西暦2026年）
+  - 「26年3月31日」→ 2026-03-31（西暦2026年）
+  - 「27.12.31」→ 2027-12-31（西暦2027年）
+  - 絶対に平成として解釈しないこと（平成は2019年に終了）
+  - 「令和〇年」と明記されている場合のみ令和換算（令和7年=2025年）
+  - 「平成〇年」と明記されている場合のみ平成換算（平成26年=2014年）
+  - 元号なしの2桁数字は必ず西暦20XX年`,
             },
           ],
         },
@@ -78,6 +85,18 @@ export async function POST(request: Request) {
       parsed = JSON.parse(jsonStr);
     } catch {
       return NextResponse.json({ error: 'Failed to parse AI response', raw: text }, { status: 422 });
+    }
+
+    // 平成誤読補正: 元号なし2桁年を平成として解釈した場合（2010-2019）、12年加算して西暦20XX年に修正
+    // 例: 平成26年誤読 → 2014 → +12 → 2026
+    for (const field of ['expiry_date', 'start_date']) {
+      const val = parsed[field];
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        const year = parseInt(val.slice(0, 4), 10);
+        if (year >= 2010 && year <= 2019) {
+          parsed[field] = `${year + 12}${val.slice(4)}`;
+        }
+      }
     }
 
     return NextResponse.json(parsed);
