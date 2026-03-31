@@ -110,7 +110,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
       {/* 展開時：子カード一覧（max-height アニメーション） */}
       <div
         className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ maxHeight: isExpanded ? `${group.transactions.length * 320}px` : '0px' }}
+        style={{ maxHeight: isExpanded ? `${group.transactions.length * 520}px` : '0px' }}
       >
         <div className="border-t border-teal-200 dark:border-teal-800 divide-y divide-gray-100 dark:divide-gray-800">
           {group.transactions.map(tx => (
