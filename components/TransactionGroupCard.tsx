@@ -78,6 +78,9 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
             <p className="text-xs text-gray-400 font-mono">{group.janCode}</p>
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
               <span>在庫 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></span>
+              {group.totalPending > 0 && (
+                <span>未着 <span className="font-medium text-orange-500">{group.totalPending}</span></span>
+              )}
               <span>売済 <span className="font-medium text-gray-700 dark:text-gray-300">{group.totalSold}</span></span>
               <span>仕入 <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(group.totalPurchasePrice)}</span></span>
             </div>

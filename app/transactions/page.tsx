@@ -37,6 +37,7 @@ export interface TransactionGroup {
   transactions: TransactionWithPayment[];
   totalQuantity: number;
   totalInStock: number;
+  totalPending: number;
   totalSold: number;
   totalPurchasePrice: number;
   totalProfit: number | null;
@@ -457,14 +458,19 @@ function TransactionsContent() {
 
   // 分组汇总辅助函数
   const buildGroupSummary = useCallback((janCode: string, txs: TransactionWithPayment[]): TransactionGroup => {
-    let totalQuantity = 0, totalInStock = 0, totalSold = 0, totalPurchasePrice = 0;
+    let totalQuantity = 0, totalInStock = 0, totalPending = 0, totalSold = 0, totalPurchasePrice = 0;
     let totalProfit: number | null = null;
     let bestBuybackPrice = 0, bestBuybackStore = '', bestExpectedProfit = 0;
     let latestDate = '';
 
     txs.forEach(tx => {
       totalQuantity += tx.quantity;
-      totalInStock += tx.quantity_in_stock ?? Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+      // pending（未着）不计入在库，单独统计
+      if (tx.status === 'pending') {
+        totalPending += tx.quantity;
+      } else {
+        totalInStock += tx.quantity_in_stock ?? Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+      }
       totalSold += tx.quantity_sold ?? 0;
       totalPurchasePrice += tx.purchase_price_total;
       if (tx.aggregated_profit != null) {
@@ -487,6 +493,7 @@ function TransactionsContent() {
       transactions: txs,
       totalQuantity,
       totalInStock,
+      totalPending,
       totalSold,
       totalPurchasePrice,
       totalProfit,
@@ -930,6 +937,21 @@ function TransactionsContent() {
               <p className="text-xs text-red-500 mt-1">
                 请求被限制，已自动停止。已获取的价格数据仍然可用。
               </p>
+            )}
+          </div>
+        )}
+
+        {/* 筛选计数 */}
+        {transactions.length > 0 && (
+          <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 px-1 -mt-1 mb-1">
+            <span>
+              {filteredTransactions.length < transactions.length
+                ? <><span className="font-medium text-gray-700 dark:text-gray-300">{filteredTransactions.length}</span> / {transactions.length} 件</>
+                : <>{transactions.length} 件</>
+              }
+            </span>
+            {filteredTransactions.length < transactions.length && (
+              <span className="text-teal-500">已筛选</span>
             )}
           </div>
         )}
