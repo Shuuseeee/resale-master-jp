@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
-              <div className="text-xs text-gray-500 mt-1">在庫+未着</div>
+              <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
             {/* 今月の利益 / 期待ポイント */}
@@ -178,7 +178,7 @@ export default function DashboardPage() {
               {includePoints ? (
                 <>
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500 mt-1">pt（在庫+未着）</div>
+                  <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
-              <div className="text-xs text-gray-500 mt-1">在庫+未着</div>
+              <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
             {/* 今月の利益 / 期待ポイント */}
@@ -394,7 +394,7 @@ export default function DashboardPage() {
               {includePoints ? (
                 <>
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500 mt-1">pt（在庫+未着）</div>
+                  <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>

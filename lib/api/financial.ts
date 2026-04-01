@@ -215,9 +215,16 @@ async function getDashboardKPI(): Promise<{
   const totalRecovered = sales.reduce((sum, s) => sum + (s.total_selling_price || 0), 0);
   const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
 
-  const unrealizedStockCost = transactions
-    .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
-    .reduce((sum, t) => sum + ((t.unit_price || 0) * (t.quantity_in_stock || 0)), 0);
+  const unrealizedStockCost = transactions.reduce((sum, t) => {
+    if (t.status === 'awaiting_payment') {
+      // 未入金：已售出但收款未到，以全额仕入成本计入未回収
+      return sum + (t.purchase_price_total || 0);
+    }
+    if (t.status === 'in_stock' || t.status === 'pending') {
+      return sum + ((t.unit_price || 0) * (t.quantity_in_stock || 0));
+    }
+    return sum;
+  }, 0);
 
   const expectedPoints = transactions
     .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
