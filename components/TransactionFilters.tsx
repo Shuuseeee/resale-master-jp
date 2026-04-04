@@ -17,6 +17,7 @@ export interface FilterValues {
   status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
   paymentMethodIds: string[];
   purchasePlatformIds: string[];
+  sellingPlatformIds: string[];
   buybackStore: string;
 }
 
@@ -25,6 +26,7 @@ interface TransactionFiltersProps {
   onClear: () => void;
   paymentMethods: Array<{ id: string; name: string }>;
   purchasePlatforms?: Array<{ id: string; name: string }>;
+  sellingPlatforms?: Array<{ id: string; name: string }>;
   janCodes?: string[];
   initialValues?: FilterValues | null;
   hasBuybackData?: boolean;
@@ -41,6 +43,7 @@ export const emptyFilters: FilterValues = {
   status: [],
   paymentMethodIds: [],
   purchasePlatformIds: [],
+  sellingPlatformIds: [],
   buybackStore: '',
 };
 
@@ -164,6 +167,7 @@ export default function TransactionFilters({
   onClear,
   paymentMethods,
   purchasePlatforms,
+  sellingPlatforms,
   janCodes = [],
   initialValues,
   hasBuybackData = false,
@@ -198,6 +202,7 @@ export default function TransactionFilters({
     filters.status.length > 0,
     filters.paymentMethodIds.length > 0,
     filters.purchasePlatformIds.length > 0,
+    filters.sellingPlatformIds.length > 0,
     !!filters.buybackStore,
   ].filter(Boolean).length;
 
@@ -206,7 +211,8 @@ export default function TransactionFilters({
     const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode
       || filters.excludeJanCodes.length > 0
       || filters.status.length > 0 || filters.paymentMethodIds.length > 0
-      || filters.purchasePlatformIds.length > 0 || filters.buybackStore;
+      || filters.purchasePlatformIds.length > 0 || filters.sellingPlatformIds.length > 0
+      || filters.buybackStore;
     if (hasAny) { onApply(filters); } else { onClear(); }
   }, [filters]);
 
@@ -320,6 +326,16 @@ export default function TransactionFilters({
             selected={filters.purchasePlatformIds}
             onChange={(vals) => updateFilter('purchasePlatformIds', vals)}
             placeholder="采购平台"
+          />
+        )}
+
+        {/* 售出平台 多选 */}
+        {(sellingPlatforms || []).length > 0 && (
+          <MultiSelect
+            options={(sellingPlatforms || []).map(p => ({ value: p.id, label: p.name }))}
+            selected={filters.sellingPlatformIds}
+            onChange={(vals) => updateFilter('sellingPlatformIds', vals)}
+            placeholder="售出平台"
           />
         )}
 

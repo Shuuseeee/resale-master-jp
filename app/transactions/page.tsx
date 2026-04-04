@@ -87,10 +87,11 @@ function TransactionsContent() {
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
     const purchasePlatformIds = (searchParams.get('pp') || '').split(',').filter(Boolean);
+    const sellingPlatformIds = (searchParams.get('sp') || '').split(',').filter(Boolean);
     const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
     const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || excludeJanCodes.length > 0) {
-      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, buybackStore: '' };
+    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
+      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -151,6 +152,7 @@ function TransactionsContent() {
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
       if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
+      if (activeFilters.sellingPlatformIds.length > 0) params.set('sp', activeFilters.sellingPlatformIds.join(','));
       if (activeFilters.janFilterMode === 'exclude') params.set('jfm', 'exclude');
       if (activeFilters.excludeJanCodes.length > 0) params.set('ejc', activeFilters.excludeJanCodes.join(','));
     }
@@ -395,6 +397,14 @@ function TransactionsContent() {
         // 購入先筛选
         if (activeFilters.purchasePlatformIds.length > 0 && !activeFilters.purchasePlatformIds.includes(t.purchase_platform_id || '')) {
           return false;
+        }
+
+        // 售出平台筛选（交集：只要有一条销售记录属于选中平台即匹配）
+        if (activeFilters.sellingPlatformIds.length > 0) {
+          const hasMatch = t.aggregated_selling_platform_ids?.some(id =>
+            activeFilters.sellingPlatformIds.includes(id)
+          ) ?? false;
+          if (!hasMatch) return false;
         }
 
         // 买取店铺筛选（仅对已加载买取数据的记录有效）
@@ -879,6 +889,7 @@ function TransactionsContent() {
           onClear={handleClearFilters}
           paymentMethods={paymentMethods}
           purchasePlatforms={purchasePlatforms}
+          sellingPlatforms={sellingPlatforms}
           janCodes={janCodes}
           initialValues={activeFilters}
           hasBuybackData={buybackPrices.size > 0}

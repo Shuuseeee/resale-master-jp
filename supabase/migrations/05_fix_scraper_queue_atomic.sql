@@ -9,7 +9,7 @@ RETURNS TABLE(
 BEGIN
   RETURN QUERY
   UPDATE kaitorix_scrape_queue
-  SET status = 'processing', attempts = attempts + 1
+  SET status = 'processing', attempts = kaitorix_scrape_queue.attempts + 1
   WHERE kaitorix_scrape_queue.id = (
     SELECT q.id
     FROM kaitorix_scrape_queue q

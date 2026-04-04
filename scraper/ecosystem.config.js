@@ -9,6 +9,7 @@ module.exports = {
     autorestart: true,
     env: {
       NODE_ENV: 'production',
+      TMPDIR: '/private/tmp',
     },
   }],
 };

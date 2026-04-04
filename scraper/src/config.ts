@@ -10,7 +10,7 @@ export const CONFIG = {
   MAX_ATTEMPTS: 3,
 
   // 浏览器
-  HEADLESS: false,
+  HEADLESS: true,
   USER_DATA_DIR: './browser-data',
 
   // KaitoriX
