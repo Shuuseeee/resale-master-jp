@@ -1,7 +1,7 @@
 // components/TransactionGroupCard.tsx — 移动端 JAN 分组汇总卡片
 'use client';
 
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { TransactionGroup } from '@/app/transactions/page';
 import { ProductImage } from '@/components/OptimizedImage';
@@ -29,6 +29,7 @@ interface TransactionGroupCardProps {
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
   onSelectGroup?: (ids: string[]) => void;
+  onLongPress?: (id: string) => void;
 }
 
 const TransactionGroupCard = memo(function TransactionGroupCard({
@@ -44,9 +45,11 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   selectedIds = new Set(),
   onToggleSelect,
   onSelectGroup,
+  onLongPress,
 }: TransactionGroupCardProps) {
   const hasBuyback = group.bestBuybackPrice > 0;
   const groupIds = group.transactions.map(t => t.id);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedCount = groupIds.filter(id => selectedIds.has(id)).length;
   const allSelected = selectedCount === groupIds.length;
   const someSelected = selectedCount > 0 && !allSelected;
@@ -84,6 +87,27 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         <button
           type="button"
           onClick={onToggle}
+          onTouchStart={() => {
+            if (compareMode || !onLongPress) return;
+            longPressTimer.current = setTimeout(() => {
+              // 展开分组并全选该组
+              if (!isExpanded) onToggle();
+              onSelectGroup?.(groupIds);
+              onLongPress(groupIds[0]);
+            }, 500);
+          }}
+          onTouchEnd={() => {
+            if (longPressTimer.current) {
+              clearTimeout(longPressTimer.current);
+              longPressTimer.current = null;
+            }
+          }}
+          onTouchMove={() => {
+            if (longPressTimer.current) {
+              clearTimeout(longPressTimer.current);
+              longPressTimer.current = null;
+            }
+          }}
           className="flex-1 text-left hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
         >
         <div className="flex items-center gap-3">
@@ -162,6 +186,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 compareMode={compareMode}
                 isSelected={selectedIds.has(tx.id)}
                 onToggleSelect={onToggleSelect}
+                onLongPress={onLongPress}
               />
             </div>
           ))}

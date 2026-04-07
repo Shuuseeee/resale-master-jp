@@ -1022,6 +1022,7 @@ function TransactionsContent() {
                     selectedIds={selectedIds}
                     onToggleSelect={toggleSelect}
                     onSelectGroup={selectGroup}
+                    onLongPress={(id) => { setCompareMode(true); toggleSelect(id); }}
                   />
                 ) : (
                   <TransactionCard
