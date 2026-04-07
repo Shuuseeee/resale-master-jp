@@ -104,6 +104,13 @@ function TransactionsContent() {
   const [isGrouped, setIsGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // searchTerm 防抖：避免每次击键都触发 filter+sort
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // KaitoriX 买取价格
   // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
   const kaitorixState = useKaitorixPrices(transactions);
@@ -274,19 +281,26 @@ function TransactionsContent() {
   };
 
   const stats = useMemo(() => {
-    const sold = transactions.filter(t => t.status === 'sold');
-    const totalCost = transactions.reduce((sum, t) => sum + t.purchase_price_total, 0);
-    const totalProfit = sold.reduce((sum, t) => sum + (t.total_profit || 0), 0);
-    const totalActualCashSpent = sold.reduce((sum, t) => sum + ((t as any).aggregated_actual_cash_spent || 0), 0);
+    let pending = 0, inStock = 0, awaitingPayment = 0, sold = 0, returned = 0;
+    let totalCost = 0, totalProfit = 0, totalActualCashSpent = 0;
+    transactions.forEach(t => {
+      totalCost += t.purchase_price_total;
+      switch (t.status) {
+        case 'pending': pending++; break;
+        case 'in_stock': inStock++; break;
+        case 'awaiting_payment': awaitingPayment++; break;
+        case 'sold':
+          sold++;
+          totalProfit += t.total_profit || 0;
+          totalActualCashSpent += (t as any).aggregated_actual_cash_spent || 0;
+          break;
+        case 'returned': returned++; break;
+      }
+    });
     return {
       total: transactions.length,
-      pending: transactions.filter(t => t.status === 'pending').length,
-      inStock: transactions.filter(t => t.status === 'in_stock').length,
-      awaitingPayment: transactions.filter(t => t.status === 'awaiting_payment').length,
-      sold: sold.length,
-      returned: transactions.filter(t => t.status === 'returned').length,
-      totalCost,
-      totalProfit,
+      pending, inStock, awaitingPayment, sold, returned,
+      totalCost, totalProfit,
       avgROI: totalActualCashSpent > 0 ? (totalProfit / totalActualCashSpent) * 100 : 0,
     };
   }, [transactions]);
@@ -316,42 +330,35 @@ function TransactionsContent() {
   );
 
   // 筛选和排序
-  const filteredTransactions = useMemo(() => transactions
+  const filteredTransactions = useMemo(() => {
+    // 搜索相关预计算（移出 filter 循环，每次 memo 只算一次）
+    const term = debouncedSearchTerm.toLowerCase();
+    // 匹配销售平台 ID 集合（Set 实现 O(1) 查找）
+    const matchedSellingPlatformIdSet: Set<string> | null = debouncedSearchTerm
+      ? new Set(sellingPlatforms.filter(p => p.name.toLowerCase().includes(term)).map(p => p.id))
+      : null;
+
+    return transactions
     .filter(t => {
       // 全局搜索
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-
-        // 反向映射：根据搜索词找出匹配的销售平台 ID 集合
-        const matchedSellingPlatformIds = sellingPlatforms
-          .filter(p => p.name.toLowerCase().includes(term))
-          .map(p => p.id);
-
-        // 正向映射：获取当前记录的购入平台名称
-        const purchasePlatformName = t.purchase_platform_id 
-          ? (platformMap.get(t.purchase_platform_id) || '') 
+      if (debouncedSearchTerm) {
+        const purchasePlatformName = t.purchase_platform_id
+          ? (platformMap.get(t.purchase_platform_id) || '')
           : '';
-
-        // 检查销售平台交集
-        const matchesSellingPlatform = t.aggregated_selling_platform_ids?.some(id => 
-          matchedSellingPlatformIds.includes(id)
-        ) ?? false;
-
-        // 综合匹配逻辑
+        const matchesSellingPlatform = matchedSellingPlatformIdSet !== null &&
+          (t.aggregated_selling_platform_ids?.some(id => matchedSellingPlatformIdSet.has(id)) ?? false);
         const matchesSaleOrderNumber = t.aggregated_sale_order_numbers?.some(
           n => n.toLowerCase().includes(term)
         ) ?? false;
-
         const matchesSearch =
           t.product_name.toLowerCase().includes(term) ||
           t.notes?.toLowerCase().includes(term) ||
           (t.jan_code || '').toLowerCase().includes(term) ||
           (t.order_number || '').toLowerCase().includes(term) ||
-          t.purchase_price_total.toString().includes(term) || // 金额匹配
-          purchasePlatformName.includes(term) ||              // 购入平台匹配
-          matchesSellingPlatform ||                           // 销售平台匹配
-          matchesSaleOrderNumber;                             // 销售注文番号匹配
-
+          t.purchase_price_total.toString().includes(term) ||
+          purchasePlatformName.includes(term) ||
+          matchesSellingPlatform ||
+          matchesSaleOrderNumber;
         if (!matchesSearch) return false;
       }
 
@@ -464,9 +471,10 @@ function TransactionsContent() {
       } else {
         return aValue < bValue ? 1 : -1;
       }
-    }),
+    });
+  },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, searchTerm, statusFilter, activeFilters, sortField, sortOrder, dateSortMode, profitSortMode, buybackPrices, platformMap, sellingPlatforms]
+    [transactions, debouncedSearchTerm, statusFilter, activeFilters, sortField, sortOrder, dateSortMode, profitSortMode, buybackPrices, platformMap, sellingPlatforms]
   );
 
   const selectedTransactions = useMemo(
@@ -544,11 +552,16 @@ function TransactionsContent() {
     filteredTransactions.forEach((t, i) => positionMap.set(t.id, i));
 
     const items: DisplayItem[] = [];
+    // 预计算每个分组的最小位置（避免在排序回调里重复 map+min）
+    const groupMinPos = new Map<string, number>();
     janMap.forEach((txs, jan) => {
       if (txs.length < 2) {
         txs.forEach(t => items.push({ type: 'transaction', data: t }));
       } else {
         items.push({ type: 'group', data: buildGroupSummary(jan, txs) });
+        let minPos = Infinity;
+        txs.forEach(t => { const p = positionMap.get(t.id) ?? Infinity; if (p < minPos) minPos = p; });
+        groupMinPos.set(jan, minPos);
       }
     });
     ungrouped.forEach(t => items.push({ type: 'transaction', data: t }));
@@ -557,10 +570,10 @@ function TransactionsContent() {
     items.sort((a, b) => {
       const posA = a.type === 'transaction'
         ? (positionMap.get(a.data.id) ?? 0)
-        : Math.min(...a.data.transactions.map(t => positionMap.get(t.id) ?? Infinity));
+        : (groupMinPos.get(a.data.janCode) ?? 0);
       const posB = b.type === 'transaction'
         ? (positionMap.get(b.data.id) ?? 0)
-        : Math.min(...b.data.transactions.map(t => positionMap.get(t.id) ?? Infinity));
+        : (groupMinPos.get(b.data.janCode) ?? 0);
       return posA - posB;
     });
 
