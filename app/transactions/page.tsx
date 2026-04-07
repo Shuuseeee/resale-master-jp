@@ -90,8 +90,9 @@ function TransactionsContent() {
     const sellingPlatformIds = (searchParams.get('sp') || '').split(',').filter(Boolean);
     const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
     const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
+    const dateMode = (searchParams.get('dm') as 'purchase' | 'sale') || 'purchase';
     if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
-      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
+      return { dateFrom, dateTo, dateMode, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -147,6 +148,7 @@ function TransactionsContent() {
     if (activeFilters) {
       if (activeFilters.dateFrom) params.set('df', activeFilters.dateFrom);
       if (activeFilters.dateTo) params.set('dt', activeFilters.dateTo);
+      if (activeFilters.dateMode === 'sale') params.set('dm', 'sale');
       if (activeFilters.productName) params.set('pn', activeFilters.productName);
       if (activeFilters.janCode) params.set('jan', activeFilters.janCode);
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
@@ -359,9 +361,15 @@ function TransactionsContent() {
 
       // 高级筛选
       if (activeFilters) {
-        // 日期筛选
-        if (activeFilters.dateFrom && t.date < activeFilters.dateFrom) return false;
-        if (activeFilters.dateTo && t.date > activeFilters.dateTo) return false;
+        // 日期筛选（购买日期 or 售出日期）
+        if (activeFilters.dateMode === 'sale') {
+          const saleDate = (t as any).latest_sale_date;
+          if (activeFilters.dateFrom && (!saleDate || saleDate < activeFilters.dateFrom)) return false;
+          if (activeFilters.dateTo && (!saleDate || saleDate > activeFilters.dateTo)) return false;
+        } else {
+          if (activeFilters.dateFrom && t.date < activeFilters.dateFrom) return false;
+          if (activeFilters.dateTo && t.date > activeFilters.dateTo) return false;
+        }
 
         // 商品名称筛选（兼作搜索：同时匹配商品名、JAN、订单号、备注）
         if (activeFilters.productName) {

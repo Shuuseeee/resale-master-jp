@@ -10,6 +10,7 @@ import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 export interface FilterValues {
   dateFrom: string;
   dateTo: string;
+  dateMode: 'purchase' | 'sale';
   productName: string;
   janCode: string;
   janFilterMode: 'include' | 'exclude';
@@ -36,6 +37,7 @@ interface TransactionFiltersProps {
 export const emptyFilters: FilterValues = {
   dateFrom: '',
   dateTo: '',
+  dateMode: 'purchase',
   productName: '',
   janCode: '',
   janFilterMode: 'include',
@@ -288,6 +290,31 @@ export default function TransactionFilters({
       <div className="flex flex-wrap items-center gap-2">
         {/* Date range */}
         <div className="flex items-center gap-1">
+          {/* 购买/售出 日期模式切换 */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 text-xs flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => updateFilter('dateMode', 'purchase')}
+              className={`px-2 py-1.5 transition-colors ${
+                filters.dateMode === 'purchase'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              购买
+            </button>
+            <button
+              type="button"
+              onClick={() => updateFilter('dateMode', 'sale')}
+              className={`px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                filters.dateMode === 'sale'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              售出
+            </button>
+          </div>
           <div className="relative w-[150px]">
             <DatePicker
               selected={filters.dateFrom ? parseDateFromLocal(filters.dateFrom) : null}
