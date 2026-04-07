@@ -108,7 +108,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
               longPressTimer.current = null;
             }
           }}
-          className="flex-1 text-left hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
+          className="flex-1 min-w-0 text-left hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
         >
         <div className="flex items-center gap-3">
           {/* 商品图片 */}
