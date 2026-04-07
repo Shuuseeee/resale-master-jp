@@ -27,6 +27,7 @@ interface TransactionGroupRowProps {
   compareMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  onSelectGroup?: (ids: string[]) => void;
 }
 
 const TransactionGroupRow = memo(function TransactionGroupRow({
@@ -41,8 +42,13 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
   compareMode = false,
   selectedIds = new Set(),
   onToggleSelect,
+  onSelectGroup,
 }: TransactionGroupRowProps) {
   const hasBuyback = group.bestBuybackPrice > 0;
+  const groupIds = group.transactions.map(t => t.id);
+  const selectedCount = groupIds.filter(id => selectedIds.has(id)).length;
+  const allSelected = selectedCount === groupIds.length;
+  const someSelected = selectedCount > 0 && !allSelected;
 
   return (
     <>
@@ -54,12 +60,38 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
         {/* 日期列 */}
         <td className="px-3 py-2 whitespace-nowrap">
           <div className="flex items-center gap-1.5">
-            <svg
-              className={`w-3.5 h-3.5 text-teal-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            {compareMode ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onSelectGroup?.(groupIds); }}
+                aria-label="全选该组"
+                className="flex-shrink-0"
+              >
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                  allSelected
+                    ? 'bg-teal-500 border-teal-500'
+                    : someSelected
+                      ? 'bg-teal-100 dark:bg-teal-900/50 border-teal-400'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                }`}>
+                  {allSelected && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {someSelected && (
+                    <div className="w-1.5 h-0.5 bg-teal-500 rounded" />
+                  )}
+                </div>
+              </button>
+            ) : (
+              <svg
+                className={`w-3.5 h-3.5 text-teal-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
             <span className="text-xs text-gray-500 dark:text-gray-400">{group.latestDate}</span>
           </div>
         </td>

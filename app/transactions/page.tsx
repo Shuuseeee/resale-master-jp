@@ -622,6 +622,19 @@ function TransactionsContent() {
     });
   }, []);
 
+  const selectGroup = useCallback((ids: string[]) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      const allSelected = ids.every(id => next.has(id));
+      if (allSelected) {
+        ids.forEach(id => next.delete(id));
+      } else {
+        ids.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  }, []);
+
   const exitCompareMode = useCallback(() => {
     setCompareMode(false);
     setSelectedIds(new Set());
@@ -1000,6 +1013,7 @@ function TransactionsContent() {
                     compareMode={compareMode}
                     selectedIds={selectedIds}
                     onToggleSelect={toggleSelect}
+                    onSelectGroup={selectGroup}
                   />
                 ) : (
                   <TransactionCard
@@ -1112,6 +1126,7 @@ function TransactionsContent() {
                             compareMode={compareMode}
                             selectedIds={selectedIds}
                             onToggleSelect={toggleSelect}
+                            onSelectGroup={selectGroup}
                           />
                         ) : (
                           <TransactionRow

@@ -28,6 +28,7 @@ interface TransactionGroupCardProps {
   compareMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  onSelectGroup?: (ids: string[]) => void;
 }
 
 const TransactionGroupCard = memo(function TransactionGroupCard({
@@ -42,17 +43,49 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   compareMode = false,
   selectedIds = new Set(),
   onToggleSelect,
+  onSelectGroup,
 }: TransactionGroupCardProps) {
   const hasBuyback = group.bestBuybackPrice > 0;
+  const groupIds = group.transactions.map(t => t.id);
+  const selectedCount = groupIds.filter(id => selectedIds.has(id)).length;
+  const allSelected = selectedCount === groupIds.length;
+  const someSelected = selectedCount > 0 && !allSelected;
 
   return (
     <div className="rounded-xl border border-teal-300 dark:border-teal-700 overflow-hidden">
       {/* 折叠行 */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full text-left bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
-      >
+      <div className="flex items-center bg-teal-50 dark:bg-teal-900/20">
+        {/* 多选模式：全选该组 checkbox */}
+        {compareMode && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onSelectGroup?.(groupIds); }}
+            className="pl-3 pr-1 py-3 flex-shrink-0 flex items-center"
+            aria-label="全选该组"
+          >
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              allSelected
+                ? 'bg-teal-500 border-teal-500'
+                : someSelected
+                  ? 'bg-teal-100 dark:bg-teal-900/50 border-teal-400'
+                  : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+            }`}>
+              {allSelected && (
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              {someSelected && (
+                <div className="w-2 h-0.5 bg-teal-500 rounded" />
+              )}
+            </div>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 text-left hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
+        >
         <div className="flex items-center gap-3">
           {/* 商品图片 */}
           {group.imageUrl ? (
@@ -108,7 +141,8 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
             </svg>
           </div>
         </div>
-      </button>
+        </button>
+      </div>
 
       {/* 展開時：子カード一覧（max-height アニメーション） */}
       <div
