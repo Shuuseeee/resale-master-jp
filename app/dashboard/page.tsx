@@ -80,7 +80,7 @@ export default function DashboardPage() {
           <h1 className={'hidden lg:inline-block '+ heading.h2 + ' lg:mb-8'}>仪表盘</h1>
         </div>
 {/* KPI カード */}
-        <div className="hidden lg:inline-block lg:mb-8">
+        <div className="hidden lg:block lg:mb-8">
           {/* ポイント含むトグル */}
           <div className="flex justify-end mb-3">
             <button
