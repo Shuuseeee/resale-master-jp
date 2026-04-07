@@ -127,7 +127,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           {/* 商品情报 */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.productName}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate min-w-0">{group.productName}</p>
               <span className="flex-shrink-0 text-xs bg-teal-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                 ×{group.transactions.length}
               </span>
