@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
-import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform, PurchasePlatform } from '@/types/database.types';
+import type { PaymentMethod, TransactionFormData, Transaction, PointsPlatform } from '@/types/database.types';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
+import { createPurchasePlatform } from '@/lib/api/platforms';
+import { usePlatforms } from '@/contexts/PlatformsContext';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -45,7 +46,7 @@ export default function EditTransactionPage() {
   // UI 状态
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
-  const [purchasePlatforms, setPurchasePlatforms] = useState<PurchasePlatform[]>([]);
+  const { purchasePlatforms, refreshPlatforms } = usePlatforms();
   const [newPurchasePlatformName, setNewPurchasePlatformName] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -62,7 +63,6 @@ export default function EditTransactionPage() {
     loadTransaction();
     fetchPaymentMethods();
     fetchPointsPlatforms();
-    fetchPurchasePlatforms();
   }, [id]);
 
   const loadTransaction = async () => {
@@ -146,17 +146,12 @@ export default function EditTransactionPage() {
     setPointsPlatforms(data || []);
   };
 
-  const fetchPurchasePlatforms = async () => {
-    const data = await getPurchasePlatforms();
-    setPurchasePlatforms(data);
-  };
-
   const handleAddPurchasePlatform = async () => {
     const name = newPurchasePlatformName.trim();
     if (!name) return;
     const created = await createPurchasePlatform(name);
     if (created) {
-      setPurchasePlatforms(prev => [...prev, created]);
+      await refreshPlatforms();
       setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
       setNewPurchasePlatformName('');
     }

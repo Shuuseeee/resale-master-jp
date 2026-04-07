@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Detect bfcache restore (iOS Safari swipe back/forward) and force a data refresh
@@ -24,8 +25,10 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <BfcacheRefreshListener />
-        {children}
+        <PlatformsProvider>
+          <BfcacheRefreshListener />
+          {children}
+        </PlatformsProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

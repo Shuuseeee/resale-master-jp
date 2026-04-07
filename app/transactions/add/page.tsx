@@ -4,14 +4,15 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload } from '@/lib/image-utils';
-import type { PaymentMethod, TransactionFormData, PointsPlatform, PurchasePlatform } from '@/types/database.types';
+import type { PaymentMethod, TransactionFormData, PointsPlatform } from '@/types/database.types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { parseNumberInput } from '@/lib/number-utils';
-import { getPurchasePlatforms, createPurchasePlatform } from '@/lib/api/platforms';
+import { createPurchasePlatform } from '@/lib/api/platforms';
+import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -46,7 +47,7 @@ function AddTransactionPageContent() {
   // UI 状态
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
-  const [purchasePlatforms, setPurchasePlatforms] = useState<PurchasePlatform[]>([]);
+  const { purchasePlatforms, refreshPlatforms } = usePlatforms();
   const [newPurchasePlatformName, setNewPurchasePlatformName] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -61,7 +62,6 @@ function AddTransactionPageContent() {
   useEffect(() => {
     fetchPaymentMethods();
     fetchPointsPlatforms();
-    fetchPurchasePlatforms();
     setAmazonConfig(loadAmazonPointConfig());
   }, []);
 
@@ -183,17 +183,12 @@ function AddTransactionPageContent() {
     setPointsPlatforms(data || []);
   };
 
-  const fetchPurchasePlatforms = async () => {
-    const data = await getPurchasePlatforms();
-    setPurchasePlatforms(data);
-  };
-
   const handleAddPurchasePlatform = async () => {
     const name = newPurchasePlatformName.trim();
     if (!name) return;
     const created = await createPurchasePlatform(name);
     if (created) {
-      setPurchasePlatforms(prev => [...prev, created]);
+      await refreshPlatforms();
       setFormData(prev => ({ ...prev, purchase_platform_id: created.id }));
       setNewPurchasePlatformName('');
     }

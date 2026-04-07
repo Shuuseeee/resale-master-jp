@@ -15,9 +15,9 @@ import TransactionRow from '@/components/TransactionRow';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
 import TransactionGroupRow from '@/components/TransactionGroupRow';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
-import { getPurchasePlatforms } from '@/lib/api/platforms';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
+import { usePlatforms } from '@/contexts/PlatformsContext';
 import PullToRefresh from '@/components/PullToRefresh';
 
 interface TransactionWithPayment extends Transaction {
@@ -66,8 +66,7 @@ function TransactionsContent() {
   const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
-  const [purchasePlatforms, setPurchasePlatforms] = useState<Array<{ id: string; name: string }>>([]);
-  const [sellingPlatforms, setSellingPlatforms] = useState<Array<{ id: string; name: string }>>([]);
+  const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
@@ -119,8 +118,6 @@ function TransactionsContent() {
   useEffect(() => {
     loadTransactions();
     loadPaymentMethods();
-    loadPurchasePlatforms();
-    loadSellingPlatforms();
   }, []);
 
   useEffect(() => {
@@ -262,21 +259,6 @@ function TransactionsContent() {
 
     if (!error && data) {
       setPaymentMethods(data);
-    }
-  };
-
-  const loadPurchasePlatforms = async () => {
-    const data = await getPurchasePlatforms();
-    setPurchasePlatforms(data.map(p => ({ id: p.id, name: p.name })));
-  };
-
-  const loadSellingPlatforms = async () => {
-    const { data, error } = await supabase
-      .from('selling_platforms')
-      .select('id, name');
-
-    if (!error && data) {
-      setSellingPlatforms(data);
     }
   };
 
