@@ -160,7 +160,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     销售数量
                   </label>
@@ -168,12 +168,12 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                     type="number"
                     value={editFormData.quantity_sold || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, quantity_sold: e.target.value === '' ? 0 : parseInt(e.target.value) })}
-                    className={input.base}
+                    className={input.base + ' w-full'}
                     min="1"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     单价 (¥)
                   </label>
@@ -181,12 +181,12 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                     type="number"
                     value={editFormData.selling_price_per_unit || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, selling_price_per_unit: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    className={input.base}
+                    className={input.base + ' w-full'}
                     step="0.01"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     平台费用 (¥)
                   </label>
@@ -194,12 +194,12 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                     type="number"
                     value={editFormData.platform_fee || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, platform_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    className={input.base}
+                    className={input.base + ' w-full'}
                     step="0.01"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     运费 (¥)
                   </label>
@@ -207,7 +207,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                     type="number"
                     value={editFormData.shipping_fee || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, shipping_fee: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    className={input.base}
+                    className={input.base + ' w-full'}
                     step="0.01"
                   />
                 </div>
@@ -221,7 +221,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                   value={editFormData.notes}
                   onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
                   rows={3}
-                  className={input.base}
+                  className={input.base + ' w-full'}
                   placeholder="可选"
                 />
               </div>
