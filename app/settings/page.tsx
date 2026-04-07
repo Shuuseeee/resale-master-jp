@@ -6,13 +6,14 @@ import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import Link from 'next/link';
 import { layout, heading, button, input } from '@/lib/theme';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, type AmazonPointConfig } from '@/lib/amazon-point-config';
-import { loadKaitorixConfig, saveKaitorixConfig, ALL_STORES, type KaitorixConfig } from '@/lib/kaitorix-config';
+import { loadKaitorixConfig, saveKaitorixConfig, getKnownStores, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [kaitorixConfig, setKaitorixConfig] = useState<KaitorixConfig>({ enabled: false, enabledStores: [] });
+  const [knownStores, setKnownStores] = useState<KaitorixStore[]>([]);
   const [kaitorixSaving, setKaitorixSaving] = useState(false);
   const [kaitorixSaveMessage, setKaitorixSaveMessage] = useState('');
   const [importing, setImporting] = useState(false);
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setConfig(loadAmazonPointConfig());
     setKaitorixConfig(loadKaitorixConfig());
+    setKnownStores(getKnownStores());
   }, []);
 
   const updateConfig = (field: keyof AmazonPointConfig, value: number | boolean) => {
@@ -282,7 +284,7 @@ export default function SettingsPage() {
               选择要检查的店铺
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ALL_STORES.map(store => {
+              {knownStores.map(store => {
                 const isChecked = kaitorixConfig.enabledStores.includes(store.key);
                 return (
                   <button

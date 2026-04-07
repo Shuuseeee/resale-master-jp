@@ -1,5 +1,7 @@
 // KaitoriX API client with caching and batch fetching
 
+import { discoverStores } from '@/lib/kaitorix-config';
+
 interface KaitorixPrice {
   store: string;
   price: number;
@@ -25,18 +27,6 @@ interface CacheEntry {
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const cache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<KaitorixResponse | null>>();
-
-// Store name to key mapping
-const STORE_NAME_TO_KEY: Record<string, string> = {
-  '買取一丁目': 'ichoume',
-  '買取商店': 'shouten',
-  '森森買取': 'morimori',
-  '買取ルデヤ': 'rudeya',
-  'モバイル一番': 'mobile_ichiban',
-  '買取ホムラ': 'homura',
-  '買取Top Offers': 'top_offers',
-  '買取楽園': 'rakuen',
-};
 
 // Use XHR to avoid Next.js fetch interception in dev mode
 function xhrGet(url: string, signal?: AbortSignal): Promise<{ ok: boolean; status: number; text: string }> {
@@ -92,6 +82,11 @@ export async function fetchBuybackPrice(
 
       if (!data.jan || !data.prices) {
         return null;
+      }
+
+      // 动态发现新店铺并保存到 localStorage
+      if (data.prices.length > 0) {
+        discoverStores(data.prices.map(p => p.store));
       }
 
       // Only cache fresh server-side results; stale/pending must always hit server
@@ -164,12 +159,10 @@ export function getFilteredPrices(
   enabledStoreKeys: string[]
 ): Array<{ store: string; price: number; url: string }> {
   if (!result?.prices?.length) return [];
+  // enabledStoreKeys 现在直接存储店铺名（新版）或旧版 key（已在 loadKaitorixConfig 迁移）
   const enabledSet = new Set(enabledStoreKeys);
   return result.prices
-    .filter(p => {
-      const key = STORE_NAME_TO_KEY[p.store];
-      return key && enabledSet.has(key);
-    })
+    .filter(p => enabledSet.has(p.store))
     .map(p => ({ store: p.store, price: p.price, url: p.url }));
 }
 
@@ -181,12 +174,8 @@ export function getBestPrice(
     return null;
   }
 
-  // Filter prices by enabled stores
   const enabledSet = new Set(enabledStoreKeys);
-  const filteredPrices = result.prices.filter(p => {
-    const storeKey = STORE_NAME_TO_KEY[p.store];
-    return storeKey && enabledSet.has(storeKey);
-  });
+  const filteredPrices = result.prices.filter(p => enabledSet.has(p.store));
 
   if (filteredPrices.length === 0) {
     return null;
