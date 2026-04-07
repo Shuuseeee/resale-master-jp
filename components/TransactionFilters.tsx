@@ -474,7 +474,7 @@ export default function TransactionFilters({
               onChange={(e) => updateFilter('buybackStore', e.target.value)}
               className={inputClass + ' w-[140px]' + (filters.buybackStore ? ' pr-8' : '')}
             >
-              <option value="">买取店</option>
+              <option value="">最高报价店</option>
               {buybackStores.map(store => (
                 <option key={store} value={store}>{store}</option>
               ))}
