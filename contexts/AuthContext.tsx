@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -76,8 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         options: {
-          // 禁用邮箱验证（个人使用）
-          emailRedirectTo: undefined,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -85,31 +85,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
 
-      // 注册后自动登录
       if (data.user && data.session) {
+        // 邮箱验证已关闭：直接登录
         setSession(data.session);
         setUser(data.user);
-
-        // 等待一小段时间确保 session 被存储到 cookies
         await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 使用 window.location 而不是 router.push 来确保完整的页面刷新
         window.location.href = '/';
-      } else if (data.user && !data.session) {
-        // 如果邮箱验证已启用，用户已创建但没有 session
-        // 返回一个特殊错误提示用户需要先禁用邮箱验证
-        return {
-          error: {
-            message: '请先在 Supabase Dashboard 中禁用邮箱验证功能。访问 Authentication → Settings → Email Auth，取消选中 "Enable email confirmations"',
-            name: 'EmailConfirmationRequired',
-            status: 400
-          } as AuthError
-        };
       }
+      // 邮箱验证已开启：data.session 为 null，需要用户去邮箱点击验证链接
+      // 返回 error: null 让注册页显示「验证邮件已发送」提示
 
       return { error: null };
     } catch (error) {
       console.error('Sign up error:', error);
+      return { error: error as AuthError };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) return { error };
+      if (data.url) {
+        window.location.href = data.url;
+      }
+      return { error: null };
+    } catch (error) {
       return { error: error as AuthError };
     }
   };
@@ -134,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
   };
 

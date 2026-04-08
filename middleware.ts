@@ -60,7 +60,7 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession();
 
   // 定义公开路径（不需要登录）
-  const publicPaths = ['/auth/login', '/auth/register'];
+  const publicPaths = ['/auth/login', '/auth/register', '/auth/callback'];
   const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path));
   const isApiPath = req.nextUrl.pathname.startsWith('/api/');
 

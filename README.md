@@ -533,4 +533,47 @@ MIT License
 
 ---
 
+## 🔑 管理员权限操作手顺
+
+管理员权限通过数据库 `user_roles` 表管理，变更立即生效，无需重启服务或重新登录。
+
+**前提条件**: 需要目标用户的 UUID（Supabase Dashboard → Authentication → Users）
+
+### 添加管理员
+
+在 Supabase Dashboard → SQL Editor 执行：
+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<用户UUID>', 'admin')
+ON CONFLICT DO NOTHING;
+```
+
+### 移除管理员
+
+```sql
+DELETE FROM public.user_roles
+WHERE user_id = '<用户UUID>' AND role = 'admin';
+```
+
+### 查看当前所有管理员
+
+```sql
+SELECT ur.user_id, u.email, ur.created_at
+FROM public.user_roles ur
+JOIN auth.users u ON u.id = ur.user_id
+WHERE ur.role = 'admin'
+ORDER BY ur.created_at;
+```
+
+### 管理员权限说明
+
+| 功能 | 普通用户 | 管理员 |
+|------|---------|--------|
+| 查看优惠券 | 仅自己 | 所有用户 |
+| 编辑 / 删除优惠券 | 仅自己 | 所有用户 |
+| 查看优惠券使用历史 | 仅自己 | 所有用户 |
+
+---
+
 **Sale System** - 让日本转卖业务管理更简单 🚀

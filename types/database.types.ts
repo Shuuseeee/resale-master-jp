@@ -248,6 +248,14 @@ export interface CouponUsageHistory {
   created_at: string;
 }
 
+// User roles (admin system)
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'user' | 'admin';
+  created_at: string;
+}
+
 // Active coupon view (computed fields)
 export interface ActiveCoupon extends Coupon {
   can_use: boolean;           // 使用可能か
