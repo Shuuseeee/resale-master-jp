@@ -57,7 +57,7 @@ const statusOptions = [
   { value: 'returned', label: '返品済' },
 ];
 
-const inputClass = 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors';
+const inputClass = 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-colors';
 
 // ── 多选下拉组件 ──────────────────────────────────────────
 interface MultiSelectProps {
@@ -99,12 +99,12 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
             {selected.slice(0, 2).map(val => {
               const label = options.find(o => o.value === val)?.label ?? val;
               return (
-                <span key={val} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs rounded flex-shrink-0">
+                <span key={val} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-apple-blue/10 text-apple-blue text-xs rounded flex-shrink-0">
                   {label}
                   <span
                     role="button"
                     onClick={(e) => { e.stopPropagation(); toggle(val); }}
-                    className="ml-0.5 hover:text-teal-900 dark:hover:text-teal-100 leading-none cursor-pointer"
+                    className="ml-0.5 hover:text-apple-blue leading-none cursor-pointer"
                   >×</span>
                 </span>
               );
@@ -128,7 +128,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                 key={opt.value}
                 className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
                   isChecked
-                    ? 'bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30'
+                    ? 'bg-apple-blue/5 hover:bg-apple-blue/10'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
@@ -136,9 +136,9 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => toggle(opt.value)}
-                  className="w-3.5 h-3.5 rounded accent-teal-600 flex-shrink-0"
+                  className="w-3.5 h-3.5 rounded accent-apple-blue flex-shrink-0"
                 />
-                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-teal-700 dark:text-teal-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-apple-blue font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
                   {opt.label}
                 </span>
               </label>
@@ -256,7 +256,7 @@ export default function TransactionFilters({
           </svg>
           <span>筛选条件</span>
           {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-teal-500 text-white text-[10px] font-bold">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-apple-blue text-white text-[10px] font-bold">
               {activeCount}
             </span>
           )}
@@ -274,7 +274,7 @@ export default function TransactionFilters({
           title={pinned ? '取消固定（下次默认折叠）' : '固定展开（下次默认展开）'}
           className={`p-1.5 rounded-lg border transition-colors ${
             pinned
-              ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400'
+              ? 'bg-apple-blue/5 border-apple-blue/20 text-apple-blue'
               : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
           }`}
         >
@@ -297,7 +297,7 @@ export default function TransactionFilters({
               onClick={() => updateFilter('dateMode', 'purchase')}
               className={`px-2 py-1.5 transition-colors ${
                 filters.dateMode === 'purchase'
-                  ? 'bg-teal-500 text-white'
+                  ? 'bg-apple-blue text-white'
                   : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
@@ -308,7 +308,7 @@ export default function TransactionFilters({
               onClick={() => updateFilter('dateMode', 'sale')}
               className={`px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
                 filters.dateMode === 'sale'
-                  ? 'bg-teal-500 text-white'
+                  ? 'bg-apple-blue text-white'
                   : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
@@ -375,7 +375,7 @@ export default function TransactionFilters({
               onClick={() => switchJanMode('include')}
               className={`px-2 py-1.5 transition-colors ${
                 filters.janFilterMode === 'include'
-                  ? 'bg-teal-500 text-white'
+                  ? 'bg-apple-blue text-white'
                   : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
@@ -423,7 +423,7 @@ export default function TransactionFilters({
                     {filteredJanCodes.length === 0
                       ? <div className="px-3 py-2 text-sm text-gray-400">无匹配</div>
                       : filteredJanCodes.map(jan => (
-                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.janCode === jan ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.janCode === jan ? 'bg-apple-blue/5 text-apple-blue' : 'text-gray-700 dark:text-gray-300'}`}>
                           {jan}
                         </button>
                       ))

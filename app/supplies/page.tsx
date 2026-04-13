@@ -141,7 +141,7 @@ export default function SuppliesPage() {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 filter === 'all'
-                  ? 'bg-teal-600 text-white'
+                  ? 'bg-apple-blue text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
@@ -153,7 +153,7 @@ export default function SuppliesPage() {
                 onClick={() => setFilter(key)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === key
-                    ? 'bg-teal-600 text-white'
+                    ? 'bg-apple-blue text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
@@ -164,7 +164,7 @@ export default function SuppliesPage() {
         </div>
 
         {/* 耗材列表 */}
-        <div className={card.primary + ' shadow-2xl overflow-hidden'}>
+        <div className={card.primary + ' shadow-card overflow-hidden'}>
           {filteredSupplies.length === 0 ? (
             <div className="p-12 text-center">
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

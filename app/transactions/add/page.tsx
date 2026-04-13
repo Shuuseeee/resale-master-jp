@@ -473,11 +473,11 @@ function AddTransactionPageContent() {
 
         {/* 表单卡片 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className={card.primary + ' p-6 shadow-2xl'}>
+          <div className={card.primary + ' p-6 shadow-card'}>
             {/* 基本信息 */}
             <div className="space-y-5">
               <h2 className={heading.h3 + ' flex items-center gap-2'}>
-                <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
+                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
                 基本信息
               </h2>
 
@@ -494,7 +494,7 @@ function AddTransactionPageContent() {
                         date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                 </div>
 
@@ -510,10 +510,10 @@ function AddTransactionPageContent() {
                       onChange={handleInputChange}
                       onBlur={() => handleJanBlur()}
                       placeholder="4901234567890"
-                      className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     {janLooking ? (
-                      <svg className="animate-spin h-5 w-5 text-teal-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5 text-apple-blue flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -521,7 +521,7 @@ function AddTransactionPageContent() {
                       <button
                         type="button"
                         onClick={() => setShowScanner(true)}
-                        className="flex-shrink-0 p-2 text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors"
+                        className="flex-shrink-0 p-2 text-gray-400 hover:text-apple-blue hover:bg-apple-blue/5 dark:hover:bg-apple-blue/10 rounded-lg transition-colors"
                         title="バーコードをスキャン"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -545,7 +545,7 @@ function AddTransactionPageContent() {
                     value={formData.product_name}
                     onChange={handleInputChange}
                     placeholder="例: Nintendo Switch OLED"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
                   {errors.product_name && (
@@ -564,7 +564,7 @@ function AddTransactionPageContent() {
                     value={formData.quantity || ''}
                     onChange={handleNumberChange}
                     placeholder="1"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -603,7 +603,7 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 采购信息 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
@@ -700,10 +700,10 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 采购成本 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
                 采购成本
               </h2>
 
@@ -756,7 +756,7 @@ function AddTransactionPageContent() {
                         value={formData.card_paid || ''}
                         onChange={(e) => handlePaymentChange('card_paid', e.target.value)}
                         placeholder="0.00 或 3,000"
-                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                     </div>
@@ -764,7 +764,7 @@ function AddTransactionPageContent() {
                       name="card_id"
                       value={formData.card_id}
                       onChange={handleInputChange}
-                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       disabled={formData.card_paid === 0}
                     >
                       <option value="">选择卡片</option>
@@ -793,7 +793,7 @@ function AddTransactionPageContent() {
                       value={formData.point_paid || ''}
                       onChange={(e) => handlePaymentChange('point_paid', e.target.value)}
                       placeholder="0.00 或 3,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
@@ -825,7 +825,7 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 预期积分 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
@@ -890,7 +890,7 @@ function AddTransactionPageContent() {
                       value={formData.extra_platform_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -904,7 +904,7 @@ function AddTransactionPageContent() {
                     value={formData.extra_platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -938,7 +938,7 @@ function AddTransactionPageContent() {
                       value={formData.expected_card_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
                   </div>
@@ -953,7 +953,7 @@ function AddTransactionPageContent() {
                     value={formData.card_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_card_points === 0 || !formData.card_id}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -976,7 +976,7 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 凭证上传 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-rose-500 to-pink-500 rounded-full"></div>
@@ -1038,10 +1038,10 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 备注 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-teal-400 to-teal-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
                 备注
               </h2>
 
@@ -1051,7 +1051,7 @@ function AddTransactionPageContent() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="添加备注信息..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
               />
             </div>
           </div>
@@ -1067,7 +1067,7 @@ function AddTransactionPageContent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 py-4 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting && !continueAdding ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1091,7 +1091,7 @@ function AddTransactionPageContent() {
                 const form = document.querySelector('form');
                 form?.requestSubmit();
               }}
-              className="flex-1 py-4 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:bg-gray-400 text-teal-700 dark:text-teal-300 font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none border-2 border-teal-600 dark:border-teal-500"
+              className="flex-1 py-4 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:bg-gray-400 text-apple-blue font-semibold rounded-xl transition-all duration-200 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none border-2 border-apple-blue"
             >
               {isSubmitting && continueAdding ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1125,7 +1125,7 @@ function AddTransactionPageContent() {
 export default function AddTransactionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

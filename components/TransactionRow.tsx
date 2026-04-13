@@ -99,11 +99,11 @@ const TransactionRow = memo(function TransactionRow({
     <tr
       onClick={handleRowClick}
       className={`border-b border-gray-100 dark:border-gray-700/50 text-sm transition-colors ${
-        isGroupChild ? 'border-l-4 border-l-teal-400 dark:border-l-teal-600 bg-gray-50/50 dark:bg-gray-800/30' : ''
+        isGroupChild ? 'border-l-4 border-l-apple-blue bg-gray-50/50 dark:bg-gray-800/30' : ''
       } ${
         compareMode
           ? isSelected
-            ? 'bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
+            ? 'bg-apple-blue/5 cursor-pointer'
             : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
           : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
       }`}
@@ -113,7 +113,7 @@ const TransactionRow = memo(function TransactionRow({
         <div className="flex items-center gap-2">
           {compareMode && (
             <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-              isSelected ? 'bg-teal-500 border-teal-500' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+              isSelected ? 'bg-apple-blue border-apple-blue' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
             }`}>
               {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
             </div>
@@ -133,7 +133,7 @@ const TransactionRow = memo(function TransactionRow({
         {transaction.jan_code && (
           <button
             onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-            className="block mt-0.5 font-mono text-xs text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer"
+            className="block mt-0.5 font-mono text-xs text-gray-400 hover:text-apple-blue transition-colors cursor-pointer"
             title="点击复制JAN"
           >
             {transaction.jan_code}

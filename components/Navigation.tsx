@@ -223,7 +223,7 @@ export default function Navigation() {
         <div className="h-16 flex items-center border-b border-gray-200 dark:border-gray-700 px-3 gap-2">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 bg-apple-blue rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -236,7 +236,7 @@ export default function Navigation() {
           )}
           {collapsed && (
             <Link href="/dashboard" className="flex-1 flex justify-center">
-              <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-apple-blue rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
@@ -258,9 +258,9 @@ export default function Navigation() {
                   flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
                   ${collapsed ? 'justify-center' : ''}
                   ${active
-                    ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 font-medium'
+                    ? 'bg-apple-blue/10 text-apple-blue font-medium'
                     : item.highlight
-                      ? 'text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20'
+                      ? 'text-apple-blue hover:bg-apple-blue/5'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }
                 `}
@@ -313,7 +313,7 @@ export default function Navigation() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between h-12 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-teal-600 rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 bg-apple-blue rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
@@ -346,8 +346,8 @@ export default function Navigation() {
           background: isDark
             ? 'rgba(20, 20, 30, 0.45)'
             : 'rgba(255, 255, 255, 0.18)',
-          backdropFilter: 'blur(48px) saturate(220%) brightness(108%) contrast(108%)',
-          WebkitBackdropFilter: 'blur(48px) saturate(220%) brightness(108%) contrast(108%)',
+          backdropFilter: 'blur(48px) saturate(180%) brightness(108%) contrast(105%)',
+          WebkitBackdropFilter: 'blur(48px) saturate(180%) brightness(108%) contrast(105%)',
           border: isDark
             ? '1px solid rgba(255,255,255,0.12)'
             : '1px solid rgba(255,255,255,0.55)',
@@ -397,10 +397,10 @@ export default function Navigation() {
               <Link
                 href="/dashboard"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
                 style={{ height: 44 }}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/dashboard') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/dashboard') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
               </Link>
@@ -408,10 +408,10 @@ export default function Navigation() {
               <Link
                 href="/transactions"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
                 style={{ height: 44 }}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/transactions') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/transactions') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
               </Link>
@@ -422,7 +422,7 @@ export default function Navigation() {
                   className={`rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${
                     showFabMenu
                       ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 scale-90'
-                      : 'bg-teal-500 text-white shadow-teal-500/30'
+                      : 'bg-apple-blue text-white shadow-apple-blue/30'
                   }`}
                   style={{ width: 48, height: 48 }}
                 >
@@ -435,20 +435,20 @@ export default function Navigation() {
               <Link
                 href="/coupons"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
                 style={{ height: 44 }}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/coupons') ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/coupons') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                 </svg>
               </Link>
 
               <button
                 onClick={() => { triggerHaptic('light'); setShowMoreSheet(true); }}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:scale-90"
+                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
                 style={{ height: 44 }}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${showMoreSheet ? 'text-teal-600 dark:text-teal-300' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 transition-colors duration-200 ${showMoreSheet ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -482,8 +482,8 @@ export default function Navigation() {
               {
                 href: '/transactions/add',
                 label: '新增交易',
-                iconBg: 'bg-teal-100 dark:bg-teal-900/40',
-                iconColor: 'text-teal-600 dark:text-teal-400',
+                iconBg: 'bg-apple-blue/15',
+                iconColor: 'text-apple-blue',
                 icon: (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -574,7 +574,7 @@ export default function Navigation() {
                       onClick={() => triggerHaptic('light')}
                       className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl transition-colors ${
                         active
-                          ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'
+                          ? 'bg-apple-blue/10 text-apple-blue'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/5 active:bg-gray-100'
                       }`}
                     >
@@ -589,8 +589,8 @@ export default function Navigation() {
             <div className="flex-shrink-0 mx-4 border-t border-gray-200/50 dark:border-gray-700/60" />
             <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-9 h-9 bg-teal-100 dark:bg-teal-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-9 h-9 bg-apple-blue/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>

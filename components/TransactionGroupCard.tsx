@@ -55,9 +55,9 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   const someSelected = selectedCount > 0 && !allSelected;
 
   return (
-    <div className="rounded-xl border border-teal-300 dark:border-teal-700 overflow-hidden">
+    <div className="rounded-xl shadow-card overflow-hidden bg-white dark:bg-apple-cardDark">
       {/* 折叠行 */}
-      <div className="flex items-center bg-teal-50 dark:bg-teal-900/20">
+      <div className="flex items-center bg-apple-gray-6 dark:bg-white/5">
         {/* 多选模式：全选该组 checkbox */}
         {compareMode && (
           <button
@@ -68,10 +68,10 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           >
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               allSelected
-                ? 'bg-teal-500 border-teal-500'
+                ? 'bg-apple-blue border-apple-blue'
                 : someSelected
-                  ? 'bg-teal-100 dark:bg-teal-900/50 border-teal-400'
-                  : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                  ? 'bg-apple-blue/20 border-apple-blue'
+                  : 'bg-white dark:bg-apple-cardDark border-apple-gray-4 dark:border-apple-gray-2'
             }`}>
               {allSelected && (
                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 </svg>
               )}
               {someSelected && (
-                <div className="w-2 h-0.5 bg-teal-500 rounded" />
+                <div className="w-2 h-0.5 bg-apple-blue rounded" />
               )}
             </div>
           </button>
@@ -108,7 +108,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
               longPressTimer.current = null;
             }
           }}
-          className="flex-1 min-w-0 text-left hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors p-3"
+          className="flex-1 min-w-0 text-left active:bg-gray-100 dark:active:bg-white/10 transition-colors p-3"
         >
         <div className="flex items-center gap-3">
           {/* 商品图片 */}
@@ -128,7 +128,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-gray-900 dark:text-white truncate min-w-0">{group.productName}</p>
-              <span className="flex-shrink-0 text-xs bg-teal-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+              <span className="flex-shrink-0 text-xs bg-apple-blue text-white px-1.5 py-0.5 rounded-full font-medium">
                 ×{group.transactions.length}
               </span>
             </div>
@@ -173,9 +173,9 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isExpanded ? `${group.transactions.length * 520}px` : '0px' }}
       >
-        <div className="border-t border-teal-200 dark:border-teal-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="border-t border-apple-separator dark:border-apple-sepDark divide-y divide-gray-100 dark:divide-gray-800">
           {group.transactions.map(tx => (
-            <div key={tx.id} className="pl-3 border-l-4 border-teal-400 dark:border-teal-600 bg-white dark:bg-gray-900">
+            <div key={tx.id} className="pl-3 border-l-4 border-apple-blue/30 bg-white dark:bg-gray-900">
               <TransactionCard
                 transaction={tx as TransactionWithPayment}
                 dateSortMode={dateSortMode}

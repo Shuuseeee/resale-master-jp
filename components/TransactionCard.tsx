@@ -119,15 +119,15 @@ const TransactionCard = memo(function TransactionCard({
   const getStatusBadge = () => {
     switch (transaction.status) {
       case 'pending':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-300 rounded">未到货</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-apple-orange/15 text-apple-orange">未到货</span>;
       case 'in_stock':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded">库存{remainingQty}</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-apple-blue/15 text-apple-blue">库存{remainingQty}</span>;
       case 'awaiting_payment':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-300 rounded">待入账</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-apple-orange/15 text-apple-orange">待入账</span>;
       case 'sold':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-green-600 bg-green-50 border border-green-300 rounded">已完成</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-apple-green/15 text-apple-green">已完成</span>;
       case 'returned':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-red-600 bg-red-50 border border-red-300 rounded">已退货</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-medium rounded-full bg-apple-red/15 text-apple-red">已退货</span>;
       default:
         return null;
     }
@@ -147,12 +147,12 @@ const TransactionCard = memo(function TransactionCard({
   return (
     <>
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border transition-colors relative select-none
+      className={`bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-card transition-colors relative select-none
         ${compareMode
           ? isSelected
-            ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 cursor-pointer'
-            : 'border-gray-200 dark:border-gray-700 cursor-pointer hover:border-teal-300 dark:hover:border-teal-600'
-          : 'border-gray-200 dark:border-gray-700 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700'
+            ? 'ring-2 ring-apple-blue bg-apple-blue/5 cursor-pointer'
+            : 'cursor-pointer active:bg-gray-50 dark:active:bg-white/5'
+          : 'cursor-pointer active:bg-gray-50 dark:active:bg-white/5'
         }`}
       onClick={handleCardClick}
       onTouchStart={handleTouchStart}
@@ -166,7 +166,7 @@ const TransactionCard = memo(function TransactionCard({
       {compareMode && (
         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10
           ${isSelected
-            ? 'bg-teal-500 border-teal-500'
+            ? 'bg-apple-blue border-apple-blue'
             : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500'
           }`}
         >
@@ -194,7 +194,7 @@ const TransactionCard = memo(function TransactionCard({
           {transaction.jan_code && (
             <button
               onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-              className="text-xs font-mono text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 mt-0.5"
+              className="text-xs font-mono text-gray-400 hover:text-apple-blue mt-0.5"
               title="点击复制JAN"
             >
               {transaction.jan_code}

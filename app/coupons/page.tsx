@@ -263,7 +263,7 @@ export default function CouponsPage() {
         </div>
 
         {/* クーポンリスト */}
-        <div className={card.primary + " shadow-2xl overflow-hidden"}>
+        <div className={card.primary + " shadow-card overflow-hidden"}>
           {filteredCoupons.length === 0 ? (
             <div className="p-12 text-center">
               <svg
@@ -340,7 +340,7 @@ export default function CouponsPage() {
                     )}
 
                     <div className="mb-3">
-                      <div className="text-2xl font-bold text-teal-600 dark:text-teal-400 mb-1">
+                      <div className="text-2xl font-bold text-apple-blue mb-1">
                         {getDiscountLabel(coupon)}
                       </div>
                       {coupon.min_purchase_amount > 0 && (
@@ -381,7 +381,7 @@ export default function CouponsPage() {
                       {!coupon.is_used && !isExpired && (
                         <button
                           onClick={() => markAsUsed(coupon.id)}
-                          className="flex-1 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors"
+                          className="flex-1 px-3 py-2 bg-apple-blue active:opacity-70 text-white text-sm font-medium rounded-lg transition-colors"
                         >
                           使用済みにする
                         </button>

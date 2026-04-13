@@ -77,7 +77,7 @@ export default function PaymentMethodsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -90,7 +90,7 @@ export default function PaymentMethodsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
       <div className="relative max-w-6xl mx-auto px-4 py-8">
         {/* 标题区域 */}
         <div className="mb-8">
@@ -111,7 +111,7 @@ export default function PaymentMethodsPage() {
             </div>
             <Link
               href="/settings/payment-methods/add"
-              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2"
+              className="px-6 py-3 bg-apple-blue active:opacity-70 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -122,10 +122,10 @@ export default function PaymentMethodsPage() {
         </div>
 
         {/* 信用卡列表 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+        <div className="bg-white dark:bg-apple-cardDark rounded-xl shadow-card overflow-hidden">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
+              <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
               信用卡配置
             </h2>
           </div>
@@ -174,7 +174,7 @@ export default function PaymentMethodsPage() {
                         value={method.payment_same_month ? 'same' : 'next'}
                         onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
                         disabled={saving === method.id || !method.closing_day || !method.payment_day}
-                        className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="next">次月还款</option>
                         <option value="same">当月还款</option>
@@ -203,7 +203,7 @@ export default function PaymentMethodsPage() {
                     <td className="px-6 py-4 text-center">
                       <Link
                         href={`/settings/payment-methods/${method.id}/edit`}
-                        className="inline-flex items-center px-3 py-1 text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 font-medium"
+                        className="inline-flex items-center px-3 py-1 text-sm text-apple-blue font-medium"
                       >
                         编辑
                       </Link>
@@ -216,9 +216,9 @@ export default function PaymentMethodsPage() {
         </div>
 
         {/* 说明卡片 */}
-        <div className="mt-6 bg-teal-500/10 backdrop-blur-xl rounded-xl p-6 border border-teal-500/30">
+        <div className="mt-6 bg-apple-blue/10 backdrop-blur-xl rounded-xl p-6 border border-apple-blue/30">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             还款周期说明

@@ -152,7 +152,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                   {rows.map(row => (
                     <tr
                       key={row.storeName}
-                      className={row.rank === 1 ? 'bg-teal-50 dark:bg-teal-900/10' : ''}
+                      className={row.rank === 1 ? 'bg-apple-blue/5' : ''}
                     >
                       {/* Store name */}
                       <td className="py-3 pr-4">
@@ -244,7 +244,7 @@ function StoreCard({ row, bestRevenue }: { row: StoreRow; bestRevenue: number })
   const isBest = row.rank === 1;
   return (
     <div className={`rounded-xl border p-4 ${isBest
-      ? 'border-teal-400 dark:border-teal-600 bg-teal-50 dark:bg-teal-900/10'
+      ? 'border-apple-blue/20 bg-apple-blue/5'
       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
     }`}>
       {/* Store header */}

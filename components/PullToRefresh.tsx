@@ -93,15 +93,15 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
   return (
     <div>
       <div ref={indicatorRef} style={{ height: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="w-8 h-8 rounded-full border-2 border-teal-500 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-apple-gray-3 flex items-center justify-center">
           {refreshing ? (
-            <svg className="w-4 h-4 text-teal-500 animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-apple-gray-1 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 100 10z" />
             </svg>
           ) : (
             <div ref={iconRef} style={{ opacity: 0, transition: 'transform 0.15s' }}>
-              <svg className="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-apple-gray-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </div>

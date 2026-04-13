@@ -85,7 +85,7 @@ export default function Modal({
     >
       {/* 遮罩层 */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40"
         aria-hidden="true"
       />
 
@@ -98,16 +98,16 @@ export default function Modal({
         className={`
           relative w-full ${sizeClasses[size]}
           max-h-[90vh] md:max-h-[85vh]
-          bg-white dark:bg-gray-800
-          rounded-t-2xl md:rounded-2xl
-          shadow-2xl
+          bg-white dark:bg-apple-cardDark
+          rounded-t-[20px] md:rounded-2xl
+          shadow-card-md
           overflow-hidden
           animate-slide-up md:animate-fade-in
         `}
       >
         {/* 标题栏 */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-apple-separator dark:border-apple-sepDark">
             {/* 移动端拖动指示器 */}
             <div className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
 
@@ -123,7 +123,7 @@ export default function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all active:scale-95 min-h-touch min-w-touch flex items-center justify-center"
+                className="ml-auto p-2 text-apple-gray-1 active:opacity-70 transition-opacity rounded-lg min-h-touch min-w-touch flex items-center justify-center"
                 aria-label="关闭"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +163,7 @@ export function ModalWithFooter({
       <div className="flex flex-col">
         <div className="flex-1">{children}</div>
         {footer && (
-          <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4 mt-6 -mx-4 md:-mx-6 -mb-4 md:-mb-6">
+          <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-apple-cardDark border-t border-apple-separator dark:border-apple-sepDark px-4 md:px-6 py-4 mt-6 -mx-4 md:-mx-6 -mb-4 md:-mb-6">
             {footer}
           </div>
         )}
@@ -197,8 +197,8 @@ export function ConfirmModal({
   isLoading = false,
 }: ConfirmModalProps) {
   const confirmButtonClass = confirmVariant === 'danger'
-    ? 'px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed'
-    : 'px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed';
+    ? 'px-4 py-2 bg-apple-red text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed'
+    : 'px-4 py-2 bg-apple-blue text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed';
 
   return (
     <Modal
@@ -219,7 +219,7 @@ export function ConfirmModal({
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg font-medium transition-all active:scale-95 min-h-touch disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {cancelText}
         </button>

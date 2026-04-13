@@ -174,7 +174,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
     <div className="fixed inset-0 z-[10002] bg-black flex flex-col">
       {/* Success flash */}
       {flashSuccess && (
-        <div className="absolute inset-0 z-10 bg-teal-400/25 pointer-events-none" />
+        <div className="absolute inset-0 z-10 bg-apple-blue/25 pointer-events-none" />
       )}
       {/* Not-found flash */}
       {notFound && (
@@ -199,7 +199,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           {/* Manual input toggle */}
           <button
             onClick={() => setManualMode(m => !m)}
-            className={`p-2 rounded-lg transition-colors ${manualMode ? 'text-teal-400' : 'text-white/50 hover:text-white'}`}
+            className={`p-2 rounded-lg transition-colors ${manualMode ? 'text-apple-blue' : 'text-white/50 hover:text-white'}`}
             aria-label="手動入力"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
         <div className="flex items-center gap-2">
           {successCount > 0 && (
-            <span className="text-teal-400 text-sm font-semibold">{successCount}件✓</span>
+            <span className="text-apple-blue text-sm font-semibold">{successCount}件✓</span>
           )}
           <button onClick={onClose} className="p-2 text-white/60 hover:text-white" aria-label="閉じる">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,11 +235,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
             onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
             placeholder="JANコードを入力..."
             autoFocus
-            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none focus:border-teal-400"
+            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none focus:border-apple-blue"
           />
           <button
             onClick={handleManualSubmit}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-apple-blue hover:bg-apple-blue/90 text-white rounded-lg text-sm font-medium transition-colors"
           >
             検索
           </button>
@@ -259,11 +259,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {cameraReady && !cameraError && phase === 'scanning' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-64 h-32 relative">
-              <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-teal-400 rounded-tl-sm" />
-              <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-teal-400 rounded-tr-sm" />
-              <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-teal-400 rounded-bl-sm" />
-              <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-teal-400 rounded-br-sm" />
-              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-teal-400/60 animate-pulse" />
+              <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-apple-blue rounded-tl-sm" />
+              <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-apple-blue rounded-tr-sm" />
+              <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-apple-blue rounded-bl-sm" />
+              <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-apple-blue rounded-br-sm" />
+              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-apple-blue/60 animate-pulse" />
             </div>
             <p className="absolute bottom-[calc(50%-80px)] text-white/50 text-xs">
               バーコードを枠に合わせてください
@@ -309,7 +309,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
               <button
                 key={tx.id}
                 onClick={() => handleSelectTransaction(tx)}
-                className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-teal-50 dark:active:bg-teal-900/20 transition-colors ${i < matches.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+                className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-apple-blue/5 transition-colors ${i < matches.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
               >
                 <span className="font-medium text-gray-900 dark:text-white text-sm">{tx.product_name}</span>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -365,7 +365,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full py-3.5 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
+            className="w-full py-3.5 bg-apple-blue hover:bg-apple-blue/90 active:bg-apple-blue/80 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
           >
             {saving ? '処理中...' : '着荷確認する'}
           </button>

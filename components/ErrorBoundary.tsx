@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-xl active:scale-95 transition-transform"
+          className="px-4 py-2 bg-apple-blue text-white text-sm font-medium rounded-xl active:scale-95 transition-transform"
         >
           再読み込み
         </button>

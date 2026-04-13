@@ -48,14 +48,14 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 // 统一 Tooltip 样式
 const tooltipStyle = {
-  backgroundColor: 'rgba(31,41,55,0.95)',
-  border: '1px solid #374151',
-  borderRadius: '0.5rem',
-  color: '#f3f4f6',
+  backgroundColor: '#ffffff',
+  border: 'none',
+  borderRadius: '10px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)',
+  color: '#111827',
 };
-// Recharts item/label 默认用切片 fill 色覆盖文字颜色，需显式强制为白色
-const tooltipItemStyle = { color: '#f3f4f6' };
-const tooltipLabelStyle = { color: '#d1d5db' };
+const tooltipItemStyle = { color: '#374151' };
+const tooltipLabelStyle = { color: '#6b7280' };
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
@@ -200,8 +200,8 @@ export default function AnalyticsPage() {
                     onClick={() => setTimeRange(range)}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       timeRange === range
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-apple-blue text-white'
+                        : 'bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-70'
                     }`}
                   >
                     {getTimeRangeLabel(range)}
@@ -257,8 +257,8 @@ export default function AnalyticsPage() {
                     onClick={() => togglePaymentMethod(method.id)}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                       selectedPaymentMethods.includes(method.id)
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-apple-blue text-white'
+                        : 'bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-70'
                     }`}
                   >
                     {method.name}

@@ -253,7 +253,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                     售出 {record.quantity_sold} 个
                   </div>
                   {(record as any).selling_platform && (
-                    <div className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
+                    <div className="text-xs text-apple-blue mt-0.5">
                       {(record as any).selling_platform.name}
                       {record.sale_order_number && ` · ${record.sale_order_number}`}
                     </div>
@@ -272,7 +272,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(record)}
-                    className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 text-sm"
+                    className="text-apple-blue hover:text-apple-blue text-sm"
                   >
                     编辑
                   </button>

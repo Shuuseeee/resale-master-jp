@@ -59,13 +59,13 @@ export default function DashboardPage() {
   const urgencyColors: Record<string, string> = {
     urgent: 'bg-red-500/20 border-red-500/50 text-red-600 dark:text-red-300',
     warning: 'bg-amber-500/20 border-amber-500/50 text-amber-600 dark:text-amber-300',
-    normal: 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-gray-900 dark:text-gray-300',
+    normal: 'bg-apple-blue/5 border-apple-blue/20 text-gray-900 dark:text-gray-200',
     expired: 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400',
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
         <div className="text-gray-900 dark:text-white text-xl">加载中...</div>
       </div>
     );
@@ -103,11 +103,11 @@ export default function DashboardPage() {
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-xs">库存数</span>
-                <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">个</div>
             </div>
 
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`text-xl font-bold whitespace-nowrap ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
@@ -177,12 +177,12 @@ export default function DashboardPage() {
               </div>
               {includePoints ? (
                 <>
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
+                  <div className="text-xl font-bold whitespace-nowrap text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>
-                  <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <div className={`text-xl font-bold whitespace-nowrap ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           {/* 期限間近のクーポン */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-yellow-500 rounded-full"></div>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
               </h2>
               <Link
                 href="/coupons"
-                className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+                className="text-sm text-apple-blue transition-opacity active:opacity-70"
               >
                 全部显示 →
               </Link>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={coupon.id}
-                      className={`p-4 rounded-xl border ${urgencyColors[urgency]} transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
+                      className={`p-4 rounded-xl border ${urgencyColors[urgency]}`}
                     >
                       <div className="flex justify-between items-start mb-1">
                         <div className="font-semibold">{coupon.name}</div>
@@ -249,50 +249,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* クイックアクション - 桌面端显示 */}
-        <div className="mt-8 hidden lg:grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link
-            href="/transactions/add"
-            className="bg-teal-600 hover:bg-teal-700 rounded-xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-lg text-white"
-          >
-            <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <div className="font-semibold">记录交易</div>
-          </Link>
 
-          <Link
-            href="/transactions"
-            className="bg-teal-600 hover:bg-teal-700 rounded-xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-lg text-white"
-          >
-            <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <div className="font-semibold">交易列表</div>
-          </Link>
-
-          <Link
-            href="/coupons"
-            className="bg-teal-600 hover:bg-teal-700 rounded-xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-lg text-white"
-          >
-            <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-            </svg>
-            <div className="font-semibold">优惠券</div>
-          </Link>
-
-          <Link
-            href="/analytics"
-            className="bg-teal-600 hover:bg-teal-700 rounded-xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-lg text-white"
-          >
-            <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <div className="font-semibold">数据分析</div>
-          </Link>
-        </div>
-
-        <div className={layout.section}>
+<div className={layout.section}>
           <h1 className={heading.h2 + ' mb-2'}></h1>
         </div>
         {/* KPI カード */}
@@ -319,11 +277,11 @@ export default function DashboardPage() {
             <div className={card.primary + ' p-4'}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-600 dark:text-gray-400 text-xs">库存数</span>
-                <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">个</div>
             </div>
 
@@ -335,7 +293,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -347,7 +305,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -359,7 +317,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className={`text-2xl font-bold ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`text-xl font-bold whitespace-nowrap ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
@@ -373,7 +331,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
+              <div className="text-xl font-bold whitespace-nowrap text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
@@ -393,12 +351,12 @@ export default function DashboardPage() {
               </div>
               {includePoints ? (
                 <>
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
+                  <div className="text-xl font-bold whitespace-nowrap text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>
-                  <div className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <div className={`text-xl font-bold whitespace-nowrap ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>

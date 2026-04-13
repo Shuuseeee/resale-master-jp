@@ -122,8 +122,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4">
-        <p className="text-sm text-teal-800 dark:text-teal-300">
+      <div className="bg-apple-blue/5 border border-apple-blue/20 rounded-lg p-4">
+        <p className="text-sm text-apple-blue">
           当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
         </p>
       </div>
@@ -244,13 +244,13 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
               value={newSellingPlatformName}
               onChange={(e) => setNewSellingPlatformName(e.target.value)}
               placeholder="添加新的销售平台..."
-              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
             />
             <button
               type="button"
               onClick={handleAddSellingPlatform}
               disabled={!newSellingPlatformName.trim()}
-              className="px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-apple-blue hover:bg-apple-blue/90 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
             >
               添加
             </button>

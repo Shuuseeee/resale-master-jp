@@ -79,7 +79,7 @@ export default function NotificationDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center gap-4">
         <div className="text-gray-400">通知不存在</div>
-        <Link href="/notifications" className="text-teal-600 text-sm">← 返回通知列表</Link>
+        <Link href="/notifications" className="text-apple-blue text-sm">← 返回通知列表</Link>
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function NotificationDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-lg mx-auto">
-        <button onClick={() => router.push('/notifications')} className="text-teal-600 text-sm mb-4 flex items-center gap-1">← 返回</button>
+        <button onClick={() => router.push('/notifications')} className="text-apple-blue text-sm mb-4 flex items-center gap-1">← 返回</button>
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{notification.title}</h1>
           {notification.body && <p className="text-gray-600 dark:text-gray-400">{notification.body}</p>}
@@ -154,7 +154,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
     <div className="min-h-screen bg-[#F5F5F7] dark:bg-gray-900 pb-12">
       <div className="max-w-lg mx-auto px-4 pt-4">
         {/* Back */}
-        <button onClick={onBack} className="flex items-center gap-1 text-teal-600 dark:text-teal-400 text-sm mb-4">
+        <button onClick={onBack} className="flex items-center gap-1 text-apple-blue text-sm mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -232,11 +232,11 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
         {d.starting && d.starting.length > 0 && (
           <section className="mb-4">
             <div className="flex items-center gap-2 mb-2 px-1">
-              <div className="w-1 h-5 bg-teal-500 rounded-full" />
+              <div className="w-1 h-5 bg-apple-blue rounded-full" />
               <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">今日生效</h2>
             </div>
             <div className="space-y-3">
-              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-teal-400" labelClass="bg-teal-500 text-white" labelText="今日开始" />)}
+              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-apple-blue/30" labelClass="bg-apple-blue text-white" labelText="今日开始" />)}
             </div>
           </section>
         )}

@@ -87,14 +87,14 @@ export default function SettingsPage() {
         <div className="flex gap-3 mb-8">
           <Link
             href="/settings/payment-methods"
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 bg-white dark:bg-apple-cardDark border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             支付方式 →
           </Link>
         </div>
 
         {/* Amazon 返ポイント自動計算 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-8">
+        <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
             Amazon 积分返还自动计算
@@ -242,9 +242,9 @@ export default function SettingsPage() {
         </div>
 
         {/* 买取价格检查 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl mb-8">
+        <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
             买取价格检查
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               aria-checked={kaitorixConfig.enabled}
               onClick={() => setKaitorixConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                kaitorixConfig.enabled ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'
+                kaitorixConfig.enabled ? 'bg-apple-blue' : 'bg-gray-300 dark:bg-gray-600'
               }`}
             >
               <span
@@ -293,13 +293,13 @@ export default function SettingsPage() {
                     onClick={() => toggleKaitorixStore(store.key)}
                     className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-colors ${
                       isChecked
-                        ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 text-teal-700 dark:text-teal-300'
+                        ? 'bg-apple-blue/5 border-apple-blue text-apple-blue'
                         : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
                       isChecked
-                        ? 'bg-teal-500 text-white'
+                        ? 'bg-apple-blue text-white'
                         : 'bg-gray-200 dark:bg-gray-600'
                     }`}>
                       {isChecked && (
@@ -330,7 +330,7 @@ export default function SettingsPage() {
         </div>
 
         {/* CSV导入 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+        <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
             CSV导入

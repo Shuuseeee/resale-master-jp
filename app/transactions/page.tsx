@@ -718,8 +718,8 @@ function TransactionsContent() {
                 title={isGrouped ? '平铺显示' : '分组显示'}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   isGrouped
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'bg-apple-blue text-white border-apple-blue'
+                    : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 active:opacity-70'
                 }`}
               >
                 {isGrouped ? (
@@ -738,8 +738,8 @@ function TransactionsContent() {
                 onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   compareMode
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'bg-apple-blue text-white border-apple-blue'
+                    : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 active:opacity-70'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -822,7 +822,7 @@ function TransactionsContent() {
                       onClick={() => { handleExportCSV('filtered'); setShowExportMenu(false); }}
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                     >
-                      <svg className="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
                       </svg>
                       筛选结果 ({filteredTransactions.length}条)
@@ -887,12 +887,12 @@ function TransactionsContent() {
               onClick={() => setStatusFilter(tab.key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                 statusFilter === tab.key
-                  ? 'bg-teal-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                  ? 'bg-apple-blue text-white shadow-card'
+                  : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 active:opacity-70 border border-gray-200 dark:border-gray-700'
               }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-teal-100' : 'text-gray-400 dark:text-gray-500'}`}>
+              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-white/80' : 'text-gray-400 dark:text-gray-500'}`}>
                 {tab.count}
               </span>
             </button>
@@ -938,7 +938,7 @@ function TransactionsContent() {
 
         {/* KaitoriX 加载进度条 */}
         {kaitorixLoading && kaitorixProgress && (
-          <div className="mb-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <div className="mb-4 bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 买取価格を取得中... {kaitorixProgress.completed}/{kaitorixProgress.total}
@@ -955,7 +955,7 @@ function TransactionsContent() {
                 className={`h-1.5 rounded-full transition-all duration-500 ${
                   kaitorixProgress.stopped
                     ? 'bg-red-500'
-                    : 'bg-teal-500'
+                    : 'bg-apple-blue'
                 }`}
                 style={{ width: `${(kaitorixProgress.completed / kaitorixProgress.total) * 100}%` }}
               />
@@ -978,14 +978,14 @@ function TransactionsContent() {
               }
             </span>
             {filteredTransactions.length < transactions.length && (
-              <span className="text-teal-500">已筛选</span>
+              <span className="text-apple-blue">已筛选</span>
             )}
           </div>
         )}
 
         {/* 交易列表 */}
         {filteredTransactions.length === 0 ? (
-          <div className={card.primary + ' shadow-2xl p-12 text-center'}>
+          <div className={card.primary + ' p-12 text-center'}>
             <svg className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -1039,7 +1039,7 @@ function TransactionsContent() {
 
             {/* 桌面端：表格 */}
             <div className="hidden md:block">
-              <div className={card.primary + ' shadow-2xl overflow-hidden'}>
+              <div className={card.primary + ' overflow-hidden'}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -1159,11 +1159,11 @@ function TransactionsContent() {
       {/* 選択モード浮動操作バー */}
       {compareMode && (
         <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-4 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-2 max-w-lg w-full border border-gray-700">
+          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-card-md px-4 py-3 flex items-center gap-2 max-w-lg w-full">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
                 ? <span className="text-gray-400 text-xs">请选择</span>
-                : <span>已选 <span className="font-bold text-teal-400">{selectedIds.size}</span> 件</span>
+                : <span>已选 <span className="font-bold text-apple-blue">{selectedIds.size}</span> 件</span>
               }
             </div>
             {/* 一括到着 */}
@@ -1191,7 +1191,7 @@ function TransactionsContent() {
                 onClick={() => setShowComparison(true)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                   selectedIds.size >= 2
-                    ? 'bg-teal-500 hover:bg-teal-400 text-white'
+                    ? 'bg-apple-blue active:opacity-80 text-white'
                     : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 }`}
               >

@@ -125,7 +125,7 @@ export default function EditPaymentMethodPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                   required
                 />
               </div>
@@ -141,7 +141,7 @@ export default function EditPaymentMethodPage() {
                         onChange={(e) => setFormData({ ...formData, closing_day: e.target.value })}
                         min="1"
                         max="31"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                         placeholder="1-31"
                       />
                     </div>
@@ -155,7 +155,7 @@ export default function EditPaymentMethodPage() {
                         onChange={(e) => setFormData({ ...formData, payment_day: e.target.value })}
                         min="1"
                         max="31"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                         placeholder="1-31"
                       />
                     </div>
@@ -168,7 +168,7 @@ export default function EditPaymentMethodPage() {
                     <select
                       value={formData.payment_same_month ? 'same' : 'next'}
                       onChange={(e) => setFormData({ ...formData, payment_same_month: e.target.value === 'same' })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                     >
                       <option value="next">次月还款</option>
                       <option value="same">当月还款</option>
@@ -185,7 +185,7 @@ export default function EditPaymentMethodPage() {
                       onChange={(e) => setFormData({ ...formData, point_rate: e.target.value })}
                       step="0.01"
                       min="0"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                       placeholder="1.0"
                     />
                   </div>
@@ -197,7 +197,7 @@ export default function EditPaymentMethodPage() {
                     <select
                       value={formData.card_points_platform_id}
                       onChange={(e) => setFormData({ ...formData, card_points_platform_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent"
                     >
                       <option value="">未设置</option>
                       {pointsPlatforms.map((p) => (
@@ -215,7 +215,7 @@ export default function EditPaymentMethodPage() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-teal-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-teal-500"
+                  className="w-4 h-4 text-apple-blue bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-apple-blue/30"
                 />
                 <label htmlFor="is_active" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   启用此支付方式
@@ -234,7 +234,7 @@ export default function EditPaymentMethodPage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 px-6 py-3 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
+              className="flex-1 px-6 py-3 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
             >
               {saving ? '保存中...' : '保存'}
             </button>

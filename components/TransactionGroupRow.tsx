@@ -55,7 +55,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
       {/* 汇总行 */}
       <tr
         onClick={onToggle}
-        className="bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 cursor-pointer transition-colors border-b border-teal-200 dark:border-teal-800"
+        className="bg-apple-blue/5 dark:bg-apple-blue/10 hover:bg-apple-blue/10 dark:hover:bg-apple-blue/15 cursor-pointer transition-colors border-b border-apple-blue/20 dark:border-apple-blue/20"
       >
         {/* 日期列 */}
         <td className="px-3 py-2 whitespace-nowrap">
@@ -69,9 +69,9 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
               >
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
                   allSelected
-                    ? 'bg-teal-500 border-teal-500'
+                    ? 'bg-apple-blue border-apple-blue'
                     : someSelected
-                      ? 'bg-teal-100 dark:bg-teal-900/50 border-teal-400'
+                      ? 'bg-apple-blue/10 border-apple-blue/20'
                       : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                 }`}>
                   {allSelected && (
@@ -80,13 +80,13 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                     </svg>
                   )}
                   {someSelected && (
-                    <div className="w-1.5 h-0.5 bg-teal-500 rounded" />
+                    <div className="w-1.5 h-0.5 bg-apple-blue rounded" />
                   )}
                 </div>
               </button>
             ) : (
               <svg
-                className={`w-3.5 h-3.5 text-teal-500 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+                className={`w-3.5 h-3.5 text-apple-blue transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -104,7 +104,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                 <span className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[200px]">
                   {group.productName}
                 </span>
-                <span className="flex-shrink-0 text-xs bg-teal-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                <span className="flex-shrink-0 text-xs bg-apple-blue text-white px-1.5 py-0.5 rounded-full font-medium">
                   ×{group.transactions.length}
                 </span>
               </div>

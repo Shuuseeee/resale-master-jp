@@ -55,8 +55,8 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
     ),
   },
   arrival_reminder: {
-    bg: 'bg-teal-50 dark:bg-teal-900/20',
-    color: 'text-teal-500',
+    bg: 'bg-apple-blue/5',
+    color: 'text-apple-blue',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -86,7 +86,7 @@ const defaultIconConfig = {
 
 function SkeletonCard() {
   return (
-    <div className="flex items-start gap-3 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm animate-pulse">
+    <div className="flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm animate-pulse">
       <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
       <div className="flex-1 space-y-2 py-0.5">
         <div className="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -197,7 +197,7 @@ export default function NotificationsPage() {
           <div className="flex items-center gap-2">
             <h1 className={heading.h1}>通知</h1>
             {unreadCount > 0 && (
-              <span className="text-xs font-bold bg-teal-500 text-white rounded-full px-2 py-0.5 min-w-[20px] text-center">
+              <span className="text-xs font-bold bg-apple-blue text-white rounded-full px-2 py-0.5 min-w-[20px] text-center">
                 {unreadCount}
               </span>
             )}
@@ -205,7 +205,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="text-xs text-teal-600 dark:text-teal-400 font-medium"
+              className="text-xs text-apple-blue font-medium"
             >
               全部已读
             </button>
@@ -266,10 +266,10 @@ export default function NotificationsPage() {
                           <Link
                             href={`/notifications/${n.id}`}
                             onClick={() => { if (!n.read) markReadOptimistic(n.id); }}
-                            className={`flex items-start gap-3 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm transition-colors border ${
+                            className={`flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm transition-colors border ${
                               n.read
-                                ? 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:hover:border-teal-700'
-                                : 'border-l-4 border-l-teal-500 border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:hover:border-teal-700'
+                                ? 'border-gray-200 dark:border-gray-700 hover:border-apple-blue/20'
+                                : 'border-l-4 border-l-apple-blue border-gray-200 dark:border-gray-700 hover:border-apple-blue/20'
                             }`}
                           >
                             {/* Type icon */}
@@ -282,7 +282,7 @@ export default function NotificationsPage() {
                                 <p className={`font-semibold text-sm truncate ${n.read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                                   {n.title}
                                 </p>
-                                {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-teal-500" />}
+                                {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-apple-blue" />}
                               </div>
                               {n.body && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>}
                               <p className="text-[10px] text-gray-400 mt-1">
@@ -321,7 +321,7 @@ export default function NotificationsPage() {
         {/* Push notification settings */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-wide mb-3 px-1">通知設定</h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">プッシュ通知</p>
@@ -336,12 +336,12 @@ export default function NotificationsPage() {
                   permission === 'denied'
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed'
                     : subscribed
-                    ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30'
+                    ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/30'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
                 }`}
               >
                 <div className={`w-8 h-4 rounded-full relative transition-colors ${
-                  subscribed ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'
+                  subscribed ? 'bg-apple-blue' : 'bg-gray-300 dark:bg-gray-600'
                 }`}>
                   <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${
                     subscribed ? 'left-4' : 'left-0.5'

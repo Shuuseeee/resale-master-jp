@@ -193,10 +193,10 @@ export default function EditCouponPage() {
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-teal-500 to-teal-600 rounded-full"></div>
+                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
                 基本情報
               </h2>
 
@@ -210,7 +210,7 @@ export default function EditCouponPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="例: 楽天スーパーSALE 10%OFFクーポン"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   required
                 />
                 {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
@@ -226,7 +226,7 @@ export default function EditCouponPage() {
                   value={formData.platform}
                   onChange={handleInputChange}
                   placeholder="例: 楽天市場, Amazon, Yahoo!"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -239,7 +239,7 @@ export default function EditCouponPage() {
                     name="discount_type"
                     value={formData.discount_type}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   >
                     <option value="percentage">割引率 (%)</option>
                     <option value="fixed_amount">固定額 (¥)</option>
@@ -262,7 +262,7 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       required
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
@@ -290,7 +290,7 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="上限なしの場合は0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
@@ -311,7 +311,7 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
                   </div>
@@ -327,7 +327,7 @@ export default function EditCouponPage() {
                     value={formData.coupon_code}
                     onChange={handleInputChange}
                     placeholder="例: RAKUTEN500"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -344,7 +344,7 @@ export default function EditCouponPage() {
                         start_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.start_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.start_date}</p>
@@ -362,7 +362,7 @@ export default function EditCouponPage() {
                         expiry_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.expiry_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.expiry_date}</p>
@@ -380,7 +380,7 @@ export default function EditCouponPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="メモを追加..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -397,7 +397,7 @@ export default function EditCouponPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 py-4 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? '保存中...' : '変更を保存'}
             </button>

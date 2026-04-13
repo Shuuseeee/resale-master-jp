@@ -74,9 +74,9 @@
     text-wrap: balance;
   }
 
-  /* 触摸反馈工具类 */
+  /* 触摸反馈工具类 — Apple 风格：opacity 替代 scale */
   .touch-feedback {
-    @apply active:scale-95 active:opacity-80 transition-transform duration-150;
+    @apply active:opacity-70 transition-opacity duration-150;
   }
 
   /* 平滑滚动 */
@@ -151,6 +151,22 @@
     }
   }
 
+  /* Toast top slide-down animation */
+  .animate-slide-down {
+    animation: slideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateX(-50%) translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  }
+
   /* FAB Speed Dial item animation */
   .animate-fab-item {
     animation: fabItemIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -176,17 +192,27 @@
 
 /* 全局样式 */
 body {
-  @apply bg-ocean-cream text-gray-900;
+  @apply bg-apple-bg text-gray-900;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   /* 启用字体平滑 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 深色模式（可选） */
+/* 深色模式 */
 @media (prefers-color-scheme: dark) {
   body {
-    @apply bg-ocean-navy text-gray-100;
+    @apply bg-apple-bgDark text-gray-100;
+  }
+}
+
+/* Apple 风格分割线 */
+.apple-separator {
+  border-top: 0.5px solid theme('colors.apple.separator');
+}
+@media (prefers-color-scheme: dark) {
+  .apple-separator {
+    border-top-color: theme('colors.apple.sepDark');
   }
 }
 

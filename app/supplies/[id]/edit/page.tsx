@@ -157,7 +157,7 @@ export default function EditSupplyPage() {
       <div className={layout.page}>
         <div className="flex justify-center items-center min-h-screen">
           <div className="text-center">
-            <svg className="animate-spin h-12 w-12 mx-auto text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-12 w-12 mx-auto text-apple-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -207,10 +207,10 @@ export default function EditSupplyPage() {
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className={card.primary + ' p-6 shadow-2xl'}>
+          <div className={card.primary + ' p-6 shadow-card'}>
             <div className="space-y-5">
               <h2 className={heading.h3 + ' flex items-center gap-2'}>
-                <div className="w-1 h-6 bg-gradient-to-b from-teal-600 to-teal-700 rounded-full"></div>
+                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
                 耗材信息
               </h2>
 
@@ -223,7 +223,7 @@ export default function EditSupplyPage() {
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   >
                     {CATEGORY_OPTIONS.map((option) => (
@@ -249,7 +249,7 @@ export default function EditSupplyPage() {
                         purchase_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.purchase_date && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.purchase_date}</p>
@@ -270,7 +270,7 @@ export default function EditSupplyPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
@@ -292,7 +292,7 @@ export default function EditSupplyPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="例: A4气泡袋 100个"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export default function EditSupplyPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="添加备注信息..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -323,7 +323,7 @@ export default function EditSupplyPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-teal-700 hover:bg-teal-800 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 py-4 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">

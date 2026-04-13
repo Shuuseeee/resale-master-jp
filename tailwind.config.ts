@@ -17,13 +17,27 @@ const config: Config = {
       '2xl': '1536px', // 大屏桌面
     },
     extend: {
-      // Ocean Depths 主题色
+      // Apple iOS 语义色
       colors: {
-        ocean: {
-          navy: '#1a2332',
-          teal: '#2d8b8b',
-          seafoam: '#a8dadc',
-          cream: '#f1faee',
+        apple: {
+          bg:       '#F2F2F7',  // systemGroupedBackground
+          bgDark:   '#000000',  // dark background
+          card:     '#FFFFFF',  // secondarySystemGroupedBackground
+          cardDark: '#1C1C1E',  // dark card
+          blue:     '#007AFF',  // systemBlue
+          green:    '#34C759',  // systemGreen
+          red:      '#FF3B30',  // systemRed
+          orange:   '#FF9500',  // systemOrange
+          gray: {
+            1: '#8E8E93',  // systemGray
+            2: '#AEAEB2',  // systemGray2
+            3: '#C7C7CC',  // systemGray3
+            4: '#D1D1D6',  // systemGray4
+            5: '#E5E5EA',  // systemGray5
+            6: '#F2F2F7',  // systemGray6
+          },
+          separator: '#C6C6C8',
+          sepDark:   '#38383A',
         },
       },
       // 动画
@@ -64,11 +78,10 @@ const config: Config = {
         'touch-md': '48px',
         'touch-lg': '56px',
       },
-      // 阴影优化
+      // 阴影（Apple 风格：极浅，仅用于区分层级）
       boxShadow: {
-        'mobile': '0 2px 8px rgba(0, 0, 0, 0.1)',
-        'card': '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
-        'card-hover': '0 4px 6px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.23)',
+        'card': '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.06)',
+        'card-md': '0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)',
       },
       // 字体大小优化（移动端友好）
       fontSize: {

@@ -352,7 +352,7 @@ export default function TaxReportPage() {
         {summary && (
           <>
             {/* 年度汇总卡片 */}
-            <div className={card.primary + ' p-6 shadow-2xl mb-8'}>
+            <div className={card.primary + ' p-6 shadow-card mb-8'}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className={heading.h2}>
                   {selectedYear}年度 雑所得集計表
@@ -423,11 +423,11 @@ export default function TaxReportPage() {
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-teal-500/30'}>
+                  <div className={card.stat + ' border-apple-blue/30'}>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       総収入
                     </div>
-                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                    <div className="text-2xl font-bold text-apple-blue">
                       {formatCurrency(summary.totalIncome)}
                     </div>
                   </div>
@@ -485,15 +485,15 @@ export default function TaxReportPage() {
 
               {/* 所得金額 */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className={heading.h3 + ' mb-4 text-teal-600 dark:text-teal-400'}>
+                <h3 className={heading.h3 + ' mb-4 text-apple-blue'}>
                   所得金額
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={card.stat + ' border-teal-500/30'}>
+                  <div className={card.stat + ' border-apple-blue/30'}>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
                       雑所得金額（収入 - 経費）
                     </div>
-                    <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">
+                    <div className="text-3xl font-bold text-apple-blue">
                       {formatCurrency(summary.netIncome)}
                     </div>
                   </div>
@@ -518,7 +518,7 @@ export default function TaxReportPage() {
             </div>
 
             {/* 取引明細表 */}
-            <div className={card.primary + ' shadow-2xl overflow-hidden'}>
+            <div className={card.primary + ' shadow-card overflow-hidden'}>
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className={heading.h2}>取引明細書</h2>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
