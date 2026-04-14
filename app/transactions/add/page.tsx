@@ -147,7 +147,7 @@ function AddTransactionPageContent() {
         image_url: '',
         notes: data.notes || '',
       });
-      setIsPending(false);
+      setIsPending(true);
     };
 
     loadSourceTransaction();
