@@ -877,7 +877,7 @@ function TransactionsContent() {
           {([
             { key: 'all', label: '全部', count: stats.total },
             { key: 'in_stock', label: '在庫', count: stats.inStock, color: 'amber' },
-            { key: 'pending', label: '未着', count: stats.pending, color: 'teal' },
+            { key: 'pending', label: '未着', count: stats.pending, color: 'blue' },
             { key: 'awaiting_payment', label: '入金待ち', count: stats.awaitingPayment, color: 'indigo' },
             { key: 'sold', label: '売却済', count: stats.sold, color: 'emerald' },
             { key: 'returned', label: '返品済', count: stats.returned, color: 'red' },

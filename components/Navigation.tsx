@@ -466,7 +466,7 @@ export default function Navigation() {
         >
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
           <div
-            className="relative mb-4 w-52 rounded-2xl shadow-2xl overflow-hidden"
+            className="relative mb-4 w-52 rounded-2xl shadow-card-md overflow-hidden"
             style={{
               background: isDark ? 'rgba(20,20,30,0.55)' : 'rgba(255,255,255,0.22)',
               backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',

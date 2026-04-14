@@ -107,7 +107,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
+              <div className="text-xl font-bold truncate text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">个</div>
             </div>
 
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
+              <div className="text-xl font-bold truncate text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
+              <div className="text-xl font-bold truncate text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className={`text-xl font-bold whitespace-nowrap ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`text-xl font-bold truncate ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
+              <div className="text-xl font-bold truncate text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
@@ -177,12 +177,12 @@ export default function DashboardPage() {
               </div>
               {includePoints ? (
                 <>
-                  <div className="text-xl font-bold whitespace-nowrap text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
+                  <div className="text-xl font-bold truncate text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>
-                  <div className={`text-xl font-bold whitespace-nowrap ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <div className={`text-xl font-bold truncate ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
+              <div className="text-xl font-bold truncate text-gray-900 dark:text-white">{inStockCount.toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">个</div>
             </div>
 
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
+              <div className="text-xl font-bold truncate text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvestment)}</div>
               <div className="text-xs text-gray-500 mt-1">全部交易总计</div>
             </div>
 
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
+              <div className="text-xl font-bold truncate text-emerald-600 dark:text-emerald-400">{formatCurrencyCompact(totalRecovered)}</div>
               <div className="text-xs text-gray-500 mt-1">销售总额</div>
             </div>
 
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className={`text-xl font-bold whitespace-nowrap ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`text-xl font-bold truncate ${confirmedProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrencyCompact(confirmedProfit)}
               </div>
               <div className="text-xs text-gray-500 mt-1">已售出部分</div>
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-xl font-bold whitespace-nowrap text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
+              <div className="text-xl font-bold truncate text-orange-600 dark:text-orange-400">{formatCurrencyCompact(unrealizedStockCost)}</div>
               <div className="text-xs text-gray-500 mt-1">在庫+未着+未入金</div>
             </div>
 
@@ -351,12 +351,12 @@ export default function DashboardPage() {
               </div>
               {includePoints ? (
                 <>
-                  <div className="text-xl font-bold whitespace-nowrap text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
+                  <div className="text-xl font-bold truncate text-amber-600 dark:text-amber-400">{expectedPoints.toLocaleString()}</div>
                   <div className="text-xs text-gray-500 mt-1">pt（在庫+未着+未入金）</div>
                 </>
               ) : (
                 <>
-                  <div className={`text-xl font-bold whitespace-nowrap ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <div className={`text-xl font-bold truncate ${monthlyProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrencyCompact(monthlyProfit)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{monthlySalesCount}笔</div>

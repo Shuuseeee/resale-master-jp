@@ -295,7 +295,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Results bottom sheet */}
       {phase === 'results' && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl flex flex-col max-h-[55vh] flex-shrink-0">
+        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md flex flex-col max-h-[55vh] flex-shrink-0">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-200 dark:border-gray-700">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">取引を選択</h3>
             <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -326,7 +326,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Confirming bottom sheet */}
       {phase === 'confirming' && selected && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl px-4 pt-4 pb-8 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md px-4 pt-4 pb-8 flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">着荷確認</h3>
             <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
