@@ -1308,12 +1308,7 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
   };
 
   const copyAll = async () => {
-    const text = janItems
-      .map(item => {
-        const url = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
-        return `${item.jan}\t${item.name}\t${item.maxStore}\t¥${item.maxPrice.toLocaleString()}\t${url}`;
-      })
-      .join('\n');
+    const text = janItems.map(item => item.jan).join('\n');
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
