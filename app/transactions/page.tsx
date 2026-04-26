@@ -1242,7 +1242,7 @@ function TransactionsContent() {
       <JanListSheet
         isOpen={showJanList}
         onClose={() => setShowJanList(false)}
-        transactions={filteredTransactions}
+        transactions={compareMode && selectedIds.size > 0 ? selectedTransactions : filteredTransactions}
         buybackMap={buybackPrices}
       />
     </div>
