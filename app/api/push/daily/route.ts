@@ -44,7 +44,7 @@ function serializeCoupon(c: Record<string, unknown>) {
 
 // ─── 主处理器 ─────────────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   // 校验 CRON_SECRET（Vercel Cron 自动注入）
   const secret = process.env.CRON_SECRET;
   if (secret) {
