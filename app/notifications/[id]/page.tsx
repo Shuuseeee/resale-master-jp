@@ -233,10 +233,10 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
           <section className="mb-4">
             <div className="flex items-center gap-2 mb-2 px-1">
               <div className="w-1 h-5 bg-apple-blue rounded-full" />
-              <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">今日生效</h2>
+              <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">明日生效</h2>
             </div>
             <div className="space-y-3">
-              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-apple-blue/30" labelClass="bg-apple-blue text-white" labelText="今日开始" />)}
+              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-apple-blue/30" labelClass="bg-apple-blue text-white" labelText="明日开始" />)}
             </div>
           </section>
         )}
