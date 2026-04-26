@@ -1256,47 +1256,63 @@ interface JanListSheetProps {
   isOpen: boolean;
   onClose: () => void;
   transactions: TransactionWithPayment[];
-  buybackMap: Map<string, { maxPrice: number; maxStore: string; expectedProfit?: number }>;
+  buybackMap: Map<string, { maxPrice: number; maxStore: string; expectedProfit?: number; allPrices?: Array<{ store: string; price: number; url: string }> }>;
 }
 
 function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListSheetProps) {
   const [copied, setCopied] = useState(false);
 
-  // 按 JAN 码去重，取最高买取价
+  // 按 JAN 码去重，取最高买取价及其买取店直链
   const janItems = useMemo(() => {
-    const map = new Map<string, { name: string; maxPrice: number; maxStore: string; count: number }>();
+    const map = new Map<string, {
+      name: string;
+      maxPrice: number;
+      maxStore: string;
+      storeUrl: string;  // 该买取店的直接页面 URL
+      allPrices: Array<{ store: string; price: number; url: string }>;
+    }>();
     for (const tx of transactions) {
       if (!tx.jan_code) continue;
       const jan = tx.jan_code;
       const bb = buybackMap.get(tx.id);
       const existing = map.get(jan);
+      // 找最高价店铺的直链：从 allPrices 中匹配 maxStore
+      const storeUrl = bb?.allPrices?.find(p => p.store === bb.maxStore)?.url ?? '';
       if (!existing) {
         map.set(jan, {
           name: tx.product_name || jan,
           maxPrice: bb?.maxPrice ?? 0,
           maxStore: bb?.maxStore ?? '',
-          count: 1,
+          storeUrl,
+          allPrices: bb?.allPrices ?? [],
         });
       } else {
         if ((bb?.maxPrice ?? 0) > existing.maxPrice) {
           existing.maxPrice = bb!.maxPrice;
           existing.maxStore = bb!.maxStore;
+          existing.storeUrl = storeUrl;
+          existing.allPrices = bb!.allPrices ?? [];
         }
-        existing.count += 1;
       }
     }
     return Array.from(map.entries())
-      .map(([jan, info]) => ({ jan, ...info, url: `https://kaitorix.app/product/${jan}` }))
+      .map(([jan, info]) => ({ jan, ...info }))
       .sort((a, b) => b.maxPrice - a.maxPrice);
   }, [transactions, buybackMap]);
 
   const openAll = () => {
-    janItems.forEach(item => window.open(item.url, '_blank', 'noopener'));
+    janItems.forEach(item => {
+      const url = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
+      window.open(url, '_blank', 'noopener');
+    });
   };
 
   const copyAll = async () => {
     const text = janItems
-      .map(item => `${item.jan}\t${item.name}\t¥${item.maxPrice.toLocaleString()}\t${item.url}`)
+      .map(item => {
+        const url = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
+        return `${item.jan}\t${item.name}\t${item.maxStore}\t¥${item.maxPrice.toLocaleString()}\t${url}`;
+      })
       .join('\n');
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -1347,35 +1363,38 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
             没有带 JAN 码的商品
           </div>
         ) : (
-          janItems.map(item => (
-            <a
-              key={item.jan}
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-white dark:bg-apple-cardDark rounded-2xl px-4 py-3 shadow-card active:opacity-70"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.jan}</p>
-                {item.maxStore && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.maxStore}</p>
-                )}
-              </div>
-              <div className="text-right flex-shrink-0">
-                {item.maxPrice > 0 ? (
-                  <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                    ¥{item.maxPrice.toLocaleString()}
-                  </p>
-                ) : (
-                  <p className="text-xs text-gray-400">未取得</p>
-                )}
-                <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </div>
-            </a>
-          ))
+          janItems.map(item => {
+            const href = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
+            return (
+              <a
+                key={item.jan}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-white dark:bg-apple-cardDark rounded-2xl px-4 py-3 shadow-card active:opacity-70"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.jan}</p>
+                  {item.maxStore && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">{item.maxStore}</p>
+                  )}
+                </div>
+                <div className="text-right flex-shrink-0">
+                  {item.maxPrice > 0 ? (
+                    <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                      ¥{item.maxPrice.toLocaleString()}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">未取得</p>
+                  )}
+                  <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+              </a>
+            );
+          })
         )}
       </div>
     </div>
