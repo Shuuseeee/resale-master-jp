@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
 
   const formatChangePercentage = (value: number) => {
     const sign = value >= 0 ? '+' : '';
-    const color = value >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300';
+    const color = value >= 0 ? 'text-apple-green' : 'text-apple-red';
     return <span className={color}>{sign}{value.toFixed(2)}%</span>;
   };
 
@@ -179,7 +179,7 @@ export default function AnalyticsPage() {
         {/* 标题和筛选器 */}
         <div className={layout.section}>
           <h1 className={heading.h1 + ' mb-2'}>数据分析仪表板</h1>
-          <p className="text-gray-600 dark:text-gray-400">深度分析您的业务数据</p>
+          <p className="text-apple-gray-1">深度分析您的业务数据</p>
         </div>
 
         {/* 筛选器 */}
@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
 
             {/* 时间范围选择 */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 时间范围
               </label>
               <div className="flex flex-wrap gap-2" data-testid="time-range-selector">
@@ -214,7 +214,7 @@ export default function AnalyticsPage() {
             {timeRange === 'custom' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" data-testid="custom-date-range">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     开始日期
                   </label>
                   <input
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     结束日期
                   </label>
                   <input
@@ -238,7 +238,7 @@ export default function AnalyticsPage() {
                   />
                 </div>
                 {startDate && endDate && startDate > endDate && (
-                  <div className="col-span-full text-sm text-red-600 dark:text-red-400" data-testid="date-range-error">
+                  <div className="col-span-full text-sm text-apple-red" data-testid="date-range-error">
                     开始日期不能晚于结束日期
                   </div>
                 )}
@@ -247,7 +247,7 @@ export default function AnalyticsPage() {
 
             {/* 支付方式筛选 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 支付方式
               </label>
               <div className="flex flex-wrap gap-2">
@@ -273,56 +273,56 @@ export default function AnalyticsPage() {
         {comparison && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-testid="metrics-grid">
             <div className={card.stat} data-testid="metric-total-sales">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总销售额</div>
+              <div className="text-apple-gray-1 text-sm mb-1">总销售额</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalSales)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-total-profit">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总利润</div>
+              <div className="text-apple-gray-1 text-sm mb-1">总利润</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalProfit)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-avg-roi">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均ROI</div>
+              <div className="text-apple-gray-1 text-sm mb-1">平均ROI</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatROI(comparison.current.avgROI)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-transaction-count">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">交易数量</div>
+              <div className="text-apple-gray-1 text-sm mb-1">交易数量</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {comparison.current.transactionCount}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-avg-profit-per-transaction">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均单笔利润</div>
+              <div className="text-apple-gray-1 text-sm mb-1">平均单笔利润</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.avgProfitPerTransaction)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-total-cost">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总成本</div>
+              <div className="text-apple-gray-1 text-sm mb-1">总成本</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalCost)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-total-points-value">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">积分回报</div>
+              <div className="text-apple-gray-1 text-sm mb-1">积分回报</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(comparison.current.totalPointsValue)}
               </div>
             </div>
 
             <div className={card.stat} data-testid="metric-total-fees">
-              <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总费用</div>
+              <div className="text-apple-gray-1 text-sm mb-1">总费用</div>
               <div className="text-xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(
                   comparison.current.totalPlatformFees +
@@ -494,7 +494,7 @@ export default function AnalyticsPage() {
                       <div className="font-medium text-gray-900 dark:text-white">
                         {method.paymentMethodName}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-sm text-apple-gray-1">
                         {method.transactionCount} 笔交易
                       </div>
                     </div>
@@ -503,7 +503,7 @@ export default function AnalyticsPage() {
                     <div className="font-bold text-gray-900 dark:text-white">
                       {formatCurrency(method.totalSales)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-apple-gray-1">
                       ROI: {formatROI(method.avgROI)}
                     </div>
                   </div>
@@ -547,7 +547,7 @@ export default function AnalyticsPage() {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {platform.platformName}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-apple-gray-1">
                       {(platform.totalPoints || 0).toLocaleString()} 积分
                     </div>
                   </div>
@@ -555,7 +555,7 @@ export default function AnalyticsPage() {
                     <div className="font-bold text-gray-900 dark:text-white">
                       {formatCurrency(platform.totalPointsValue)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-apple-gray-1">
                       {platform.percentage.toFixed(1)}%
                     </div>
                   </div>
@@ -612,7 +612,7 @@ export default function AnalyticsPage() {
                           <div className="font-medium text-gray-900 dark:text-white">
                             {platform.platformName}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-sm text-apple-gray-1">
                             {platform.transactionCount} 笔交易
                           </div>
                         </div>
@@ -621,7 +621,7 @@ export default function AnalyticsPage() {
                         <div className="font-bold text-gray-900 dark:text-white">
                           {formatCurrency(platform.totalCost)}
              </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-apple-gray-1">
                           ROI: {formatROI(platform.avgROI)}
                         </div>
                       </div>
@@ -630,7 +630,7 @@ export default function AnalyticsPage() {
                 </div>
               </>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div className="text-center text-apple-gray-1 py-8">
                 暂无购入平台数据
               </div>
             )}
@@ -681,7 +681,7 @@ export default function AnalyticsPage() {
                           <div className="font-medium text-gray-900 dark:text-white">
                             {platform.platformName}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-sm text-apple-gray-1">
                             {platform.transactionCount} 笔交易
                           </div>
                         </div>
@@ -690,7 +690,7 @@ export default function AnalyticsPage() {
                         <div className="font-bold text-gray-900 dark:text-white">
                           {formatCurrency(platform.totalSales)}
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-apple-gray-1">
                           ROI: {formatROI(platform.avgROI)}
                         </div>
                       </div>
@@ -699,7 +699,7 @@ export default function AnalyticsPage() {
                 </div>
               </>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div className="text-center text-apple-gray-1 py-8">
                 暂无出手平台数据
               </div>
             )}
@@ -752,7 +752,7 @@ export default function AnalyticsPage() {
                       <div className="font-bold text-gray-900 dark:text-white">
                         {formatCurrency(item.value)}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-sm text-apple-gray-1">
                         {((item.value / costStructure.totalCost) * 100).toFixed(1)}%
                       </div>
                     </div>

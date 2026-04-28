@@ -296,7 +296,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
       {/* Results bottom sheet */}
       {phase === 'results' && (
         <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md flex flex-col max-h-[55vh] flex-shrink-0">
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-apple-separator dark:border-apple-sepDark">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">取引を選択</h3>
             <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,11 +312,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
                 className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-apple-blue/5 transition-colors ${i < matches.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
               >
                 <span className="font-medium text-gray-900 dark:text-white text-sm">{tx.product_name}</span>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  <span className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{tx.purchase_platforms?.name ?? '—'}</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-apple-gray-1">
+                  <span className="bg-apple-gray-5 dark:bg-white/10 px-1.5 py-0.5 rounded">{tx.purchase_platforms?.name ?? '—'}</span>
                   <span>{tx.order_number ?? '注文番号なし'}</span>
                   <span>{tx.date}</span>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">{tx.quantity}個</span>
+                  <span className="text-gray-900 dark:text-white font-medium">{tx.quantity}個</span>
                 </div>
               </button>
             ))}
@@ -339,7 +339,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           {/* Transaction info */}
           <div className="mb-4 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
             <p className="font-medium text-gray-900 dark:text-white text-sm mb-1">{selected.product_name}</p>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-apple-gray-1">
               <span className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-1.5 py-0.5 rounded">{selected.purchase_platforms?.name ?? '—'}</span>
               <span>{selected.order_number ?? '注文番号なし'}</span>
               <span>{selected.date}</span>
@@ -348,7 +348,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
           {/* Quantity stepper */}
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">到着数量</span>
+            <span className="text-sm text-apple-gray-1">到着数量</span>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setQty(q => Math.max(1, q - 1))}

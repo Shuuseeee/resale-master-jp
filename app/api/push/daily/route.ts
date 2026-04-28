@@ -207,5 +207,22 @@ export async function GET(req: NextRequest) {
     results.push({ userId, notificationId, status: 'sent' });
   }
 
+  // 调用 LINE Reminder Edge Function（同步发送，失败不影响 PWA 结果）
+  const lineReminderUrl = process.env.LINE_REMINDER_URL;
+  const cronSecret = process.env.CRON_SECRET;
+  if (lineReminderUrl) {
+    try {
+      await fetch(lineReminderUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {}),
+        },
+      });
+    } catch {
+      // 忽略 LINE 端错误，不影响 PWA 推送返回
+    }
+  }
+
   return NextResponse.json({ ok: true, date: today, results });
 }

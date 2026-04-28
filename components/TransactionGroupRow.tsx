@@ -72,7 +72,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                     ? 'bg-apple-blue border-apple-blue'
                     : someSelected
                       ? 'bg-apple-blue/10 border-apple-blue/20'
-                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                      : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark'
                 }`}>
                   {allSelected && (
                     <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             )}
-            <span className="text-xs text-gray-500 dark:text-gray-400">{group.latestDate}</span>
+            <span className="text-xs text-apple-gray-1">{group.latestDate}</span>
           </div>
         </td>
 
@@ -108,7 +108,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                   ×{group.transactions.length}
                 </span>
               </div>
-              <div className="text-xs text-gray-400 font-mono">{group.janCode}</div>
+              <div className="text-xs text-apple-gray-2 font-mono">{group.janCode}</div>
             </div>
           </div>
         </td>
@@ -116,7 +116,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
         {/* 仕入合計 */}
         <td className="px-3 py-2 text-right">
           <div className="text-sm font-mono text-gray-900 dark:text-white">{formatCurrency(group.totalPurchasePrice)}</div>
-          <div className="text-xs text-gray-400">合計 ×{group.totalQuantity}</div>
+          <div className="text-xs text-apple-gray-2">合计 ×{group.totalQuantity}</div>
         </td>
 
         {/* 来源渠道 — 空 */}
@@ -128,11 +128,11 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
         {/* 账号 — 空 */}
         <td className="px-3 py-2" />
 
-        {/* 状態: 在庫/売済 */}
+        {/* 状態: 在庫/已售 */}
         <td className="px-3 py-2">
-          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-            <div>在庫 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></div>
-            <div>売済 <span className="font-medium text-gray-700 dark:text-gray-300">{group.totalSold}</span></div>
+          <div className="text-xs text-apple-gray-1 space-y-0.5">
+            <div>库存 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></div>
+            <div>已售 <span className="font-medium text-gray-900 dark:text-white">{group.totalSold}</span></div>
           </div>
         </td>
 
@@ -142,11 +142,11 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
         {/* 利益合計 */}
         <td className="px-3 py-2 text-right">
           {group.totalProfit != null ? (
-            <span className={`text-sm font-mono font-medium ${group.totalProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+            <span className={`text-sm font-mono font-medium ${group.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
               {group.totalProfit >= 0 ? '+' : ''}{formatCurrency(group.totalProfit)}
             </span>
           ) : (
-            <span className="text-gray-400">—</span>
+            <span className="text-apple-gray-2">—</span>
           )}
         </td>
 
@@ -157,10 +157,10 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
               <div className="text-sm font-mono font-medium text-gray-900 dark:text-white">
                 {formatCurrency(group.bestBuybackPrice)}
               </div>
-              <div className="text-xs text-blue-600 dark:text-blue-400">{group.bestBuybackStore}</div>
+              <div className="text-xs text-apple-blue">{group.bestBuybackStore}</div>
             </div>
           ) : (
-            <span className="text-gray-400">—</span>
+            <span className="text-apple-gray-2">—</span>
           )}
         </td>
 

@@ -210,7 +210,7 @@ export function ConfirmModal({
       closeOnEsc={!isLoading}
     >
       <div className="py-4">
-        <p className="text-gray-700 dark:text-gray-300 text-sm md:text-base">
+        <p className="text-gray-900 dark:text-white text-sm md:text-base">
           {message}
         </p>
       </div>

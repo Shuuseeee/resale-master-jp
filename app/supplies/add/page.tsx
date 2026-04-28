@@ -105,7 +105,7 @@ export default function AddSupplyPage() {
           </button>
 
           <h1 className={heading.h1 + ' mb-2'}>添加耗材记录</h1>
-          <p className="text-gray-600 dark:text-gray-400">记录包装、运输等耗材采购</p>
+          <p className="text-apple-gray-1">记录包装、运输等耗材采购</p>
         </div>
 
         {/* 表单 */}
@@ -119,14 +119,14 @@ export default function AddSupplyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     耗材分类 <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   >
                     {CATEGORY_OPTIONS.map((option) => (
@@ -141,7 +141,7 @@ export default function AddSupplyPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     采购日期 <span className="text-red-300">*</span>
                   </label>
                   <DatePicker
@@ -152,7 +152,7 @@ export default function AddSupplyPage() {
                         purchase_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.purchase_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.purchase_date}</p>
@@ -161,7 +161,7 @@ export default function AddSupplyPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   金额 <span className="text-red-300">*</span>
                 </label>
                 <div className="relative">
@@ -173,10 +173,10 @@ export default function AddSupplyPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">
                     ¥
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export default function AddSupplyPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   描述
                 </label>
                 <input
@@ -195,12 +195,12 @@ export default function AddSupplyPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="例: A4气泡袋 100个"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   备注
                 </label>
                 <textarea
@@ -209,7 +209,7 @@ export default function AddSupplyPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="添加备注信息..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -217,7 +217,7 @@ export default function AddSupplyPage() {
 
           {/* 提交按钮 */}
           {errors.submit && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
               <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
@@ -243,7 +243,7 @@ export default function AddSupplyPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
             >
               取消
             </button>

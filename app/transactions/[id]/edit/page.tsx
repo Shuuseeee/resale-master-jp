@@ -409,12 +409,12 @@ export default function EditTransactionPage() {
 
   return (
     <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
-      <div className="relative max-w-2xl mx-auto px-4 py-8">
+      <div className="relative max-w-2xl lg:max-w-5xl mx-auto px-4 py-8">
         {/* 标题区域 */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-apple-gray-1 hover:text-white transition-colors mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -425,11 +425,13 @@ export default function EditTransactionPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             编辑交易
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">修改交易记录信息</p>
+          <p className="text-apple-gray-1">修改交易记录信息</p>
         </div>
 
         {/* 表单卡片 */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:space-y-0">
+          <div className="space-y-6">
           <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             {/* 基本信息 */}
             <div className="space-y-5">
@@ -440,8 +442,8 @@ export default function EditTransactionPage() {
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    日期 <span className="text-red-600 dark:text-red-300">*</span>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    日期 <span className="text-apple-red">*</span>
                   </label>
                   <DatePicker
                     selected={formData.date ? parseDateFromLocal(formData.date) : null}
@@ -451,13 +453,13 @@ export default function EditTransactionPage() {
                         date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    商品名称 <span className="text-red-600 dark:text-red-300">*</span>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    商品名称 <span className="text-apple-red">*</span>
                   </label>
                   <input
                     type="text"
@@ -465,17 +467,17 @@ export default function EditTransactionPage() {
                     value={formData.product_name}
                     onChange={handleInputChange}
                     placeholder="例: Nintendo Switch OLED"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
                   {errors.product_name && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.product_name}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.product_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    数量 <span className="text-red-600 dark:text-red-300">*</span>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    数量 <span className="text-apple-red">*</span>
                   </label>
                   <input
                     type="number"
@@ -484,13 +486,13 @@ export default function EditTransactionPage() {
                     onChange={(e) => setFormData({...formData, quantity: e.target.value === '' ? '' as any : parseInt(e.target.value)})}
                     min="1"
                     disabled={!!(transaction && transaction.quantity_sold > 0)}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   {errors.quantity && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.quantity}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.quantity}</p>
                   )}
                   {transaction && transaction.quantity_sold > 0 && (
-                    <p className="text-amber-500 text-sm mt-1">
+                    <p className="text-apple-orange text-sm mt-1">
                       该商品已售出 {transaction.quantity_sold} 件，无法修改总数量
                     </p>
                   )}
@@ -498,12 +500,12 @@ export default function EditTransactionPage() {
 
                 {/* 未着品トグル - 只有 pending/in_stock 且未售出时可切换 */}
                 {transaction && (transaction.status === 'pending' || transaction.status === 'in_stock') && transaction.quantity_sold === 0 && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                  <div className="flex items-center justify-between p-3 bg-apple-gray-6 dark:bg-white/5 rounded-xl">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-sm font-medium text-gray-900 dark:text-white">
                         未到货
                       </label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-apple-gray-1 mt-0.5">
                         商品未到货
                       </p>
                     </div>
@@ -513,7 +515,7 @@ export default function EditTransactionPage() {
                       aria-checked={isPending}
                       onClick={() => setIsPending(!isPending)}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        isPending ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                        isPending ? 'bg-apple-orange' : 'bg-apple-gray-3 dark:bg-apple-gray-1'
                       }`}
                     >
                       <span
@@ -538,7 +540,7 @@ export default function EditTransactionPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     JAN
                   </label>
                   <div className="flex items-center gap-2">
@@ -549,10 +551,10 @@ export default function EditTransactionPage() {
                       onChange={handleInputChange}
                       onBlur={() => handleJanBlur()}
                       placeholder="4901234567890"
-                      className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
                     {janLooking ? (
-                      <svg className="animate-spin h-5 w-5 text-indigo-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5 text-apple-blue flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -560,7 +562,7 @@ export default function EditTransactionPage() {
                       <button
                         type="button"
                         onClick={() => setShowScanner(true)}
-                        className="flex-shrink-0 p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        className="flex-shrink-0 p-2 text-apple-gray-2 hover:text-apple-blue hover:bg-apple-blue/5 rounded-lg transition-colors"
                         title="バーコードをスキャン"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,7 +574,7 @@ export default function EditTransactionPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     订单号
                   </label>
                   <input
@@ -581,13 +583,13 @@ export default function EditTransactionPage() {
                     value={formData.order_number || ''}
                     onChange={handleInputChange}
                     placeholder="注文番号"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   单价 (¥)
                 </label>
                 <div className="relative">
@@ -607,17 +609,17 @@ export default function EditTransactionPage() {
                       }));
                     }}
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-apple-gray-1">
                   输入单价后会自动计算总价和余额支付金额
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   购买平台
                 </label>
                 <div className="flex gap-2">
@@ -625,7 +627,7 @@ export default function EditTransactionPage() {
                     name="purchase_platform_id"
                     value={formData.purchase_platform_id || ''}
                     onChange={handleInputChange}
-                    className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   >
                     <option value="">请选择</option>
                     {purchasePlatforms.map((p) => (
@@ -641,13 +643,13 @@ export default function EditTransactionPage() {
                     value={newPurchasePlatformName}
                     onChange={(e) => setNewPurchasePlatformName(e.target.value)}
                     placeholder="请输入新的购买平台..."
-                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   <button
                     type="button"
                     onClick={handleAddPurchasePlatform}
                     disabled={!newPurchasePlatformName.trim()}
-                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+                    className="px-3 py-2 bg-apple-blue active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
                   >
                     追加
                   </button>
@@ -655,7 +657,9 @@ export default function EditTransactionPage() {
               </div>
             </div>
           </div>
+          </div>{/* end left column */}
 
+          <div className="space-y-6">
           {/* 采购成本 */}
           <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
@@ -665,8 +669,8 @@ export default function EditTransactionPage() {
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  采购总价 <span className="text-red-600 dark:text-red-300">*</span>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  采购总价 <span className="text-apple-red">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -686,20 +690,20 @@ export default function EditTransactionPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                 </div>
                 {errors.purchase_price_total && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.purchase_price_total}</p>
+                  <p className="mt-1 text-sm text-apple-red">{errors.purchase_price_total}</p>
                 )}
               </div>
 
               {/* 混合支付 */}
-              <div className="grid grid-cols-1 gap-4 pt-4 border-t border-gray-300 dark:border-gray-600/50">
+              <div className="grid grid-cols-1 gap-4 pt-4 border-t border-apple-separator dark:border-apple-sepDark/50">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     信用卡支付
                   </label>
                   <div className="flex gap-3">
@@ -712,15 +716,15 @@ export default function EditTransactionPage() {
                         min="0"
                         max={formData.purchase_price_total}
                         placeholder="0.00"
-                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                     </div>
                     <select
                       name="card_id"
                       value={formData.card_id}
                       onChange={handleInputChange}
-                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       disabled={formData.card_paid === 0}
                     >
                       <option value="">选择卡片</option>
@@ -734,12 +738,12 @@ export default function EditTransactionPage() {
                     </select>
                   </div>
                   {errors.card_id && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.card_id}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.card_id}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     积分抵扣
                   </label>
                   <div className="relative">
@@ -751,14 +755,14 @@ export default function EditTransactionPage() {
                       min="0"
                       max={formData.purchase_price_total}
                       placeholder="0.00"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     余额支付
                   </label>
                   <div className="relative">
@@ -766,16 +770,16 @@ export default function EditTransactionPage() {
                       type="number"
                       value={formData.balance_paid || ''}
                       readOnly
-                      className="w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600/50 rounded-xl text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                      className="w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark/50 rounded-xl text-apple-gray-1 cursor-not-allowed"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-500">¥</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1 dark:text-apple-gray-1">¥</span>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">自动计算</p>
+                  <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">自动计算</p>
                 </div>
 
                 {errors.payment && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <p className="text-sm text-red-600 dark:text-red-300">{errors.payment}</p>
+                  <div className="p-3 bg-apple-red/10 border border-apple-red/30 rounded-lg">
+                    <p className="text-sm text-apple-red">{errors.payment}</p>
                   </div>
                 )}
               </div>
@@ -786,14 +790,14 @@ export default function EditTransactionPage() {
           <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
+                <div className="w-1 h-6 bg-gradient-to-b from-apple-orange to-apple-orange/60 rounded-full"></div>
                 预期积分
               </h2>
 
               {/* 平台积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     平台积分数量
                   </label>
                   <div className="relative">
@@ -805,13 +809,13 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     积分平台
                   </label>
                   <select
@@ -819,7 +823,7 @@ export default function EditTransactionPage() {
                     value={formData.platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -829,7 +833,7 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -837,9 +841,9 @@ export default function EditTransactionPage() {
               {/* 额外平台积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     额外积分数量
-                    <span className="text-xs text-gray-500 ml-2">(如d point)</span>
+                    <span className="text-xs text-apple-gray-1 ml-2">(如d point)</span>
                   </label>
                   <div className="relative">
                     <input
@@ -850,13 +854,13 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     额外积分平台
                   </label>
                   <select
@@ -864,7 +868,7 @@ export default function EditTransactionPage() {
                     value={formData.extra_platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -874,7 +878,7 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.extra_platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.extra_platform_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.extra_platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -882,10 +886,10 @@ export default function EditTransactionPage() {
               {/* 信用卡积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     信用卡积分数量
                     {formData.card_id && paymentMethods.find(pm => pm.id === formData.card_id) && (
-                      <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-300">
+                      <span className="ml-2 text-xs text-apple-green">
                         (返点率: {(paymentMethods.find(pm => pm.id === formData.card_id)?.point_rate || 0) * 100}%)
                       </span>
                     )}
@@ -899,14 +903,14 @@ export default function EditTransactionPage() {
                       step="1"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">P</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">根据卡片返点率自动计算，可手动调整</p>
+                  <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">根据卡片返点率自动计算，可手动调整</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     信用卡积分平台
                   </label>
                   <select
@@ -914,7 +918,7 @@ export default function EditTransactionPage() {
                     value={formData.card_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_card_points === 0 || !formData.card_id}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -924,10 +928,10 @@ export default function EditTransactionPage() {
                     ))}
                   </select>
                   {errors.card_points_platform_id && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.card_points_platform_id}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.card_points_platform_id}</p>
                   )}
                   {formData.card_id && formData.card_points_platform_id && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                    <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">
                       已从支付方式自动设置
                     </p>
                   )}
@@ -945,13 +949,13 @@ export default function EditTransactionPage() {
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   采购截图
                 </label>
 
                 {imagePreview ? (
                   <div className="relative group">
-                    <div className="relative w-full h-48 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600">
+                    <div className="relative w-full h-48 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark">
                       <Image
                         src={imagePreview}
                         alt="预览"
@@ -965,7 +969,7 @@ export default function EditTransactionPage() {
                         setSelectedImage(null);
                         setImagePreview('');
                       }}
-                      className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                      className="absolute top-2 right-2 p-2 bg-apple-red active:opacity-80 rounded-lg transition-colors"
                     >
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -973,15 +977,15 @@ export default function EditTransactionPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-white dark:bg-gray-700 transition-all">
+                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-apple-separator dark:border-apple-sepDark rounded-xl cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-white dark:bg-gray-700 transition-all">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-12 h-12 mb-3 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 mb-3 text-apple-gray-1 dark:text-apple-gray-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                      <p className="mb-2 text-sm text-apple-gray-1">
                         <span className="font-semibold">点击上传</span>
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500">PNG, JPG 或 WEBP (最大 5MB)</p>
+                      <p className="text-xs text-apple-gray-1 dark:text-apple-gray-1">PNG, JPG 或 WEBP (最大 5MB)</p>
                     </div>
                     <input
                       type="file"
@@ -992,7 +996,7 @@ export default function EditTransactionPage() {
                   </label>
                 )}
                 {errors.image && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.image}</p>
+                  <p className="mt-1 text-sm text-apple-red">{errors.image}</p>
                 )}
               </div>
             </div>
@@ -1012,15 +1016,17 @@ export default function EditTransactionPage() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="添加备注信息..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
               />
             </div>
           </div>
+          </div>{/* end right column */}
+          </div>{/* end grid wrapper */}
 
           {/* 提交按钮 */}
           {errors.submit && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-300">{errors.submit}</p>
+            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
+              <p className="text-sm text-apple-red">{errors.submit}</p>
             </div>
           )}
 
@@ -1045,7 +1051,7 @@ export default function EditTransactionPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-slate-700/50 text-gray-700 dark:text-gray-300 hover:text-white font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+              className="px-8 py-4 bg-white dark:bg-gray-700 dark:hover:bg-white/10 text-gray-900 dark:text-white hover:text-white font-semibold rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
             >
               取消
             </button>

@@ -151,8 +151,8 @@ const TransactionCard = memo(function TransactionCard({
         ${compareMode
           ? isSelected
             ? 'ring-2 ring-apple-blue bg-apple-blue/5 cursor-pointer'
-            : 'cursor-pointer active:bg-gray-50 dark:active:bg-white/5'
-          : 'cursor-pointer active:bg-gray-50 dark:active:bg-white/5'
+            : 'cursor-pointer active:bg-apple-gray-6 dark:active:bg-white/5'
+          : 'cursor-pointer active:bg-apple-gray-6 dark:active:bg-white/5'
         }`}
       onClick={handleCardClick}
       onTouchStart={handleTouchStart}
@@ -167,7 +167,7 @@ const TransactionCard = memo(function TransactionCard({
         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10
           ${isSelected
             ? 'bg-apple-blue border-apple-blue'
-            : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500'
+            : 'bg-white dark:bg-apple-cardDark border-apple-separator dark:border-apple-sepDark'
           }`}
         >
           {isSelected && (
@@ -209,7 +209,7 @@ const TransactionCard = memo(function TransactionCard({
                   triggerHaptic('medium');
                   onMarkArrived(transaction.id);
                 }}
-                className="px-2 py-0.5 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white rounded transition-colors"
+                className="px-2 py-0.5 text-xs font-medium bg-apple-orange active:opacity-80 text-white rounded transition-colors"
               >
                 着荷
               </button>
@@ -221,42 +221,42 @@ const TransactionCard = memo(function TransactionCard({
       {/* 数据网格 */}
       <div className="grid grid-cols-3 gap-x-3 gap-y-2 text-sm mb-2">
         <div>
-          <span className="text-gray-400 text-xs">日期</span>
+          <span className="text-apple-gray-2 text-xs">日期</span>
           <p className="text-gray-900 dark:text-white text-xs font-medium">{displayDate}</p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs">单价</span>
+          <span className="text-apple-gray-2 text-xs">单价</span>
           <p className="text-gray-900 dark:text-white text-xs font-medium font-mono">
             {formatCurrency(transaction.unit_price || transaction.purchase_price_total)}
           </p>
           {totalPoints > 0 && (
-            <p className="text-[10px] text-gray-400">返{formatCurrency(totalPoints)}</p>
+            <p className="text-[10px] text-apple-gray-2">返{formatCurrency(totalPoints)}</p>
           )}
         </div>
         <div>
-          <span className="text-gray-400 text-xs">数量</span>
+          <span className="text-apple-gray-2 text-xs">数量</span>
           <p className="text-gray-900 dark:text-white text-xs font-medium">{transaction.quantity}</p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs">渠道</span>
+          <span className="text-apple-gray-2 text-xs">渠道</span>
           <p className="text-xs">
             {platformName ? (
-              <span className="text-blue-600 dark:text-blue-400">{platformName}</span>
+              <span className="text-apple-blue">{platformName}</span>
             ) : '-'}
           </p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs">账号</span>
-          <p className="text-gray-700 dark:text-gray-300 text-xs truncate">
+          <span className="text-apple-gray-2 text-xs">账号</span>
+          <p className="text-gray-900 dark:text-white text-xs truncate">
             {transaction.payment_method?.name || '-'}
           </p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs">利润</span>
+          <span className="text-apple-gray-2 text-xs">利润</span>
           <p className={`text-xs font-medium font-mono ${
             (transaction as any).aggregated_profit != null
-              ? (transaction as any).aggregated_profit >= 0 ? 'text-green-600' : 'text-red-600'
-              : 'text-gray-400'
+              ? (transaction as any).aggregated_profit >= 0 ? 'text-apple-green' : 'text-apple-red'
+              : 'text-apple-gray-2'
           }`}>
             {(transaction as any).aggregated_profit != null
               ? formatCurrency((transaction as any).aggregated_profit)
@@ -265,27 +265,27 @@ const TransactionCard = memo(function TransactionCard({
         </div>
         {!hasSoldOut && buybackInfo && buybackInfo.source === 'pending' && buybackInfo.maxPrice === 0 && (
           <div>
-            <span className="text-gray-400 text-xs">買取価格</span>
-            <p className="text-xs text-gray-400 animate-pulse">取得中...</p>
+            <span className="text-apple-gray-2 text-xs">买取价格</span>
+            <p className="text-xs text-apple-gray-2 animate-pulse">获取中...</p>
           </div>
         )}
         {!hasSoldOut && buybackInfo && buybackInfo.maxPrice > 0 && (
           <>
             <div>
-              <span className="text-gray-400 text-xs">買取価格</span>
+              <span className="text-apple-gray-2 text-xs">买取价格</span>
               <p className="text-xs font-medium font-mono text-gray-900 dark:text-white">
                 {formatCurrency(buybackInfo.maxPrice)}
                 {buybackInfo.source === 'stale' && buybackInfo.fetchedAt && (() => {
                   const mins = Math.floor((Date.now() - buybackInfo.fetchedAt) / 60000);
                   const label = mins < 1 ? 'たった今' : mins < 60 ? `${mins}分前` : `${Math.floor(mins / 60)}時間前`;
-                  return <span className="ml-1 text-[10px] text-amber-400">{label}</span>;
+                  return <span className="ml-1 text-[10px] text-apple-orange/70">{label}</span>;
                 })()}
               </p>
-              <p className="text-[10px] text-blue-600 dark:text-blue-400">{buybackInfo.maxStore}</p>
+              <p className="text-[10px] text-apple-blue">{buybackInfo.maxStore}</p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">見込利益</span>
-              <p className={`text-xs font-medium font-mono ${buybackInfo.expectedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <span className="text-apple-gray-2 text-xs">预期利润</span>
+              <p className={`text-xs font-medium font-mono ${buybackInfo.expectedProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
                 ≈{formatCurrency(buybackInfo.expectedProfit)}
               </p>
             </div>
@@ -298,7 +298,7 @@ const TransactionCard = memo(function TransactionCard({
         <div className="mb-2">
           <button
             onClick={(e) => copyToClipboard(transaction.order_number!, e)}
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline truncate max-w-full block"
+            className="text-xs text-apple-blue hover:underline truncate max-w-full block"
             title={transaction.order_number}
           >
             订单: {transaction.order_number}
@@ -307,21 +307,21 @@ const TransactionCard = memo(function TransactionCard({
       )}
 
       {/* 操作栏 */}
-      <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+      <div className="pt-2 border-t border-apple-separator dark:border-apple-sepDark">
         <div className="flex items-center justify-end gap-1">
-          <Link href={`/transactions/${transaction.id}/edit`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">编辑</Link>
-          <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">出售</Link>
+          <Link href={`/transactions/${transaction.id}/edit`} className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors">编辑</Link>
+          <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-apple-blue hover:bg-apple-blue/5 rounded transition-colors">出售</Link>
           {(transaction.status === 'in_stock' || transaction.status === 'pending') && (
-            <Link href={`/transactions/${transaction.id}?action=return`} className="px-2 py-1 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded transition-colors">退货</Link>
+            <Link href={`/transactions/${transaction.id}?action=return`} className="px-2 py-1 text-xs text-apple-orange hover:bg-apple-orange/5 rounded transition-colors">退货</Link>
           )}
-          <Link href={`/transactions/add?copy=${transaction.id}`} className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">复制</Link>
+          <Link href={`/transactions/add?copy=${transaction.id}`} className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors">复制</Link>
           <button
             onClick={(e) => {
               e.stopPropagation();
               triggerHaptic('medium');
               onDelete(transaction.id);
             }}
-            className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"
+            className="px-2 py-1 text-xs text-apple-red hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"
           >
             删除
           </button>

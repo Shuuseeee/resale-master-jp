@@ -96,7 +96,7 @@ export default function PaymentMethodsPage() {
         <div className="mb-8">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-apple-gray-1 hover:text-gray-900 dark:text-white transition-colors mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -107,7 +107,7 @@ export default function PaymentMethodsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">支付方式管理</h1>
-              <p className="text-gray-600 dark:text-gray-400">配置信用卡还款周期和其他设置</p>
+              <p className="text-apple-gray-1">配置信用卡还款周期和其他设置</p>
             </div>
             <Link
               href="/settings/payment-methods/add"
@@ -123,7 +123,7 @@ export default function PaymentMethodsPage() {
 
         {/* 信用卡列表 */}
         <div className="bg-white dark:bg-apple-cardDark rounded-xl shadow-card overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-apple-separator dark:border-apple-sepDark">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
               信用卡配置
@@ -133,40 +133,40 @@ export default function PaymentMethodsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-apple-separator dark:border-apple-sepDark">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     名称
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     账单日
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     还款日
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     还款周期
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     返点率
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     状态
                   </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                     操作
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-apple-separator dark:divide-apple-sepDark">
                 {paymentMethods.filter(pm => pm.type === 'card').map((method) => (
-                  <tr key={method.id} className="hover:bg-gray-100 dark:bg-gray-700 transition-colors">
+                  <tr key={method.id} className="active:bg-apple-gray-6 dark:active:bg-white/5 transition-colors">
                     <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">
                       {method.name}
                     </td>
-                    <td className="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
+                    <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
                       {method.closing_day ? `${method.closing_day}日` : '-'}
                     </td>
-                    <td className="px-6 py-4 text-center text-gray-700 dark:text-gray-300">
+                    <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
                       {method.payment_day ? `${method.payment_day}日` : '-'}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -174,17 +174,17 @@ export default function PaymentMethodsPage() {
                         value={method.payment_same_month ? 'same' : 'next'}
                         onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
                         disabled={saving === method.id || !method.closing_day || !method.payment_day}
-                        className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 bg-white dark:bg-apple-cardDark border border-apple-separator dark:border-apple-sepDark rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="next">次月还款</option>
                         <option value="same">当月还款</option>
                       </select>
                       {saving === method.id && (
-                        <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-300">保存中...</div>
+                        <div className="mt-1 text-xs text-apple-green">保存中...</div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="text-emerald-600 dark:text-emerald-300 font-medium">
+                      <span className="text-apple-green font-medium">
                         {(method.point_rate * 100).toFixed(2)}%
                       </span>
                     </td>
@@ -193,8 +193,8 @@ export default function PaymentMethodsPage() {
                         onClick={() => toggleActive(method.id, method.is_active)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                           method.is_active
-                            ? 'bg-emerald-600/30 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/40'
-                            : 'bg-slate-700/50 text-gray-700 dark:text-gray-400 border border-slate-600 hover:bg-slate-700'
+                            ? 'bg-apple-green/10 text-apple-green border border-apple-green/30 active:bg-apple-green/20'
+                            : 'bg-apple-gray-5 dark:bg-white/10 text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark active:opacity-80'
                         }`}
                       >
                         {method.is_active ? '启用' : '禁用'}
@@ -223,18 +223,18 @@ export default function PaymentMethodsPage() {
             </svg>
             还款周期说明
           </h3>
-          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+          <div className="space-y-2 text-sm text-gray-900 dark:text-white">
             <div>
               <span className="font-medium text-gray-900 dark:text-white">次月还款：</span>
               还款日在账单日的下个月（大部分信用卡的模式）
-              <div className="ml-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <div className="ml-4 mt-1 text-xs text-apple-gray-1">
                 示例：账单日 25日，还款日 15日 → 1月10日消费，2月15日还款
               </div>
             </div>
             <div>
               <span className="font-medium text-gray-900 dark:text-white">当月还款：</span>
               还款日在账单日的当月（部分储蓄卡联名卡或特殊信用卡）
-              <div className="ml-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <div className="ml-4 mt-1 text-xs text-apple-gray-1">
                 示例：账单日 15日，还款日 28日 → 1月10日消费，1月28日还款
               </div>
             </div>

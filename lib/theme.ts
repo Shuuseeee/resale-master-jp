@@ -12,7 +12,7 @@ export const card = {
   secondary: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card',
 
   // 交互卡片（带 active 反馈）
-  interactive: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card active:bg-gray-50 dark:active:bg-white/5 transition-colors cursor-pointer',
+  interactive: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card active:bg-apple-gray-6 dark:active:bg-white/5 transition-colors cursor-pointer',
 
   // 统计卡片
   stat: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-4',
@@ -57,7 +57,7 @@ export const badge = {
  * 输入框样式 — 无边框，极浅阴影
  */
 export const input = {
-  base: 'px-4 py-2 text-sm bg-white dark:bg-apple-cardDark rounded-lg border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-shadow',
+  base: 'px-4 py-2 text-sm bg-white dark:bg-apple-cardDark rounded-lg border border-apple-separator dark:border-apple-sepDark text-gray-900 dark:text-white placeholder-apple-gray-2 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-shadow',
   error: 'w-full px-4 py-2 text-sm bg-white dark:bg-apple-cardDark rounded-lg border border-apple-red/40 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-red/30 transition-shadow',
 };
 

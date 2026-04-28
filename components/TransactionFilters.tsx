@@ -57,7 +57,7 @@ const statusOptions = [
   { value: 'returned', label: '返品済' },
 ];
 
-const inputClass = 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-colors';
+const inputClass = 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-apple-separator dark:border-apple-sepDark rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-colors';
 
 // ── 多选下拉组件 ──────────────────────────────────────────
 interface MultiSelectProps {
@@ -93,7 +93,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
         className={`${inputClass} flex items-center gap-1`}
       >
         {selected.length === 0 ? (
-          <span className="text-gray-400 dark:text-gray-500 truncate">{placeholder}</span>
+          <span className="text-gray-400 dark:text-apple-gray-1 truncate">{placeholder}</span>
         ) : (
           <div className="flex items-center gap-1 overflow-hidden flex-1 min-w-0">
             {selected.slice(0, 2).map(val => {
@@ -110,17 +110,17 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
               );
             })}
             {selected.length > 2 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">+{selected.length - 2}</span>
+              <span className="text-xs text-apple-gray-1 flex-shrink-0">+{selected.length - 2}</span>
             )}
           </div>
         )}
-        <svg className="w-3.5 h-3.5 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3.5 h-3.5 text-apple-gray-2 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-white dark:bg-gray-800 border border-apple-separator dark:border-apple-sepDark rounded-lg shadow-lg overflow-hidden">
           {options.map(opt => {
             const isChecked = selected.includes(opt.value);
             return (
@@ -138,18 +138,18 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                   onChange={() => toggle(opt.value)}
                   className="w-3.5 h-3.5 rounded accent-apple-blue flex-shrink-0"
                 />
-                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-apple-blue font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-apple-blue font-medium' : 'text-gray-900 dark:text-white'}`}>
                   {opt.label}
                 </span>
               </label>
             );
           })}
           {selected.length > 0 && (
-            <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-1.5">
+            <div className="border-t border-apple-separator dark:border-apple-sepDark px-3 py-1.5">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onChange([]); setOpen(false); }}
-                className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="text-xs text-gray-400 hover:text-apple-red dark:hover:text-red-400 transition-colors"
               >
                 リセット
               </button>
@@ -249,7 +249,7 @@ export default function TransactionFilters({
         <button
           type="button"
           onClick={() => setIsExpanded(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-1"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 border border-apple-separator dark:border-apple-sepDark text-apple-gray-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-1"
         >
           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
@@ -261,7 +261,7 @@ export default function TransactionFilters({
             </span>
           )}
           <svg
-            className={`w-4 h-4 ml-auto text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 ml-auto text-apple-gray-2 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -275,7 +275,7 @@ export default function TransactionFilters({
           className={`p-1.5 rounded-lg border transition-colors ${
             pinned
               ? 'bg-apple-blue/5 border-apple-blue/20 text-apple-blue'
-              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+              : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
           }`}
         >
           <svg className="w-4 h-4" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -291,14 +291,14 @@ export default function TransactionFilters({
         {/* Date range */}
         <div className="flex items-center gap-1">
           {/* 购买/售出 日期模式切换 */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 text-xs flex-shrink-0">
+          <div className="flex rounded-lg overflow-hidden border border-apple-separator dark:border-apple-sepDark text-xs flex-shrink-0">
             <button
               type="button"
               onClick={() => updateFilter('dateMode', 'purchase')}
               className={`px-2 py-1.5 transition-colors ${
                 filters.dateMode === 'purchase'
                   ? 'bg-apple-blue text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-800 text-apple-gray-1 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               购买
@@ -306,10 +306,10 @@ export default function TransactionFilters({
             <button
               type="button"
               onClick={() => updateFilter('dateMode', 'sale')}
-              className={`px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+              className={`px-2 py-1.5 transition-colors border-l border-apple-separator dark:border-apple-sepDark ${
                 filters.dateMode === 'sale'
                   ? 'bg-apple-blue text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-800 text-apple-gray-1 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               售出
@@ -324,12 +324,12 @@ export default function TransactionFilters({
               className={inputClass + ' w-full' + (filters.dateFrom ? ' pr-7' : '')}
             />
             {filters.dateFrom && (
-              <button onClick={() => updateFilter('dateFrom', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10" type="button">
+              <button onClick={() => updateFilter('dateFrom', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white z-10" type="button">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             )}
           </div>
-          <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 text-sm">~</span>
+          <span className="text-gray-400 dark:text-apple-gray-1 flex-shrink-0 text-sm">~</span>
           <div className="relative w-[150px]">
             <DatePicker
               selected={filters.dateTo ? parseDateFromLocal(filters.dateTo) : null}
@@ -339,7 +339,7 @@ export default function TransactionFilters({
               className={inputClass + ' w-full' + (filters.dateTo ? ' pr-7' : '')}
             />
             {filters.dateTo && (
-              <button onClick={() => updateFilter('dateTo', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10" type="button">
+              <button onClick={() => updateFilter('dateTo', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white z-10" type="button">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             )}
@@ -369,14 +369,14 @@ export default function TransactionFilters({
         {/* JAN 筛选（含む/除外切换） */}
         <div className="flex items-center gap-1">
           {/* 模式切换 */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 text-xs">
+          <div className="flex rounded-lg overflow-hidden border border-apple-separator dark:border-apple-sepDark text-xs">
             <button
               type="button"
               onClick={() => switchJanMode('include')}
               className={`px-2 py-1.5 transition-colors ${
                 filters.janFilterMode === 'include'
                   ? 'bg-apple-blue text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-800 text-apple-gray-1 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               包含
@@ -384,10 +384,10 @@ export default function TransactionFilters({
             <button
               type="button"
               onClick={() => switchJanMode('exclude')}
-              className={`px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600 ${
+              className={`px-2 py-1.5 transition-colors border-l border-apple-separator dark:border-apple-sepDark ${
                 filters.janFilterMode === 'exclude'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-apple-orange text-white'
+                  : 'bg-white dark:bg-gray-800 text-apple-gray-1 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               除外
@@ -402,28 +402,28 @@ export default function TransactionFilters({
                 onClick={() => setJanDropdownOpen(!janDropdownOpen)}
                 className={inputClass + ' flex items-center gap-1 min-w-[120px]'}
               >
-                <span className={filters.janCode ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
+                <span className={filters.janCode ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-apple-gray-1'}>
                   {filters.janCode || 'JAN'}
                 </span>
-                <svg className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-apple-gray-2 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {filters.janCode && (
-                <button onClick={(e) => { e.stopPropagation(); updateFilter('janCode', ''); setJanSearch(''); }} className="absolute right-7 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" type="button">
+                <button onClick={(e) => { e.stopPropagation(); updateFilter('janCode', ''); setJanSearch(''); }} className="absolute right-7 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white" type="button">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               )}
               {janDropdownOpen && (
-                <div className="absolute z-50 top-full left-0 mt-1 w-[200px] max-h-[280px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-hidden">
-                  <div className="p-1.5 border-b border-gray-200 dark:border-gray-700">
-                    <input type="text" value={janSearch} onChange={(e) => setJanSearch(e.target.value)} placeholder="搜索JAN..." className="w-full px-2 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none" autoFocus />
+                <div className="absolute z-50 top-full left-0 mt-1 w-[200px] max-h-[280px] bg-white dark:bg-gray-800 border border-apple-separator dark:border-apple-sepDark rounded-lg shadow-lg overflow-hidden">
+                  <div className="p-1.5 border-b border-apple-separator dark:border-apple-sepDark">
+                    <input type="text" value={janSearch} onChange={(e) => setJanSearch(e.target.value)} placeholder="搜索JAN..." className="w-full px-2 py-1 text-sm bg-apple-gray-6 dark:bg-white/5 border border-apple-separator dark:border-apple-sepDark rounded text-gray-900 dark:text-white placeholder-apple-gray-2 focus:outline-none" autoFocus />
                   </div>
                   <div className="overflow-y-auto max-h-[220px]">
                     {filteredJanCodes.length === 0
-                      ? <div className="px-3 py-2 text-sm text-gray-400">无匹配</div>
+                      ? <div className="px-3 py-2 text-sm text-apple-gray-2">无匹配</div>
                       : filteredJanCodes.map(jan => (
-                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${filters.janCode === jan ? 'bg-apple-blue/5 text-apple-blue' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono active:bg-apple-gray-5 dark:active:bg-white/10 transition-colors ${filters.janCode === jan ? 'bg-apple-blue/5 text-apple-blue' : 'text-gray-900 dark:text-white'}`}>
                           {jan}
                         </button>
                       ))
@@ -480,7 +480,7 @@ export default function TransactionFilters({
               ))}
             </select>
             {filters.buybackStore && (
-              <button onClick={() => updateFilter('buybackStore', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" type="button">
+              <button onClick={() => updateFilter('buybackStore', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white" type="button">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             )}

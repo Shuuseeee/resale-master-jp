@@ -156,7 +156,7 @@ export default function Navigation() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-apple-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -218,9 +218,9 @@ export default function Navigation() {
   return (
     <>
       {/* ── 桌面端侧边栏 ── */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:bg-white dark:lg:bg-gray-800 lg:border-r lg:border-gray-200 dark:lg:border-gray-700 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}>
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:bg-white dark:lg:bg-apple-cardDark lg:border-r lg:border-apple-separator dark:lg:border-apple-sepDark transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}>
         {/* Logo */}
-        <div className="h-16 flex items-center border-b border-gray-200 dark:border-gray-700 px-3 gap-2">
+        <div className="h-16 flex items-center border-b border-apple-separator dark:border-apple-sepDark px-3 gap-2">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-9 h-9 bg-apple-blue rounded-lg flex items-center justify-center flex-shrink-0">
@@ -261,7 +261,7 @@ export default function Navigation() {
                     ? 'bg-apple-blue/10 text-apple-blue font-medium'
                     : item.highlight
                       ? 'text-apple-blue hover:bg-apple-blue/5'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'text-gray-900 dark:text-white hover:bg-apple-gray-6 dark:hover:bg-white/5'
                   }
                 `}
               >
@@ -273,7 +273,7 @@ export default function Navigation() {
         </nav>
 
         {/* 用户信息和退出 */}
-        <div className="p-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+        <div className="p-2 border-t border-apple-separator dark:border-apple-sepDark space-y-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="w-full flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors justify-center"
@@ -284,7 +284,7 @@ export default function Navigation() {
             </svg>
           </button>
           {!collapsed && (
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div className="px-3 py-2 bg-apple-gray-6 dark:bg-white/5 rounded-lg">
               <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
               <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
                 {mounted ? (user?.email || '未登录') : '加载中...'}
@@ -295,7 +295,7 @@ export default function Navigation() {
             <button
               onClick={handleLogout}
               title={collapsed ? '退出登录' : undefined}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-apple-red hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
             >
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -310,7 +310,7 @@ export default function Navigation() {
       <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`} aria-hidden="true" />
 
       {/* ── 移动端顶部栏（精简版） ── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-apple-cardDark border-b border-apple-separator dark:border-apple-sepDark">
         <div className="flex items-center justify-between h-12 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-apple-blue rounded-lg flex items-center justify-center">
@@ -327,7 +327,7 @@ export default function Navigation() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-apple-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -595,7 +595,7 @@ export default function Navigation() {
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">ログイン中</div>
+                  <div className="text-xs text-apple-gray-1">当前用户</div>
                   <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
                     {mounted ? (user?.email || '未登录') : '加载中...'}
                   </div>
@@ -604,12 +604,12 @@ export default function Navigation() {
               {mounted && (
                 <button
                   onClick={handleLogout}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm text-apple-red dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                  ログアウト
+                  退出登录
                 </button>
               )}
             </div>

@@ -137,15 +137,15 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       )}
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <div className="bg-apple-red/5 dark:bg-apple-red/10 border border-apple-red/30 rounded-lg p-4">
           <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            销售数量 <span className="text-red-600 dark:text-red-300">*</span>
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+            销售数量 <span className="text-apple-red">*</span>
           </label>
           <input
             type="text"
@@ -159,8 +159,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            单价 (¥) <span className="text-red-600 dark:text-red-300">*</span>
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+            单价 (¥) <span className="text-apple-red">*</span>
           </label>
           <input
             type="text"
@@ -175,14 +175,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       </div>
 
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-apple-gray-1">
           总售价：<span className="font-bold text-gray-900 dark:text-white">¥{totalPrice.toLocaleString()}</span>
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
             平台费用 (¥)
           </label>
           <input
@@ -196,7 +196,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
             运费 (¥)
           </label>
           <input
@@ -211,7 +211,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
           销售日期
         </label>
         <DatePicker
@@ -223,7 +223,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
             销售平台
           </label>
           <select
@@ -244,7 +244,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
               value={newSellingPlatformName}
               onChange={(e) => setNewSellingPlatformName(e.target.value)}
               placeholder="添加新的销售平台..."
-              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
             />
             <button
               type="button"
@@ -258,7 +258,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
             销售订单号
           </label>
           <input
@@ -272,7 +272,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
           备注
         </label>
         <textarea

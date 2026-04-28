@@ -50,12 +50,12 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
   };
 
   if (loading) {
-    return <div className="text-center py-4 text-gray-500">加载中...</div>;
+    return <div className="text-center py-4 text-apple-gray-1">加载中...</div>;
   }
 
   if (records.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-8 text-apple-gray-1">
         暂无退货记录
       </div>
     );
@@ -67,16 +67,16 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
         <div key={record.id} className={card.secondary + ' p-4'}>
           <div className="flex justify-between items-start mb-3">
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-apple-gray-1">
                 {new Date(record.return_date).toLocaleDateString('zh-CN')}
               </div>
-              <div className="text-lg font-semibold text-red-600 dark:text-red-300">
+              <div className="text-lg font-semibold text-apple-red">
                 退货 {record.quantity_returned} 个
               </div>
             </div>
             <button
               onClick={() => handleDelete(record)}
-              className="text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 text-sm"
+              className="text-apple-red hover:text-red-700 dark:hover:text-red-200 text-sm"
             >
               删除
             </button>
@@ -85,7 +85,7 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
           <div className="grid grid-cols-2 gap-3 text-sm">
             {record.return_amount > 0 && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">退款金额：</span>
+                <span className="text-apple-gray-1">退款金额：</span>
                 <span className="text-gray-900 dark:text-white font-medium">
                   {formatCurrency(record.return_amount)}
                 </span>
@@ -93,7 +93,7 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
             )}
             {record.points_deducted > 0 && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">扣除积分：</span>
+                <span className="text-apple-gray-1">扣除积分：</span>
                 <span className="text-gray-900 dark:text-white font-medium">
                   {record.points_deducted} P
                 </span>
@@ -103,14 +103,14 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
 
           {record.return_reason && (
             <div className="mt-2 text-sm">
-              <span className="text-gray-600 dark:text-gray-400">退货原因：</span>
+              <span className="text-apple-gray-1">退货原因：</span>
               <span className="text-gray-900 dark:text-white">{record.return_reason}</span>
             </div>
           )}
 
           {record.notes && (
-            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">{record.notes}</p>
+            <div className="mt-2 pt-2 border-t border-apple-separator dark:border-apple-sepDark">
+              <p className="text-sm text-apple-gray-1">{record.notes}</p>
             </div>
           )}
         </div>

@@ -76,11 +76,11 @@ export default function DatePicker({
       : null;
     return (
       <div className="relative">
-        <div className={`flex items-center gap-2 ${className || 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg'} ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+        <div className={`flex items-center gap-2 ${className || 'px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-apple-separator dark:border-apple-sepDark rounded-lg'} ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
           <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className={`min-w-0 overflow-hidden ${displayValue ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+          <span className={`min-w-0 overflow-hidden ${displayValue ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-apple-gray-1'}`}>
             {displayValue || placeholder}
           </span>
         </div>

@@ -80,14 +80,14 @@ export default function SettingsPage() {
       <div className={layout.container}>
         <div className={layout.section}>
           <h1 className={heading.h1 + ' mb-2'}>设置</h1>
-          <p className="text-gray-600 dark:text-gray-400">积分返还率和数据管理</p>
+          <p className="text-apple-gray-1">积分返还率和数据管理</p>
         </div>
 
         {/* ナビゲーション */}
         <div className="flex gap-3 mb-8">
           <Link
             href="/settings/payment-methods"
-            className="px-4 py-2 bg-white dark:bg-apple-cardDark border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 bg-white dark:bg-apple-cardDark border border-apple-separator dark:border-apple-sepDark rounded-xl text-sm text-gray-900 dark:text-white active:opacity-80 transition-opacity"
           >
             支付方式 →
           </Link>
@@ -96,20 +96,20 @@ export default function SettingsPage() {
         {/* Amazon 返ポイント自動計算 */}
         <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card mb-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-gradient-to-b from-apple-orange to-apple-orange/60 rounded-full"></div>
             Amazon 积分返还自动计算
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-apple-gray-1 mb-6">
             Amazon采购时自动计算积分的返还率设置
           </p>
 
           {/* 自动计算トグル */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
+          <div className="flex items-center justify-between p-3 bg-apple-gray-6 dark:bg-white/5 rounded-xl mb-6">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-900 dark:text-white">
                 新采购时自动计算
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-xs text-apple-gray-1 mt-0.5">
                 当采购平台为Amazon时，自动填入积分
               </p>
             </div>
@@ -119,7 +119,7 @@ export default function SettingsPage() {
               aria-checked={config.auto_calc_enabled}
               onClick={() => updateConfig('auto_calc_enabled', !config.auto_calc_enabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                config.auto_calc_enabled ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                config.auto_calc_enabled ? 'bg-apple-orange' : 'bg-apple-gray-4 dark:bg-apple-gray-1'
               }`}
             >
               <span
@@ -132,7 +132,7 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             {/* Amazon ポイント */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-apple-gray-6 dark:bg-white/5">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
                 Amazon 积分
               </div>
@@ -146,12 +146,12 @@ export default function SettingsPage() {
                   onChange={e => updateConfig('amazon_point_rate', parseFloat(e.target.value) || 0)}
                   className={input.base + ' w-20 text-center text-sm'}
                 />
-                <span className="text-xs text-gray-500">%</span>
+                <span className="text-xs text-apple-gray-1">%</span>
               </div>
             </div>
 
             {/* キャンペーン */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-apple-gray-6 dark:bg-white/5">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
                 活动
               </div>
@@ -165,15 +165,15 @@ export default function SettingsPage() {
                   onChange={e => updateConfig('campaign_rate', parseFloat(e.target.value) || 0)}
                   className={input.base + ' w-20 text-center text-sm'}
                 />
-                <span className="text-xs text-gray-500">%</span>
+                <span className="text-xs text-apple-gray-1">%</span>
               </div>
             </div>
 
             {/* カード還元 */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-apple-gray-6 dark:bg-white/5">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
                 信用卡返还
-                <span className="block text-xs text-gray-500 dark:text-gray-400 font-normal">不含积分使用部分</span>
+                <span className="block text-xs text-apple-gray-1 font-normal">不含积分使用部分</span>
               </div>
               <div className="flex items-center gap-2 flex-1">
                 <input
@@ -185,12 +185,12 @@ export default function SettingsPage() {
                   onChange={e => updateConfig('card_rate', parseFloat(e.target.value) || 0)}
                   className={input.base + ' w-20 text-center text-sm'}
                 />
-                <span className="text-xs text-gray-500">%</span>
+                <span className="text-xs text-apple-gray-1">%</span>
               </div>
             </div>
 
             {/* d ポイント */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-apple-gray-6 dark:bg-white/5">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
                 d 积分
               </div>
@@ -204,12 +204,12 @@ export default function SettingsPage() {
                   onChange={e => updateConfig('d_point_rate', parseFloat(e.target.value) || 0)}
                   className={input.base + ' w-20 text-center text-sm'}
                 />
-                <span className="text-xs text-gray-500">%</span>
+                <span className="text-xs text-apple-gray-1">%</span>
               </div>
             </div>
 
             {/* d ポイント上限 */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center gap-4 p-3 rounded-xl bg-apple-gray-6 dark:bg-white/5">
               <div className="w-48 font-medium text-gray-900 dark:text-white text-sm">
                 d 积分上限
               </div>
@@ -222,7 +222,7 @@ export default function SettingsPage() {
                   onChange={e => updateConfig('d_point_cap', parseFloat(e.target.value) || 0)}
                   className={input.base + ' w-24 text-center text-sm'}
                 />
-                <span className="text-xs text-gray-500">¥</span>
+                <span className="text-xs text-apple-gray-1">¥</span>
               </div>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function SettingsPage() {
               {saving ? '保存中...' : '保存'}
             </button>
             {saveMessage && (
-              <span className="text-sm text-emerald-600 dark:text-emerald-400">{saveMessage}</span>
+              <span className="text-sm text-apple-green">{saveMessage}</span>
             )}
           </div>
         </div>
@@ -247,17 +247,17 @@ export default function SettingsPage() {
             <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
             买取价格检查
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-apple-gray-1 mb-6">
             从KaitoriX获取最新买取价格并显示预期利润
           </p>
 
           {/* 功能开关 */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
+          <div className="flex items-center justify-between p-3 bg-apple-gray-6 dark:bg-white/5 rounded-xl mb-6">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-900 dark:text-white">
                 启用买取价格检查
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-xs text-apple-gray-1 mt-0.5">
                 在交易列表中显示买取价格和预期利润
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               aria-checked={kaitorixConfig.enabled}
               onClick={() => setKaitorixConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                kaitorixConfig.enabled ? 'bg-apple-blue' : 'bg-gray-300 dark:bg-gray-600'
+                kaitorixConfig.enabled ? 'bg-apple-blue' : 'bg-apple-gray-4 dark:bg-apple-gray-1'
               }`}
             >
               <span
@@ -280,7 +280,7 @@ export default function SettingsPage() {
 
           {/* 店铺选择 */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-gray-900 dark:text-white">
               选择要检查的店铺
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -294,13 +294,13 @@ export default function SettingsPage() {
                     className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-colors ${
                       isChecked
                         ? 'bg-apple-blue/5 border-apple-blue text-apple-blue'
-                        : 'bg-gray-50 dark:bg-gray-700/50 border-transparent text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        : 'bg-apple-gray-6 dark:bg-white/5 border-transparent text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
                       isChecked
                         ? 'bg-apple-blue text-white'
-                        : 'bg-gray-200 dark:bg-gray-600'
+                        : 'bg-apple-gray-5 dark:bg-white/15'
                     }`}>
                       {isChecked && (
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,7 +324,7 @@ export default function SettingsPage() {
               {kaitorixSaving ? '保存中...' : '保存'}
             </button>
             {kaitorixSaveMessage && (
-              <span className="text-sm text-emerald-600 dark:text-emerald-400">{kaitorixSaveMessage}</span>
+              <span className="text-sm text-apple-green">{kaitorixSaveMessage}</span>
             )}
           </div>
         </div>
@@ -332,16 +332,16 @@ export default function SettingsPage() {
         {/* CSV导入 */}
         <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></div>
+            <div className="w-1 h-6 bg-gradient-to-b from-apple-blue to-apple-blue/70 rounded-full"></div>
             CSV导入
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-apple-gray-1 mb-6">
             从purchases.csv格式文件批量导入交易数据
           </p>
 
           <div className="space-y-4">
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center">
-              <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="border-2 border-dashed border-apple-separator dark:border-apple-sepDark rounded-xl p-8 text-center">
+              <svg className="w-12 h-12 mx-auto text-apple-gray-2 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <input
@@ -366,7 +366,7 @@ export default function SettingsPage() {
                   </span>
                 ) : '选择CSV文件'}
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+              <p className="text-xs text-apple-gray-1 mt-3">
                 支持格式: 仕入日, 商品名, JAN, 仕入単価, 数量, 仕入先, 注文ID ...
               </p>
             </div>
@@ -374,20 +374,20 @@ export default function SettingsPage() {
             {importResult && (
               <div className={`p-4 rounded-xl border ${
                 importResult.errors.length > 0
-                  ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                  : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                  ? 'bg-apple-orange/5 dark:bg-apple-orange/10 border-apple-orange/30'
+                  : 'bg-apple-green/5 dark:bg-apple-green/10 border-apple-green/30'
               }`}>
                 <div className="flex items-center gap-4 mb-2">
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <span className="text-sm font-medium text-apple-green">
                     成功: {importResult.success}件
                   </span>
                   {importResult.skipped > 0 && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-apple-gray-1">
                       跳过: {importResult.skipped}件
                     </span>
                   )}
                   {importResult.errors.length > 0 && (
-                    <span className="text-sm text-red-600 dark:text-red-400">
+                    <span className="text-sm text-apple-red">
                       错误: {importResult.errors.length}件
                     </span>
                   )}
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                 {importResult.errors.length > 0 && (
                   <div className="mt-2 max-h-32 overflow-y-auto">
                     {importResult.errors.map((err, i) => (
-                      <div key={i} className="text-xs text-red-600 dark:text-red-400">{err}</div>
+                      <div key={i} className="text-xs text-apple-red">{err}</div>
                     ))}
                   </div>
                 )}

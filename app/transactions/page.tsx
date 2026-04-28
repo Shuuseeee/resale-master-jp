@@ -720,7 +720,7 @@ function TransactionsContent() {
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   isGrouped
                     ? 'bg-apple-blue text-white border-apple-blue'
-                    : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 active:opacity-70'
+                    : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border-apple-separator dark:border-apple-sepDark active:opacity-70'
                 }`}
               >
                 {isGrouped ? (
@@ -740,7 +740,7 @@ function TransactionsContent() {
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   compareMode
                     ? 'bg-apple-blue text-white border-apple-blue'
-                    : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 active:opacity-70'
+                    : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border-apple-separator dark:border-apple-sepDark active:opacity-70'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -753,10 +753,10 @@ function TransactionsContent() {
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     kaitorixLoading
-                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      ? 'bg-apple-orange/10 text-apple-orange border border-apple-orange/30'
                       : buybackPrices.size > 0
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? 'bg-apple-green/10 text-apple-green border border-apple-green/30 active:bg-apple-green/15'
+                        : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark active:opacity-80'
                   }`}
                 >
                   {kaitorixLoading ? (
@@ -829,10 +829,10 @@ function TransactionsContent() {
                   )}
                 </div>
                 {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-apple-cardDark border border-apple-separator dark:border-apple-sepDark rounded-lg shadow-card overflow-hidden min-w-[160px]">
                     <button
                       onClick={() => { handleExportCSV('filtered'); setShowExportMenu(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white active:bg-apple-gray-6 dark:active:bg-white/5 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
@@ -841,7 +841,7 @@ function TransactionsContent() {
                     </button>
                     <button
                       onClick={() => { handleExportCSV('all'); setShowExportMenu(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-t border-gray-100 dark:border-gray-700"
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white active:bg-apple-gray-6 dark:active:bg-white/5 flex items-center gap-2 border-t border-apple-separator dark:border-apple-sepDark"
                     >
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -865,22 +865,34 @@ function TransactionsContent() {
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-          <div className={card.stat + ' !p-3 sm:!p-6'}>
-            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">总成本</div>
-            <div className="text-base sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(stats.totalCost)}</div>
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-6">
+          <div className={card.stat + ' !p-3 sm:!p-4'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">总成本</div>
+            <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(stats.totalCost)}</div>
           </div>
-          <div className={card.stat + ' !p-3 sm:!p-6'}>
-            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">总利润</div>
-            <div className={`text-base sm:text-2xl font-bold truncate ${stats.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
+          <div className={card.stat + ' !p-3 sm:!p-4'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">总利润</div>
+            <div className={`text-base sm:text-xl font-bold truncate ${stats.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
               {formatCurrency(stats.totalProfit)}
             </div>
           </div>
-          <div className={card.stat + ' !p-3 sm:!p-6'}>
-            <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1">平均ROI</div>
-            <div className={`text-base sm:text-2xl font-bold truncate ${stats.avgROI >= 0 ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}`}>
+          <div className={card.stat + ' !p-3 sm:!p-4'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">平均ROI</div>
+            <div className={`text-base sm:text-xl font-bold truncate ${stats.avgROI >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
               {formatROI(stats.avgROI)}
             </div>
+          </div>
+          <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">库存中</div>
+            <div className="text-base sm:text-xl font-bold text-apple-blue truncate">{stats.inStock}</div>
+          </div>
+          <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">未到货</div>
+            <div className="text-base sm:text-xl font-bold text-apple-orange truncate">{stats.pending}</div>
+          </div>
+          <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
+            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">已售出</div>
+            <div className="text-base sm:text-xl font-bold text-apple-green truncate">{stats.sold}</div>
           </div>
         </div>
 
@@ -888,11 +900,11 @@ function TransactionsContent() {
         <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
           {([
             { key: 'all', label: '全部', count: stats.total },
-            { key: 'in_stock', label: '在庫', count: stats.inStock, color: 'amber' },
-            { key: 'pending', label: '未着', count: stats.pending, color: 'blue' },
-            { key: 'awaiting_payment', label: '入金待ち', count: stats.awaitingPayment, color: 'indigo' },
-            { key: 'sold', label: '売却済', count: stats.sold, color: 'emerald' },
-            { key: 'returned', label: '返品済', count: stats.returned, color: 'red' },
+            { key: 'in_stock', label: '库存中', count: stats.inStock, color: 'amber' },
+            { key: 'pending', label: '未到货', count: stats.pending, color: 'blue' },
+            { key: 'awaiting_payment', label: '待入账', count: stats.awaitingPayment, color: 'indigo' },
+            { key: 'sold', label: '已售出', count: stats.sold, color: 'emerald' },
+            { key: 'returned', label: '已退货', count: stats.returned, color: 'red' },
           ] as const).map((tab) => (
             <button
               key={tab.key}
@@ -900,11 +912,11 @@ function TransactionsContent() {
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                 statusFilter === tab.key
                   ? 'bg-apple-blue text-white shadow-card'
-                  : 'bg-white dark:bg-apple-cardDark text-gray-600 dark:text-gray-400 active:opacity-70 border border-gray-200 dark:border-gray-700'
+                  : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 active:opacity-70 border border-apple-separator dark:border-apple-sepDark'
               }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-white/80' : 'text-gray-400 dark:text-gray-500'}`}>
+              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-white/80' : 'text-apple-gray-1'}`}>
                 {tab.count}
               </span>
             </button>
@@ -933,13 +945,13 @@ function TransactionsContent() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className={input.base + ' pl-10 w-full'}
           />
-          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-apple-gray-2 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -952,28 +964,28 @@ function TransactionsContent() {
         {kaitorixLoading && kaitorixProgress && (
           <div className="mb-4 bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                买取価格を取得中... {kaitorixProgress.completed}/{kaitorixProgress.total}
+              <span className="text-xs text-apple-gray-1">
+                买取价格获取中... {kaitorixProgress.completed}/{kaitorixProgress.total}
                 {kaitorixProgress.failed > 0 && (
-                  <span className="text-red-500 ml-2">({kaitorixProgress.failed} 失败)</span>
+                  <span className="text-apple-red ml-2">({kaitorixProgress.failed} 失败)</span>
                 )}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-500">
+              <span className="text-xs text-apple-gray-1">
                 ~{Math.ceil((kaitorixProgress.total - kaitorixProgress.completed) * 6 / 60)} 分钟
               </span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className="w-full bg-apple-gray-5 dark:bg-white/10 rounded-full h-1.5">
               <div
                 className={`h-1.5 rounded-full transition-all duration-500 ${
                   kaitorixProgress.stopped
-                    ? 'bg-red-500'
+                    ? 'bg-apple-red'
                     : 'bg-apple-blue'
                 }`}
                 style={{ width: `${(kaitorixProgress.completed / kaitorixProgress.total) * 100}%` }}
               />
             </div>
             {kaitorixProgress.stopped && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-apple-red mt-1">
                 请求被限制，已自动停止。已获取的价格数据仍然可用。
               </p>
             )}
@@ -982,7 +994,7 @@ function TransactionsContent() {
 
         {/* 筛选计数 */}
         {transactions.length > 0 && (
-          <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 px-1 -mt-1 mb-1">
+          <div className="flex items-center justify-between text-xs text-apple-gray-1 px-1 -mt-1 mb-1">
             <span>
               {filteredTransactions.length < transactions.length
                 ? <><span className="font-medium text-gray-700 dark:text-gray-300">{filteredTransactions.length}</span> / {transactions.length} 件</>
@@ -998,10 +1010,10 @@ function TransactionsContent() {
         {/* 交易列表 */}
         {filteredTransactions.length === 0 ? (
           <div className={card.primary + ' p-12 text-center'}>
-            <svg className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-apple-gray-1 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">暂无交易记录</p>
+            <p className="text-apple-gray-1 text-lg">暂无交易记录</p>
             <Link
               href="/transactions/add"
               className={button.primary + ' inline-block mt-4'}
@@ -1055,7 +1067,7 @@ function TransactionsContent() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <tr className="border-b border-gray-200 dark:border-gray-700 text-xs text-apple-gray-1 uppercase tracking-wider">
                         <th className="px-3 py-3 text-left">
                           <div className="flex items-center gap-1">
                             <button
@@ -1071,7 +1083,7 @@ function TransactionsContent() {
                             </button>
                             <button
                               onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')}
-                              className="px-1 py-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                              className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors"
                               title="切换日期类型"
                             >
                               ⇄
@@ -1081,7 +1093,7 @@ function TransactionsContent() {
                         <th className="px-3 py-3 text-left">商品名</th>
                         <th className="px-3 py-3 text-left">
                           <div>进货单价</div>
-                          <div className="text-[10px] text-gray-400 font-normal normal-case">(不含返点)</div>
+                          <div className="text-[10px] text-apple-gray-2 font-normal normal-case">(不含返点)</div>
                         </th>
                         <th className="px-3 py-3 text-left">来源渠道</th>
                         <th className="px-3 py-3 text-left">订单号</th>
@@ -1103,7 +1115,7 @@ function TransactionsContent() {
                             </button>
                             <button
                               onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')}
-                              className="px-1 py-0.5 text-[10px] bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                              className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors"
                               title="切换利润类型"
                             >
                               ⇄
@@ -1126,7 +1138,7 @@ function TransactionsContent() {
                         <th className="px-2 py-3 text-center">操作</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-apple-separator dark:divide-apple-sepDark">
                       {displayItems.map((item) =>
                         item.type === 'group' ? (
                           <TransactionGroupRow
@@ -1171,10 +1183,10 @@ function TransactionsContent() {
       {/* 選択モード浮動操作バー */}
       {compareMode && (
         <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-4 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto bg-gray-900 dark:bg-gray-800 text-white rounded-2xl shadow-card-md px-4 py-3 flex items-center gap-2 max-w-lg w-full">
+          <div className="pointer-events-auto bg-[#111] dark:bg-apple-cardDark text-white rounded-2xl shadow-card-md px-4 py-3 flex items-center gap-2 max-w-lg w-full">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
-                ? <span className="text-gray-400 text-xs">请选择</span>
+                ? <span className="text-apple-gray-2 text-xs">请选择</span>
                 : <span>已选 <span className="font-bold text-apple-blue">{selectedIds.size}</span> 件</span>
               }
             </div>
@@ -1182,7 +1194,7 @@ function TransactionsContent() {
             {[...selectedIds].some(id => transactions.find(t => t.id === id && t.status === 'pending')) && (
               <button
                 onClick={handleBatchArrival}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-500 hover:bg-orange-400 text-white transition-all whitespace-nowrap"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-orange active:opacity-80 text-white transition-all whitespace-nowrap"
               >
                 一括到着
               </button>
@@ -1191,7 +1203,7 @@ function TransactionsContent() {
             {selectedIds.size > 0 && (
               <button
                 onClick={handleBatchDelete}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-500 text-white transition-all whitespace-nowrap"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-red text-white active:opacity-80 transition-all whitespace-nowrap"
               >
                 削除
               </button>
@@ -1204,7 +1216,7 @@ function TransactionsContent() {
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                   selectedIds.size >= 2
                     ? 'bg-apple-blue active:opacity-80 text-white'
-                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    : 'bg-apple-gray-5 text-apple-gray-2 cursor-not-allowed'
                 }`}
               >
                 比较
@@ -1262,53 +1274,51 @@ interface JanListSheetProps {
 function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListSheetProps) {
   const [copied, setCopied] = useState(false);
 
-  // 按 JAN 码去重，取最高买取价及其买取店直链
-  const janItems = useMemo(() => {
-    const map = new Map<string, {
-      name: string;
-      maxPrice: number;
-      maxStore: string;
-      storeUrl: string;  // 该买取店的直接页面 URL
-      allPrices: Array<{ store: string; price: number; url: string }>;
-    }>();
+  // 找出所有商品价格合计最高的那家店，列表统一用该店的 URL
+  const { bestStore, bestStoreTotal, items, missingCount } = useMemo(() => {
+    // Step 1: 按 JAN 去重，收集每个 JAN 的所有店铺报价
+    const janMap = new Map<string, { name: string; allPrices: Array<{ store: string; price: number; url: string }> }>();
     for (const tx of transactions) {
       if (!tx.jan_code) continue;
-      const jan = tx.jan_code;
       const bb = buybackMap.get(tx.id);
-      const existing = map.get(jan);
-      // 找最高价店铺的直链：从 allPrices 中匹配 maxStore
-      const storeUrl = bb?.allPrices?.find(p => p.store === bb.maxStore)?.url ?? '';
-      if (!existing) {
-        map.set(jan, {
-          name: tx.product_name || jan,
-          maxPrice: bb?.maxPrice ?? 0,
-          maxStore: bb?.maxStore ?? '',
-          storeUrl,
-          allPrices: bb?.allPrices ?? [],
-        });
-      } else {
-        if ((bb?.maxPrice ?? 0) > existing.maxPrice) {
-          existing.maxPrice = bb!.maxPrice;
-          existing.maxStore = bb!.maxStore;
-          existing.storeUrl = storeUrl;
-          existing.allPrices = bb!.allPrices ?? [];
-        }
+      if (!janMap.has(tx.jan_code)) {
+        janMap.set(tx.jan_code, { name: tx.product_name || tx.jan_code, allPrices: bb?.allPrices ?? [] });
+      } else if (bb?.allPrices?.length && !janMap.get(tx.jan_code)!.allPrices.length) {
+        janMap.get(tx.jan_code)!.allPrices = bb.allPrices;
       }
     }
-    return Array.from(map.entries())
-      .map(([jan, info]) => ({ jan, ...info }))
-      .sort((a, b) => b.maxPrice - a.maxPrice);
+
+    // Step 2: 按店铺累加所有 JAN 的报价，找总额最高的店
+    const storeTotals = new Map<string, { total: number; janData: Map<string, { url: string; price: number }> }>();
+    for (const [jan, info] of janMap.entries()) {
+      for (const p of info.allPrices) {
+        if (!storeTotals.has(p.store)) storeTotals.set(p.store, { total: 0, janData: new Map() });
+        const st = storeTotals.get(p.store)!;
+        st.total += p.price;
+        st.janData.set(jan, { url: p.url, price: p.price });
+      }
+    }
+
+    let bestStore = '';
+    let bestStoreTotal = 0;
+    for (const [store, data] of storeTotals.entries()) {
+      if (data.total > bestStoreTotal) { bestStoreTotal = data.total; bestStore = store; }
+    }
+
+    // Step 3: 用最高总价店铺的 URL 构建列表
+    const bestData = bestStore ? storeTotals.get(bestStore) : null;
+    let missingCount = 0;
+    const items = Array.from(janMap.entries()).map(([jan, info]) => {
+      const d = bestData?.janData.get(jan);
+      if (!d) missingCount++;
+      return { jan, name: info.name, price: d?.price ?? 0, storeUrl: d?.url ?? '' };
+    }).sort((a, b) => b.price - a.price);
+
+    return { bestStore, bestStoreTotal, items, missingCount };
   }, [transactions, buybackMap]);
 
-  const openAll = () => {
-    janItems.forEach(item => {
-      const url = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
-      window.open(url, '_blank', 'noopener');
-    });
-  };
-
   const copyAll = async () => {
-    const text = janItems.map(item => item.jan).join('\n');
+    const text = items.map(item => item.jan).join('\n');
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -1322,28 +1332,29 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
       <div className="flex items-center justify-between px-4 pt-12 pb-3 bg-white dark:bg-apple-cardDark border-b border-apple-separator dark:border-apple-sepDark">
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">JAN 买取列表</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{janItems.length} 个商品</p>
+          <p className="text-xs text-apple-gray-1">
+            {items.length} 个商品
+            {bestStore ? (
+              <span className="ml-1.5 text-apple-green font-medium">
+                · 最优店：{bestStore}（合计 ¥{bestStoreTotal.toLocaleString()}）
+              </span>
+            ) : null}
+            {missingCount > 0 && (
+              <span className="ml-1.5 text-apple-orange">· {missingCount} 件该店无报价</span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={copyAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 active:opacity-70"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-70"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            {copied ? '已复制' : '复制全部'}
+            {copied ? '已复制' : '复制 JAN'}
           </button>
-          <button
-            onClick={openAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-600 text-white active:opacity-70"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            全部打开
-          </button>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+          <button onClick={onClose} className="p-1.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -1353,41 +1364,39 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {janItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-sm">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 text-apple-gray-2 text-sm">
             没有带 JAN 码的商品
           </div>
         ) : (
-          janItems.map(item => {
-            const href = item.storeUrl || `https://kaitorix.app/product/${item.jan}`;
+          items.map(item => {
+            const href = item.storeUrl || undefined;
+            const Tag = href ? 'a' : 'div';
             return (
-              <a
+              <Tag
                 key={item.jan}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...(href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className="flex items-center gap-3 bg-white dark:bg-apple-cardDark rounded-2xl px-4 py-3 shadow-card active:opacity-70"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.jan}</p>
-                  {item.maxStore && (
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">{item.maxStore}</p>
-                  )}
+                  <p className="text-xs text-apple-gray-2 mt-0.5 font-mono">{item.jan}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  {item.maxPrice > 0 ? (
-                    <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                      ¥{item.maxPrice.toLocaleString()}
+                  {item.price > 0 ? (
+                    <p className="text-base font-bold text-apple-green">
+                      ¥{item.price.toLocaleString()}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400">未取得</p>
+                    <p className="text-xs text-apple-orange">无报价</p>
                   )}
-                  <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  {href && (
+                    <svg className="w-4 h-4 text-apple-gray-3 dark:text-apple-gray-1 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  )}
                 </div>
-              </a>
+              </Tag>
             );
           })
         )}

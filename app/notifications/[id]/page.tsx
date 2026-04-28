@@ -69,7 +69,7 @@ export default function NotificationDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
         <div className="text-gray-400">加载中...</div>
       </div>
     );
@@ -77,7 +77,7 @@ export default function NotificationDetailPage() {
 
   if (!notification) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex flex-col items-center justify-center gap-4">
         <div className="text-gray-400">通知不存在</div>
         <Link href="/notifications" className="text-apple-blue text-sm">← 返回通知列表</Link>
       </div>
@@ -90,12 +90,12 @@ export default function NotificationDetailPage() {
 
   // Generic fallback
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark p-4">
       <div className="max-w-lg mx-auto">
         <button onClick={() => router.push('/notifications')} className="text-apple-blue text-sm mb-4 flex items-center gap-1">← 返回</button>
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-apple-separator dark:border-apple-sepDark">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{notification.title}</h1>
-          {notification.body && <p className="text-gray-600 dark:text-gray-400">{notification.body}</p>}
+          {notification.body && <p className="text-apple-gray-1">{notification.body}</p>}
           <p className="text-xs text-gray-400 mt-4">{new Date(notification.created_at).toLocaleString('ja-JP')}</p>
         </div>
       </div>
@@ -106,9 +106,9 @@ export default function NotificationDetailPage() {
 // ─── Coupon Alert Detail ─────────────────────────────────────────────────────
 
 const urgencyStyle: Record<number, { border: string; label: string; labelColor: string }> = {
-  0: { border: 'border-red-400', label: '今日到期', labelColor: 'bg-red-500 text-white' },
+  0: { border: 'border-apple-red', label: '今日到期', labelColor: 'bg-apple-red text-white' },
   1: { border: 'border-orange-400', label: '明日到期', labelColor: 'bg-orange-500 text-white' },
-  3: { border: 'border-amber-400', label: '还剩3天', labelColor: 'bg-amber-500 text-white' },
+  3: { border: 'border-amber-400', label: '还剩3天', labelColor: 'bg-apple-orange text-white' },
   7: { border: 'border-blue-400', label: '还剩7天', labelColor: 'bg-blue-500 text-white' },
 };
 
@@ -134,7 +134,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
                 {dress.text_cn || dress.text_jp}
               </span>
               {dress.text_cn && dress.text_jp && (
-                <span className="text-[8px] leading-tight text-center max-w-[85px] text-gray-400 dark:text-gray-500">
+                <span className="text-[8px] leading-tight text-center max-w-[85px] text-gray-400 dark:text-apple-gray-1">
                   {dress.text_jp}
                 </span>
               )}
@@ -151,7 +151,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-gray-900 pb-12">
+    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark pb-12">
       <div className="max-w-lg mx-auto px-4 pt-4">
         {/* Back */}
         <button onClick={onBack} className="flex items-center gap-1 text-apple-blue text-sm mb-4">
@@ -162,11 +162,11 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
         </button>
 
         {/* Header card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-apple-separator dark:border-apple-sepDark mb-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">{notification.title}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{dateStr}</p>
+              <p className="text-sm text-apple-gray-1 mt-0.5">{dateStr}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 flex-shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,10 +186,10 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
 
         {/* Weather card */}
         {d.weather && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-apple-separator dark:border-apple-sepDark mb-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
+                <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
                   <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                   </svg>
@@ -208,17 +208,17 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
             
             {/* Dressing Index */}
             {(d.weather.dress_morning || d.weather.dress_daytime || d.weather.dress_evening) && (
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-stretch text-sm text-gray-700 dark:text-gray-300">
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-stretch text-sm text-gray-900 dark:text-white">
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">早上</span>
                   {renderDress(d.weather.dress_morning)}
                 </div>
-                <div className="w-px bg-gray-100 dark:bg-gray-700 my-1 mx-1"></div>
+                <div className="w-px bg-apple-separator dark:bg-apple-sepDark my-1 mx-1"></div>
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">白天</span>
                   {renderDress(d.weather.dress_daytime)}
                 </div>
-                <div className="w-px bg-gray-100 dark:bg-gray-700 my-1 mx-1"></div>
+                <div className="w-px bg-apple-separator dark:bg-apple-sepDark my-1 mx-1"></div>
                 <div className="flex flex-col items-center flex-1">
                   <span className="text-[10px] text-gray-400 mb-1">晚上</span>
                   {renderDress(d.weather.dress_evening)}
@@ -233,7 +233,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
           <section className="mb-4">
             <div className="flex items-center gap-2 mb-2 px-1">
               <div className="w-1 h-5 bg-apple-blue rounded-full" />
-              <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">明日生效</h2>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">明日生效</h2>
             </div>
             <div className="space-y-3">
               {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-apple-blue/30" labelClass="bg-apple-blue text-white" labelText="明日开始" />)}
@@ -248,9 +248,9 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
             <section key={days} className="mb-4">
               <div className="flex items-center gap-2 mb-2 px-1">
                 <div className={`w-1 h-5 rounded-full ${
-                  Number(days) === 0 ? 'bg-red-500' : Number(days) === 1 ? 'bg-orange-500' : Number(days) <= 3 ? 'bg-amber-500' : 'bg-blue-500'
+                  Number(days) === 0 ? 'bg-red-500' : Number(days) === 1 ? 'bg-orange-500' : Number(days) <= 3 ? 'bg-apple-orange' : 'bg-blue-500'
                 }`} />
-                <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">{style.label}</h2>
+                <h2 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">{style.label}</h2>
               </div>
               <div className="space-y-3">
                 {(coupons as CouponItem[]).map((c, i) => <CouponCard key={i} coupon={c} borderClass={style.border} labelClass={style.labelColor} labelText={style.label} />)}
@@ -285,7 +285,7 @@ function CouponCard({ coupon, borderClass, labelClass, labelText }: {
   labelText: string;
 }) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 ${borderClass} border border-gray-200 dark:border-gray-700`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border-l-4 ${borderClass} border border-apple-separator dark:border-apple-sepDark`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -297,15 +297,15 @@ function CouponCard({ coupon, borderClass, labelClass, labelText }: {
           <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1.5">{coupon.name}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <span className="text-lg font-bold text-red-500">{coupon.discount_str}</span>
+          <span className="text-lg font-bold text-apple-red">{coupon.discount_str}</span>
         </div>
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-apple-gray-1">
         {coupon.condition_str && <span>{coupon.condition_str}</span>}
         {coupon.is_online_only && <span className="text-blue-500">仅限线上</span>}
-        {coupon.is_offline_only && <span className="text-gray-500">仅限门店</span>}
+        {coupon.is_offline_only && <span className="text-apple-gray-1">仅限门店</span>}
         {coupon.coupon_code && (
-          <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-700 dark:text-gray-300">
+          <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-900 dark:text-white">
             {coupon.coupon_code}
           </span>
         )}

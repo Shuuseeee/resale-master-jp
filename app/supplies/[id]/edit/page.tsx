@@ -161,7 +161,7 @@ export default function EditSupplyPage() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
+            <p className="mt-4 text-apple-gray-1">加载中...</p>
           </div>
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function EditSupplyPage() {
       <div className={layout.page}>
         <div className="flex justify-center items-center min-h-screen">
           <div className="text-center">
-            <p className="text-red-600 dark:text-red-300">{errors.fetch}</p>
+            <p className="text-apple-red">{errors.fetch}</p>
             <button
               onClick={() => router.back()}
               className={button.primary + ' mt-4'}
@@ -202,7 +202,7 @@ export default function EditSupplyPage() {
           </button>
 
           <h1 className={heading.h1 + ' mb-2'}>编辑耗材记录</h1>
-          <p className="text-gray-600 dark:text-gray-400">修改耗材采购信息</p>
+          <p className="text-apple-gray-1">修改耗材采购信息</p>
         </div>
 
         {/* 表单 */}
@@ -216,14 +216,14 @@ export default function EditSupplyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    耗材分类 <span className="text-red-600 dark:text-red-300">*</span>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    耗材分类 <span className="text-apple-red">*</span>
                   </label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   >
                     {CATEGORY_OPTIONS.map((option) => (
@@ -233,13 +233,13 @@ export default function EditSupplyPage() {
                     ))}
                   </select>
                   {errors.category && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.category}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.category}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    采购日期 <span className="text-red-600 dark:text-red-300">*</span>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    采购日期 <span className="text-apple-red">*</span>
                   </label>
                   <DatePicker
                     selected={formData.purchase_date ? parseDateFromLocal(formData.purchase_date) : null}
@@ -249,17 +249,17 @@ export default function EditSupplyPage() {
                         purchase_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.purchase_date && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.purchase_date}</p>
+                    <p className="mt-1 text-sm text-apple-red">{errors.purchase_date}</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  金额 <span className="text-red-600 dark:text-red-300">*</span>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  金额 <span className="text-apple-red">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -270,20 +270,20 @@ export default function EditSupplyPage() {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     required
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">
                     ¥
                   </span>
                 </div>
                 {errors.amount && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-300">{errors.amount}</p>
+                  <p className="mt-1 text-sm text-apple-red">{errors.amount}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   描述
                 </label>
                 <input
@@ -292,12 +292,12 @@ export default function EditSupplyPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="例: A4气泡袋 100个"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   备注
                 </label>
                 <textarea
@@ -306,7 +306,7 @@ export default function EditSupplyPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="添加备注信息..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -314,8 +314,8 @@ export default function EditSupplyPage() {
 
           {/* 提交按钮 */}
           {errors.submit && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-300">{errors.submit}</p>
+            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
+              <p className="text-sm text-apple-red">{errors.submit}</p>
             </div>
           )}
 
@@ -340,14 +340,14 @@ export default function EditSupplyPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
             >
               取消
             </button>
             <button
               type="button"
               onClick={handleDelete}
-              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all"
+              className="px-8 py-4 bg-apple-red active:opacity-80 text-white font-semibold rounded-xl transition-all"
             >
               删除
             </button>

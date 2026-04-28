@@ -162,7 +162,7 @@ export default function CouponsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className={heading.h1 + " mb-2"}>クーポン管理</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-apple-gray-1">
                 クーポン・キャンペーンの管理
               </p>
             </div>
@@ -191,34 +191,34 @@ export default function CouponsPage() {
         {/* 統計カード */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+            <div className="text-apple-gray-1 text-sm mb-1">
               すべて
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {stats.total}
             </div>
           </div>
-          <div className={card.stat + " border-emerald-500/30"}>
-            <div className="text-emerald-600 dark:text-emerald-300 text-sm mb-1">
+          <div className={card.stat + " border-apple-green/30"}>
+            <div className="text-apple-green text-sm mb-1">
               未使用
             </div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+            <div className="text-2xl font-bold text-apple-green">
               {stats.unused}
             </div>
           </div>
-          <div className={card.stat + " border-amber-500/30"}>
-            <div className="text-amber-600 dark:text-amber-300 text-sm mb-1">
+          <div className={card.stat + " border-apple-orange/30"}>
+            <div className="text-apple-orange text-sm mb-1">
               期限間近
             </div>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
+            <div className="text-2xl font-bold text-apple-orange">
               {stats.expiring}
             </div>
           </div>
           <div className={card.stat + " border-gray-500/30"}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+            <div className="text-apple-gray-1 text-sm mb-1">
               使用済み
             </div>
-            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+            <div className="text-2xl font-bold text-apple-gray-1">
               {stats.used}
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function CouponsPage() {
           {filteredCoupons.length === 0 ? (
             <div className="p-12 text-center">
               <svg
-                className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4"
+                className="w-16 h-16 text-apple-gray-1 mx-auto mb-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -279,7 +279,7 @@ export default function CouponsPage() {
                   d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
                 />
               </svg>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
+              <p className="text-apple-gray-1 text-lg">
                 クーポンがありません
               </p>
               <Link
@@ -301,12 +301,12 @@ export default function CouponsPage() {
                     key={coupon.id}
                     className={`rounded-xl p-5 border-2 transition-all ${
                       coupon.is_used
-                        ? "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 opacity-60"
+                        ? "bg-apple-gray-6 dark:bg-white/5 border-apple-separator dark:border-apple-sepDark opacity-60"
                         : isExpired
-                          ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800"
+                          ? "bg-apple-red/5 dark:bg-apple-red/10 border-apple-red/30"
                           : isExpiringSoon
-                            ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800"
-                            : "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800"
+                            ? "bg-apple-orange/5 dark:bg-apple-orange/10 border-apple-orange/30"
+                            : "bg-apple-green/5 dark:bg-apple-green/10 border-apple-green/30"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
@@ -314,13 +314,13 @@ export default function CouponsPage() {
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                           {coupon.name}
                         </h3>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-apple-gray-1">
                           {coupon.platform || "共通"}
                         </div>
                       </div>
                       {coupon.is_used && (
-                        <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full">
-                          使用済み
+                        <span className="px-2 py-1 bg-apple-gray-1 text-white text-xs rounded-full">
+                          已使用
                         </span>
                       )}
                     </div>
@@ -332,7 +332,7 @@ export default function CouponsPage() {
                             navigator.clipboard.writeText(coupon.coupon_code!);
                             alert("コードをコピーしました");
                           }}
-                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-mono rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                          className="px-3 py-1 bg-apple-blue/10 text-apple-blue text-sm font-mono rounded-md active:opacity-80 transition-opacity"
                         >
                           {coupon.coupon_code}
                         </button>
@@ -344,23 +344,23 @@ export default function CouponsPage() {
                         {getDiscountLabel(coupon)}
                       </div>
                       {coupon.min_purchase_amount > 0 && (
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                        <div className="text-xs text-apple-gray-1">
                           {formatCurrency(coupon.min_purchase_amount)}円以上で利用可
                         </div>
                       )}
                     </div>
                     <div className="mb-4 text-sm">
-                      <div className="text-gray-600 dark:text-gray-400">
+                      <div className="text-apple-gray-1">
                         {coupon.start_date && `${coupon.start_date} 〜 `}
                         {coupon.expiry_date}
                       </div>
                       <div
                         className={`font-medium ${
                           isExpired
-                            ? "text-red-600 dark:text-red-300"
+                            ? "text-apple-red"
                             : isExpiringSoon
-                              ? "text-orange-600 dark:text-orange-300"
-                              : "text-green-600 dark:text-green-400"
+                              ? "text-apple-orange"
+                              : "text-apple-green"
                         }`}
                       >
                         {isExpired
@@ -372,7 +372,7 @@ export default function CouponsPage() {
                     </div>
 
                     {coupon.notes && (
-                      <div className="mb-4 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600 pt-3">
+                      <div className="mb-4 text-sm text-apple-gray-1 border-t border-apple-separator dark:border-apple-sepDark pt-3">
                         {coupon.notes}
                       </div>
                     )}
@@ -388,13 +388,13 @@ export default function CouponsPage() {
                       )}
                       <Link
                         href={`/coupons/${coupon.id}/edit`}
-                        className="px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
+                        className="px-3 py-2 bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white text-sm font-medium rounded-lg active:opacity-80 transition-opacity"
                       >
                         編集
                       </Link>
                       <button
                         onClick={() => deleteCoupon(coupon.id)}
-                        className="px-3 py-2 bg-red-600 dark:bg-red-900/30 hover:bg-red-700 dark:hover:bg-red-900/50 text-white dark:text-red-300 text-sm font-medium rounded-lg transition-colors"
+                        className="px-3 py-2 bg-apple-red text-white text-sm font-medium rounded-lg active:opacity-80 transition-opacity"
                       >
                         削除
                       </button>

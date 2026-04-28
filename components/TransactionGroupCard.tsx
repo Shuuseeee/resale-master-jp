@@ -113,12 +113,12 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         <div className="flex items-center gap-3">
           {/* 商品图片 */}
           {group.imageUrl ? (
-            <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+            <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-apple-gray-5 dark:bg-white/10">
               <ProductImage src={group.imageUrl} alt={group.productName} size="sm" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-apple-gray-5 dark:bg-white/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-apple-gray-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
@@ -132,14 +132,14 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 ×{group.transactions.length}
               </span>
             </div>
-            <p className="text-xs text-gray-400 font-mono">{group.janCode}</p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-              <span>在庫 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></span>
+            <p className="text-xs text-apple-gray-2 font-mono">{group.janCode}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-apple-gray-1">
+              <span>库存 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></span>
               {group.totalPending > 0 && (
-                <span>未着 <span className="font-medium text-orange-500">{group.totalPending}</span></span>
+                <span>未到货 <span className="font-medium text-apple-orange">{group.totalPending}</span></span>
               )}
-              <span>売済 <span className="font-medium text-gray-700 dark:text-gray-300">{group.totalSold}</span></span>
-              <span>仕入 <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(group.totalPurchasePrice)}</span></span>
+              <span>已售 <span className="font-medium text-gray-900 dark:text-white">{group.totalSold}</span></span>
+              <span>进货 <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(group.totalPurchasePrice)}</span></span>
             </div>
           </div>
 
@@ -147,18 +147,18 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="text-right">
               {group.totalProfit != null && (
-                <p className={`text-sm font-medium font-mono ${group.totalProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                <p className={`text-sm font-medium font-mono ${group.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
                   {group.totalProfit >= 0 ? '+' : ''}{formatCurrency(group.totalProfit)}
                 </p>
               )}
               {hasBuyback && (
-                <p className="text-xs text-blue-600 dark:text-blue-400">
-                  買取 {formatCurrency(group.bestBuybackPrice)}
+                <p className="text-xs text-apple-blue">
+                  买取 {formatCurrency(group.bestBuybackPrice)}
                 </p>
               )}
             </div>
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-apple-gray-2 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -173,7 +173,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isExpanded ? `${group.transactions.length * 520}px` : '0px' }}
       >
-        <div className="border-t border-apple-separator dark:border-apple-sepDark divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="border-t border-apple-separator dark:border-apple-sepDark divide-y divide-apple-separator dark:divide-apple-sepDark">
           {group.transactions.map(tx => (
             <div key={tx.id} className="pl-3 border-l-4 border-apple-blue/30 bg-white dark:bg-gray-900">
               <TransactionCard

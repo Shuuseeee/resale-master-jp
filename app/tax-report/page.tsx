@@ -328,7 +328,7 @@ export default function TaxReportPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className={heading.h1 + ' mb-2'}>税务申报报告</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-apple-gray-1">
                 生成税务申报所需的年度收支报告书
               </p>
             </div>
@@ -403,28 +403,28 @@ export default function TaxReportPage() {
 
               {/* 収入の部 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-emerald-600 dark:text-emerald-300'}>
+                <h3 className={heading.h3 + ' mb-4 text-apple-green'}>
                   収入の部
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className={card.stat + ' border-emerald-500/30'}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       売上高（現金）
                     </div>
-                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+                    <div className="text-2xl font-bold text-apple-green">
                       {formatCurrency(summary.totalRevenue)}
                     </div>
                   </div>
                   <div className={card.stat + ' border-amber-500/30'}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       ポイント収入
                     </div>
-                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
+                    <div className="text-2xl font-bold text-apple-orange">
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
                   <div className={card.stat + ' border-apple-blue/30'}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       総収入
                     </div>
                     <div className="text-2xl font-bold text-apple-blue">
@@ -436,12 +436,12 @@ export default function TaxReportPage() {
 
               {/* 必要経費の部 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-red-600 dark:text-red-300'}>
+                <h3 className={heading.h3 + ' mb-4 text-apple-red'}>
                   必要経費の部
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       仕入費
                     </div>
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -449,7 +449,7 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       販売手数料
                     </div>
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -457,7 +457,7 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       送料
                     </div>
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -465,7 +465,7 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       消耗品費
                     </div>
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -473,10 +473,10 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat + ' border-red-500/30'}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       経費合計
                     </div>
-                    <div className="text-xl font-bold text-red-600 dark:text-red-300">
+                    <div className="text-xl font-bold text-apple-red">
                       {formatCurrency(summary.totalExpenses)}
                     </div>
                   </div>
@@ -484,13 +484,13 @@ export default function TaxReportPage() {
               </div>
 
               {/* 所得金額 */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <div className="border-t border-apple-separator dark:border-apple-sepDark pt-6">
                 <h3 className={heading.h3 + ' mb-4 text-apple-blue'}>
                   所得金額
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className={card.stat + ' border-apple-blue/30'}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       雑所得金額（収入 - 経費）
                     </div>
                     <div className="text-3xl font-bold text-apple-blue">
@@ -498,7 +498,7 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       現金収入
                     </div>
                     <div className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -506,7 +506,7 @@ export default function TaxReportPage() {
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                    <div className="text-apple-gray-1 text-sm mb-1">
                       取引件数
                     </div>
                     <div className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -519,9 +519,9 @@ export default function TaxReportPage() {
 
             {/* 取引明細表 */}
             <div className={card.primary + ' shadow-card overflow-hidden'}>
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-6 border-b border-apple-separator dark:border-apple-sepDark">
                 <h2 className={heading.h2}>取引明細書</h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-apple-gray-1 mt-2">
                   合計 {details.length} 件の取引
                 </p>
               </div>
@@ -529,7 +529,7 @@ export default function TaxReportPage() {
               {details.length === 0 ? (
                 <div className="p-12 text-center">
                   <svg
-                    className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4"
+                    className="w-16 h-16 text-apple-gray-1 mx-auto mb-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -541,7 +541,7 @@ export default function TaxReportPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  <p className="text-apple-gray-1 text-lg">
                     该年度没有已售出的交易
                   </p>
                 </div>
@@ -549,39 +549,39 @@ export default function TaxReportPage() {
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
+                      <thead className="bg-apple-gray-6 dark:bg-white/5">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
                             販売日
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
                             購入先
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
                             商品名
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-apple-gray-1 uppercase">
                             数量
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             購入価格
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             売却価格
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
                             販売先
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             手数料
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             送料
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             ポイント
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
                             利益
                           </th>
                         </tr>
@@ -590,43 +590,43 @@ export default function TaxReportPage() {
                         {paginatedDetails.map(detail => (
                           <tr
                             key={detail.saleRecordId}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            className="active:opacity-80 transition-colors"
                           >
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                               {detail.saleDate}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                               {detail.purchasePlatformName || '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                               {detail.productName}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">
                               {detail.quantitySold}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
                               {formatCurrency(detail.purchasePrice)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-emerald-600 dark:text-emerald-300 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-apple-green text-right font-mono">
                               {formatCurrency(detail.sellingPrice)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                               {detail.sellingPlatformName || '-'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
                               {formatCurrency(detail.platformFee)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
                               {formatCurrency(detail.shippingFee)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-amber-600 dark:text-amber-300 text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-apple-orange text-right font-mono">
                               {formatCurrency(detail.pointsReward)}
                             </td>
                             <td
                               className={`px-4 py-3 text-sm text-right font-mono font-semibold ${
                                 detail.totalProfit >= 0
-                                  ? 'text-emerald-600 dark:text-emerald-300'
-                                  : 'text-red-600 dark:text-red-300'
+                                  ? 'text-apple-green'
+                                  : 'text-apple-red'
                               }`}
                             >
                               {formatCurrency(detail.totalProfit)}
@@ -639,8 +639,8 @@ export default function TaxReportPage() {
 
                   {/* ページネーション */}
                   {totalPages > 1 && (
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="p-4 border-t border-apple-separator dark:border-apple-sepDark flex items-center justify-between">
+                      <div className="text-sm text-apple-gray-1">
                         {(currentPage - 1) * itemsPerPage + 1} 〜{' '}
                         {Math.min(currentPage * itemsPerPage, details.length)} / 共{' '}
                         {details.length} 条

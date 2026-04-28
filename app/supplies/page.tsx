@@ -90,7 +90,7 @@ export default function SuppliesPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className={heading.h1 + ' mb-2'}>耗材成本管理</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-apple-gray-1">
                 管理包装材料、运输耗材等固定成本
               </p>
             </div>
@@ -109,25 +109,25 @@ export default function SuppliesPage() {
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">总耗材成本</div>
+            <div className="text-apple-gray-1 text-sm mb-1">总耗材成本</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(totalCost)}
             </div>
           </div>
           <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">记录数量</div>
+            <div className="text-apple-gray-1 text-sm mb-1">记录数量</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {filteredSupplies.length}
             </div>
           </div>
           <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">本月耗材</div>
+            <div className="text-apple-gray-1 text-sm mb-1">本月耗材</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(monthlyStats[formatDateToLocal(new Date()).substring(0, 7)] || 0)}
             </div>
           </div>
           <div className={card.stat}>
-            <div className="text-gray-600 dark:text-gray-400 text-sm mb-1">平均单笔</div>
+            <div className="text-apple-gray-1 text-sm mb-1">平均单笔</div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(filteredSupplies.length > 0 ? totalCost / filteredSupplies.length : 0)}
             </div>
@@ -142,7 +142,7 @@ export default function SuppliesPage() {
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 filter === 'all'
                   ? 'bg-apple-blue text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : 'bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-80'
               }`}
             >
               全部
@@ -154,7 +154,7 @@ export default function SuppliesPage() {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === key
                     ? 'bg-apple-blue text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-80'
                 }`}
               >
                 {label}
@@ -170,7 +170,7 @@ export default function SuppliesPage() {
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">暂无耗材记录</p>
+              <p className="text-apple-gray-1 text-lg">暂无耗材记录</p>
               <Link
                 href="/supplies/add"
                 className={button.primary + ' inline-block mt-4'}
@@ -182,28 +182,28 @@ export default function SuppliesPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  <tr className="border-b border-apple-separator dark:border-apple-sepDark">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                       日期
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                       分类
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                       描述
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                       金额
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
                       操作
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSupplies.map((supply) => (
-                    <tr key={supply.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <tr key={supply.id} className="active:opacity-80 transition-colors">
+                      <td className="px-6 py-4 text-gray-900 dark:text-white whitespace-nowrap">
                         {parseDateFromLocal(supply.purchase_date)?.toLocaleDateString('zh-CN') ?? supply.purchase_date}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -211,7 +211,7 @@ export default function SuppliesPage() {
                           {CATEGORY_LABELS[supply.category] || supply.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      <td className="px-6 py-4 text-gray-900 dark:text-white">
                         {supply.description || '-'}
                       </td>
                       <td className="px-6 py-4 text-right text-gray-900 dark:text-white font-mono font-semibold">
@@ -221,7 +221,7 @@ export default function SuppliesPage() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/supplies/${supply.id}/edit`}
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            className="p-2 text-apple-gray-1 hover:text-emerald-600 dark:hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all"
                             title="编辑"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,7 +230,7 @@ export default function SuppliesPage() {
                           </Link>
                           <button
                             onClick={() => handleDelete(supply.id)}
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all"
+                            className="p-2 text-apple-gray-1 hover:text-apple-red dark:hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all"
                             title="删除"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,8 +255,8 @@ export default function SuppliesPage() {
               {Object.entries(monthlyStats)
                 .sort((a, b) => b[0].localeCompare(a[0]))
                 .map(([month, amount]) => (
-                  <div key={month} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <div key={month} className="bg-apple-gray-6 dark:bg-white/5 rounded-lg p-4">
+                    <div className="text-sm text-apple-gray-1 mb-1">
                       {month}
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">

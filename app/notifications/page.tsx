@@ -75,7 +75,7 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
 };
 
 const defaultIconConfig = {
-  bg: 'bg-gray-100 dark:bg-gray-700',
+  bg: 'bg-apple-gray-5 dark:bg-white/10',
   color: 'text-gray-400',
   icon: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,10 +86,10 @@ const defaultIconConfig = {
 
 function SkeletonCard() {
   return (
-    <div className="flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm animate-pulse">
-      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
+    <div className="flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 border border-apple-separator dark:border-apple-sepDark shadow-sm animate-pulse">
+      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-apple-gray-5 dark:bg-white/10" />
       <div className="flex-1 space-y-2 py-0.5">
-        <div className="h-3.5 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+        <div className="h-3.5 bg-apple-gray-5 dark:bg-white/10 rounded w-3/4" />
         <div className="h-2.5 bg-gray-100 dark:bg-gray-600 rounded w-1/2" />
         <div className="h-2 bg-gray-100 dark:bg-gray-600 rounded w-1/4" />
       </div>
@@ -214,12 +214,12 @@ export default function NotificationsPage() {
 
         {/* Dev-only: test push panel */}
         {process.env.NODE_ENV === 'development' && subscribed && (
-          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+          <div className="mb-4 p-3 bg-apple-orange/5 dark:bg-apple-orange/10 border border-apple-orange/30 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">调试模式</span>
+              <span className="text-xs font-bold text-apple-orange">调试模式</span>
               <button
                 onClick={sendTestPush}
-                className="px-3 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors"
+                className="px-3 py-1 text-xs bg-apple-orange hover:bg-amber-600 text-white rounded-lg transition-colors"
               >
                 发送测试推送
               </button>
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
             <div className="space-y-6">
               {groups.map(({ label, items }) => (
                 <div key={label}>
-                  <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-wide px-1 mb-2">
+                  <div className="text-xs font-semibold text-gray-400 dark:text-apple-gray-1 tracking-wide px-1 mb-2">
                     {label}
                   </div>
                   <div className="space-y-2">
@@ -268,8 +268,8 @@ export default function NotificationsPage() {
                             onClick={() => { if (!n.read) markReadOptimistic(n.id); }}
                             className={`flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm transition-colors border ${
                               n.read
-                                ? 'border-gray-200 dark:border-gray-700 hover:border-apple-blue/20'
-                                : 'border-l-4 border-l-apple-blue border-gray-200 dark:border-gray-700 hover:border-apple-blue/20'
+                                ? 'border-apple-separator dark:border-apple-sepDark hover:border-apple-blue/20'
+                                : 'border-l-4 border-l-apple-blue border-apple-separator dark:border-apple-sepDark hover:border-apple-blue/20'
                             }`}
                           >
                             {/* Type icon */}
@@ -279,12 +279,12 @@ export default function NotificationsPage() {
                             {/* Content */}
                             <div className="flex-1 min-w-0 pr-6">
                               <div className="flex items-center gap-2">
-                                <p className={`font-semibold text-sm truncate ${n.read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                <p className={`font-semibold text-sm truncate ${n.read ? 'text-apple-gray-1' : 'text-gray-900 dark:text-white'}`}>
                                   {n.title}
                                 </p>
                                 {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-apple-blue" />}
                               </div>
-                              {n.body && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>}
+                              {n.body && <p className="text-xs text-apple-gray-1 mt-0.5 line-clamp-2">{n.body}</p>}
                               <p className="text-[10px] text-gray-400 mt-1">
                                 {formatRelativeTime(n.created_at)}
                               </p>
@@ -294,7 +294,7 @@ export default function NotificationsPage() {
                           {/* Delete button */}
                           <button
                             onClick={(e) => deleteNotification(n.id, e)}
-                            className="absolute right-3 top-3 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:text-red-400 active:bg-red-50 dark:active:bg-red-900/20 transition-colors opacity-60 hover:opacity-100"
+                            className="absolute right-3 top-3 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 dark:text-gray-600 hover:text-apple-red hover:bg-apple-red/5 dark:hover:bg-apple-red/10 active:text-apple-red transition-colors opacity-60 hover:opacity-100"
                             aria-label="削除"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,8 +319,8 @@ export default function NotificationsPage() {
         )}
 
         {/* Push notification settings */}
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 tracking-wide mb-3 px-1">通知設定</h2>
+        <div className="mt-8 pt-6 border-t border-apple-separator dark:border-apple-sepDark">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-apple-gray-1 tracking-wide mb-3 px-1">通知設定</h2>
           <div className="bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -334,10 +334,10 @@ export default function NotificationsPage() {
                 disabled={pushLoading || permission === 'denied'}
                 className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                   permission === 'denied'
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-300 dark:border-gray-600 cursor-not-allowed'
+                    ? 'bg-apple-gray-5 dark:bg-white/10 text-gray-400 border-apple-separator dark:border-apple-sepDark cursor-not-allowed'
                     : subscribed
                     ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/30'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
+                    : 'bg-apple-gray-5 dark:bg-white/10 text-apple-gray-1 border-apple-separator dark:border-apple-sepDark'
                 }`}
               >
                 <div className={`w-8 h-4 rounded-full relative transition-colors ${

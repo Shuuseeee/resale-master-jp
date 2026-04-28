@@ -160,7 +160,7 @@ export default function EditCouponPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-900 dark:text-white">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -173,13 +173,13 @@ export default function EditCouponPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
       <div className="relative max-w-2xl mx-auto px-4 py-8">
         {/* 標題区域 */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-apple-gray-1 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -188,12 +188,12 @@ export default function EditCouponPage() {
           </button>
 
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">クーポン編集</h1>
-          <p className="text-gray-600 dark:text-gray-400">クーポン情報を編集</p>
+          <p className="text-apple-gray-1">クーポン情報を編集</p>
         </div>
 
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-card">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-apple-separator dark:border-apple-sepDark shadow-card">
             <div className="space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
@@ -201,7 +201,7 @@ export default function EditCouponPage() {
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   クーポン名 <span className="text-red-300">*</span>
                 </label>
                 <input
@@ -210,14 +210,14 @@ export default function EditCouponPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="例: 楽天スーパーSALE 10%OFFクーポン"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   required
                 />
                 {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   プラットフォーム
                 </label>
                 <input
@@ -226,20 +226,20 @@ export default function EditCouponPage() {
                   value={formData.platform}
                   onChange={handleInputChange}
                   placeholder="例: 楽天市場, Amazon, Yahoo!"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     割引タイプ <span className="text-red-300">*</span>
                   </label>
                   <select
                     name="discount_type"
                     value={formData.discount_type}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   >
                     <option value="percentage">割引率 (%)</option>
                     <option value="fixed_amount">固定額 (¥)</option>
@@ -250,7 +250,7 @@ export default function EditCouponPage() {
 
                 {formData.discount_type !== 'free_item' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     割引値 <span className="text-red-300">*</span>
                   </label>
                   <div className="relative">
@@ -262,10 +262,10 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                       required
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">
                       {formData.discount_type === 'percentage' ? '%' : formData.discount_type === 'point_multiply' ? '倍' : '¥'}
                     </span>
                   </div>
@@ -278,7 +278,7 @@ export default function EditCouponPage() {
 
               {formData.discount_type === 'percentage' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     最大割引額
                   </label>
                   <div className="relative">
@@ -290,16 +290,16 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="上限なしの場合は0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                   </div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     最低購入金額
                   </label>
                   <div className="relative">
@@ -311,14 +311,14 @@ export default function EditCouponPage() {
                       step="0.01"
                       min="0"
                       placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">¥</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     クーポンコード
                   </label>
                   <input
@@ -327,13 +327,13 @@ export default function EditCouponPage() {
                     value={formData.coupon_code}
                     onChange={handleInputChange}
                     placeholder="例: RAKUTEN500"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     開始日
                   </label>
                   <DatePicker
@@ -344,14 +344,14 @@ export default function EditCouponPage() {
                         start_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.start_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.start_date}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                     有効期限 <span className="text-red-300">*</span>
                   </label>
                   <DatePicker
@@ -362,7 +362,7 @@ export default function EditCouponPage() {
                         expiry_date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
                   />
                   {errors.expiry_date && (
                     <p className="mt-1 text-sm text-red-300">{errors.expiry_date}</p>
@@ -371,7 +371,7 @@ export default function EditCouponPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                   メモ
                 </label>
                 <textarea
@@ -380,7 +380,7 @@ export default function EditCouponPage() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="メモを追加..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
             </div>
@@ -388,7 +388,7 @@ export default function EditCouponPage() {
 
           {/* 送信ボタン */}
           {errors.submit && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
               <p className="text-sm text-red-300">{errors.submit}</p>
             </div>
           )}
@@ -404,7 +404,7 @@ export default function EditCouponPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all border border-gray-300 dark:border-gray-600"
+              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
             >
               キャンセル
             </button>
