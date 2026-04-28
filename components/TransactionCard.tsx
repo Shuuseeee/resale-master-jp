@@ -4,7 +4,6 @@
 import { useState, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { triggerHaptic } from '@/lib/haptic';
-import Link from 'next/link';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { ProductImage } from '@/components/OptimizedImage';
@@ -32,6 +31,10 @@ interface TransactionCardProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onQuickSale?: (id: string) => void;
+  onQuickReturn?: (id: string) => void;
+  onQuickEdit?: (id: string) => void;
+  onQuickCopy?: (id: string) => void;
   buybackInfo?: BuybackInfo;
   purchasePlatforms?: Array<{ id: string; name: string }>;
   compareMode?: boolean;
@@ -45,6 +48,10 @@ const TransactionCard = memo(function TransactionCard({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onQuickSale,
+  onQuickReturn,
+  onQuickEdit,
+  onQuickCopy,
   buybackInfo,
   purchasePlatforms = [],
   compareMode = false,
@@ -309,12 +316,34 @@ const TransactionCard = memo(function TransactionCard({
       {/* 操作栏 */}
       <div className="pt-2 border-t border-apple-separator dark:border-apple-sepDark">
         <div className="flex items-center justify-end gap-1">
-          <Link href={`/transactions/${transaction.id}/edit`} className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors">编辑</Link>
-          <Link href={`/transactions/${transaction.id}?action=sale`} className="px-2 py-1 text-xs text-apple-blue hover:bg-apple-blue/5 rounded transition-colors">出售</Link>
+          <button
+            onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickEdit?.(transaction.id); }}
+            className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors cursor-pointer"
+          >
+            编辑
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickSale?.(transaction.id); }}
+            disabled={hasSoldOut}
+            className="px-2 py-1 text-xs text-apple-blue hover:bg-apple-blue/5 rounded transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            出售
+          </button>
           {(transaction.status === 'in_stock' || transaction.status === 'pending') && (
-            <Link href={`/transactions/${transaction.id}?action=return`} className="px-2 py-1 text-xs text-apple-orange hover:bg-apple-orange/5 rounded transition-colors">退货</Link>
+            <button
+              onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickReturn?.(transaction.id); }}
+              disabled={hasSoldOut}
+              className="px-2 py-1 text-xs text-apple-orange hover:bg-apple-orange/5 rounded transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              退货
+            </button>
           )}
-          <Link href={`/transactions/add?copy=${transaction.id}`} className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors">复制</Link>
+          <button
+            onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickCopy?.(transaction.id); }}
+            className="px-2 py-1 text-xs text-apple-gray-1 active:bg-apple-gray-5 dark:active:bg-white/10 rounded transition-colors cursor-pointer"
+          >
+            复制
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -23,6 +23,10 @@ interface TransactionGroupCardProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onQuickSale?: (id: string) => void;
+  onQuickReturn?: (id: string) => void;
+  onQuickEdit?: (id: string) => void;
+  onQuickCopy?: (id: string) => void;
   buybackPrices: Map<string, BuybackInfo>;
   purchasePlatforms?: Array<{ id: string; name: string }>;
   compareMode?: boolean;
@@ -39,6 +43,10 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onQuickSale,
+  onQuickReturn,
+  onQuickEdit,
+  onQuickCopy,
   buybackPrices,
   purchasePlatforms = [],
   compareMode = false,
@@ -181,6 +189,10 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 dateSortMode={dateSortMode}
                 onDelete={onDelete}
                 onMarkArrived={onMarkArrived}
+                onQuickSale={onQuickSale}
+                onQuickReturn={onQuickReturn}
+                onQuickEdit={onQuickEdit}
+                onQuickCopy={onQuickCopy}
                 buybackInfo={buybackPrices.get(tx.id)}
                 purchasePlatforms={purchasePlatforms}
                 compareMode={compareMode}

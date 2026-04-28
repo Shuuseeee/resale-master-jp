@@ -15,6 +15,13 @@ import TransactionRow from '@/components/TransactionRow';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
 import TransactionGroupRow from '@/components/TransactionGroupRow';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
+import Modal, { ConfirmModal } from '@/components/Modal';
+import BatchSaleForm from '@/components/BatchSaleForm';
+import ReturnForm from '@/components/ReturnForm';
+import QuickEditForm from '@/components/QuickEditForm';
+import QuickCopyForm from '@/components/QuickCopyForm';
+import Toast from '@/components/Toast';
+import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import { usePlatforms } from '@/contexts/PlatformsContext';
@@ -103,6 +110,15 @@ function TransactionsContent() {
   const [showJanList, setShowJanList] = useState(false);
   const [isGrouped, setIsGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // 列表页快捷操作 Modal 状态
+  const [saleModalId, setSaleModalId] = useState<string | null>(null);
+  const [returnModalId, setReturnModalId] = useState<string | null>(null);
+  const [editModalId, setEditModalId] = useState<string | null>(null);
+  const [copyModalId, setCopyModalId] = useState<string | null>(null);
+  const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // searchTerm 防抖：避免每次击键都触发 filter+sort
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
@@ -580,25 +596,28 @@ function TransactionsContent() {
     }
   };
 
-  const deleteTransaction = useCallback(async (id: string) => {
-    if (!confirm('确定要删除这条交易记录吗？此操作无法撤销。')) {
+  const deleteTransaction = useCallback((id: string) => {
+    setDeleteModalId(id);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteModalId) return;
+    setDeleteSubmitting(true);
+    const { error } = await deleteTransactionApi(deleteModalId);
+    setDeleteSubmitting(false);
+    if (error) {
+      alert(error?.message || '删除失败,请重试');
       return;
     }
+    setTransactions(prev => prev.filter(t => t.id !== deleteModalId));
+    setDeleteModalId(null);
+    setToastMsg('已删除');
+  }, [deleteModalId]);
 
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTransactions(prev => prev.filter(t => t.id !== id));
-    } catch (error) {
-      console.error('删除失败:', error);
-      alert('删除失败，请重试');
-    }
-  }, []);
+  const openQuickSale = useCallback((id: string) => setSaleModalId(id), []);
+  const openQuickReturn = useCallback((id: string) => setReturnModalId(id), []);
+  const openQuickEdit = useCallback((id: string) => setEditModalId(id), []);
+  const openQuickCopy = useCallback((id: string) => setCopyModalId(id), []);
 
   const handleExportCSV = async (mode: 'filtered' | 'all' = 'filtered') => {
     setExporting(true);
@@ -1035,6 +1054,10 @@ function TransactionsContent() {
                     dateSortMode={dateSortMode}
                     onDelete={deleteTransaction}
                     onMarkArrived={handleMarkArrived}
+                    onQuickSale={openQuickSale}
+                    onQuickReturn={openQuickReturn}
+                    onQuickEdit={openQuickEdit}
+                    onQuickCopy={openQuickCopy}
                     buybackPrices={buybackPrices}
                     purchasePlatforms={purchasePlatforms}
                     compareMode={compareMode}
@@ -1050,6 +1073,10 @@ function TransactionsContent() {
                     dateSortMode={dateSortMode}
                     onDelete={deleteTransaction}
                     onMarkArrived={handleMarkArrived}
+                    onQuickSale={openQuickSale}
+                    onQuickReturn={openQuickReturn}
+                    onQuickEdit={openQuickEdit}
+                    onQuickCopy={openQuickCopy}
                     buybackInfo={buybackPrices.get(item.data.id)}
                     purchasePlatforms={purchasePlatforms}
                     compareMode={compareMode}
@@ -1149,6 +1176,10 @@ function TransactionsContent() {
                             dateSortMode={dateSortMode}
                             onDelete={deleteTransaction}
                             onMarkArrived={handleMarkArrived}
+                            onQuickSale={openQuickSale}
+                            onQuickReturn={openQuickReturn}
+                            onQuickEdit={openQuickEdit}
+                            onQuickCopy={openQuickCopy}
                             buybackPrices={buybackPrices}
                             purchasePlatforms={purchasePlatforms}
                             compareMode={compareMode}
@@ -1163,6 +1194,10 @@ function TransactionsContent() {
                             dateSortMode={dateSortMode}
                             onDelete={deleteTransaction}
                             onMarkArrived={handleMarkArrived}
+                            onQuickSale={openQuickSale}
+                            onQuickReturn={openQuickReturn}
+                            onQuickEdit={openQuickEdit}
+                            onQuickCopy={openQuickCopy}
                             buybackInfo={buybackPrices.get(item.data.id)}
                             purchasePlatforms={purchasePlatforms}
                             compareMode={compareMode}
@@ -1257,6 +1292,118 @@ function TransactionsContent() {
         transactions={compareMode && selectedIds.size > 0 ? selectedTransactions : filteredTransactions}
         buybackMap={buybackPrices}
       />
+
+      {/* 出售 Modal */}
+      {(() => {
+        const tx = saleModalId ? transactions.find(t => t.id === saleModalId) : null;
+        if (!tx) return null;
+        return (
+          <Modal
+            isOpen={!!saleModalId}
+            onClose={() => setSaleModalId(null)}
+            title="记录销售"
+            size="lg"
+          >
+            <BatchSaleForm
+              transaction={tx}
+              onSuccess={() => {
+                setSaleModalId(null);
+                loadTransactions();
+                setToastMsg('销售已记录');
+              }}
+              onCancel={() => setSaleModalId(null)}
+            />
+          </Modal>
+        );
+      })()}
+
+      {/* 退货 Modal */}
+      {(() => {
+        const tx = returnModalId ? transactions.find(t => t.id === returnModalId) : null;
+        if (!tx) return null;
+        return (
+          <Modal
+            isOpen={!!returnModalId}
+            onClose={() => setReturnModalId(null)}
+            title="记录退货"
+            size="lg"
+          >
+            <ReturnForm
+              transaction={tx}
+              onSuccess={() => {
+                setReturnModalId(null);
+                loadTransactions();
+                setToastMsg('退货已记录');
+              }}
+              onCancel={() => setReturnModalId(null)}
+            />
+          </Modal>
+        );
+      })()}
+
+      {/* 快速编辑 Modal */}
+      {(() => {
+        const tx = editModalId ? transactions.find(t => t.id === editModalId) : null;
+        if (!tx) return null;
+        return (
+          <Modal
+            isOpen={!!editModalId}
+            onClose={() => setEditModalId(null)}
+            title="快速编辑"
+            size="lg"
+          >
+            <QuickEditForm
+              transaction={tx}
+              paymentMethods={paymentMethods}
+              purchasePlatforms={purchasePlatforms}
+              onSuccess={() => {
+                setEditModalId(null);
+                loadTransactions();
+                setToastMsg('已保存');
+              }}
+              onCancel={() => setEditModalId(null)}
+            />
+          </Modal>
+        );
+      })()}
+
+      {/* 快速复制 Modal */}
+      {(() => {
+        const tx = copyModalId ? transactions.find(t => t.id === copyModalId) : null;
+        if (!tx) return null;
+        return (
+          <Modal
+            isOpen={!!copyModalId}
+            onClose={() => setCopyModalId(null)}
+            title="复制交易"
+            size="lg"
+          >
+            <QuickCopyForm
+              source={tx}
+              onSuccess={() => {
+                setCopyModalId(null);
+                loadTransactions();
+                setToastMsg('已创建新交易');
+              }}
+              onCancel={() => setCopyModalId(null)}
+            />
+          </Modal>
+        );
+      })()}
+
+      {/* 删除确认 */}
+      <ConfirmModal
+        isOpen={!!deleteModalId}
+        onClose={() => { if (!deleteSubmitting) setDeleteModalId(null); }}
+        onConfirm={confirmDelete}
+        title="删除交易"
+        message={`确定要删除${deleteModalId ? `「${transactions.find(t => t.id === deleteModalId)?.product_name ?? ''}」` : ''}这条交易记录吗?此操作无法撤销。`}
+        confirmText="删除"
+        confirmVariant="danger"
+        isLoading={deleteSubmitting}
+      />
+
+      {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>
     </PullToRefresh>
   );

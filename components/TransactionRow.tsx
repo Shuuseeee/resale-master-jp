@@ -28,6 +28,10 @@ interface TransactionRowProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onQuickSale?: (id: string) => void;
+  onQuickReturn?: (id: string) => void;
+  onQuickEdit?: (id: string) => void;
+  onQuickCopy?: (id: string) => void;
   buybackInfo?: BuybackInfo;
   purchasePlatforms?: Array<{ id: string; name: string }>;
   compareMode?: boolean;
@@ -41,6 +45,10 @@ const TransactionRow = memo(function TransactionRow({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onQuickSale,
+  onQuickReturn,
+  onQuickEdit,
+  onQuickCopy,
   buybackInfo,
   purchasePlatforms = [],
   compareMode = false,
@@ -255,12 +263,34 @@ const TransactionRow = memo(function TransactionRow({
         <div className="flex flex-col gap-0.5 min-w-[90px]">
           <div className="flex gap-1">
             <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center transition-colors whitespace-nowrap">详情</Link>
-            <Link href={`/transactions/${transaction.id}/edit`} className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center transition-colors whitespace-nowrap">编辑</Link>
-            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-blue hover:bg-apple-blue/5 rounded text-center transition-colors whitespace-nowrap">出售</Link>
+            <button
+              onClick={(e) => { e.stopPropagation(); onQuickEdit?.(transaction.id); }}
+              className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+            >
+              编辑
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onQuickSale?.(transaction.id); }}
+              disabled={transaction.quantity_in_stock <= 0}
+              className="flex-1 px-1 py-0.5 text-xs text-apple-blue hover:bg-apple-blue/5 rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              出售
+            </button>
           </div>
           <div className="flex gap-1">
-            <Link href={`/transactions/add?copy=${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center transition-colors whitespace-nowrap">复制</Link>
-            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-orange hover:bg-apple-orange/5 rounded text-center transition-colors whitespace-nowrap">退货</Link>
+            <button
+              onClick={(e) => { e.stopPropagation(); onQuickCopy?.(transaction.id); }}
+              className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+            >
+              复制
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onQuickReturn?.(transaction.id); }}
+              disabled={transaction.quantity_in_stock <= 0}
+              className="flex-1 px-1 py-0.5 text-xs text-apple-orange hover:bg-apple-orange/5 rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              退货
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
