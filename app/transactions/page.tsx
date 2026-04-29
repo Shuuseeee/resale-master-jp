@@ -23,6 +23,10 @@ import QuickCopyForm from '@/components/QuickCopyForm';
 import Toast from '@/components/Toast';
 import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
+import { getColumnPreferences, saveColumnPreferences } from '@/lib/api/user-preferences';
+import { DEFAULT_COLUMNS, effectiveColumns, visibleColumnKeys, COLUMN_LABELS } from '@/lib/transactions/columns';
+import type { ColumnConfig } from '@/lib/transactions/columns';
+import TransactionColumnPicker from '@/components/TransactionColumnPicker';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import PullToRefresh from '@/components/PullToRefresh';
@@ -111,6 +115,11 @@ function TransactionsContent() {
   const [isGrouped, setIsGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // 列定制
+  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerDraft, setPickerDraft] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+
   // 列表页快捷操作 Modal 状态
   const [saleModalId, setSaleModalId] = useState<string | null>(null);
   const [returnModalId, setReturnModalId] = useState<string | null>(null);
@@ -135,6 +144,12 @@ function TransactionsContent() {
   useEffect(() => {
     loadTransactions();
     loadPaymentMethods();
+    getColumnPreferences().then(saved => {
+      if (saved) {
+        setColumns(saved);
+        setPickerDraft(saved);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -157,6 +172,15 @@ function TransactionsContent() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions.length, kaitorixEnabled]);
+
+  const visibleColumns = useMemo(() => visibleColumnKeys(columns), [columns]);
+
+  const handleSaveColumns = useCallback(async () => {
+    setColumns(pickerDraft);
+    setPickerOpen(false);
+    await saveColumnPreferences(pickerDraft);
+    setToastMsg('列设置已保存');
+  }, [pickerDraft]);
 
   // 筛选条件变化时同步到 URL
   const syncFiltersToURL = useCallback(() => {
@@ -870,6 +894,18 @@ function TransactionsContent() {
                   </div>
                 )}
               </div>
+              {/* 列定制齿轮 — 仅桌面表格视图 */}
+              <button
+                onClick={() => { setPickerDraft(columns); setPickerOpen(true); }}
+                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-apple-gray-1 hover:text-gray-900 dark:hover:text-white border border-apple-separator dark:border-apple-sepDark bg-white dark:bg-apple-cardDark active:opacity-70 transition-colors flex-shrink-0"
+                title="自定义列"
+                aria-label="自定义列"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
               <Link
                 href="/transactions/add"
                 className={button.primary + ' hidden lg:flex items-center gap-2 whitespace-nowrap'}
@@ -1095,74 +1131,59 @@ function TransactionsContent() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-gray-700 text-xs text-apple-gray-1 uppercase tracking-wider">
-                        <th className="px-3 py-3 text-left">
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => toggleSort('date')}
-                              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            >
-                              {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
-                              {sortField === 'date' && (
-                                <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')}
-                              className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors"
-                              title="切换日期类型"
-                            >
-                              ⇄
-                            </button>
-                          </div>
-                        </th>
-                        <th className="px-3 py-3 text-left">商品名</th>
-                        <th className="px-3 py-3 text-left">
-                          <div>进货单价</div>
-                          <div className="text-[10px] text-apple-gray-2 font-normal normal-case">(不含返点)</div>
-                        </th>
-                        <th className="px-3 py-3 text-left">来源渠道</th>
-                        <th className="px-3 py-3 text-left">订单号</th>
-                        <th className="px-3 py-3 text-left">账号</th>
-                        <th className="px-3 py-3 text-left">状态</th>
-                        <th className="px-2 py-3 text-center"></th>
-                        <th className="px-3 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                            <button
-                              onClick={() => toggleSort('total_profit')}
-                              className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            >
-                              {profitSortMode === 'actual' ? '利润' : '预估利润'}
-                              {sortField === 'total_profit' && (
-                                <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')}
-                              className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors"
-                              title="切换利润类型"
-                            >
-                              ⇄
-                            </button>
-                          </div>
-                        </th>
-                        <th
-                          className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-                          onClick={() => toggleSort('buyback_price')}
-                        >
-                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                            最高价
-                            {sortField === 'buyback_price' && (
-                              <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                        <th className="px-2 py-3 text-center">操作</th>
+                        {visibleColumns.map(key => {
+                          if (key === 'date') return (
+                            <th key="date" className="px-3 py-3 text-left">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                  {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
+                                  {sortField === 'date' && (
+                                    <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors" title="切换日期类型">⇄</button>
+                              </div>
+                            </th>
+                          );
+                          if (key === 'price') return (
+                            <th key="price" className="px-3 py-3 text-left">
+                              <div>进货单价</div>
+                              <div className="text-[10px] text-apple-gray-2 font-normal normal-case">(不含返点)</div>
+                            </th>
+                          );
+                          if (key === 'arrived') return <th key="arrived" className="px-2 py-3 text-center"></th>;
+                          if (key === 'profit') return (
+                            <th key="profit" className="px-3 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                                <button onClick={() => toggleSort('total_profit')} className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                  {profitSortMode === 'actual' ? '利润' : '预估利润'}
+                                  {sortField === 'total_profit' && (
+                                    <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <button onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')} className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors" title="切换利润类型">⇄</button>
+                              </div>
+                            </th>
+                          );
+                          if (key === 'buyback') return (
+                            <th key="buyback" className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => toggleSort('buyback_price')}>
+                              <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                                {COLUMN_LABELS.buyback}
+                                {sortField === 'buyback_price' && (
+                                  <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          );
+                          if (key === 'actions') return <th key="actions" className="px-2 py-3 text-center">{COLUMN_LABELS.actions}</th>;
+                          return <th key={key} className="px-3 py-3 text-left">{COLUMN_LABELS[key]}</th>;
+                        })}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-apple-separator dark:divide-apple-sepDark">
@@ -1186,6 +1207,7 @@ function TransactionsContent() {
                             selectedIds={selectedIds}
                             onToggleSelect={toggleSelect}
                             onSelectGroup={selectGroup}
+                            visibleColumns={visibleColumns}
                           />
                         ) : (
                           <TransactionRow
@@ -1203,6 +1225,7 @@ function TransactionsContent() {
                             compareMode={compareMode}
                             isSelected={selectedIds.has(item.data.id)}
                             onToggleSelect={toggleSelect}
+                            visibleColumns={visibleColumns}
                           />
                         )
                       )}
@@ -1402,6 +1425,34 @@ function TransactionsContent() {
         confirmVariant="danger"
         isLoading={deleteSubmitting}
       />
+
+      {/* 列定制 Modal */}
+      <Modal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="自定义列"
+        size="sm"
+      >
+        <TransactionColumnPicker
+          value={pickerDraft}
+          onChange={setPickerDraft}
+          onReset={() => setPickerDraft(DEFAULT_COLUMNS)}
+        />
+        <div className="flex justify-end gap-2 pt-4 border-t border-apple-separator dark:border-apple-sepDark mt-4">
+          <button
+            onClick={() => setPickerOpen(false)}
+            className="px-4 py-2 text-sm text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark rounded-lg active:opacity-70 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSaveColumns}
+            className="px-4 py-2 text-sm bg-apple-blue text-white rounded-lg active:opacity-80 transition-colors font-medium"
+          >
+            保存
+          </button>
+        </div>
+      </Modal>
 
       {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>

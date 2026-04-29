@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import Toast from '@/components/Toast';
+import type { TransactionColumnKey } from '@/lib/transactions/columns';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -38,6 +39,7 @@ interface TransactionRowProps {
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   isGroupChild?: boolean;
+  visibleColumns: TransactionColumnKey[];
 }
 
 const TransactionRow = memo(function TransactionRow({
@@ -55,12 +57,12 @@ const TransactionRow = memo(function TransactionRow({
   isSelected = false,
   onToggleSelect,
   isGroupChild = false,
+  visibleColumns,
 }: TransactionRowProps) {
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
   const [showToast, setShowToast] = useState(false);
   const platformName = purchasePlatforms.find(p => p.id === transaction.purchase_platform_id)?.name || null;
 
-  // 返点合计
   const totalPoints = (transaction.expected_platform_points || 0)
     + (transaction.expected_card_points || 0)
     + (transaction.extra_platform_points || 0);
@@ -102,55 +104,51 @@ const TransactionRow = memo(function TransactionRow({
       }
     : undefined;
 
-  return (
-    <>
-    <tr
-      onClick={handleRowClick}
-      className={`border-b border-apple-separator dark:border-apple-sepDark/50 text-sm transition-colors ${
-        isGroupChild ? 'border-l-4 border-l-apple-blue bg-apple-gray-6/50 dark:bg-white/5' : ''
-      } ${
-        compareMode
-          ? isSelected
-            ? 'bg-apple-blue/5 cursor-pointer'
-            : 'cursor-pointer active:bg-apple-gray-6 dark:active:bg-white/5'
-          : 'active:bg-apple-gray-6 dark:active:bg-white/5'
-      }`}
-    >
-      {/* 1. 进货日期 */}
-      <td className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+  const selectCheckbox = compareMode ? (
+    <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+      isSelected ? 'bg-apple-blue border-apple-blue' : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark'
+    }`}>
+      {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+    </div>
+  ) : null;
+
+  // 每列的完整 <td> 渲染
+  const cellMap: Record<TransactionColumnKey, () => React.ReactNode> = {
+    date: () => (
+      <td key="date" className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
         <div className="flex items-center gap-2">
-          {compareMode && (
-            <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-              isSelected ? 'bg-apple-blue border-apple-blue' : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark'
-            }`}>
-              {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-            </div>
-          )}
           <span>{displayDate}</span>
         </div>
       </td>
+    ),
 
-      {/* 2. 商品名 + JAN */}
-      <td className="px-3 py-2">
-        <Link
-          href={`/transactions/${transaction.id}`}
-          className="text-apple-blue hover:underline line-clamp-2 break-cjk leading-snug text-sm"
-        >
-          {transaction.product_name}
-        </Link>
-        {transaction.jan_code && (
-          <button
-            onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-            className="block mt-0.5 font-mono text-xs text-apple-gray-2 hover:text-apple-blue transition-colors cursor-pointer"
-            title="点击复制JAN"
-          >
-            {transaction.jan_code}
-          </button>
-        )}
+    product: () => (
+      <td key="product" className="px-3 py-2">
+        <div className="flex items-center gap-2">
+          {selectCheckbox}
+          <div className="min-w-0">
+            <Link
+              href={`/transactions/${transaction.id}`}
+              className="text-apple-blue hover:underline line-clamp-2 break-cjk leading-snug text-sm"
+            >
+              {transaction.product_name}
+            </Link>
+            {transaction.jan_code && (
+              <button
+                onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
+                className="block mt-0.5 font-mono text-xs text-apple-gray-2 hover:text-apple-blue transition-colors cursor-pointer"
+                title="点击复制JAN"
+              >
+                {transaction.jan_code}
+              </button>
+            )}
+          </div>
+        </div>
       </td>
+    ),
 
-      {/* 3. 进货单价 + 数量 + 返点 */}
-      <td className="px-3 py-2 whitespace-nowrap">
+    price: () => (
+      <td key="price" className="px-3 py-2 whitespace-nowrap">
         <div className="text-gray-900 dark:text-white font-medium">
           {formatCurrency(transaction.unit_price || transaction.purchase_price_total)}
         </div>
@@ -159,18 +157,20 @@ const TransactionRow = memo(function TransactionRow({
           {totalPoints > 0 && <span>返{formatCurrency(totalPoints)}</span>}
         </div>
       </td>
+    ),
 
-      {/* 4. 来源渠道 */}
-      <td className="px-3 py-2 whitespace-nowrap">
+    channel: () => (
+      <td key="channel" className="px-3 py-2 whitespace-nowrap">
         {platformName ? (
           <span className="text-apple-blue">{platformName}</span>
         ) : (
           <span className="text-apple-gray-2">-</span>
         )}
       </td>
+    ),
 
-      {/* 5. 订单号 */}
-      <td className="px-3 py-2">
+    order: () => (
+      <td key="order" className="px-3 py-2">
         {transaction.order_number ? (
           <button
             onClick={(e) => copyToClipboard(transaction.order_number!, e)}
@@ -183,19 +183,22 @@ const TransactionRow = memo(function TransactionRow({
           <span className="text-apple-gray-2">-</span>
         )}
       </td>
+    ),
 
-      {/* 6. 账号 */}
-      <td className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap text-sm">
+    account: () => (
+      <td key="account" className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap text-sm">
         {transaction.payment_method?.name || '-'}
       </td>
+    ),
 
-      {/* 7. 状态 */}
-      <td className="px-3 py-2">
+    status: () => (
+      <td key="status" className="px-3 py-2">
         {getStatusBadge()}
       </td>
+    ),
 
-      {/* 8. 着荷 */}
-      <td className="px-2 py-2 text-center">
+    arrived: () => (
+      <td key="arrived" className="px-2 py-2 text-center">
         {transaction.status === 'pending' && onMarkArrived && (
           <button
             onClick={(e) => {
@@ -208,9 +211,10 @@ const TransactionRow = memo(function TransactionRow({
           </button>
         )}
       </td>
+    ),
 
-      {/* 9. 確定利润 + 预估 */}
-      <td className="px-3 py-2 whitespace-nowrap text-right">
+    profit: () => (
+      <td key="profit" className="px-3 py-2 whitespace-nowrap text-right">
         <div>
           {(transaction as any).aggregated_profit != null ? (
             <span className={`font-medium ${(transaction as any).aggregated_profit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
@@ -226,9 +230,10 @@ const TransactionRow = memo(function TransactionRow({
           </div>
         )}
       </td>
+    ),
 
-      {/* 10. 当前最高收购价 + 店名 */}
-      <td className="px-3 py-2 whitespace-nowrap text-right">
+    buyback: () => (
+      <td key="buyback" className="px-3 py-2 whitespace-nowrap text-right">
         {buybackInfo?.loading ? (
           <div className="flex flex-col items-end gap-1">
             <div className="h-4 w-16 bg-apple-gray-5 dark:bg-white/10 rounded animate-pulse"></div>
@@ -257,9 +262,10 @@ const TransactionRow = memo(function TransactionRow({
           <span className="text-apple-gray-2">-</span>
         )}
       </td>
+    ),
 
-      {/* 11. 操作按钮 2×3 矩阵 */}
-      <td className="px-2 py-2">
+    actions: () => (
+      <td key="actions" className="px-2 py-2">
         <div className="flex flex-col gap-0.5 min-w-[90px]">
           <div className="flex gap-1">
             <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center transition-colors whitespace-nowrap">详情</Link>
@@ -303,6 +309,24 @@ const TransactionRow = memo(function TransactionRow({
           </div>
         </div>
       </td>
+    ),
+  };
+
+  return (
+    <>
+    <tr
+      onClick={handleRowClick}
+      className={`border-b border-apple-separator dark:border-apple-sepDark/50 text-sm transition-colors ${
+        isGroupChild ? 'border-l-4 border-l-apple-blue bg-apple-gray-6/50 dark:bg-white/5' : ''
+      } ${
+        compareMode
+          ? isSelected
+            ? 'bg-apple-blue/5 cursor-pointer'
+            : 'cursor-pointer active:bg-apple-gray-6 dark:active:bg-white/5'
+          : 'active:bg-apple-gray-6 dark:active:bg-white/5'
+      }`}
+    >
+      {visibleColumns.map(key => cellMap[key]())}
     </tr>
     {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
     </>
