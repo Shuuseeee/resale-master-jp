@@ -80,8 +80,13 @@ export default function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-modal flex items-end md:items-center justify-center animate-fade-in"
+      className="fixed inset-0 z-[10010] flex items-end md:items-center justify-center animate-fade-in overflow-hidden overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0"
       onClick={handleOverlayClick}
+      onTouchMove={(e) => {
+        // 拦截外层(遮罩)上的滑动,防止冒泡到底部页面;Modal 内容区有 data-modal-scroll 标记不受影响
+        const target = e.target as HTMLElement;
+        if (!target.closest('[data-modal-scroll]')) e.preventDefault();
+      }}
     >
       {/* 遮罩层 */}
       <div
@@ -97,7 +102,7 @@ export default function Modal({
         aria-labelledby={title ? 'modal-title' : undefined}
         className={`
           relative w-full ${sizeClasses[size]}
-          max-h-[90vh] md:max-h-[85vh]
+          max-h-[calc(90vh-5rem)] md:max-h-[85vh]
           bg-white dark:bg-apple-cardDark
           rounded-t-[20px] md:rounded-2xl
           shadow-card-md
@@ -135,7 +140,11 @@ export default function Modal({
         )}
 
         {/* 内容区域 */}
-        <div className="overflow-y-auto max-h-[calc(90vh-4rem)] md:max-h-[calc(85vh-5rem)] px-4 md:px-6 py-4 md:py-6">
+        <div
+          data-modal-scroll
+          className="overflow-y-auto max-h-[calc(90vh-9rem)] md:max-h-[calc(85vh-5rem)] px-4 md:px-6 py-4 md:py-6 overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        >
           {children}
         </div>
       </div>
