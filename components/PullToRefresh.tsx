@@ -37,6 +37,9 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       if (refreshingRef.current || window.scrollY > 0) return;
+      // 滑动起点在 Modal 内时不参与下拉刷新,避免与 Modal 内滚动冲突
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[role="dialog"]')) return;
       startYRef.current = e.touches[0].clientY;
     };
 
