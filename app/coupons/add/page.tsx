@@ -1,14 +1,13 @@
-// app/coupons/add/page.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
-import { layout, heading, card, button, input } from '@/lib/theme';
+import { button, card, heading, input, layout } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
-import { processImageForUpload, isValidImageFile } from '@/lib/image-utils';
+import { isValidImageFile, processImageForUpload } from '@/lib/image-utils';
 
 interface CouponFormData {
   name: string;
@@ -25,6 +24,7 @@ interface CouponFormData {
 
 export default function AddCouponPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CouponFormData>({
     name: '',
     discount_type: 'percentage',
@@ -38,22 +38,35 @@ export default function AddCouponPage() {
     notes: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isRecognizing, setIsRecognizing] = useState(false);
-  const [ocrError, setOcrError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+  };
 
   const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!isValidImageFile(file)) {
-      setOcrError('画像ファイルを選択してください');
+      setErrors(prev => ({ ...prev, submit: '请选择有效的图片文件' }));
       return;
     }
 
     setIsRecognizing(true);
-    setOcrError(null);
-
     try {
       const compressed = await processImageForUpload(file, 1200, 1200, 0.85);
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -69,7 +82,7 @@ export default function AddCouponPage() {
         body: JSON.stringify({ image: base64, mediaType: 'image/jpeg' }),
       });
 
-      if (!res.ok) throw new Error('認識に失敗しました');
+      if (!res.ok) throw new Error('识别失败');
       const data = await res.json();
 
       setFormData(prev => ({
@@ -86,363 +99,184 @@ export default function AddCouponPage() {
         notes: data.notes || prev.notes,
       }));
     } catch (err: any) {
-      setOcrError(err.message || '認識に失敗しました');
+      setErrors(prev => ({ ...prev, submit: err?.message || '识别失败' }));
     } finally {
       setIsRecognizing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'クーポン名を入力してください';
-    }
-
-    if (formData.discount_type !== 'free_item' && formData.discount_value <= 0) {
-      newErrors.discount_value = '割引値は0より大きい値を入力してください';
-    }
-
-    if (formData.discount_type === 'percentage' && formData.discount_value > 100) {
-      newErrors.discount_value = '割引率は100%を超えることはできません';
-    }
-
-    if (!formData.expiry_date) {
-      newErrors.expiry_date = '有効期限を選択してください';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validateForm = () => {
+    const next: Record<string, string> = {};
+    if (!formData.name.trim()) next.name = '请输入优惠券名称';
+    if (formData.discount_type !== 'free_item' && formData.discount_value <= 0) next.discount_value = '请输入大于 0 的数值';
+    if (formData.discount_type === 'percentage' && formData.discount_value > 100) next.discount_value = '折扣率不能超过 100%';
+    if (!formData.expiry_date) next.expiry_date = '请选择有效期';
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-
     try {
-      const { error } = await supabase.from('coupons').insert([
-        {
-          name: formData.name,
-          discount_type: formData.discount_type,
-          discount_value: formData.discount_value,
-          min_purchase_amount: formData.min_purchase_amount,
-          start_date: formData.start_date || null,
-          expiry_date: formData.expiry_date,
-          platform: formData.platform || null,
-          coupon_code: formData.coupon_code || null,
-          max_discount_amount: formData.max_discount_amount,
-          notes: formData.notes || null,
-          is_used: false,
-        },
-      ]);
+      const { error } = await supabase.from('coupons').insert([{
+        name: formData.name,
+        discount_type: formData.discount_type,
+        discount_value: formData.discount_value,
+        min_purchase_amount: formData.min_purchase_amount,
+        start_date: formData.start_date || null,
+        expiry_date: formData.expiry_date,
+        platform: formData.platform || null,
+        coupon_code: formData.coupon_code || null,
+        max_discount_amount: formData.max_discount_amount,
+        notes: formData.notes || null,
+        is_used: false,
+      }]);
 
       if (error) throw error;
-
       router.push('/coupons');
     } catch (error: any) {
-      console.error('保存失敗:', error);
-      setErrors({ submit: error.message || '保存に失敗しました' });
+      setErrors(prev => ({ ...prev, submit: error.message || '保存失败，请重试' }));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const field = input.base + ' w-full';
+
   return (
-    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
-      <div className="relative max-w-2xl mx-auto px-4 py-8">
-        {/* 標題区域 */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-apple-gray-1 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className={layout.page}>
+      <div className={layout.container + ' max-w-3xl'}>
+        <div className={layout.section}>
+          <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2'}>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">戻る</span>
+            返回
           </button>
 
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">クーポン追加</h1>
-              <p className="text-apple-gray-1">
-                {ocrError
-                  ? <span className="text-apple-red dark:text-red-400 text-sm">{ocrError}</span>
-                  : '新しいクーポン・キャンペーンを記録'}
-              </p>
+              <h1 className={heading.h1}>新增优惠券</h1>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">记录新的券码、有效期和折扣信息。</p>
             </div>
-            {/* OCR 相机按钮 */}
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isRecognizing}
-                className="p-2 rounded-xl text-apple-gray-1 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="写真から自動入力"
-              >
-                {isRecognizing ? (
-                  <svg className="animate-spin w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageCapture}
-                className="hidden"
-              />
-            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isRecognizing}
+              className={button.secondary + ' gap-2'}
+              title="从图片自动识别"
+            >
+              {isRecognizing ? '识别中...' : '图片识别'}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageCapture} className="hidden" />
           </div>
         </div>
 
-        {/* 表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          <section className={card.primary + ' p-6'}>
+            <h2 className={heading.h3 + ' mb-5 flex items-center gap-2'}>
+              <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
+              基本信息
+            </h2>
 
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
-                基本情報
-              </h2>
-
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  クーポン名 <span className="text-red-300">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="例: 楽天スーパーSALE 10%OFFクーポン"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                  required
-                />
-                {errors.name && <p className="mt-1 text-sm text-red-300">{errors.name}</p>}
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">优惠券名称 <span className="text-[var(--color-danger)]">*</span></label>
+                <input name="name" value={formData.name} onChange={handleInputChange} className={field} placeholder="例如：楽天超级SALE 10%OFF" />
+                {errors.name && <p className="mt-1 text-sm text-[var(--color-danger)]">{errors.name}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  プラットフォーム
-                </label>
-                <input
-                  type="text"
-                  name="platform"
-                  value={formData.platform}
-                  onChange={handleInputChange}
-                  placeholder="例: 楽天市場, Amazon, Yahoo!"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                />
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">平台</label>
+                <input name="platform" value={formData.platform} onChange={handleInputChange} className={field} placeholder="例如：楽天市场、Amazon、Yahoo!" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    割引タイプ <span className="text-red-300">*</span>
-                  </label>
-                  <select
-                    name="discount_type"
-                    value={formData.discount_type}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                  >
-                    <option value="percentage">割引率 (%)</option>
-                    <option value="fixed_amount">固定額 (¥)</option>
-                    <option value="point_multiply">ポイント倍率</option>
-                    <option value="free_item">無料引換</option>
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">折扣类型 <span className="text-[var(--color-danger)]">*</span></label>
+                  <select name="discount_type" value={formData.discount_type} onChange={handleInputChange} className={field}>
+                    <option value="percentage">折扣率 (%)</option>
+                    <option value="fixed_amount">固定金额 (¥)</option>
+                    <option value="point_multiply">积分倍率</option>
+                    <option value="free_item">免费兑换</option>
                   </select>
                 </div>
 
                 {formData.discount_type !== 'free_item' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    割引値 <span className="text-red-300">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      name="discount_value"
-                      value={formData.discount_value || ''}
-                      onChange={handleNumberChange}
-                      step="0.01"
-                      min="0"
-                      placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                      required
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">
-                      {formData.discount_type === 'percentage' ? '%' : formData.discount_type === 'point_multiply' ? '倍' : '¥'}
-                    </span>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">折扣值 <span className="text-[var(--color-danger)]">*</span></label>
+                    <div className="relative">
+                      <input type="number" name="discount_value" value={formData.discount_value || ''} onChange={handleNumberChange} className={field + ' pr-12'} min="0" step="0.01" />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+                        {formData.discount_type === 'percentage' ? '%' : formData.discount_type === 'point_multiply' ? '倍' : '¥'}
+                      </span>
+                    </div>
+                    {errors.discount_value && <p className="mt-1 text-sm text-[var(--color-danger)]">{errors.discount_value}</p>}
                   </div>
-                  {errors.discount_value && (
-                    <p className="mt-1 text-sm text-red-300">{errors.discount_value}</p>
-                  )}
-                </div>
                 )}
               </div>
 
               {formData.discount_type === 'percentage' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    最大割引額
-                  </label>
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">最高折扣金额</label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      name="max_discount_amount"
-                      value={formData.max_discount_amount || ''}
-                      onChange={handleNumberChange}
-                      step="0.01"
-                      min="0"
-                      placeholder="上限なしの場合は0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                    <input type="number" name="max_discount_amount" value={formData.max_discount_amount || ''} onChange={handleNumberChange} className={field + ' pr-12'} min="0" step="0.01" placeholder="不限则填 0" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    最低購入金額
-                  </label>
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">最低购买金额</label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      name="min_purchase_amount"
-                      value={formData.min_purchase_amount || ''}
-                      onChange={handleNumberChange}
-                      step="0.01"
-                      min="0"
-                      placeholder="0"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                    <input type="number" name="min_purchase_amount" value={formData.min_purchase_amount || ''} onChange={handleNumberChange} className={field + ' pr-12'} min="0" step="0.01" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    クーポンコード
-                  </label>
-                  <input
-                    type="text"
-                    name="coupon_code"
-                    value={formData.coupon_code}
-                    onChange={handleInputChange}
-                    placeholder="例: RAKUTEN500"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                  />
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">券码</label>
+                  <input name="coupon_code" value={formData.coupon_code} onChange={handleInputChange} className={field} placeholder="例如：RAKUTEN500" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    開始日
-                  </label>
-                  <DatePicker
-                    selected={formData.start_date ? parseDateFromLocal(formData.start_date) : null}
-                    onChange={(date) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        start_date: formatDateToLocal(date)
-                      }));
-                    }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                  />
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">开始日期</label>
+                  <DatePicker selected={formData.start_date ? parseDateFromLocal(formData.start_date) : null} onChange={date => setFormData(prev => ({ ...prev, start_date: date ? formatDateToLocal(date) : '' }))} className={field} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    有効期限 <span className="text-red-300">*</span>
-                  </label>
-                  <DatePicker
-                    selected={formData.expiry_date ? parseDateFromLocal(formData.expiry_date) : null}
-                    onChange={(date) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        expiry_date: formatDateToLocal(date)
-                      }));
-                    }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                  />
-                  {errors.expiry_date && (
-                    <p className="mt-1 text-sm text-red-300">{errors.expiry_date}</p>
-                  )}
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">有效期 <span className="text-[var(--color-danger)]">*</span></label>
+                  <DatePicker selected={formData.expiry_date ? parseDateFromLocal(formData.expiry_date) : null} onChange={date => setFormData(prev => ({ ...prev, expiry_date: date ? formatDateToLocal(date) : '' }))} className={field} />
+                  {errors.expiry_date && <p className="mt-1 text-sm text-[var(--color-danger)]">{errors.expiry_date}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  メモ
-                </label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="メモを追加..."
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
-                />
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">备注</label>
+                <textarea name="notes" value={formData.notes} onChange={handleInputChange} rows={3} className={field + ' resize-none'} placeholder="补充说明..." />
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* 送信ボタン */}
           {errors.submit && (
-            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
-              <p className="text-sm text-red-300">{errors.submit}</p>
+            <div className="rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-4 text-sm text-[var(--color-danger)]">
+              {errors.submit}
             </div>
           )}
 
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-4 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isSubmitting ? '保存中...' : '保存'}
+          <div className="flex gap-3">
+            <button type="submit" disabled={isSubmitting} className={button.primary + ' flex-1'}>
+              {isSubmitting ? '保存中...' : '保存优惠券'}
             </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-8 py-4 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
-            >
-              キャンセル
+            <button type="button" onClick={() => router.back()} className={button.secondary}>
+              取消
             </button>
           </div>
         </form>

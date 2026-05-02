@@ -61,4 +61,5 @@ scraper/debug-page.html
 .claude/
 CLAUDE.md
 CLAUDE.zh.md
-
+.codex/
+AGENTS.md

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import type { Transaction, TransactionStatus, PaymentMethod, PurchasePlatform } from '@/types/database.types';
 import { quickUpdateTransaction, type QuickEditPayload } from '@/lib/api/transactions';
 import { parseNumberInput } from '@/lib/number-utils';
+import { button, input } from '@/lib/theme';
 
 interface QuickEditFormProps {
   transaction: Transaction;
@@ -83,71 +84,71 @@ export default function QuickEditForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">状态</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">状态</label>
           <select
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value as TransactionStatus })}
             disabled={!canEditStatus}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className={input.base + ' w-full disabled:cursor-not-allowed disabled:opacity-50'}
           >
             {STATUS_OPTIONS.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
           {!canEditStatus && (
-            <p className="mt-1 text-xs text-apple-gray-1">已有销售记录或当前状态不允许直接修改</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">已有销售记录或当前状态不允许直接修改</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">订单号</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">订单号</label>
           <input
             type="text"
             value={formData.order_number}
             onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
             placeholder="可选"
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">数量</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">数量</label>
           <input
             type="number"
             min={1}
             value={formData.quantity || ''}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? 0 : parseInt(e.target.value) })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">单价</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">单价</label>
           <div className="relative">
             <input
               type="text"
               inputMode="decimal"
               value={formData.unit_price || ''}
               onChange={(e) => setFormData({ ...formData, unit_price: parseNumberInput(e.target.value, 0) })}
-              className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+              className={input.base + ' w-full pr-12'}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
           </div>
           {(formData.quantity !== transaction.quantity || formData.unit_price !== (transaction.unit_price ?? 0)) && (
-            <p className="mt-1 text-xs text-apple-gray-1">
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
               新合计:¥{(formData.unit_price * formData.quantity).toLocaleString()}
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">账号</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">账号</label>
           <select
             value={formData.card_id}
             onChange={(e) => setFormData({ ...formData, card_id: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           >
             <option value="">未选择</option>
             {paymentMethods.map(pm => (
@@ -157,11 +158,11 @@ export default function QuickEditForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">渠道</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">渠道</label>
           <select
             value={formData.purchase_platform_id}
             onChange={(e) => setFormData({ ...formData, purchase_platform_id: e.target.value })}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           >
             <option value="">未选择</option>
             {purchasePlatforms.map(p => (
@@ -172,29 +173,29 @@ export default function QuickEditForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">备注</label>
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">备注</label>
         <textarea
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={2}
-          className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all resize-none"
+          className={input.base + ' w-full resize-none'}
         />
       </div>
 
-      <p className="text-xs text-apple-gray-1">
+      <p className="text-xs text-[var(--color-text-muted)]">
         修改付款拆分、积分或凭证等其他字段,请打开{' '}
-        <Link href={`/transactions/${transaction.id}/edit`} className="text-apple-blue hover:underline">
+        <Link href={`/transactions/${transaction.id}/edit`} className="text-[var(--color-primary)] hover:underline">
           完整编辑页
         </Link>
       </p>
 
-      {error && <p className="text-sm text-apple-red">{error}</p>}
+      {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting}
-          className="px-6 py-3 bg-apple-blue disabled:opacity-40 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
+          className={button.primary}
         >
           {submitting ? '保存中...' : '保存'}
         </button>
@@ -202,7 +203,7 @@ export default function QuickEditForm({
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="px-6 py-3 bg-white dark:bg-apple-cardDark dark:hover:bg-white/5 text-gray-900 dark:text-white rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark disabled:opacity-40"
+          className={button.secondary}
         >
           取消
         </button>

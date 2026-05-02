@@ -63,9 +63,9 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   const someSelected = selectedCount > 0 && !allSelected;
 
   return (
-    <div className="rounded-xl shadow-card overflow-hidden bg-white dark:bg-apple-cardDark">
+    <div className="rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] overflow-hidden bg-[var(--color-bg-elevated)] border border-[var(--color-border)]">
       {/* 折叠行 */}
-      <div className="flex items-center bg-apple-gray-6 dark:bg-white/5">
+      <div className="flex items-center bg-[var(--color-bg-subtle)]">
         {/* 多选模式：全选该组 checkbox */}
         {compareMode && (
           <button
@@ -76,10 +76,10 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           >
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               allSelected
-                ? 'bg-apple-blue border-apple-blue'
+                ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
                 : someSelected
-                  ? 'bg-apple-blue/20 border-apple-blue'
-                  : 'bg-white dark:bg-apple-cardDark border-apple-gray-4 dark:border-apple-gray-2'
+                  ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
+                  : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
             }`}>
               {allSelected && (
                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +87,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 </svg>
               )}
               {someSelected && (
-                <div className="w-2 h-0.5 bg-apple-blue rounded" />
+                <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
               )}
             </div>
           </button>
@@ -116,17 +116,17 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
               longPressTimer.current = null;
             }
           }}
-          className="flex-1 min-w-0 text-left active:bg-gray-100 dark:active:bg-white/10 transition-colors p-3"
+          className="flex-1 min-w-0 text-left active:bg-[var(--color-bg-elevated)] transition-colors p-3"
         >
         <div className="flex items-center gap-3">
           {/* 商品图片 */}
           {group.imageUrl ? (
-            <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-apple-gray-5 dark:bg-white/10">
+            <div className="w-12 h-12 flex-shrink-0 rounded-[var(--radius-md)] overflow-hidden bg-[var(--color-bg-elevated)] border border-[var(--color-border)]">
               <ProductImage src={group.imageUrl} alt={group.productName} size="sm" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-apple-gray-5 dark:bg-white/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-apple-gray-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex items-center justify-center">
+              <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
@@ -135,19 +135,19 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           {/* 商品情报 */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate min-w-0">{group.productName}</p>
-              <span className="flex-shrink-0 text-xs bg-apple-blue text-white px-1.5 py-0.5 rounded-full font-medium">
+              <p className="text-sm font-semibold text-[var(--color-text)] truncate min-w-0">{group.productName}</p>
+              <span className="flex-shrink-0 text-xs bg-[var(--color-primary)] text-white px-1.5 py-0.5 rounded-full font-semibold">
                 ×{group.transactions.length}
               </span>
             </div>
-            <p className="text-xs text-apple-gray-2 font-mono">{group.janCode}</p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-apple-gray-1">
-              <span>库存 <span className="font-medium text-gray-900 dark:text-white">{group.totalInStock}</span></span>
+            <p className="text-xs text-[var(--color-text-muted)] font-mono">{group.janCode}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-text-muted)]">
+              <span>库存 <span className="font-semibold text-[var(--color-text)]">{group.totalInStock}</span></span>
               {group.totalPending > 0 && (
-                <span>未到货 <span className="font-medium text-apple-orange">{group.totalPending}</span></span>
+                <span>未到货 <span className="font-semibold text-[var(--color-warning)]">{group.totalPending}</span></span>
               )}
-              <span>已售 <span className="font-medium text-gray-900 dark:text-white">{group.totalSold}</span></span>
-              <span>进货 <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(group.totalPurchasePrice)}</span></span>
+              <span>已售 <span className="font-semibold text-[var(--color-text)]">{group.totalSold}</span></span>
+              <span>进货 <span className="font-semibold text-[var(--color-text)]">{formatCurrency(group.totalPurchasePrice)}</span></span>
             </div>
           </div>
 
@@ -155,18 +155,18 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="text-right">
               {group.totalProfit != null && (
-                <p className={`text-sm font-medium font-mono ${group.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+                <p className={`text-sm font-semibold font-mono ${group.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                   {group.totalProfit >= 0 ? '+' : ''}{formatCurrency(group.totalProfit)}
                 </p>
               )}
               {hasBuyback && (
-                <p className="text-xs text-apple-blue">
+                <p className="text-xs text-[var(--color-primary)]">
                   买取 {formatCurrency(group.bestBuybackPrice)}
                 </p>
               )}
             </div>
             <svg
-              className={`w-4 h-4 text-apple-gray-2 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -181,9 +181,9 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isExpanded ? `${group.transactions.length * 520}px` : '0px' }}
       >
-        <div className="border-t border-apple-separator dark:border-apple-sepDark divide-y divide-apple-separator dark:divide-apple-sepDark">
+        <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
           {group.transactions.map(tx => (
-            <div key={tx.id} className="pl-3 border-l-4 border-apple-blue/30 bg-white dark:bg-gray-900">
+            <div key={tx.id} className="pl-3 border-l-4 border-[var(--color-primary)]/30 bg-[var(--color-bg)]">
               <TransactionCard
                 transaction={tx as TransactionWithPayment}
                 dateSortMode={dateSortMode}

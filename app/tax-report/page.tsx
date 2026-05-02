@@ -10,11 +10,17 @@ import {
   type TaxReportSummary,
 } from '@/lib/api/tax-report';
 import { formatCurrency } from '@/lib/financial/calculator';
-import { layout, heading, card, button, input, badge } from '@/lib/theme';
+import { layout, heading, card, button, input } from '@/lib/theme';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { loadJapaneseFont } from '@/lib/pdf-font-loader';
+
+const reportCardClass = 'sn-detail-card';
+const statLabelClass = 'text-sm text-[var(--color-text-muted)] mb-1';
+const statValueClass = 'font-bold text-[var(--color-text)]';
+const tableHeadClass = 'px-4 py-3 text-xs font-semibold uppercase text-[var(--color-text-muted)]';
+const tableCellClass = 'px-4 py-3 text-sm text-[var(--color-text)]';
 
 export default function TaxReportPage() {
   const [loading, setLoading] = useState(false);
@@ -71,18 +77,18 @@ export default function TaxReportPage() {
     try {
       const workbook = XLSX.utils.book_new();
 
-      // 年度集計表を作成
+      // 申告入力用サマリー
       const summaryData = [
-        ['確定申告レポート - 年度集計表'],
+        ['確定申告入力用サマリー'],
         ['年度', summary.year],
         [],
         ['収入の部'],
         ['売上高（現金）', summary.totalRevenue],
-        ['ポイント収入', summary.totalPointsValue],
-        ['総収入', summary.totalIncome],
+        ['ポイント相当額', summary.totalPointsValue],
+        ['収入合計', summary.totalIncome],
         [],
         ['必要経費の部'],
-        ['仕入費', summary.purchaseCosts],
+        ['仕入金額（売上原価按分）', summary.purchaseCosts],
         ['販売手数料', summary.platformFees],
         ['送料', summary.shippingFees],
         ['消耗品費', summary.suppliesCosts],
@@ -90,14 +96,18 @@ export default function TaxReportPage() {
         [],
         ['所得金額'],
         ['雑所得金額（収入 - 経費）', summary.netIncome],
-        ['現金収入', summary.cashIncome],
-        ['取引件数', summary.transactionCount],
+        ['現金ベース収支', summary.cashIncome],
+        ['販売記録件数', summary.transactionCount],
+        [],
+        ['注記'],
+        ['本サマリーは申告入力・税理士確認用の集計資料です。提出書類の要否は年度の収入金額等により異なります。'],
+        ['ポイント相当額および棚卸資産の取扱いは、実際の申告方針に合わせて確認してください。'],
       ];
 
       const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, '年度集計');
+      XLSX.utils.book_append_sheet(workbook, summarySheet, '申告入力用サマリー');
 
-      // 明細表を作成
+      // 保存用取引台帳
       const detailsData = [
         [
           '販売日',
@@ -105,13 +115,13 @@ export default function TaxReportPage() {
           '購入先',
           '商品名',
           '数量',
-          '売却数',
-          '購入価格',
-          '売却価���',
+          '販売数量',
+          '仕入金額',
+          '売却価格',
           '販売先',
           '販売手数料',
           '送料',
-          'ポイント還元',
+          'ポイント相当額',
           '現金利益',
           '総利益',
           '備考',
@@ -136,10 +146,9 @@ export default function TaxReportPage() {
       ];
 
       const detailsSheet = XLSX.utils.aoa_to_sheet(detailsData);
-      XLSX.utils.book_append_sheet(workbook, detailsSheet, '取引明細');
+      XLSX.utils.book_append_sheet(workbook, detailsSheet, '保存用取引台帳');
 
-      // ファイルをエクスポート
-      XLSX.writeFile(workbook, `確定申告レポート_${summary.year}年度.xlsx`);
+      XLSX.writeFile(workbook, `確定申告資料_${summary.year}年度.xlsx`);
     } catch (error) {
       console.error('Excel导出失败:', error);
       alert('导出失败，请重试');
@@ -162,34 +171,32 @@ export default function TaxReportPage() {
         format: 'a4',
       });
 
-      // 日本語フォントを読み込み
+      // 加载 CJK 字体
       await loadJapaneseFont(doc);
 
-      // タイトル
       doc.setFontSize(16);
-      doc.text('確定申告レポート - 年度集計表', 105, 15, { align: 'center' });
+      doc.text('確定申告入力用サマリー', 105, 15, { align: 'center' });
       doc.setFontSize(12);
       doc.text(`${summary.year}年度`, 105, 23, { align: 'center' });
 
-      // 年度集計表
       doc.setFontSize(11);
-      doc.text('年度集計', 14, 35);
+      doc.text('申告入力用サマリー', 14, 35);
 
       autoTable(doc, {
         startY: 40,
         head: [['項目', '金額（円）']],
         body: [
           ['売上高（現金）', formatCurrency(summary.totalRevenue)],
-          ['ポイント収入', formatCurrency(summary.totalPointsValue)],
-          ['総収入', formatCurrency(summary.totalIncome)],
-          ['仕入費', formatCurrency(summary.purchaseCosts)],
+          ['ポイント相当額', formatCurrency(summary.totalPointsValue)],
+          ['収入合計', formatCurrency(summary.totalIncome)],
+          ['仕入金額（売上原価按分）', formatCurrency(summary.purchaseCosts)],
           ['販売手数料', formatCurrency(summary.platformFees)],
           ['送料', formatCurrency(summary.shippingFees)],
           ['消耗品費', formatCurrency(summary.suppliesCosts)],
           ['必要経費合計', formatCurrency(summary.totalExpenses)],
           ['雑所得金額', formatCurrency(summary.netIncome)],
-          ['現金収入', formatCurrency(summary.cashIncome)],
-          ['取引件数', summary.transactionCount.toString() + '件'],
+          ['現金ベース収支', formatCurrency(summary.cashIncome)],
+          ['販売記録件数', summary.transactionCount.toString() + '件'],
         ],
         theme: 'grid',
         styles: {
@@ -210,10 +217,9 @@ export default function TaxReportPage() {
         margin: { left: 25, right: 25 },
       });
 
-      // 取引明細表
       doc.addPage();
       doc.setFontSize(11);
-      doc.text('取引明細書', 14, 15);
+      doc.text('保存用取引台帳', 14, 15);
 
       autoTable(doc, {
         startY: 22,
@@ -223,7 +229,7 @@ export default function TaxReportPage() {
             '購入先',
             '商品名',
             '数量',
-            '購入価格',
+            '仕入金額',
             '売却価格',
             '販売先',
             '手数料',
@@ -274,7 +280,7 @@ export default function TaxReportPage() {
         margin: { left: 5, right: 5 },
       });
 
-      doc.save(`確定申告レポート_${summary.year}年度.pdf`);
+      doc.save(`確定申告資料_${summary.year}年度.pdf`);
     } catch (error) {
       console.error('PDF导出失败:', error);
       alert('导出失败，请重试');
@@ -293,7 +299,7 @@ export default function TaxReportPage() {
   if (loading && !summary) {
     return (
       <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+        <div className="flex items-center gap-3 text-[var(--color-text)]">
           <svg
             className="animate-spin h-8 w-8"
             xmlns="http://www.w3.org/2000/svg"
@@ -328,8 +334,8 @@ export default function TaxReportPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className={heading.h1 + ' mb-2'}>税务申报报告</h1>
-              <p className="text-apple-gray-1">
-                生成税务申报所需的年度收支报告书
+              <p className="text-[var(--color-text-muted)]">
+                页面用于中文操作；导出的 Excel/PDF 会使用日本报税资料语境的日文术语。
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -351,11 +357,18 @@ export default function TaxReportPage() {
 
         {summary && (
           <>
+            <div className="mb-8 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-4 text-sm text-[var(--color-text)]">
+              <div className="mb-2 font-semibold text-[var(--color-warning)]">日本报税说明</div>
+              <p className="leading-relaxed text-[var(--color-text-muted)]">
+                导出的逐笔明细定位为保存用取引台帳 / 税理士核对资料，不等同于默认需要把全部交易明细提交给国税厅。积分相当额、棚卸资产和売上原価的处理可能影响申告口径，请按实际申告方针或税理士意见确认。
+              </p>
+            </div>
+
             {/* 年度汇总卡片 */}
-            <div className={card.primary + ' p-6 shadow-card mb-8'}>
+            <div className={reportCardClass + ' mb-8'}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className={heading.h2}>
-                  {selectedYear}年度 雑所得集計表
+                  {selectedYear}年度 申告输入用汇总
                 </h2>
                 <div className="flex gap-3">
                   <button
@@ -376,7 +389,7 @@ export default function TaxReportPage() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    {exporting ? '导出中...' : 'Excel导出'}
+                    {exporting ? '导出中...' : '日文 Excel 导出'}
                   </button>
                   <button
                     onClick={exportToPDF}
@@ -396,120 +409,120 @@ export default function TaxReportPage() {
                         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                       />
                     </svg>
-                    {exporting ? '导出中...' : 'PDF导出'}
+                    {exporting ? '导出中...' : '日文 PDF 导出'}
                   </button>
                 </div>
               </div>
 
-              {/* 収入の部 */}
+              {/* 收入 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-apple-green'}>
-                  収入の部
+                <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-primary)]">
+                  收入
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={card.stat + ' border-emerald-500/30'}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      売上高（現金）
+                  <div className={card.stat + ' border-[rgba(16,185,129,0.3)]'}>
+                    <div className={statLabelClass}>
+                      销售额（现金）
                     </div>
-                    <div className="text-2xl font-bold text-apple-green">
+                    <div className="text-2xl font-bold text-[var(--color-primary)]">
                       {formatCurrency(summary.totalRevenue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-amber-500/30'}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      ポイント収入
+                  <div className={card.stat + ' border-[rgba(245,158,11,0.3)]'}>
+                    <div className={statLabelClass}>
+                      积分相当额
                     </div>
-                    <div className="text-2xl font-bold text-apple-orange">
+                    <div className="text-2xl font-bold text-[var(--color-warning)]">
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-apple-blue/30'}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      総収入
+                  <div className={card.stat + ' border-[rgba(59,130,246,0.3)]'}>
+                    <div className={statLabelClass}>
+                      收入合计
                     </div>
-                    <div className="text-2xl font-bold text-apple-blue">
+                    <div className="text-2xl font-bold text-[var(--color-info)]">
                       {formatCurrency(summary.totalIncome)}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 必要経費の部 */}
+              {/* 必要经费 */}
               <div className="mb-6">
-                <h3 className={heading.h3 + ' mb-4 text-apple-red'}>
-                  必要経費の部
+                <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-danger)]">
+                  必要经费
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      仕入費
+                    <div className={statLabelClass}>
+                      采购成本（售出按分）
                     </div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-xl ' + statValueClass}>
                       {formatCurrency(summary.purchaseCosts)}
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      販売手数料
+                    <div className={statLabelClass}>
+                      平台手续费
                     </div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-xl ' + statValueClass}>
                       {formatCurrency(summary.platformFees)}
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      送料
+                    <div className={statLabelClass}>
+                      运费
                     </div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-xl ' + statValueClass}>
                       {formatCurrency(summary.shippingFees)}
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      消耗品費
+                    <div className={statLabelClass}>
+                      耗材成本
                     </div>
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-xl ' + statValueClass}>
                       {formatCurrency(summary.suppliesCosts)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-red-500/30'}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      経費合計
+                  <div className={card.stat + ' border-[rgba(239,68,68,0.3)]'}>
+                    <div className={statLabelClass}>
+                      经费合计
                     </div>
-                    <div className="text-xl font-bold text-apple-red">
+                    <div className="text-xl font-bold text-[var(--color-danger)]">
                       {formatCurrency(summary.totalExpenses)}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 所得金額 */}
-              <div className="border-t border-apple-separator dark:border-apple-sepDark pt-6">
-                <h3 className={heading.h3 + ' mb-4 text-apple-blue'}>
-                  所得金額
+              {/* 所得金额 */}
+              <div className="border-t border-[var(--color-border)] pt-6">
+                <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-info)]">
+                  所得金额
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={card.stat + ' border-apple-blue/30'}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      雑所得金額（収入 - 経費）
+                  <div className={card.stat + ' border-[rgba(59,130,246,0.3)]'}>
+                    <div className={statLabelClass}>
+                      杂项所得估算（收入 - 经费）
                     </div>
-                    <div className="text-3xl font-bold text-apple-blue">
+                    <div className="text-3xl font-bold text-[var(--color-info)]">
                       {formatCurrency(summary.netIncome)}
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      現金収入
+                    <div className={statLabelClass}>
+                      现金收入
                     </div>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-3xl ' + statValueClass}>
                       {formatCurrency(summary.cashIncome)}
                     </div>
                   </div>
                   <div className={card.stat}>
-                    <div className="text-apple-gray-1 text-sm mb-1">
-                      取引件数
+                    <div className={statLabelClass}>
+                      交易件数
                     </div>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    <div className={'text-3xl ' + statValueClass}>
                       {summary.transactionCount}
                     </div>
                   </div>
@@ -517,19 +530,19 @@ export default function TaxReportPage() {
               </div>
             </div>
 
-            {/* 取引明細表 */}
-            <div className={card.primary + ' shadow-card overflow-hidden'}>
-              <div className="p-6 border-b border-apple-separator dark:border-apple-sepDark">
-                <h2 className={heading.h2}>取引明細書</h2>
-                <p className="text-apple-gray-1 mt-2">
-                  合計 {details.length} 件の取引
+            {/* 交易明细表 */}
+            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-sm)]">
+              <div className="p-6 border-b border-[var(--color-border)]">
+                <h2 className={heading.h2}>交易明细表</h2>
+                <p className="text-[var(--color-text-muted)] mt-2">
+                  共 {details.length} 条交易
                 </p>
               </div>
 
               {details.length === 0 ? (
                 <div className="p-12 text-center">
                   <svg
-                    className="w-16 h-16 text-apple-gray-1 mx-auto mb-4"
+                    className="w-16 h-16 text-[var(--color-text-muted)] mx-auto mb-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -541,7 +554,7 @@ export default function TaxReportPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <p className="text-apple-gray-1 text-lg">
+                  <p className="text-[var(--color-text-muted)] text-lg">
                     该年度没有已售出的交易
                   </p>
                 </div>
@@ -549,84 +562,84 @@ export default function TaxReportPage() {
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-apple-gray-6 dark:bg-white/5">
+                      <thead className="bg-[var(--color-bg-subtle)]">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
-                            販売日
+                          <th className={tableHeadClass + ' text-left'}>
+                            销售日
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
-                            購入先
+                          <th className={tableHeadClass + ' text-left'}>
+                            采购平台
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
+                          <th className={tableHeadClass + ' text-left'}>
                             商品名
                           </th>
-                          <th className="px-4 py-3 text-center text-xs font-semibold text-apple-gray-1 uppercase">
+                          <th className={tableHeadClass + ' text-center'}>
                             数量
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            購入価格
+                          <th className={tableHeadClass + ' text-right'}>
+                            采购价格
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            売却価格
+                          <th className={tableHeadClass + ' text-right'}>
+                            销售价格
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-apple-gray-1 uppercase">
-                            販売先
+                          <th className={tableHeadClass + ' text-left'}>
+                            销售平台
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            手数料
+                          <th className={tableHeadClass + ' text-right'}>
+                            手续费
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            送料
+                          <th className={tableHeadClass + ' text-right'}>
+                            运费
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            ポイント
+                          <th className={tableHeadClass + ' text-right'}>
+                            积分
                           </th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-apple-gray-1 uppercase">
-                            利益
+                          <th className={tableHeadClass + ' text-right'}>
+                            利润
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      <tbody className="divide-y divide-[var(--color-border)]">
                         {paginatedDetails.map(detail => (
                           <tr
                             key={detail.saleRecordId}
                             className="active:opacity-80 transition-colors"
                           >
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                            <td className={tableCellClass + ' whitespace-nowrap'}>
                               {detail.saleDate}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                            <td className={tableCellClass + ' whitespace-nowrap'}>
                               {detail.purchasePlatformName || '-'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                            <td className={tableCellClass}>
                               {detail.productName}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">
+                            <td className={tableCellClass + ' text-center'}>
                               {detail.quantitySold}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
+                            <td className={tableCellClass + ' text-right font-mono'}>
                               {formatCurrency(detail.purchasePrice)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-apple-green text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-[var(--color-primary)] text-right font-mono">
                               {formatCurrency(detail.sellingPrice)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                            <td className={tableCellClass + ' whitespace-nowrap'}>
                               {detail.sellingPlatformName || '-'}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
+                            <td className={tableCellClass + ' text-right font-mono'}>
                               {formatCurrency(detail.platformFee)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-mono">
+                            <td className={tableCellClass + ' text-right font-mono'}>
                               {formatCurrency(detail.shippingFee)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-apple-orange text-right font-mono">
+                            <td className="px-4 py-3 text-sm text-[var(--color-warning)] text-right font-mono">
                               {formatCurrency(detail.pointsReward)}
                             </td>
                             <td
                               className={`px-4 py-3 text-sm text-right font-mono font-semibold ${
                                 detail.totalProfit >= 0
-                                  ? 'text-apple-green'
-                                  : 'text-apple-red'
+                                  ? 'text-[var(--color-primary)]'
+                                  : 'text-[var(--color-danger)]'
                               }`}
                             >
                               {formatCurrency(detail.totalProfit)}
@@ -637,11 +650,11 @@ export default function TaxReportPage() {
                     </table>
                   </div>
 
-                  {/* ページネーション */}
+                  {/* 分页 */}
                   {totalPages > 1 && (
-                    <div className="p-4 border-t border-apple-separator dark:border-apple-sepDark flex items-center justify-between">
-                      <div className="text-sm text-apple-gray-1">
-                        {(currentPage - 1) * itemsPerPage + 1} 〜{' '}
+                    <div className="p-4 border-t border-[var(--color-border)] flex items-center justify-between">
+                      <div className="text-sm text-[var(--color-text-muted)]">
+                        {(currentPage - 1) * itemsPerPage + 1} -{' '}
                         {Math.min(currentPage * itemsPerPage, details.length)} / 共{' '}
                         {details.length} 条
                       </div>
@@ -653,7 +666,7 @@ export default function TaxReportPage() {
                         >
                           上一页
                         </button>
-                        <span className="px-4 py-2 text-gray-900 dark:text-white">
+                        <span className="px-4 py-2 text-[var(--color-text)]">
                           {currentPage} / {totalPages}
                         </span>
                         <button

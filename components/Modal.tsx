@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { button } from '@/lib/theme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -90,7 +91,7 @@ export default function Modal({
     >
       {/* 遮罩层 */}
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/50 backdrop-blur-[4px]"
         aria-hidden="true"
       />
 
@@ -103,23 +104,24 @@ export default function Modal({
         className={`
           relative w-full ${sizeClasses[size]}
           max-h-[calc(90vh-5rem)] md:max-h-[85vh]
-          bg-white dark:bg-apple-cardDark
-          rounded-t-[20px] md:rounded-2xl
-          shadow-card-md
+          bg-[var(--color-bg-elevated)]
+          border border-[var(--color-border)]
+          rounded-t-[20px] md:rounded-[16px]
+          shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)]
           overflow-hidden
           animate-slide-up md:animate-fade-in
         `}
       >
         {/* 标题栏 */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-apple-separator dark:border-apple-sepDark">
+          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]">
             {/* 移动端拖动指示器 */}
-            <div className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            <div className="absolute top-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-[var(--color-border)] md:hidden" />
 
             {title && (
               <h2
                 id="modal-title"
-                className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white pt-2 md:pt-0"
+                className="text-lg md:text-xl font-semibold text-[var(--color-text)] pt-2 md:pt-0"
               >
                 {title}
               </h2>
@@ -128,7 +130,7 @@ export default function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto p-2 text-apple-gray-1 active:opacity-70 transition-opacity rounded-lg min-h-touch min-w-touch flex items-center justify-center"
+                className="ml-auto p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text)] transition-colors rounded-[var(--radius-md)] min-h-touch min-w-touch flex items-center justify-center"
                 aria-label="关闭"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +144,7 @@ export default function Modal({
         {/* 内容区域 */}
         <div
           data-modal-scroll
-          className="overflow-y-auto max-h-[calc(90vh-9rem)] md:max-h-[calc(85vh-5rem)] px-4 md:px-6 py-4 md:py-6 overscroll-contain"
+          className="overflow-y-auto max-h-[calc(90vh-9rem)] md:max-h-[calc(85vh-5rem)] px-4 md:px-6 py-4 md:py-6 overscroll-contain text-[var(--color-text)]"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}
@@ -172,7 +174,7 @@ export function ModalWithFooter({
       <div className="flex flex-col">
         <div className="flex-1">{children}</div>
         {footer && (
-          <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-apple-cardDark border-t border-apple-separator dark:border-apple-sepDark px-4 md:px-6 py-4 mt-6 -mx-4 md:-mx-6 -mb-4 md:-mb-6">
+          <div className="sticky bottom-0 left-0 right-0 bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] px-4 md:px-6 py-4 mt-6 -mx-4 md:-mx-6 -mb-4 md:-mb-6">
             {footer}
           </div>
         )}
@@ -206,8 +208,8 @@ export function ConfirmModal({
   isLoading = false,
 }: ConfirmModalProps) {
   const confirmButtonClass = confirmVariant === 'danger'
-    ? 'px-4 py-2 bg-apple-red text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed'
-    : 'px-4 py-2 bg-apple-blue text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed';
+    ? button.danger
+    : button.primary;
 
   return (
     <Modal
@@ -219,7 +221,7 @@ export function ConfirmModal({
       closeOnEsc={!isLoading}
     >
       <div className="py-4">
-        <p className="text-gray-900 dark:text-white text-sm md:text-base">
+        <p className="text-sm text-[var(--color-text)] md:text-base">
           {message}
         </p>
       </div>
@@ -228,7 +230,7 @@ export function ConfirmModal({
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="px-4 py-2 bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 min-h-touch disabled:opacity-40 disabled:cursor-not-allowed"
+          className={button.secondary}
         >
           {cancelText}
         </button>

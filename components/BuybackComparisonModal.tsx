@@ -4,6 +4,7 @@ import Modal from '@/components/Modal';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { Transaction } from '@/types/database.types';
+import { card } from '@/lib/theme';
 
 interface TransactionForCompare extends Pick<Transaction,
   'id' | 'product_name' | 'purchase_price_total' | 'quantity' |
@@ -109,14 +110,14 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
     <Modal isOpen={isOpen} onClose={onClose} title="买取价格比较" size="xl">
       <div className="space-y-4">
         {/* Header summary */}
-        <div className="flex items-center gap-2 text-sm text-apple-gray-1 pb-2 border-b border-apple-separator dark:border-apple-sepDark">
-          <span>已选 <span className="font-semibold text-gray-900 dark:text-white">{selectedTransactions.length}</span> 件商品</span>
+        <div className="flex items-center gap-2 border-b border-[var(--color-border)] pb-2 text-sm text-[var(--color-text-muted)]">
+          <span>已选 <span className="font-semibold text-[var(--color-text)]">{selectedTransactions.length}</span> 件商品</span>
           <span>·</span>
-          <span><span className="font-semibold text-gray-900 dark:text-white">{rows.length}</span> 家店铺</span>
+          <span><span className="font-semibold text-[var(--color-text)]">{rows.length}</span> 家店铺</span>
         </div>
 
         {rows.length === 0 ? (
-          <div className="text-center py-8 text-apple-gray-1">
+          <div className="py-8 text-center text-[var(--color-text-muted)]">
             未找到各店铺的买取价格数据
           </div>
         ) : (
@@ -132,37 +133,37 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-apple-separator dark:border-apple-sepDark text-xs text-apple-gray-1 uppercase tracking-wider">
+                  <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wider text-[var(--color-text-muted)]">
                     <th className="py-2 pr-4 text-left font-medium">店铺</th>
                     {selectedTransactions.map(t => (
                       <th key={t.id} className="py-2 px-3 text-right font-medium min-w-[100px]">
                         <div className="truncate max-w-[120px]" title={t.product_name}>
                           {t.product_name.length > 12 ? t.product_name.slice(0, 12) + '…' : t.product_name}
                         </div>
-                        <div className="text-[10px] text-gray-400 normal-case font-normal">
+                        <div className="text-[10px] font-normal normal-case text-[var(--color-text-muted)]">
                           ×{t.quantity_in_stock ?? Math.max(0, t.quantity - (t.quantity_sold || 0) - (t.quantity_returned || 0))}
                         </div>
                       </th>
                     ))}
-                    <th className="py-2 pl-3 text-right font-medium border-l border-apple-separator dark:border-apple-sepDark">合計買取</th>
-                    <th className="py-2 pl-3 text-right font-medium">合計利润</th>
+                    <th className="border-l border-[var(--color-border)] py-2 pl-3 text-right font-medium">合计买取</th>
+                    <th className="py-2 pl-3 text-right font-medium">合计利润</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-[var(--color-border)]">
                   {rows.map(row => (
                     <tr
                       key={row.storeName}
-                      className={row.rank === 1 ? 'bg-apple-blue/5' : ''}
+                      className={row.rank === 1 ? 'bg-[var(--color-primary-light)]' : ''}
                     >
                       {/* Store name */}
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <RankBadge rank={row.rank} />
-                          <span className="font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                          <span className="whitespace-nowrap font-medium text-[var(--color-text)]">
                             {row.storeName}
                           </span>
                           {row.missingCount > 0 && (
-                            <span className="text-[10px] text-apple-orange" title={`${row.missingCount}件商品无价格数据`}>⚠</span>
+                            <span className="text-[10px] text-[var(--color-warning)]" title={`${row.missingCount}件商品无价格数据`}>⚠</span>
                           )}
                         </div>
                       </td>
@@ -172,29 +173,29 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                         <td key={item.transactionId} className="py-3 px-3 text-right">
                           {item.hasData ? (
                             <div>
-                              <div className="font-mono text-gray-900 dark:text-white">
+                              <div className="font-mono text-[var(--color-text)]">
                                 {formatCurrency(item.storePrice)}
                               </div>
-                              <div className={`text-[11px] font-mono ${item.profit >= 0 ? 'text-apple-green' : 'text-apple-red dark:text-red-400'}`}>
+                              <div className={`text-[11px] font-mono ${item.profit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                                 {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-300 dark:text-gray-600">—</span>
+                            <span className="text-[var(--color-text-muted)]">—</span>
                           )}
                         </td>
                       ))}
 
                       {/* Total revenue */}
-                      <td className="py-3 pl-3 text-right border-l border-apple-separator dark:border-apple-sepDark">
-                        <span className="font-bold font-mono text-gray-900 dark:text-white">
+                      <td className="border-l border-[var(--color-border)] py-3 pl-3 text-right">
+                        <span className="font-mono font-bold text-[var(--color-text)]">
                           {formatCurrency(row.totalRevenue)}
                         </span>
                       </td>
 
                       {/* Total profit */}
                       <td className="py-3 pl-3 text-right">
-                        <span className={`font-bold font-mono ${row.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red dark:text-red-400'}`}>
+                        <span className={`font-mono font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                           {row.totalProfit >= 0 ? '+' : ''}{formatCurrency(row.totalProfit)}
                         </span>
                       </td>
@@ -205,8 +206,8 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
             </div>
 
             {/* Unit cost reference */}
-            <div className="pt-3 border-t border-apple-separator dark:border-apple-sepDark">
-              <div className="text-xs text-apple-gray-1 mb-2">单件成本参考</div>
+            <div className="border-t border-[var(--color-border)] pt-3">
+              <div className="mb-2 text-xs text-[var(--color-text-muted)]">单件成本参考</div>
               <div className="flex flex-wrap gap-3">
                 {selectedTransactions.map(t => {
                   const totalPoints = (t.expected_platform_points || 0) + 
@@ -215,12 +216,12 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                   const unitCost = (t.purchase_price_total - totalPoints) / (t.quantity || 1);
                   const qty = t.quantity_in_stock ?? Math.max(0, t.quantity - (t.quantity_sold || 0) - (t.quantity_returned || 0));
                   return (
-                    <div key={t.id} className="text-xs bg-apple-gray-5 dark:bg-white/10 rounded-lg px-3 py-1.5">
-                      <span className="text-apple-gray-1 truncate max-w-[80px] inline-block align-bottom">
+                    <div key={t.id} className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs">
+                      <span className="inline-block max-w-[80px] truncate align-bottom text-[var(--color-text-muted)]">
                         {t.product_name.length > 10 ? t.product_name.slice(0, 10) + '…' : t.product_name}
                       </span>
-                      <span className="ml-2 font-mono font-medium text-gray-900 dark:text-white">{formatCurrency(unitCost)}</span>
-                      <span className="ml-1 text-gray-400">×{qty}</span>
+                      <span className="ml-2 font-mono font-medium text-[var(--color-text)]">{formatCurrency(unitCost)}</span>
+                      <span className="ml-1 text-[var(--color-text-muted)]">×{qty}</span>
                     </div>
                   );
                 })}
@@ -237,33 +238,33 @@ function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <span className="text-base leading-none">🥇</span>;
   if (rank === 2) return <span className="text-base leading-none">🥈</span>;
   if (rank === 3) return <span className="text-base leading-none">🥉</span>;
-  return <span className="w-5 h-5 rounded-full bg-apple-gray-5 dark:bg-white/10 text-xs flex items-center justify-center text-apple-gray-1 font-medium">{rank}</span>;
+  return <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-bg-subtle)] text-xs font-medium text-[var(--color-text-muted)]">{rank}</span>;
 }
 
 function StoreCard({ row, bestRevenue }: { row: StoreRow; bestRevenue: number }) {
   const isBest = row.rank === 1;
   return (
-    <div className={`rounded-xl border p-4 ${isBest
-      ? 'border-apple-blue/20 bg-apple-blue/5'
-      : 'border-apple-separator dark:border-apple-sepDark bg-white dark:bg-gray-800'
+    <div className={`${card.primary} p-4 ${isBest
+      ? 'border-[var(--color-primary)]/20 bg-[var(--color-primary-light)]'
+      : ''
     }`}>
       {/* Store header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <RankBadge rank={row.rank} />
-          <span className="font-semibold text-gray-900 dark:text-white">{row.storeName}</span>
+          <span className="font-semibold text-[var(--color-text)]">{row.storeName}</span>
           {row.missingCount > 0 && (
-            <span className="text-xs text-apple-orange bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">
+            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-1.5 py-0.5 text-xs text-[var(--color-warning)]">
               {row.missingCount}件无数据
             </span>
           )}
         </div>
         <div className="text-right">
-          <div className="font-bold font-mono text-lg text-gray-900 dark:text-white">
+          <div className="font-mono text-lg font-bold text-[var(--color-text)]">
             {formatCurrency(row.totalRevenue)}
           </div>
           {bestRevenue > 0 && row.rank > 1 && (
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-[var(--color-text-muted)]">
               差 {formatCurrency(bestRevenue - row.totalRevenue)}
             </div>
           )}
@@ -275,31 +276,31 @@ function StoreCard({ row, bestRevenue }: { row: StoreRow; bestRevenue: number })
         {row.items.map(item => (
           <div key={item.transactionId} className="flex items-start justify-between text-sm">
             <div className="flex-1 min-w-0 mr-3">
-              <span className="text-gray-900 dark:text-white truncate block" title={item.productName}>
+              <span className="block truncate text-[var(--color-text)]" title={item.productName}>
                 {item.productName}
               </span>
-              <span className="text-xs text-gray-400">×{item.qty} · 成本 {formatCurrency(item.unitCost)}/件</span>
+              <span className="text-xs text-[var(--color-text-muted)]">×{item.qty} · 成本 {formatCurrency(item.unitCost)}/件</span>
             </div>
             {item.hasData ? (
               <div className="text-right shrink-0">
-                <div className="font-mono text-gray-900 dark:text-white">
+                <div className="font-mono text-[var(--color-text)]">
                   {formatCurrency(item.storePrice)}/件
                 </div>
-                <div className={`text-xs font-mono ${item.profit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+                <div className={`text-xs font-mono ${item.profit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                   {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
                 </div>
               </div>
             ) : (
-              <span className="text-gray-300 dark:text-gray-600 text-sm shrink-0">无数据</span>
+              <span className="shrink-0 text-sm text-[var(--color-text-muted)]">无数据</span>
             )}
           </div>
         ))}
       </div>
 
       {/* Store total profit */}
-      <div className="mt-3 pt-3 border-t border-apple-separator dark:border-apple-sepDark flex justify-between items-center">
-        <span className="text-sm text-apple-gray-1">合計利润</span>
-        <span className={`font-bold font-mono text-base ${row.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+      <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+        <span className="text-sm text-[var(--color-text-muted)]">合计利润</span>
+        <span className={`font-mono text-base font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
           {row.totalProfit >= 0 ? '+' : ''}{formatCurrency(row.totalProfit)}
         </span>
       </div>

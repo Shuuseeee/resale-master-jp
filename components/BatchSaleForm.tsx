@@ -122,67 +122,67 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-apple-blue/5 border border-apple-blue/20 rounded-lg p-4">
-        <p className="text-sm text-apple-blue">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary)]/20 bg-[var(--color-primary-light)] p-4">
+        <p className="text-sm text-[var(--color-primary)]">
           当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
         </p>
       </div>
 
       {successCount > 0 && (
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+        <div className="rounded-[var(--radius-lg)] border border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.08)] p-4">
+          <p className="text-sm text-[var(--color-primary)]">
             已保存 {successCount} 条销售记录。销售平台、单价、费用保留了上次的输入。
           </p>
         </div>
       )}
 
       {error && (
-        <div className="bg-apple-red/5 dark:bg-apple-red/10 border border-apple-red/30 rounded-lg p-4">
-          <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+        <div className="rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-4">
+          <p className="text-sm text-[var(--color-danger)]">{error}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            销售数量 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            销售数量 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="text"
             inputMode="numeric"
             value={formData.quantity_sold || ''}
             onChange={(e) => setFormData({ ...formData, quantity_sold: parseNumberInput(e.target.value, 0) })}
-            className={input.base}
+            className={input.base + ' w-full'}
             required
             placeholder="1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            单价 (¥) <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            单价 (¥) <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="text"
             inputMode="decimal"
             value={formData.selling_price_per_unit || ''}
             onChange={(e) => setFormData({ ...formData, selling_price_per_unit: parseNumberInput(e.target.value, 0) })}
-            className={input.base}
+            className={input.base + ' w-full'}
             required
             placeholder="0.00"
           />
         </div>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-        <p className="text-sm text-apple-gray-1">
-          总售价：<span className="font-bold text-gray-900 dark:text-white">¥{totalPrice.toLocaleString()}</span>
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4">
+        <p className="text-sm text-[var(--color-text-muted)]">
+          总售价：<span className="font-bold text-[var(--color-text)]">¥{totalPrice.toLocaleString()}</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             平台费用 (¥)
           </label>
           <input
@@ -190,13 +190,13 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             inputMode="decimal"
             value={formData.platform_fee || ''}
             onChange={(e) => setFormData({ ...formData, platform_fee: parseNumberInput(e.target.value, 0) })}
-            className={input.base}
+            className={input.base + ' w-full'}
             placeholder="0.00"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             运费 (¥)
           </label>
           <input
@@ -204,14 +204,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             inputMode="decimal"
             value={formData.shipping_fee || ''}
             onChange={(e) => setFormData({ ...formData, shipping_fee: parseNumberInput(e.target.value, 0) })}
-            className={input.base}
+            className={input.base + ' w-full'}
             placeholder="0.00"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
           销售日期
         </label>
         <DatePicker
@@ -221,20 +221,20 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             销售平台
           </label>
           <select
             value={formData.selling_platform_id || ''}
             onChange={(e) => setFormData({ ...formData, selling_platform_id: e.target.value })}
-            className={input.base}
+            className={input.base + ' w-full'}
           >
             <option value="">请选择</option>
             {sellingPlatforms.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name}{p.is_builtin ? '' : ' (カスタム)'}
+                {p.name}{p.is_builtin ? '' : '（自定义）'}
               </option>
             ))}
           </select>
@@ -244,13 +244,13 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
               value={newSellingPlatformName}
               onChange={(e) => setNewSellingPlatformName(e.target.value)}
               placeholder="添加新的销售平台..."
-              className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+              className={input.base + ' flex-1'}
             />
             <button
               type="button"
               onClick={handleAddSellingPlatform}
               disabled={!newSellingPlatformName.trim()}
-              className="px-3 py-2 bg-apple-blue hover:bg-apple-blue/90 disabled:bg-gray-400 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+              className={button.primary + ' px-4 py-2 text-sm'}
             >
               添加
             </button>
@@ -258,28 +258,28 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             销售订单号
           </label>
           <input
             type="text"
             value={formData.sale_order_number || ''}
             onChange={(e) => setFormData({ ...formData, sale_order_number: e.target.value })}
-            className={input.base}
-            placeholder="注文番号"
+            className={input.base + ' w-full'}
+            placeholder="订单号"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
           备注
         </label>
         <textarea
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
-          className={input.base}
+          className={input.base + ' w-full'}
           placeholder="可选"
         />
       </div>

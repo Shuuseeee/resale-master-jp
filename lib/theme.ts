@@ -6,16 +6,16 @@
  */
 export const card = {
   // 主要内容卡片
-  primary: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card',
+  primary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]',
 
   // 次要内容卡片
-  secondary: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card',
+  secondary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]',
 
   // 交互卡片（带 active 反馈）
-  interactive: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card active:bg-apple-gray-6 dark:active:bg-white/5 transition-colors cursor-pointer',
+  interactive: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-primary)] transition-all cursor-pointer',
 
   // 统计卡片
-  stat: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-4',
+  stat: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4',
 };
 
 /**
@@ -23,33 +23,33 @@ export const card = {
  */
 export const button = {
   // 主要按钮
-  primary: 'px-4 py-2 text-[15px] bg-apple-blue text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 disabled:opacity-40 min-h-[44px] flex items-center justify-center',
+  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary)] to-[#059669] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(16,185,129,0.35)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 成功按钮
-  success: 'px-4 py-2 text-[15px] bg-apple-green text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 disabled:opacity-40 min-h-[44px] flex items-center justify-center',
+  success: 'px-5 py-2.5 text-sm bg-[var(--color-success)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[#059669] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 危险按钮
-  danger: 'px-4 py-2 text-[15px] bg-apple-red text-white rounded-[10px] font-semibold transition-opacity active:opacity-70 disabled:opacity-40 min-h-[44px] flex items-center justify-center',
+  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[#dc2626] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 次要按钮
-  secondary: 'px-4 py-2 text-[15px] bg-apple-gray-5 dark:bg-white/10 text-apple-blue dark:text-apple-blue rounded-[10px] font-semibold transition-opacity active:opacity-70 disabled:opacity-40 min-h-[44px] flex items-center justify-center',
+  secondary: 'px-5 py-2.5 text-sm bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-bg-subtle)] hover:border-[var(--color-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 幽灵按钮
-  ghost: 'px-4 py-2 text-[15px] text-apple-blue active:opacity-70 rounded-[10px] font-medium transition-opacity',
+  ghost: 'px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)] font-medium transition-all',
 
   // 链接按钮
-  link: 'text-[15px] text-apple-blue active:opacity-70 font-medium transition-opacity',
+  link: 'text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium transition-colors',
 };
 
 /**
  * 徽章样式 — 去掉 border，淡底色 pill
  */
 export const badge = {
-  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-apple-orange/15 text-apple-orange',
-  success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-apple-green/15 text-apple-green',
-  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-apple-red/15 text-apple-red',
-  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-apple-blue/15 text-apple-blue',
-  neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-apple-gray-5 dark:bg-white/10 text-apple-gray-1 dark:text-apple-gray-3',
+  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)]',
+  success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)]',
+  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]',
+  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(59,130,246,0.12)] text-[var(--color-info)]',
+  neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]',
   awaiting: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-600 dark:text-purple-400',
 };
 
@@ -57,16 +57,16 @@ export const badge = {
  * 输入框样式 — 无边框，极浅阴影
  */
 export const input = {
-  base: 'px-4 py-2 text-sm bg-white dark:bg-apple-cardDark rounded-lg border border-apple-separator dark:border-apple-sepDark text-gray-900 dark:text-white placeholder-apple-gray-2 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-shadow',
-  error: 'w-full px-4 py-2 text-sm bg-white dark:bg-apple-cardDark rounded-lg border border-apple-red/40 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-red/30 transition-shadow',
+  base: 'px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] placeholder:opacity-50 focus:outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary-light)] transition-all',
+  error: 'w-full px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-danger)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(239,68,68,0.15)] transition-all',
 };
 
 /**
  * 布局样式
  */
 export const layout = {
-  page: 'min-h-screen bg-apple-bg dark:bg-apple-bgDark',
-  container: 'max-w-lg mx-auto px-4 py-6 lg:max-w-5xl',
+  page: 'min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]',
+  container: 'max-w-lg mx-auto px-4 py-6 lg:max-w-none lg:px-6 lg:py-6',
   section: 'mb-6',
 };
 
@@ -74,21 +74,21 @@ export const layout = {
  * 标题样式
  */
 export const heading = {
-  h1: 'text-[28px] leading-tight font-bold tracking-tight text-gray-900 dark:text-white',
-  h2: 'text-[22px] font-bold text-gray-900 dark:text-white',
-  h3: 'text-[17px] font-semibold text-gray-900 dark:text-white',
-  h4: 'text-[15px] font-semibold text-gray-900 dark:text-white',
+  h1: 'text-[28px] leading-tight font-bold tracking-tight text-[var(--color-text)]',
+  h2: 'text-[22px] font-bold text-[var(--color-text)]',
+  h3: 'text-[17px] font-semibold text-[var(--color-text)]',
+  h4: 'text-[15px] font-semibold text-[var(--color-text)]',
 };
 
 /**
  * Tab 导航样式 — iOS segmented control 风格
  */
 export const tabs = {
-  container: 'bg-apple-gray-5 dark:bg-white/10 rounded-[10px] p-0.5',
+  container: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-1',
   tab: {
-    base: 'flex-1 px-3 py-1.5 rounded-[8px] font-medium text-[13px] transition-all',
-    active: 'bg-white dark:bg-apple-cardDark shadow-card text-gray-900 dark:text-white',
-    inactive: 'text-apple-gray-1 dark:text-apple-gray-3',
+    base: 'flex-1 px-3 py-1.5 rounded-[var(--radius-md)] font-medium text-[13px] transition-all',
+    active: 'bg-[var(--color-primary-light)] text-[var(--color-primary)]',
+    inactive: 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]',
   },
 };
 
@@ -96,25 +96,25 @@ export const tabs = {
  * 加载状态样式
  */
 export const loading = {
-  spinner: 'inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-apple-blue',
+  spinner: 'inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-[var(--color-primary)]',
   container: 'text-center py-12',
-  text: 'text-apple-gray-1 mt-4 text-[15px]',
+  text: 'text-[var(--color-text-muted)] mt-4 text-sm',
 };
 
 /**
  * 空状态样式
  */
 export const empty = {
-  container: 'bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-12 text-center',
-  text: 'text-apple-gray-1 text-[15px]',
+  container: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-12 text-center',
+  text: 'text-[var(--color-text-muted)] text-sm',
 };
 
 /**
  * 提示消息样式 — 无 border，淡底色
  */
 export const alert = {
-  success: 'mb-4 bg-apple-green/10 text-apple-green px-4 py-3 rounded-xl text-[15px]',
-  error: 'mb-4 bg-apple-red/10 text-apple-red px-4 py-3 rounded-xl text-[15px]',
-  warning: 'mb-4 bg-apple-orange/10 text-apple-orange px-4 py-3 rounded-xl text-[15px]',
-  info: 'mb-4 bg-apple-blue/10 text-apple-blue px-4 py-3 rounded-xl text-[15px]',
+  success: 'mb-4 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.3)] text-[var(--color-primary)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  error: 'mb-4 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-[var(--color-danger)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  warning: 'mb-4 bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] text-[var(--color-warning)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  info: 'mb-4 bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.3)] text-[var(--color-info)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
 };

@@ -78,17 +78,17 @@ const TransactionRow = memo(function TransactionRow({
   const getStatusBadge = () => {
     switch (transaction.status) {
       case 'pending':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-orange bg-apple-orange/10 border-apple-orange/30 rounded whitespace-nowrap">未到货</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.12)] rounded whitespace-nowrap">未到货</span>;
       case 'in_stock':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-blue bg-apple-blue/10 border-apple-blue/30 rounded whitespace-nowrap">库存{remainingQty}</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-subtle)] rounded whitespace-nowrap">库存{remainingQty}</span>;
       case 'awaiting_payment':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-orange bg-apple-orange/10 border-apple-orange/30 rounded whitespace-nowrap">待入账</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.12)] rounded whitespace-nowrap">待入账</span>;
       case 'sold':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-green bg-apple-green/10 border-apple-green/30 rounded whitespace-nowrap">已完成</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[rgba(16,185,129,0.12)] rounded whitespace-nowrap">已完成</span>;
       case 'returned':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-red bg-apple-red/10 border border-apple-red/30 rounded whitespace-nowrap">已退货</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-danger)] bg-[rgba(239,68,68,0.12)] rounded whitespace-nowrap">已退货</span>;
       default:
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-apple-gray-1 bg-apple-gray-6 border-apple-separator rounded whitespace-nowrap">-</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">-</span>;
     }
   };
 
@@ -106,7 +106,7 @@ const TransactionRow = memo(function TransactionRow({
 
   const selectCheckbox = compareMode ? (
     <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-      isSelected ? 'bg-apple-blue border-apple-blue' : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark'
+      isSelected ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
     }`}>
       {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
     </div>
@@ -115,7 +115,7 @@ const TransactionRow = memo(function TransactionRow({
   // 每列的完整 <td> 渲染
   const cellMap: Record<TransactionColumnKey, () => React.ReactNode> = {
     date: () => (
-      <td key="date" className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+      <td key="date" className="px-4 py-3 text-[var(--color-text)] whitespace-nowrap">
         <div className="flex items-center gap-2">
           <span>{displayDate}</span>
         </div>
@@ -129,14 +129,14 @@ const TransactionRow = memo(function TransactionRow({
           <div className="min-w-0">
             <Link
               href={`/transactions/${transaction.id}`}
-              className="text-apple-blue hover:underline line-clamp-2 break-cjk leading-snug text-sm"
+              className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] line-clamp-2 break-cjk leading-snug text-sm font-medium"
             >
               {transaction.product_name}
             </Link>
             {transaction.jan_code && (
               <button
                 onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-                className="block mt-0.5 font-mono text-xs text-apple-gray-2 hover:text-apple-blue transition-colors cursor-pointer"
+                className="block mt-0.5 font-mono text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
                 title="点击复制JAN"
               >
                 {transaction.jan_code}
@@ -148,11 +148,11 @@ const TransactionRow = memo(function TransactionRow({
     ),
 
     price: () => (
-      <td key="price" className="px-3 py-2 whitespace-nowrap">
-        <div className="text-gray-900 dark:text-white font-medium">
+      <td key="price" className="px-4 py-3 whitespace-nowrap">
+        <div className="text-[var(--color-text)] font-medium">
           {formatCurrency(transaction.unit_price || transaction.purchase_price_total)}
         </div>
-        <div className="text-xs text-apple-gray-2">
+        <div className="text-xs text-[var(--color-text-muted)]">
           {transaction.quantity > 1 && <span>×{transaction.quantity} </span>}
           {totalPoints > 0 && <span>返{formatCurrency(totalPoints)}</span>}
         </div>
@@ -160,39 +160,39 @@ const TransactionRow = memo(function TransactionRow({
     ),
 
     channel: () => (
-      <td key="channel" className="px-3 py-2 whitespace-nowrap">
+      <td key="channel" className="px-4 py-3 whitespace-nowrap">
         {platformName ? (
-          <span className="text-apple-blue">{platformName}</span>
+          <span className="text-[var(--color-primary)]">{platformName}</span>
         ) : (
-          <span className="text-apple-gray-2">-</span>
+          <span className="text-[var(--color-text-muted)]">-</span>
         )}
       </td>
     ),
 
     order: () => (
-      <td key="order" className="px-3 py-2">
+      <td key="order" className="px-4 py-3">
         {transaction.order_number ? (
           <button
             onClick={(e) => copyToClipboard(transaction.order_number!, e)}
-            className="text-apple-blue hover:underline text-sm max-w-[100px] truncate block cursor-pointer"
+            className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] text-sm max-w-[100px] truncate block cursor-pointer"
             title={transaction.order_number}
           >
             {transaction.order_number}
           </button>
         ) : (
-          <span className="text-apple-gray-2">-</span>
+          <span className="text-[var(--color-text-muted)]">-</span>
         )}
       </td>
     ),
 
     account: () => (
-      <td key="account" className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap text-sm">
+      <td key="account" className="px-4 py-3 text-[var(--color-text)] whitespace-nowrap text-sm">
         {transaction.payment_method?.name || '-'}
       </td>
     ),
 
     status: () => (
-      <td key="status" className="px-3 py-2">
+      <td key="status" className="px-4 py-3">
         {getStatusBadge()}
       </td>
     ),
@@ -205,7 +205,7 @@ const TransactionRow = memo(function TransactionRow({
               e.stopPropagation();
               onMarkArrived(transaction.id);
             }}
-            className="px-2 py-1 text-xs font-medium bg-apple-orange active:opacity-80 text-white rounded transition-colors whitespace-nowrap"
+            className="px-2 py-1 text-xs font-semibold bg-[var(--color-warning)] hover:bg-[#d97706] text-white rounded transition-colors whitespace-nowrap"
           >
             着荷
           </button>
@@ -214,18 +214,18 @@ const TransactionRow = memo(function TransactionRow({
     ),
 
     profit: () => (
-      <td key="profit" className="px-3 py-2 whitespace-nowrap text-right">
+      <td key="profit" className="px-4 py-3 whitespace-nowrap text-right">
         <div>
           {(transaction as any).aggregated_profit != null ? (
-            <span className={`font-medium ${(transaction as any).aggregated_profit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+            <span className={`font-medium ${(transaction as any).aggregated_profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
               {formatCurrency((transaction as any).aggregated_profit)}
             </span>
           ) : (
-            <span className="text-apple-gray-2">-</span>
+            <span className="text-[var(--color-text-muted)]">-</span>
           )}
         </div>
         {buybackInfo && buybackInfo.maxPrice > 0 && buybackInfo.expectedProfit !== 0 && (
-          <div className={`text-xs ${buybackInfo.expectedProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+          <div className={`text-xs ${buybackInfo.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
             ≈{formatCurrency(buybackInfo.expectedProfit)}
           </div>
         )}
@@ -233,15 +233,15 @@ const TransactionRow = memo(function TransactionRow({
     ),
 
     buyback: () => (
-      <td key="buyback" className="px-3 py-2 whitespace-nowrap text-right">
+      <td key="buyback" className="px-4 py-3 whitespace-nowrap text-right">
         {buybackInfo?.loading ? (
           <div className="flex flex-col items-end gap-1">
-            <div className="h-4 w-16 bg-apple-gray-5 dark:bg-white/10 rounded animate-pulse"></div>
-            <div className="h-3 w-12 bg-apple-gray-5 dark:bg-white/10 rounded animate-pulse"></div>
+            <div className="h-4 w-16 bg-[var(--color-bg-subtle)] rounded animate-pulse"></div>
+            <div className="h-3 w-12 bg-[var(--color-bg-subtle)] rounded animate-pulse"></div>
           </div>
         ) : buybackInfo && buybackInfo.maxPrice > 0 ? (
           <div>
-            <div className="text-gray-900 dark:text-white font-medium">
+            <div className="text-[var(--color-text)] font-medium">
               {formatCurrency(buybackInfo.maxPrice)}
               {buybackInfo.source === 'stale' && buybackInfo.fetchedAt && (() => {
                 const d = new Date(buybackInfo.fetchedAt);
@@ -249,17 +249,17 @@ const TransactionRow = memo(function TransactionRow({
                 const label = isToday
                   ? d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
                   : `${d.getMonth() + 1}/${d.getDate()} ${d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`;
-                return <span className="ml-1 text-[10px] text-apple-orange/70" title="キャッシュ時刻">{label}</span>;
+                return <span className="ml-1 text-[10px] text-[var(--color-warning)] opacity-80" title="缓存时刻">{label}</span>;
               })()}
             </div>
-            <div className="text-xs text-apple-blue">
+            <div className="text-xs text-[var(--color-primary)]">
               {buybackInfo.maxStore}
             </div>
           </div>
         ) : buybackInfo?.source === 'pending' ? (
-          <span className="text-xs text-apple-gray-2 animate-pulse">获取中...</span>
+          <span className="text-xs text-[var(--color-text-muted)] animate-pulse">获取中...</span>
         ) : (
-          <span className="text-apple-gray-2">-</span>
+          <span className="text-[var(--color-text-muted)]">-</span>
         )}
       </td>
     ),
@@ -268,17 +268,17 @@ const TransactionRow = memo(function TransactionRow({
       <td key="actions" className="px-2 py-2">
         <div className="flex flex-col gap-0.5 min-w-[90px]">
           <div className="flex gap-1">
-            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center transition-colors whitespace-nowrap">详情</Link>
+            <Link href={`/transactions/${transaction.id}`} className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center transition-colors whitespace-nowrap">详情</Link>
             <button
               onClick={(e) => { e.stopPropagation(); onQuickEdit?.(transaction.id); }}
-              className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
             >
               编辑
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onQuickSale?.(transaction.id); }}
               disabled={transaction.quantity_in_stock <= 0}
-              className="flex-1 px-1 py-0.5 text-xs text-apple-blue hover:bg-apple-blue/5 rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
             >
               出售
             </button>
@@ -286,14 +286,14 @@ const TransactionRow = memo(function TransactionRow({
           <div className="flex gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onQuickCopy?.(transaction.id); }}
-              className="flex-1 px-1 py-0.5 text-xs text-apple-gray-1 hover:text-gray-900 dark:hover:text-white active:bg-apple-gray-5 dark:active:bg-white/10 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
             >
               复制
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onQuickReturn?.(transaction.id); }}
               disabled={transaction.quantity_in_stock <= 0}
-              className="flex-1 px-1 py-0.5 text-xs text-apple-orange hover:bg-apple-orange/5 rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-warning)] hover:bg-[rgba(245,158,11,0.12)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
             >
               退货
             </button>
@@ -302,7 +302,7 @@ const TransactionRow = memo(function TransactionRow({
                 e.stopPropagation();
                 onDelete(transaction.id);
               }}
-              className="flex-1 px-1 py-0.5 text-xs text-apple-red hover:bg-apple-red/5 rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.12)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
             >
               删除
             </button>
@@ -316,14 +316,14 @@ const TransactionRow = memo(function TransactionRow({
     <>
     <tr
       onClick={handleRowClick}
-      className={`border-b border-apple-separator dark:border-apple-sepDark/50 text-sm transition-colors ${
-        isGroupChild ? 'border-l-4 border-l-apple-blue bg-apple-gray-6/50 dark:bg-white/5' : ''
+      className={`border-b border-[var(--color-border)] text-sm transition-colors hover:bg-[var(--color-bg-subtle)] ${
+        isGroupChild ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-bg-subtle)]/70' : ''
       } ${
         compareMode
           ? isSelected
-            ? 'bg-apple-blue/5 cursor-pointer'
-            : 'cursor-pointer active:bg-apple-gray-6 dark:active:bg-white/5'
-          : 'active:bg-apple-gray-6 dark:active:bg-white/5'
+            ? 'bg-[var(--color-primary-light)] cursor-pointer'
+            : 'cursor-pointer'
+          : ''
       }`}
     >
       {visibleColumns.map(key => cellMap[key]())}

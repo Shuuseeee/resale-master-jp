@@ -9,7 +9,7 @@ import { formatCurrency, formatROI, daysUntil, calculatePaymentDate } from '@/li
 import { markTransactionArrived, confirmPaymentReceived } from '@/lib/api/financial';
 import Image from 'next/image';
 import Link from 'next/link';
-import { layout, heading, card, button, badge, input } from '@/lib/theme';
+import { button } from '@/lib/theme';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
 import ReturnRecordsList from '@/components/ReturnRecordsList';
@@ -33,38 +33,38 @@ interface HistoryEntry {
 
 const FIELD_LABELS: Record<string, string> = {
   product_name: '商品名',
-  date: '購入日',
-  purchase_price_total: '合計金額',
-  unit_price: '単価',
+  date: '采购日',
+  purchase_price_total: '合计金额',
+  unit_price: '单价',
   quantity: '数量',
-  card_paid: 'カード払い',
-  point_paid: 'ポイント払い',
-  balance_paid: '残高払い',
-  expected_platform_points: 'PF積分',
-  expected_card_points: 'カード積分',
-  extra_platform_points: '追加積分',
-  jan_code: 'JANコード',
-  order_number: '注文番号',
-  notes: 'メモ',
-  status: 'ステータス',
-  image_url: '画像',
-  purchase_platform_id: '購入先',
-  card_id: 'カード',
+  card_paid: '信用卡支付',
+  point_paid: '积分抵扣',
+  balance_paid: '余额支付',
+  expected_platform_points: '平台积分',
+  expected_card_points: '信用卡积分',
+  extra_platform_points: '额外积分',
+  jan_code: 'JAN 码',
+  order_number: '订单号',
+  notes: '备注',
+  status: '状态',
+  image_url: '图片',
+  purchase_platform_id: '采购平台',
+  card_id: '卡片',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '未着',
-  in_stock: '在庫',
-  awaiting_payment: '入金待ち',
-  sold: '売済',
-  returned: '返品',
+  pending: '未到货',
+  in_stock: '库存中',
+  awaiting_payment: '待入账',
+  sold: '已售出',
+  returned: '已退货',
 };
 
 function formatHistoryValue(field: string, value: unknown): string {
   if (value === null || value === undefined) return '-';
   if (field === 'status') return STATUS_LABELS[String(value)] || String(value);
-  if (field === 'image_url') return '(画像)';
-  if (['purchase_platform_id', 'card_id'].includes(field)) return '(変更)';
+  if (field === 'image_url') return '(图片)';
+  if (['purchase_platform_id', 'card_id'].includes(field)) return '(已变更)';
   if (['purchase_price_total', 'unit_price', 'card_paid', 'point_paid', 'balance_paid',
     'expected_platform_points', 'expected_card_points', 'extra_platform_points'].includes(field)) {
     return `¥${Number(value).toLocaleString()}`;
@@ -222,8 +222,8 @@ export default function TransactionDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[var(--color-text)]">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -259,13 +259,13 @@ export default function TransactionDetailPage() {
   const daysToPayment = calculatedPaymentDate ? daysUntil(calculatedPaymentDate) : null;
 
   return (
-    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <div className="relative max-w-5xl mx-auto px-4 py-8">
         {/* 标题栏 */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-apple-gray-1 hover:text-gray-900 dark:text-white transition-colors mb-4"
+            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -275,30 +275,30 @@ export default function TransactionDetailPage() {
 
           <div className="flex flex-col gap-4">
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-3 sm:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--color-text)] mb-2 line-clamp-3 sm:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-apple-green/20 text-apple-green border border-apple-green/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/30 whitespace-nowrap">
                     已售出
                   </span>
                 ) : transaction.status === 'returned' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-red-500/20 text-apple-red border border-red-500/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-red-500/20 text-[var(--color-danger)] border border-red-500/30 whitespace-nowrap">
                     已退货
                   </span>
                 ) : transaction.status === 'awaiting_payment' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-apple-blue/20 text-apple-blue border border-apple-blue/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/30 whitespace-nowrap">
                     待入账
                   </span>
                 ) : transaction.status === 'pending' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-apple-blue/20 text-apple-blue border border-apple-blue/30 whitespace-nowrap">
-                    未着
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary)]/30 whitespace-nowrap">
+                    未到货
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-apple-orange/20 text-apple-orange border border-apple-orange/30 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[rgba(245,158,11,0.14)] text-[var(--color-warning)] border border-[rgba(245,158,11,0.3)] whitespace-nowrap">
                     库存中
                   </span>
                 )}
-                <span className="text-xs sm:text-sm text-apple-gray-1 whitespace-nowrap">
+                <span className="text-xs sm:text-sm text-[var(--color-text-muted)] whitespace-nowrap">
                   {new Date(transaction.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
@@ -317,7 +317,7 @@ export default function TransactionDetailPage() {
                       alert('到货处理失败');
                     }
                   }}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-blue active:opacity-70 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -329,7 +329,7 @@ export default function TransactionDetailPage() {
               {transaction.quantity > 1 && transaction.quantity_in_stock > 0 && !showBatchSaleForm && (
                 <button
                   onClick={() => setShowBatchSaleForm(true)}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-blue active:opacity-70 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -341,7 +341,7 @@ export default function TransactionDetailPage() {
               {transaction.quantity === 1 && transaction.status === 'in_stock' && !showSaleForm && (
                 <button
                   onClick={() => setShowSaleForm(true)}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-blue active:opacity-70 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -353,7 +353,7 @@ export default function TransactionDetailPage() {
               {transaction.quantity_in_stock > 0 && !showReturnForm && (
                 <button
                   onClick={() => setShowReturnForm(true)}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-red text-white active:opacity-80 text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className={button.danger + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
@@ -372,7 +372,7 @@ export default function TransactionDetailPage() {
                       alert('入金确认失败');
                     }
                   }}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-blue active:opacity-80 text-white text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -383,7 +383,7 @@ export default function TransactionDetailPage() {
               {(transaction.status === 'sold' || transaction.status === 'awaiting_payment') && (
                 <button
                   onClick={cancelSale}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-apple-orange text-white active:opacity-80 text-sm font-semibold rounded-xl transition-all duration-200 hover:shadow-xl shadow-lg flex items-center gap-1.5 whitespace-nowrap"
+                  className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-warning)] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -393,7 +393,7 @@ export default function TransactionDetailPage() {
               )}
               <Link
                 href={`/transactions/${id}/edit`}
-                className="p-3 bg-white dark:bg-apple-cardDark dark:hover:bg-white/5 text-gray-900 dark:text-white hover:text-gray-900 dark:text-white rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
+                className="sn-icon-button"
                 title="编辑"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -402,7 +402,7 @@ export default function TransactionDetailPage() {
               </Link>
               <Link
                 href={`/transactions/add?copy=${id}`}
-                className="p-3 bg-white dark:bg-apple-cardDark dark:hover:bg-white/5 text-gray-900 dark:text-white hover:text-gray-900 dark:text-white rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark"
+                className="sn-icon-button"
                 title="复制为新交易"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,7 +411,7 @@ export default function TransactionDetailPage() {
               </Link>
               <button
                 onClick={deleteTransaction}
-                className="p-3 bg-red-500/10 hover:bg-red-500/20 text-apple-red hover:text-red-700 dark:hover:text-red-300 rounded-xl transition-all border border-red-500/30"
+                className="sn-icon-button text-[var(--color-danger)] hover:border-[rgba(239,68,68,0.35)] hover:bg-[rgba(239,68,68,0.08)]"
                 title="删除"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,7 +424,7 @@ export default function TransactionDetailPage() {
 
         {/* 退货表单 */}
         {showReturnForm && (
-          <div className="mb-6 bg-white dark:bg-apple-cardDark rounded-xl p-6 border border-red-500/30 shadow-card">
+          <div className="mb-6 sn-detail-card border-[rgba(239,68,68,0.3)]">
             <ReturnForm
               transaction={transaction}
               onSuccess={handleReturnSuccess}
@@ -436,9 +436,9 @@ export default function TransactionDetailPage() {
 
         {/* 批量销售表单 */}
         {showBatchSaleForm && transaction.quantity > 1 && (
-          <div className="mb-6 bg-white dark:bg-apple-cardDark rounded-xl p-6 border border-emerald-500/30 shadow-card">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+          <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
+            <h2 className="sn-detail-title-lg">
+              <div className="sn-form-title-bar"></div>
               记录销售信息
             </h2>
             <BatchSaleForm
@@ -455,9 +455,9 @@ export default function TransactionDetailPage() {
 
         {/* 销售表单（统一使用批量销售表单） */}
         {showSaleForm && transaction.status === 'in_stock' && (
-          <div className="mb-6 bg-white dark:bg-apple-cardDark rounded-xl p-6 border border-emerald-500/30 shadow-card">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+          <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
+            <h2 className="sn-detail-title-lg">
+              <div className="sn-form-title-bar"></div>
               记录销售信息
             </h2>
             <BatchSaleForm
@@ -476,28 +476,28 @@ export default function TransactionDetailPage() {
           {/* 左侧主要内容 */}
           <div className="lg:col-span-2 space-y-6">
             {/* 成本信息 */}
-            <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+            <div className="sn-detail-card">
+              <h2 className="sn-detail-title-lg">
+                <div className="sn-form-title-bar"></div>
                 采购成本
               </h2>
               <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-apple-separator dark:border-apple-sepDark">
-                  <span className="text-apple-gray-1">采购总价</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(transaction.purchase_price_total)}</span>
+                <div className="flex justify-between items-center py-3 border-b border-[var(--color-border)]">
+                  <span className="text-[var(--color-text-muted)]">采购总价</span>
+                  <span className="text-2xl font-bold text-[var(--color-text)]">{formatCurrency(transaction.purchase_price_total)}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-apple-gray-1">信用卡支付</span>
-                    <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.card_paid)}</span>
+                    <span className="text-[var(--color-text-muted)]">信用卡支付</span>
+                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.card_paid)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-apple-gray-1">积分抵扣</span>
-                    <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.point_paid)}</span>
+                    <span className="text-[var(--color-text-muted)]">积分抵扣</span>
+                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.point_paid)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-apple-gray-1">余额支付</span>
-                    <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.balance_paid)}</span>
+                    <span className="text-[var(--color-text-muted)]">余额支付</span>
+                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.balance_paid)}</span>
                   </div>
                 </div>
               </div>
@@ -505,24 +505,24 @@ export default function TransactionDetailPage() {
 
             {/* 采购信息 */}
             {(transaction.jan_code || transaction.purchase_platform || transaction.order_number || transaction.unit_price) && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+              <div className="sn-detail-card">
+                <h2 className="sn-detail-title-lg">
+                  <div className="sn-form-title-bar"></div>
                   采购信息
                 </h2>
                 <div className="space-y-3">
                   {transaction.purchase_platform && (
                     <div className="flex justify-between items-center">
-                      <span className="text-apple-gray-1">进货平台</span>
-                      <span className="text-gray-900 dark:text-white font-medium">{transaction.purchase_platform.name}</span>
+                      <span className="text-[var(--color-text-muted)]">采购平台</span>
+                      <span className="text-[var(--color-text)] font-medium">{transaction.purchase_platform.name}</span>
                     </div>
                   )}
                   {transaction.jan_code && (
                     <div className="flex justify-between items-center">
-                      <span className="text-apple-gray-1">JAN代码</span>
+                      <span className="text-[var(--color-text-muted)]">JAN 码</span>
                       <button
                         onClick={() => copyToClipboard(transaction.jan_code!)}
-                        className="text-gray-900 dark:text-white font-mono hover:text-apple-blue transition-colors cursor-pointer"
+                        className="text-[var(--color-text)] font-mono hover:text-[var(--color-primary)] transition-colors cursor-pointer"
                         title="点击复制"
                       >
                         {transaction.jan_code}
@@ -531,10 +531,10 @@ export default function TransactionDetailPage() {
                   )}
                   {transaction.order_number && (
                     <div className="flex justify-between items-center">
-                      <span className="text-apple-gray-1">订单号</span>
+                      <span className="text-[var(--color-text-muted)]">订单号</span>
                       <button
                         onClick={() => copyToClipboard(transaction.order_number!)}
-                        className="text-gray-900 dark:text-white font-mono hover:text-apple-blue transition-colors cursor-pointer"
+                        className="text-[var(--color-text)] font-mono hover:text-[var(--color-primary)] transition-colors cursor-pointer"
                         title="点击复制"
                       >
                         {transaction.order_number}
@@ -546,23 +546,26 @@ export default function TransactionDetailPage() {
                     const platformName = transaction.purchase_platform?.name || '';
                     const orderNum = transaction.order_number || '';
                     let orderUrl: string | null = null;
+                    let platformLabel = platformName;
                     if (platformName === 'Amazon') {
                       orderUrl = `https://www.amazon.co.jp/gp/your-account/order-details?orderID=${orderNum}`;
                     } else if (platformName === '楽天市場') {
                       orderUrl = `https://order.my.rakuten.co.jp/`;
+                      platformLabel = '乐天市场';
                     } else if (platformName === 'Yahoo!ショッピング') {
                       orderUrl = `https://odhistory.shopping.yahoo.co.jp/order-history/details`;
+                      platformLabel = 'Yahoo!购物';
                     }
                     return orderUrl ? (
                       <div className="flex justify-between items-center">
-                        <span className="text-apple-gray-1">订单历史</span>
+                        <span className="text-[var(--color-text-muted)]">订单历史</span>
                         <a
                           href={orderUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-apple-blue hover:underline text-sm flex items-center gap-1"
+                          className="text-[var(--color-primary)] hover:underline text-sm flex items-center gap-1"
                         >
-                          在{platformName}查看
+                          在{platformLabel}查看
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
@@ -572,8 +575,8 @@ export default function TransactionDetailPage() {
                   })()}
                   {transaction.unit_price && (
                     <div className="flex justify-between items-center">
-                      <span className="text-apple-gray-1">单价</span>
-                      <span className="text-gray-900 dark:text-white font-mono">{formatCurrency(transaction.unit_price)}</span>
+                      <span className="text-[var(--color-text-muted)]">单价</span>
+                      <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.unit_price)}</span>
                     </div>
                   )}
                 </div>
@@ -581,9 +584,9 @@ export default function TransactionDetailPage() {
             )}
 
             {/* 复购链接 */}
-            <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-apple-blue to-apple-blue/70 rounded-full"></div>
+            <div className="sn-detail-card">
+              <h2 className="sn-detail-title-lg">
+                <div className="sn-form-title-bar"></div>
                 复购
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -591,11 +594,11 @@ export default function TransactionDetailPage() {
                   const searchQuery = transaction.jan_code || transaction.product_name;
                   const encodedQuery = encodeURIComponent(searchQuery);
                   const links = [
-                    { name: 'Amazon', url: `https://www.amazon.co.jp/s?k=${encodedQuery}`, color: 'bg-apple-orange/10 text-apple-orange border-apple-orange/30' },
-                    { name: '楽天', url: `https://search.rakuten.co.jp/search/mall/${encodedQuery}/`, color: 'bg-red-500/10 text-apple-red border-red-500/30' },
-                    { name: 'Yahoo!', url: `https://shopping.yahoo.co.jp/search?p=${encodedQuery}`, color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' },
-                    { name: 'メルカリ', url: `https://jp.mercari.com/search?keyword=${encodedQuery}`, color: 'bg-red-500/10 text-apple-red dark:text-red-400 border-red-400/30' },
-                    { name: 'ヤフオク', url: `https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}`, color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' },
+                    { name: 'Amazon', url: `https://www.amazon.co.jp/s?k=${encodedQuery}`, color: 'bg-[rgba(245,158,11,0.1)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]' },
+                    { name: '乐天', url: `https://search.rakuten.co.jp/search/mall/${encodedQuery}/`, color: 'bg-[rgba(239,68,68,0.1)] text-[var(--color-danger)] border-[rgba(239,68,68,0.3)]' },
+                    { name: 'Yahoo!', url: `https://shopping.yahoo.co.jp/search?p=${encodedQuery}`, color: 'bg-[rgba(59,130,246,0.1)] text-[var(--color-info)] border-[rgba(59,130,246,0.3)]' },
+                    { name: 'Mercari', url: `https://jp.mercari.com/search?keyword=${encodedQuery}`, color: 'bg-[rgba(239,68,68,0.1)] text-[var(--color-danger)] border-[rgba(239,68,68,0.3)]' },
+                    { name: '雅虎拍卖', url: `https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}`, color: 'bg-[rgba(245,158,11,0.1)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]' },
                   ];
                   return links.map((link) => (
                     <a
@@ -614,8 +617,8 @@ export default function TransactionDetailPage() {
                 })()}
               </div>
               {transaction.jan_code && (
-                <p className="mt-3 text-xs text-apple-gray-1">
-                  JAN代码 ({transaction.jan_code}) 搜索
+                <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                  JAN 码 ({transaction.jan_code}) 搜索
                 </p>
               )}
             </div>
@@ -624,12 +627,12 @@ export default function TransactionDetailPage() {
 
             {/* 备注 */}
             {transaction.notes && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+              <div className="sn-detail-card">
+                <h2 className="sn-detail-title-lg">
+                  <div className="sn-form-title-bar"></div>
                   备注
                 </h2>
-                <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{transaction.notes}</p>
+                <p className="text-[var(--color-text)] whitespace-pre-wrap">{transaction.notes}</p>
               </div>
             )}
           </div>
@@ -638,26 +641,26 @@ export default function TransactionDetailPage() {
           <div className="space-y-6">
             {/* 批量商品的库存信息 */}
             {transaction.quantity > 1 && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">库存信息</h3>
+              <div className="sn-detail-card">
+                <h3 className="sn-detail-title">库存信息</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-apple-gray-1">总数量</span>
-                    <span className="text-gray-900 dark:text-white font-medium">{transaction.quantity}</span>
+                    <span className="text-[var(--color-text-muted)]">总数量</span>
+                    <span className="text-[var(--color-text)] font-medium">{transaction.quantity}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-apple-gray-1">已售出</span>
-                    <span className="text-apple-green font-medium">{transaction.quantity_sold}</span>
+                    <span className="text-[var(--color-text-muted)]">已售出</span>
+                    <span className="text-[var(--color-primary)] font-medium">{transaction.quantity_sold}</span>
                   </div>
                   {transaction.quantity_returned > 0 && (
                     <div className="flex items-center justify-between">
-                      <span className="text-apple-gray-1">已退货</span>
-                      <span className="text-apple-red font-medium">{transaction.quantity_returned}</span>
+                      <span className="text-[var(--color-text-muted)]">已退货</span>
+                      <span className="text-[var(--color-danger)] font-medium">{transaction.quantity_returned}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-apple-gray-1">库存</span>
-                    <span className="text-apple-blue font-bold text-lg">{transaction.quantity_in_stock}</span>
+                    <span className="text-[var(--color-text-muted)]">库存</span>
+                    <span className="text-[var(--color-primary)] font-bold text-lg">{transaction.quantity_in_stock}</span>
                   </div>
                 </div>
               </div>
@@ -665,8 +668,8 @@ export default function TransactionDetailPage() {
 
             {/* 销售记录列表 */}
             {transaction.quantity_sold > 0 && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">销售记录</h3>
+              <div className="sn-detail-card">
+                <h3 className="sn-detail-title">销售记录</h3>
                 <SalesRecordsList
                   transactionId={transaction.id}
                   transaction={transaction}
@@ -677,8 +680,8 @@ export default function TransactionDetailPage() {
 
             {/* 退货记录列表 */}
             {transaction.quantity_returned > 0 && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 border border-red-500/20 shadow-card">
-                <h3 className="text-lg font-semibold text-apple-red mb-4">退货记录</h3>
+              <div className="sn-detail-card border-[rgba(239,68,68,0.25)]">
+                <h3 className="text-lg font-semibold text-[var(--color-danger)] mb-4">退货记录</h3>
                 <ReturnRecordsList
                   transactionId={transaction.id}
                   onUpdate={loadTransaction}
@@ -688,9 +691,9 @@ export default function TransactionDetailPage() {
 
             {/* 凭证图片 */}
             {transaction.image_url && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">采购凭证</h3>
-                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-apple-bgDark">
+              <div className="sn-detail-card">
+                <h3 className="sn-detail-title">采购凭证</h3>
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--color-header)]">
                   <Image
                     src={transaction.image_url}
                     alt="采购凭证"
@@ -701,22 +704,22 @@ export default function TransactionDetailPage() {
               </div>
             )}
 {/* 预期积分 */}
-            <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-apple-orange to-apple-orange/60 rounded-full"></div>
+            <div className="sn-detail-card">
+              <h2 className="sn-detail-title-lg">
+                <div className="sn-form-title-bar"></div>
                 预期积分
               </h2>
               <div className="space-y-3">
                 {/* 平台积分 */}
-                <div className="bg-apple-orange/10 rounded-xl p-4 border border-apple-orange/30">
+                <div className="bg-[rgba(245,158,11,0.1)] rounded-xl p-4 border border-[rgba(245,158,11,0.3)]">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-apple-orange text-sm mb-1">平台积分</div>
-                      <div className="text-2xl font-bold text-apple-orange">{transaction.expected_platform_points} P</div>
+                      <div className="text-[var(--color-warning)] text-sm mb-1">平台积分</div>
+                      <div className="text-2xl font-bold text-[var(--color-warning)]">{transaction.expected_platform_points} P</div>
                     </div>
                     {transaction.platform_points_platform && (
                       <div className="text-right">
-                        <div className="text-xs text-apple-orange/90">{transaction.platform_points_platform.display_name}</div>
+                        <div className="text-xs text-[var(--color-warning)] opacity-90">{transaction.platform_points_platform.display_name}</div>
                       </div>
                     )}
                   </div>
@@ -724,15 +727,15 @@ export default function TransactionDetailPage() {
 
                 {/* 额外平台积分 */}
                 {transaction.extra_platform_points > 0 && (
-                  <div className="bg-apple-blue/10 rounded-xl p-4 border border-apple-blue/30">
+                  <div className="bg-[var(--color-primary-light)] rounded-xl p-4 border border-[var(--color-primary)]/30">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-apple-blue text-sm mb-1">额外积分</div>
-                        <div className="text-2xl font-bold text-apple-blue">{transaction.extra_platform_points} P</div>
+                        <div className="text-[var(--color-primary)] text-sm mb-1">额外积分</div>
+                        <div className="text-2xl font-bold text-[var(--color-primary)]">{transaction.extra_platform_points} P</div>
                       </div>
                       {transaction.extra_platform_points_platform && (
                         <div className="text-right">
-                          <div className="text-xs text-apple-blue">{transaction.extra_platform_points_platform.display_name}</div>
+                          <div className="text-xs text-[var(--color-primary)]">{transaction.extra_platform_points_platform.display_name}</div>
                         </div>
                       )}
                     </div>
@@ -740,15 +743,15 @@ export default function TransactionDetailPage() {
                 )}
 
                 {/* 信用卡积分 */}
-                <div className="bg-apple-blue/10 rounded-xl p-4 border border-apple-blue/30">
+                <div className="bg-[var(--color-primary-light)] rounded-xl p-4 border border-[var(--color-primary)]/30">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-apple-blue text-sm mb-1">信用卡积分</div>
-                      <div className="text-2xl font-bold text-apple-blue">{transaction.expected_card_points} P</div>
+                      <div className="text-[var(--color-primary)] text-sm mb-1">信用卡积分</div>
+                      <div className="text-2xl font-bold text-[var(--color-primary)]">{transaction.expected_card_points} P</div>
                     </div>
                     {transaction.card_points_platform && (
                       <div className="text-right">
-                        <div className="text-xs text-apple-blue/70">{transaction.card_points_platform.display_name}</div>
+                        <div className="text-xs text-[var(--color-primary)] opacity-70">{transaction.card_points_platform.display_name}</div>
                       </div>
                     )}
                   </div>
@@ -757,22 +760,22 @@ export default function TransactionDetailPage() {
             </div>
             {/* 支付信息 */}
             {transaction.payment_method && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">支付方式</h3>
+              <div className="sn-detail-card">
+                <h3 className="sn-detail-title">支付方式</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-apple-gray-1">卡片名称</span>
-                    <span className="text-gray-900 dark:text-white font-medium">{transaction.payment_method.name}</span>
+                    <span className="text-[var(--color-text-muted)]">卡片名称</span>
+                    <span className="text-[var(--color-text)] font-medium">{transaction.payment_method.name}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-apple-gray-1">返点率</span>
-                    <span className="text-apple-green font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
+                    <span className="text-[var(--color-text-muted)]">返点率</span>
+                    <span className="text-[var(--color-primary)] font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
                   </div>
                   {calculatedPaymentDate && (
                     <>
-                      <div className="flex items-center justify-between pt-3 border-t border-apple-separator dark:border-apple-sepDark">
-                        <span className="text-apple-gray-1">预计还款日</span>
-                        <span className="text-gray-900 dark:text-white font-medium">
+                      <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
+                        <span className="text-[var(--color-text-muted)]">预计还款日</span>
+                        <span className="text-[var(--color-text)] font-medium">
                           {calculatedPaymentDate}
                         </span>
                       </div>
@@ -783,18 +786,18 @@ export default function TransactionDetailPage() {
             )}
 
             {/* 时间信息 */}
-            <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">时间信息</h3>
+            <div className="sn-detail-card">
+              <h3 className="sn-detail-title">时间信息</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-apple-gray-1">创建时间</span>
-                  <span className="text-gray-900 dark:text-white">
+                  <span className="text-[var(--color-text-muted)]">创建时间</span>
+                  <span className="text-[var(--color-text)]">
                     {new Date(transaction.created_at).toLocaleString('zh-CN')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-apple-gray-1">更新时间</span>
-                  <span className="text-gray-900 dark:text-white">
+                  <span className="text-[var(--color-text-muted)]">更新时间</span>
+                  <span className="text-[var(--color-text)]">
                     {new Date(transaction.updated_at).toLocaleString('zh-CN')}
                   </span>
                 </div>
@@ -803,9 +806,9 @@ export default function TransactionDetailPage() {
 
             {/* 编辑历史 */}
             {history.length > 0 && (
-              <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-apple-gray-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="sn-detail-card">
+                <h3 className="sn-detail-title">
+                  <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   编辑历史
@@ -814,10 +817,10 @@ export default function TransactionDetailPage() {
                   {history.map((entry) => {
                     const changedFields = Object.keys(entry.new_values);
                     return (
-                      <div key={entry.id} className="relative pl-5 border-l-2 border-apple-separator dark:border-apple-sepDark">
-                        <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-apple-gray-4 dark:bg-apple-gray-1" />
-                        <p className="text-xs text-apple-gray-2 mb-1.5">
-                          {new Date(entry.changed_at).toLocaleString('ja-JP', {
+                      <div key={entry.id} className="relative pl-5 border-l-2 border-[var(--color-border)]">
+                        <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-[var(--color-border)]" />
+                        <p className="text-xs text-[var(--color-text-muted)] mb-1.5">
+                          {new Date(entry.changed_at).toLocaleString('zh-CN', {
                             month: 'numeric', day: 'numeric',
                             hour: '2-digit', minute: '2-digit',
                           })}
@@ -825,15 +828,15 @@ export default function TransactionDetailPage() {
                         <div className="space-y-1">
                           {changedFields.map((field) => (
                             <div key={field} className="text-xs">
-                              <span className="text-apple-gray-1 font-medium">
+                              <span className="text-[var(--color-text-muted)] font-medium">
                                 {FIELD_LABELS[field] || field}
                               </span>
-                              <span className="text-apple-gray-2 mx-1">:</span>
-                              <span className="text-apple-red line-through">
+                              <span className="text-[var(--color-text-muted)] mx-1">:</span>
+                              <span className="text-[var(--color-danger)] line-through">
                                 {formatHistoryValue(field, entry.old_values[field])}
                               </span>
-                              <span className="text-apple-gray-2 mx-1">→</span>
-                              <span className="text-apple-green">
+                              <span className="text-[var(--color-text-muted)] mx-1">→</span>
+                              <span className="text-[var(--color-primary)]">
                                 {formatHistoryValue(field, entry.new_values[field])}
                               </span>
                             </div>

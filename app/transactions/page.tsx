@@ -709,7 +709,7 @@ function TransactionsContent() {
 
   const handleBatchDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`選択した ${selectedIds.size} 件を削除してよろしいですか？`)) return;
+    if (!confirm(`确定删除已选的 ${selectedIds.size} 件交易吗？`)) return;
     const ids = [...selectedIds];
     const { error } = await supabase
       .from('transactions')
@@ -719,7 +719,7 @@ function TransactionsContent() {
       setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
       exitCompareMode();
     } else {
-      alert('削除に失敗しました');
+      alert('删除失败');
     }
   }, [selectedIds, exitCompareMode]);
 
@@ -737,12 +737,12 @@ function TransactionsContent() {
   if (loading) {
     return (
       <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div className="flex items-center gap-3 text-[var(--color-text)]">
+          <svg className="animate-spin h-8 w-8 text-[var(--color-primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-xl">加载中...</span>
+          <span className="text-lg font-medium">加载中...</span>
         </div>
       </div>
     );
@@ -753,17 +753,20 @@ function TransactionsContent() {
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
-        <div className={layout.section}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h1 className={heading.h1}>交易列表</h1>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润、买取价格与销售状态</p>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 xl:pb-0">
               {/* 分组/平铺切换按钮 */}
               <button
                 onClick={() => setIsGrouped(v => !v)}
                 title={isGrouped ? '平铺显示' : '分组显示'}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                   isGrouped
-                    ? 'bg-apple-blue text-white border-apple-blue'
-                    : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border-apple-separator dark:border-apple-sepDark active:opacity-70'
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                 }`}
               >
                 {isGrouped ? (
@@ -777,13 +780,13 @@ function TransactionsContent() {
                 )}
                 <span className="hidden sm:inline">{isGrouped ? '平铺' : '分组'}</span>
               </button>
-              {/* 選択モードボタン */}
+              {/* 多选模式按钮 */}
               <button
                 onClick={() => { setCompareMode(!compareMode); setSelectedIds(new Set()); }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                   compareMode
-                    ? 'bg-apple-blue text-white border-apple-blue'
-                    : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border-apple-separator dark:border-apple-sepDark active:opacity-70'
+                    ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -794,12 +797,12 @@ function TransactionsContent() {
               {kaitorixEnabled && (
                 <button
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                     kaitorixLoading
-                      ? 'bg-apple-orange/10 text-apple-orange border border-apple-orange/30'
+                      ? 'bg-[rgba(245,158,11,0.1)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]'
                       : buybackPrices.size > 0
-                        ? 'bg-apple-green/10 text-apple-green border border-apple-green/30 active:bg-apple-green/15'
-                        : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark active:opacity-80'
+                        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+                        : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                   }`}
                 >
                   {kaitorixLoading ? (
@@ -828,7 +831,7 @@ function TransactionsContent() {
               {kaitorixEnabled && buybackPrices.size > 0 && !kaitorixLoading && (
                 <button
                   onClick={() => setShowJanList(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] whitespace-nowrap"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -842,7 +845,7 @@ function TransactionsContent() {
                   <button
                     onClick={() => handleExportCSV('filtered')}
                     disabled={exporting}
-                    className={button.secondary + ' flex items-center gap-2 whitespace-nowrap' + (filteredTransactions.length < transactions.length ? ' rounded-r-none border-r-0' : '')}
+                    className={'inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap' + (filteredTransactions.length < transactions.length ? ' rounded-r-none border-r-0' : '')}
                   >
                     {exporting ? (
                       <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -862,7 +865,7 @@ function TransactionsContent() {
                     <button
                       onClick={() => setShowExportMenu(v => !v)}
                       disabled={exporting}
-                      className={button.secondary + ' px-1.5 rounded-l-none'}
+                      className="inline-flex items-center justify-center rounded-[var(--radius-md)] rounded-l-none border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
                       title="导出选项"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -872,21 +875,21 @@ function TransactionsContent() {
                   )}
                 </div>
                 {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-apple-cardDark border border-apple-separator dark:border-apple-sepDark rounded-lg shadow-card overflow-hidden min-w-[160px]">
+                  <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)]">
                     <button
                       onClick={() => { handleExportCSV('filtered'); setShowExportMenu(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white active:bg-apple-gray-6 dark:active:bg-white/5 flex items-center gap-2"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
                     >
-                      <svg className="w-4 h-4 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
                       </svg>
                       筛选结果 ({filteredTransactions.length}条)
                     </button>
                     <button
                       onClick={() => { handleExportCSV('all'); setShowExportMenu(false); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-gray-900 dark:text-white active:bg-apple-gray-6 dark:active:bg-white/5 flex items-center gap-2 border-t border-apple-separator dark:border-apple-sepDark"
+                      className="flex w-full items-center gap-2 border-t border-[var(--color-border)] px-4 py-2.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
                     >
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                       </svg>
                       全部 ({transactions.length}条)
@@ -897,7 +900,7 @@ function TransactionsContent() {
               {/* 列定制齿轮 — 仅桌面表格视图 */}
               <button
                 onClick={() => { setPickerDraft(columns); setPickerOpen(true); }}
-                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-apple-gray-1 hover:text-gray-900 dark:hover:text-white border border-apple-separator dark:border-apple-sepDark bg-white dark:bg-apple-cardDark active:opacity-70 transition-colors flex-shrink-0"
+                className="hidden md:flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]"
                 title="自定义列"
                 aria-label="自定义列"
               >
@@ -915,44 +918,43 @@ function TransactionsContent() {
                 </svg>
                 记录新交易
               </Link>
-            </div>
           </div>
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-6">
+        <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-6">
           <div className={card.stat + ' !p-3 sm:!p-4'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">总成本</div>
-            <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">{formatCurrency(stats.totalCost)}</div>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">总成本</div>
+            <div className="truncate text-base font-bold text-[var(--color-text)] sm:text-xl">{formatCurrency(stats.totalCost)}</div>
           </div>
           <div className={card.stat + ' !p-3 sm:!p-4'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">总利润</div>
-            <div className={`text-base sm:text-xl font-bold truncate ${stats.totalProfit >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">总利润</div>
+            <div className={`truncate text-base font-bold sm:text-xl ${stats.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
               {formatCurrency(stats.totalProfit)}
             </div>
           </div>
           <div className={card.stat + ' !p-3 sm:!p-4'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">平均ROI</div>
-            <div className={`text-base sm:text-xl font-bold truncate ${stats.avgROI >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">平均ROI</div>
+            <div className={`truncate text-base font-bold sm:text-xl ${stats.avgROI >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
               {formatROI(stats.avgROI)}
             </div>
           </div>
           <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">库存中</div>
-            <div className="text-base sm:text-xl font-bold text-apple-blue truncate">{stats.inStock}</div>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">库存中</div>
+            <div className="truncate text-base font-bold text-[var(--color-primary)] sm:text-xl">{stats.inStock}</div>
           </div>
           <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">未到货</div>
-            <div className="text-base sm:text-xl font-bold text-apple-orange truncate">{stats.pending}</div>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">未到货</div>
+            <div className="truncate text-base font-bold text-[var(--color-warning)] sm:text-xl">{stats.pending}</div>
           </div>
           <div className={card.stat + ' !p-3 sm:!p-4 hidden lg:block'}>
-            <div className="text-apple-gray-1 text-xs sm:text-sm mb-1">已售出</div>
-            <div className="text-base sm:text-xl font-bold text-apple-green truncate">{stats.sold}</div>
+            <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">已售出</div>
+            <div className="truncate text-base font-bold text-[var(--color-success)] sm:text-xl">{stats.sold}</div>
           </div>
         </div>
 
-        {/* タブバー */}
-        <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
+        {/* 状态标签栏 */}
+        <div className="mb-5 flex min-h-[42px] items-end gap-1 overflow-x-auto border-b border-[var(--color-border)]">
           {([
             { key: 'all', label: '全部', count: stats.total },
             { key: 'in_stock', label: '库存中', count: stats.inStock, color: 'amber' },
@@ -964,14 +966,14 @@ function TransactionsContent() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex h-[42px] flex-shrink-0 items-center whitespace-nowrap border-b-2 px-4 text-sm font-semibold transition-colors ${
                 statusFilter === tab.key
-                  ? 'bg-apple-blue text-white shadow-card'
-                  : 'bg-white dark:bg-apple-cardDark text-apple-gray-1 active:opacity-70 border border-apple-separator dark:border-apple-sepDark'
+                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
               }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-xs ${statusFilter === tab.key ? 'text-white/80' : 'text-apple-gray-1'}`}>
+              <span className="ml-1.5 text-xs opacity-75">
                 {tab.count}
               </span>
             </button>
@@ -1000,13 +1002,13 @@ function TransactionsContent() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className={input.base + ' pl-10 w-full'}
           />
-          <svg className="w-4 h-4 text-apple-gray-2 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1017,30 +1019,30 @@ function TransactionsContent() {
 
         {/* KaitoriX 加载进度条 */}
         {kaitorixLoading && kaitorixProgress && (
-          <div className="mb-4 bg-white dark:bg-apple-cardDark rounded-xl shadow-card p-3">
+          <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 shadow-[var(--shadow-sm)]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-apple-gray-1">
+              <span className="text-xs text-[var(--color-text-muted)]">
                 买取价格获取中... {kaitorixProgress.completed}/{kaitorixProgress.total}
                 {kaitorixProgress.failed > 0 && (
-                  <span className="text-apple-red ml-2">({kaitorixProgress.failed} 失败)</span>
+                  <span className="text-[var(--color-danger)] ml-2">({kaitorixProgress.failed} 失败)</span>
                 )}
               </span>
-              <span className="text-xs text-apple-gray-1">
+              <span className="text-xs text-[var(--color-text-muted)]">
                 ~{Math.ceil((kaitorixProgress.total - kaitorixProgress.completed) * 6 / 60)} 分钟
               </span>
             </div>
-            <div className="w-full bg-apple-gray-5 dark:bg-white/10 rounded-full h-1.5">
+            <div className="w-full bg-[var(--color-bg-subtle)] rounded-full h-1.5">
               <div
                 className={`h-1.5 rounded-full transition-all duration-500 ${
                   kaitorixProgress.stopped
-                    ? 'bg-apple-red'
-                    : 'bg-apple-blue'
+                    ? 'bg-[var(--color-danger)]'
+                    : 'bg-[var(--color-primary)]'
                 }`}
                 style={{ width: `${(kaitorixProgress.completed / kaitorixProgress.total) * 100}%` }}
               />
             </div>
             {kaitorixProgress.stopped && (
-              <p className="text-xs text-apple-red mt-1">
+              <p className="text-xs text-[var(--color-danger)] mt-1">
                 请求被限制，已自动停止。已获取的价格数据仍然可用。
               </p>
             )}
@@ -1049,15 +1051,15 @@ function TransactionsContent() {
 
         {/* 筛选计数 */}
         {transactions.length > 0 && (
-          <div className="flex items-center justify-between text-xs text-apple-gray-1 px-1 -mt-1 mb-1">
+          <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] px-1 -mt-1 mb-2">
             <span>
               {filteredTransactions.length < transactions.length
-                ? <><span className="font-medium text-gray-700 dark:text-gray-300">{filteredTransactions.length}</span> / {transactions.length} 件</>
+                ? <><span className="font-semibold text-[var(--color-text)]">{filteredTransactions.length}</span> / {transactions.length} 件</>
                 : <>{transactions.length} 件</>
               }
             </span>
             {filteredTransactions.length < transactions.length && (
-              <span className="text-apple-blue">已筛选</span>
+              <span className="text-[var(--color-primary)]">已筛选</span>
             )}
           </div>
         )}
@@ -1065,10 +1067,10 @@ function TransactionsContent() {
         {/* 交易列表 */}
         {filteredTransactions.length === 0 ? (
           <div className={card.primary + ' p-12 text-center'}>
-            <svg className="w-16 h-16 text-apple-gray-1 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-[var(--color-primary)] opacity-60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <p className="text-apple-gray-1 text-lg">暂无交易记录</p>
+            <p className="text-[var(--color-text-muted)] text-lg">暂无交易记录</p>
             <Link
               href="/transactions/add"
               className={button.primary + ' inline-block mt-4'}
@@ -1128,14 +1130,14 @@ function TransactionsContent() {
             <div className="hidden md:block">
               <div className={card.primary + ' overflow-hidden'}>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full border-collapse">
                     <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700 text-xs text-apple-gray-1 uppercase tracking-wider">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-xs text-[var(--color-text-muted)] uppercase tracking-[0.04em]">
                         {visibleColumns.map(key => {
                           if (key === 'date') return (
-                            <th key="date" className="px-3 py-3 text-left">
+                            <th key="date" className="px-4 py-3 text-left font-semibold">
                               <div className="flex items-center gap-1">
-                                <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
                                   {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
                                   {sortField === 'date' && (
                                     <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
@@ -1143,21 +1145,21 @@ function TransactionsContent() {
                                     </svg>
                                   )}
                                 </button>
-                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors" title="切换日期类型">⇄</button>
+                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="px-1 py-0.5 text-[10px] bg-[var(--color-bg-elevated)] rounded hover:text-[var(--color-primary)] transition-colors" title="切换日期类型">⇄</button>
                               </div>
                             </th>
                           );
                           if (key === 'price') return (
-                            <th key="price" className="px-3 py-3 text-left">
+                            <th key="price" className="px-4 py-3 text-left font-semibold">
                               <div>进货单价</div>
-                              <div className="text-[10px] text-apple-gray-2 font-normal normal-case">(不含返点)</div>
+                              <div className="text-[10px] text-[var(--color-text-muted)] font-normal normal-case">(不含返点)</div>
                             </th>
                           );
                           if (key === 'arrived') return <th key="arrived" className="px-2 py-3 text-center"></th>;
                           if (key === 'profit') return (
-                            <th key="profit" className="px-3 py-3 text-right">
+                            <th key="profit" className="px-4 py-3 text-right font-semibold">
                               <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                                <button onClick={() => toggleSort('total_profit')} className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                <button onClick={() => toggleSort('total_profit')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
                                   {profitSortMode === 'actual' ? '利润' : '预估利润'}
                                   {sortField === 'total_profit' && (
                                     <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
@@ -1165,12 +1167,12 @@ function TransactionsContent() {
                                     </svg>
                                   )}
                                 </button>
-                                <button onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')} className="px-1 py-0.5 text-[10px] bg-apple-gray-5 dark:bg-white/10 rounded active:opacity-80 transition-colors" title="切换利润类型">⇄</button>
+                                <button onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')} className="px-1 py-0.5 text-[10px] bg-[var(--color-bg-elevated)] rounded hover:text-[var(--color-primary)] transition-colors" title="切换利润类型">⇄</button>
                               </div>
                             </th>
                           );
                           if (key === 'buyback') return (
-                            <th key="buyback" className="px-3 py-3 text-right cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors" onClick={() => toggleSort('buyback_price')}>
+                            <th key="buyback" className="px-4 py-3 text-right cursor-pointer hover:text-[var(--color-text)] transition-colors font-semibold" onClick={() => toggleSort('buyback_price')}>
                               <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                                 {COLUMN_LABELS.buyback}
                                 {sortField === 'buyback_price' && (
@@ -1181,12 +1183,12 @@ function TransactionsContent() {
                               </div>
                             </th>
                           );
-                          if (key === 'actions') return <th key="actions" className="px-2 py-3 text-center">{COLUMN_LABELS.actions}</th>;
-                          return <th key={key} className="px-3 py-3 text-left">{COLUMN_LABELS[key]}</th>;
+                          if (key === 'actions') return <th key="actions" className="px-2 py-3 text-center font-semibold">{COLUMN_LABELS.actions}</th>;
+                          return <th key={key} className="px-4 py-3 text-left font-semibold">{COLUMN_LABELS[key]}</th>;
                         })}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-apple-separator dark:divide-apple-sepDark">
+                    <tbody className="divide-y divide-[var(--color-border)]">
                       {displayItems.map((item) =>
                         item.type === 'group' ? (
                           <TransactionGroupRow
@@ -1238,32 +1240,32 @@ function TransactionsContent() {
         )}
       </div>
 
-      {/* 選択モード浮動操作バー */}
+      {/* 多选模式浮动操作栏 */}
       {compareMode && (
-        <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-4 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto bg-[#111] dark:bg-apple-cardDark text-white rounded-2xl shadow-card-md px-4 py-3 flex items-center gap-2 max-w-lg w-full">
+        <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-3 z-[9998] pointer-events-none">
+          <div className="pointer-events-auto bg-[var(--color-header)] text-white rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-3 py-3 flex items-center gap-2 max-w-lg w-full border border-white/10">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
-                ? <span className="text-apple-gray-2 text-xs">请选择</span>
-                : <span>已选 <span className="font-bold text-apple-blue">{selectedIds.size}</span> 件</span>
+                ? <span className="text-white/60 text-xs">请选择</span>
+                : <span>已选 <span className="font-bold text-[var(--color-primary)]">{selectedIds.size}</span> 件</span>
               }
             </div>
-            {/* 一括到着 */}
+            {/* 批量到货 */}
             {[...selectedIds].some(id => transactions.find(t => t.id === id && t.status === 'pending')) && (
               <button
                 onClick={handleBatchArrival}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-orange active:opacity-80 text-white transition-all whitespace-nowrap"
+                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-warning)] active:opacity-80 text-white transition-all whitespace-nowrap"
               >
-                一括到着
+                批量到货
               </button>
             )}
-            {/* 一括削除 */}
+            {/* 批量删除 */}
             {selectedIds.size > 0 && (
               <button
                 onClick={handleBatchDelete}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-red text-white active:opacity-80 transition-all whitespace-nowrap"
+                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-danger)] text-white active:opacity-80 transition-all whitespace-nowrap"
               >
-                削除
+                删除
               </button>
             )}
             {/* 买取比较 */}
@@ -1271,10 +1273,10 @@ function TransactionsContent() {
               <button
                 disabled={selectedIds.size < 2}
                 onClick={() => setShowComparison(true)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold transition-all whitespace-nowrap ${
                   selectedIds.size >= 2
-                    ? 'bg-apple-blue active:opacity-80 text-white'
-                    : 'bg-apple-gray-5 text-apple-gray-2 cursor-not-allowed'
+                    ? 'bg-[var(--color-primary)] active:opacity-80 text-white'
+                    : 'bg-white/10 text-white/40 cursor-not-allowed'
                 }`}
               >
                 比较
@@ -1283,15 +1285,15 @@ function TransactionsContent() {
             {selectedIds.size > 0 && (
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-xs text-gray-400 hover:text-white transition-colors px-1"
+                className="text-xs text-white/60 hover:text-white transition-colors px-1"
               >
                 清空
               </button>
             )}
             <button
               onClick={exitCompareMode}
-              className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0"
-              aria-label="選択モード終了"
+              className="p-1.5 text-white/60 hover:text-white transition-colors flex-shrink-0"
+              aria-label="退出多选模式"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1438,16 +1440,16 @@ function TransactionsContent() {
           onChange={setPickerDraft}
           onReset={() => setPickerDraft(DEFAULT_COLUMNS)}
         />
-        <div className="flex justify-end gap-2 pt-4 border-t border-apple-separator dark:border-apple-sepDark mt-4">
+        <div className="flex justify-end gap-2 pt-4 border-t border-[var(--color-border)] mt-4">
           <button
             onClick={() => setPickerOpen(false)}
-            className="px-4 py-2 text-sm text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark rounded-lg active:opacity-70 transition-colors"
+            className="px-4 py-2 text-sm text-[var(--color-text-muted)] border border-[var(--color-border)] rounded-[var(--radius-md)] active:opacity-70 transition-colors"
           >
             取消
           </button>
           <button
             onClick={handleSaveColumns}
-            className="px-4 py-2 text-sm bg-apple-blue text-white rounded-lg active:opacity-80 transition-colors font-medium"
+            className="px-4 py-2 text-sm bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] active:opacity-80 transition-colors font-semibold"
           >
             保存
           </button>
@@ -1525,45 +1527,48 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-apple-bg dark:bg-black">
+    <div className="fixed inset-0 z-[10020] flex flex-col bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-3 bg-white dark:bg-apple-cardDark border-b border-apple-separator dark:border-apple-sepDark">
+      <div className="bg-[var(--color-header)] text-white">
+        <div className="flex items-center justify-between px-4 pt-12 pb-3">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">JAN 买取列表</h2>
-          <p className="text-xs text-apple-gray-1">
+          <h2 className="text-lg font-bold">JAN 买取列表</h2>
+          <p className="text-xs text-white/65">
             {items.length} 个商品
             {bestStore ? (
-              <span className="ml-1.5 text-apple-green font-medium">
+              <span className="ml-1.5 text-[var(--color-primary)] font-semibold">
                 · 最优店：{bestStore}（合计 ¥{bestStoreTotal.toLocaleString()}）
               </span>
             ) : null}
             {missingCount > 0 && (
-              <span className="ml-1.5 text-apple-orange">· {missingCount} 件该店无报价</span>
+              <span className="ml-1.5 text-[var(--color-warning)]">· {missingCount} 件该店无报价</span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={copyAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-apple-gray-5 dark:bg-white/10 text-gray-900 dark:text-white active:opacity-70"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-white/10 text-white active:opacity-70"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             {copied ? '已复制' : '复制 JAN'}
           </button>
-          <button onClick={onClose} className="p-1.5 text-apple-gray-2 hover:text-gray-900 dark:hover:text-white">
+          <button onClick={onClose} className="p-1.5 text-white/65 hover:text-white" aria-label="关闭">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
+        </div>
+        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-apple-gray-2 text-sm">
+          <div className="flex flex-col items-center justify-center h-40 text-[var(--color-text-muted)] text-sm">
             没有带 JAN 码的商品
           </div>
         ) : (
@@ -1574,22 +1579,22 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
               <Tag
                 key={item.jan}
                 {...(href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="flex items-center gap-3 bg-white dark:bg-apple-cardDark rounded-2xl px-4 py-3 shadow-card active:opacity-70"
+                className="flex items-center gap-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--color-border)] px-4 py-3 shadow-[var(--shadow-sm)] active:opacity-70"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
-                  <p className="text-xs text-apple-gray-2 mt-0.5 font-mono">{item.jan}</p>
+                  <p className="text-sm font-semibold text-[var(--color-text)] truncate">{item.name}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono">{item.jan}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {item.price > 0 ? (
-                    <p className="text-base font-bold text-apple-green">
+                    <p className="text-base font-bold text-[var(--color-success)]">
                       ¥{item.price.toLocaleString()}
                     </p>
                   ) : (
-                    <p className="text-xs text-apple-orange">无报价</p>
+                    <p className="text-xs text-[var(--color-warning)]">无报价</p>
                   )}
                   {href && (
-                    <svg className="w-4 h-4 text-apple-gray-3 dark:text-apple-gray-1 mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-[var(--color-text-muted)] mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   )}
@@ -1608,12 +1613,12 @@ export default function TransactionsPage() {
     <>
       <Suspense fallback={
         <div className={layout.page + ' flex items-center justify-center'}>
-          <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-            <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <div className="flex items-center gap-3 text-[var(--color-text)]">
+            <svg className="animate-spin h-8 w-8 text-[var(--color-primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span className="text-xl">加载中...</span>
+            <span className="text-lg font-medium">加载中...</span>
           </div>
         </div>
       }>

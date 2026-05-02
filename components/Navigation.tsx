@@ -4,9 +4,28 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  BarChart3,
+  Bell,
+  ChevronLeft,
+  ClipboardList,
+  FileText,
+  Home,
+  LogOut,
+  Menu,
+  Package,
+  Plus,
+  ScanBarcode,
+  Settings,
+  Ticket,
+  TrendingUp,
+  User,
+  X,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ScanArrivalModal from '@/components/ScanArrivalModal';
 import { triggerHaptic } from '@/lib/haptic';
+import ThemeToggleButton from '@/components/ThemeToggleButton';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -17,15 +36,9 @@ export default function Navigation() {
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
@@ -85,78 +98,47 @@ export default function Navigation() {
     {
       name: '仪表盘',
       href: '/dashboard',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      ),
+      icon: <Home className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '交易列表',
       href: '/transactions',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </svg>
-      ),
+      icon: <ClipboardList className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '记录交易',
       href: '/transactions/add',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
+      icon: <Plus className="h-5 w-5" strokeWidth={2} />,
       highlight: true,
     },
     {
       name: '优惠券',
       href: '/coupons',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-        </svg>
-      ),
+      icon: <Ticket className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '设置',
       href: '/settings',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <Settings className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '耗材管理',
       href: '/supplies',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      ),
+      icon: <Package className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '数据分析',
       href: '/analytics',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
+      icon: <BarChart3 className="h-5 w-5" strokeWidth={2} />,
     },
     {
       name: '通知',
       href: '/notifications',
       icon: (
         <div className="relative">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
+          <Bell className="h-5 w-5" strokeWidth={2} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-apple-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -166,87 +148,111 @@ export default function Navigation() {
     {
       name: '税务申报',
       href: '/tax-report',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FileText className="h-5 w-5" strokeWidth={2} />,
     },
   ];
 
-  // 移动端"もっと"抽屉中的次要项目
+  // 移动端更多抽屉中的次要项目
   const moreItems = [
     {
-      name: '設定',
+      name: '设置',
       href: '/settings',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: <Settings className="h-6 w-6" strokeWidth={2} />,
     },
     {
       name: '耗材管理',
       href: '/supplies',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      ),
+      icon: <Package className="h-6 w-6" strokeWidth={2} />,
     },
     {
       name: '数据分析',
       href: '/analytics',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
+      icon: <BarChart3 className="h-6 w-6" strokeWidth={2} />,
     },
     {
       name: '税务申报',
       href: '/tax-report',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
+      icon: <FileText className="h-6 w-6" strokeWidth={2} />,
     },
   ];
 
   return (
     <>
+      {/* 桌面端顶部栏 — SNUtils manage shell */}
+      <header className="hidden lg:flex fixed top-0 left-0 right-0 z-[9000] h-[60px] bg-[#1B1B26] shadow-[var(--shadow-md)] items-center justify-between px-6">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[var(--radius-md)] bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/30 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
+          </div>
+          <div className="leading-tight">
+            <div className="text-white text-base font-bold tracking-[-0.3px]">Resale Master</div>
+            <div className="text-[var(--color-primary)] text-xs font-medium uppercase tracking-[0.5px]">财务控制台</div>
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/notifications"
+            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+            title="通知"
+          >
+            <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-4 h-4 px-1 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
+
+          <ThemeToggleButton />
+
+          <div className="hidden xl:flex items-center h-9 overflow-hidden rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70">
+            <div className="flex h-full items-center gap-2 px-3 transition-colors hover:bg-white/10">
+              <User className="h-4 w-4 flex-shrink-0 opacity-70" strokeWidth={2} />
+              <span className="max-w-[240px] truncate text-[13px] font-medium">
+                {mounted ? (user?.email || '未登录') : '加载中...'}
+              </span>
+            </div>
+            {mounted && (
+              <button
+                onClick={handleLogout}
+                title="退出登录"
+                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-white/10 text-white/70 transition-colors hover:bg-[rgba(239,68,68,0.2)] hover:text-[#fca5a5]"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+      <div className="hidden lg:block fixed top-[60px] left-0 right-0 h-[3px] z-[9001] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
+
       {/* ── 桌面端侧边栏 ── */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:bg-white dark:lg:bg-apple-cardDark lg:border-r lg:border-apple-separator dark:lg:border-apple-sepDark transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}>
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[63px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
         {/* Logo */}
-        <div className="h-16 flex items-center border-b border-apple-separator dark:border-apple-sepDark px-3 gap-2">
+        <div className="h-14 flex items-center border-b border-[var(--color-border)] px-3 gap-2">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-9 h-9 bg-apple-blue rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+              <div className="w-9 h-9 bg-[var(--color-primary-light)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <div className="text-gray-900 dark:text-white font-bold text-base truncate">管理系统</div>
-                <div className="text-gray-500 dark:text-gray-400 text-xs truncate">仅供内部使用</div>
+                <div className="text-[var(--color-text)] font-semibold text-sm truncate">管理系统</div>
+                <div className="text-[var(--color-text-muted)] text-[11px] truncate">内部财务控制台</div>
               </div>
             </Link>
           )}
           {collapsed && (
             <Link href="/dashboard" className="flex-1 flex justify-center">
-              <div className="w-9 h-9 bg-apple-blue rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+              <div className="w-10 h-10 bg-[var(--color-primary-light)] rounded-[var(--radius-lg)] flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
               </div>
             </Link>
           )}
         </div>
 
         {/* 导航菜单 */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {desktopNavItems.map((item) => {
             const active = isActive(item.href);
             return (
@@ -255,13 +261,13 @@ export default function Navigation() {
                 href={item.href}
                 title={collapsed ? item.name : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-                  ${collapsed ? 'justify-center' : ''}
+                  flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-all text-sm
+                  ${collapsed ? 'justify-center h-12 w-12 mx-auto' : ''}
                   ${active
-                    ? 'bg-apple-blue/10 text-apple-blue font-medium'
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
                     : item.highlight
-                      ? 'text-apple-blue hover:bg-apple-blue/5'
-                      : 'text-gray-900 dark:text-white hover:bg-apple-gray-6 dark:hover:bg-white/5'
+                      ? 'text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                   }
                 `}
               >
@@ -273,20 +279,18 @@ export default function Navigation() {
         </nav>
 
         {/* 用户信息和退出 */}
-        <div className="p-2 border-t border-apple-separator dark:border-apple-sepDark space-y-2">
+        <div className="p-2 border-t border-[var(--color-border)] space-y-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors justify-center"
+            className="w-full flex items-center gap-2 px-3 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)] transition-colors justify-center"
             title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
           >
-            <svg className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className={`h-5 w-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} strokeWidth={2} />
           </button>
           {!collapsed && (
-            <div className="px-3 py-2 bg-apple-gray-6 dark:bg-white/5 rounded-lg">
-              <div className="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
-              <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
+            <div className="px-3 py-2 bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)]">
+              <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
+              <div className="text-sm text-[var(--color-text)] font-medium truncate">
                 {mounted ? (user?.email || '未登录') : '加载中...'}
               </div>
             </div>
@@ -295,11 +299,9 @@ export default function Navigation() {
             <button
               onClick={handleLogout}
               title={collapsed ? '退出登录' : undefined}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-apple-red hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-md)] transition-colors ${collapsed ? 'justify-center' : ''}`}
             >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
               {!collapsed && <span className="text-sm font-medium">退出登录</span>}
             </button>
           )}
@@ -307,264 +309,220 @@ export default function Navigation() {
       </aside>
 
       {/* 桌面端侧边栏占位 */}
-      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-16' : 'lg:w-64'}`} aria-hidden="true" />
+      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`} aria-hidden="true" />
 
-      {/* ── 移动端顶部栏（精简版） ── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-apple-cardDark border-b border-apple-separator dark:border-apple-sepDark">
-        <div className="flex items-center justify-between h-12 px-4">
+      {/* ── 移动端顶部栏：SNUtils compact header ── */}
+      <div
+        className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-[var(--color-header)] shadow-[var(--shadow-md)]"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-apple-blue rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+            <div className="w-8 h-8 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/15 flex items-center justify-center">
+              <TrendingUp className="h-[18px] w-[18px] text-[var(--color-primary)]" strokeWidth={2} />
             </div>
-            <span className="text-gray-900 dark:text-white font-bold text-sm">管理系统</span>
+            <div className="leading-tight">
+              <div className="text-sm font-bold text-white">Resale Master</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>
+            </div>
           </Link>
 
           {/* 通知铃铛 */}
-          <Link href="/notifications" className="relative p-2 -mr-2 text-gray-600 dark:text-gray-400" onClick={() => triggerHaptic('light')}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+          <Link
+            href="/notifications"
+            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70 active:bg-white/15"
+            onClick={() => triggerHaptic('light')}
+            aria-label="通知"
+          >
+            <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-apple-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
         </div>
+        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
       </div>
 
       {/* 移动端顶部占位 */}
-      <div className="lg:hidden h-12" />
+      <div className="lg:hidden h-[calc(59px+env(safe-area-inset-top,0px))]" />
 
-      {/* ── 移动端底部导航栏 (iOS 26 Floating Glass Style) ── */}
+      {/* ── 移动端底部导航栏：SNUtils touch adaptation ── */}
       <div
-        className="lg:hidden fixed bottom-5 left-4 right-4 z-[9999] rounded-[32px] overflow-hidden"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[0_-10px_24px_rgba(15,23,42,0.08)]"
         style={{
-          marginBottom: 'env(safe-area-inset-bottom)',
-          background: isDark
-            ? 'rgba(20, 20, 30, 0.45)'
-            : 'rgba(255, 255, 255, 0.18)',
-          backdropFilter: 'blur(48px) saturate(180%) brightness(108%) contrast(105%)',
-          WebkitBackdropFilter: 'blur(48px) saturate(180%) brightness(108%) contrast(105%)',
-          border: isDark
-            ? '1px solid rgba(255,255,255,0.12)'
-            : '1px solid rgba(255,255,255,0.55)',
-          boxShadow: isDark
-            ? '0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)'
-            : '0 8px 40px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.04)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        {/* 5列布局：各列中心点在 10% 30% 50% 70% 90%，pill left = center% - 22px */}
-        {(() => {
-          const pillPos = isActive('/dashboard') ? 10
-            : isActive('/transactions') ? 30
-            : isActive('/coupons') ? 70
-            : showMoreSheet ? 90
-            : -1;
-          const pillVisible = pillPos >= 0;
-          return (
-            <div className="relative flex items-center h-16">
-              {/* 滑动玻璃 pill — 绝对定位，在图标层之下 */}
-              <div
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  width: 44,
-                  height: 44,
-                  top: '50%',
-                  left: `calc(${pillVisible ? pillPos : 50}% - 22px)`,
-                  transform: 'translateY(-50%)',
-                  transition: 'left 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease',
-                  opacity: pillVisible ? 1 : 0,
-                  pointerEvents: 'none',
-                  borderRadius: 14,
-                  zIndex: 0,
-                  background: isDark
-                    ? 'rgba(255,255,255,0.18)'
-                    : 'rgba(255,255,255,0.72)',
-                  border: isDark
-                    ? '1px solid rgba(255,255,255,0.28)'
-                    : '1px solid rgba(255,255,255,0.95)',
-                  boxShadow: isDark
-                    ? '0 2px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.15)'
-                    : '0 2px 10px rgba(0,0,0,0.1), inset 0 1.5px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.06)',
-                }}
-              />
-
-              {/* 图标层 */}
+        <div className="grid h-16 grid-cols-5 px-1">
               <Link
                 href="/dashboard"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
-                style={{ height: 44 }}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
+              isActive('/dashboard')
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+            }`}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/dashboard') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/dashboard') ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              <Home className="h-5 w-5" strokeWidth={1.5} />
+            </span>
+            <span>仪表盘</span>
               </Link>
 
               <Link
                 href="/transactions"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
-                style={{ height: 44 }}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
+              isActive('/transactions')
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+            }`}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/transactions') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/transactions') ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              <ClipboardList className="h-5 w-5" strokeWidth={1.5} />
+            </span>
+            <span>交易</span>
               </Link>
 
-              <div className="flex-1 flex items-center justify-center relative z-10">
+          <div className="flex items-center justify-center">
                 <button
                   onClick={() => { triggerHaptic('medium'); setShowFabMenu(v => !v); }}
-                  className={`rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${
+              className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] border font-semibold shadow-[0_6px_14px_rgba(16,185,129,0.28)] transition-colors active:opacity-80 ${
                     showFabMenu
-                      ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 scale-90'
-                      : 'bg-apple-blue text-white shadow-apple-blue/30'
+                  ? 'border-[var(--color-primary-hover)] bg-[var(--color-primary-hover)] text-white'
+                  : 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
                   }`}
-                  style={{ width: 48, height: 48 }}
+              aria-label="新增"
                 >
-                  <svg className={`w-6 h-6 transition-transform duration-300 ${showFabMenu ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
+              <Plus className={`h-[22px] w-[22px] transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} strokeWidth={2.5} />
                 </button>
               </div>
 
               <Link
                 href="/coupons"
                 onClick={() => triggerHaptic('light')}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
-                style={{ height: 44 }}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
+              isActive('/coupons')
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+            }`}
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${isActive('/coupons') ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                </svg>
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/coupons') ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              <Ticket className="h-5 w-5" strokeWidth={1.5} />
+            </span>
+            <span>优惠券</span>
               </Link>
 
               <button
                 onClick={() => { triggerHaptic('light'); setShowMoreSheet(true); }}
-                className="flex-1 flex items-center justify-center relative z-10 transition-transform active:opacity-70"
-                style={{ height: 44 }}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
+              showMoreSheet
+                ? 'text-[var(--color-primary)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+            }`}
+            aria-label="更多"
               >
-                <svg className={`w-6 h-6 transition-colors duration-200 ${showMoreSheet ? 'text-apple-blue' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${showMoreSheet ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              <Menu className="h-5 w-5" strokeWidth={2} />
+            </span>
+            <span>更多</span>
               </button>
             </div>
-          );
-        })()}
       </div>
 
       {/* ── FAB 弹出菜单卡片 ── */}
       {showFabMenu && (
         <div
           className="lg:hidden fixed inset-0 z-[10000] flex items-end justify-center"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
           onClick={() => setShowFabMenu(false)}
         >
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative mb-4 w-52 rounded-2xl shadow-card-md overflow-hidden"
-            style={{
-              background: isDark ? 'rgba(20,20,30,0.55)' : 'rgba(255,255,255,0.22)',
-              backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
-              WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
-              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.6)',
-              boxShadow: isDark
-                ? '0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)'
-                : '0 12px 40px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)',
-            }}
+            className="relative mb-3 w-56 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)]"
             onClick={(e) => e.stopPropagation()}
           >
             {[
               {
                 href: '/transactions/add',
                 label: '新增交易',
-                iconBg: 'bg-apple-blue/15',
-                iconColor: 'text-apple-blue',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                ),
+                iconBg: 'bg-[var(--color-primary-light)]',
+                iconColor: 'text-[var(--color-primary)]',
+                icon: <ClipboardList className="h-4 w-4" strokeWidth={2} />,
               },
               {
                 href: '/coupons/add',
                 label: '新增优惠券',
-                iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-                iconColor: 'text-amber-600 dark:text-amber-400',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                  </svg>
-                ),
+                iconBg: 'bg-[rgba(245,158,11,0.12)]',
+                iconColor: 'text-[var(--color-warning)]',
+                icon: <Ticket className="h-4 w-4" strokeWidth={2} />,
               },
               {
                 href: '/supplies/add',
                 label: '新增耗材',
-                iconBg: 'bg-purple-100 dark:bg-purple-900/40',
-                iconColor: 'text-purple-600 dark:text-purple-400',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                ),
+                iconBg: 'bg-[rgba(59,130,246,0.12)]',
+                iconColor: 'text-[var(--color-info)]',
+                icon: <Package className="h-4 w-4" strokeWidth={2} />,
               },
             ].map((item, i, arr) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => triggerHaptic('light')}
-                className={`flex items-center gap-3 px-4 py-3.5 active:bg-white/40 dark:active:bg-white/10 transition-colors ${
-                  i < arr.length - 1 ? 'border-b border-gray-100/50 dark:border-gray-700/60' : ''
+                className={`flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-subtle)] ${
+                  i < arr.length - 1 ? 'border-b border-[var(--color-border)]' : ''
                 }`}
               >
-                <div className={`w-8 h-8 ${item.iconBg} ${item.iconColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-8 h-8 ${item.iconBg} ${item.iconColor} rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0`}>
                   {item.icon}
                 </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
+                <span className="text-sm font-semibold text-[var(--color-text)]">{item.label}</span>
               </Link>
             ))}
             <button
               onClick={() => { triggerHaptic('light'); setShowFabMenu(false); setShowScanArrival(true); }}
-              className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/40 dark:active:bg-white/10 transition-colors border-t border-gray-100/50 dark:border-gray-700/60"
+              className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-subtle)] border-t border-[var(--color-border)]"
             >
-              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+              <div className="w-8 h-8 bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
+                <ScanBarcode className="h-4 w-4" strokeWidth={2} />
               </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">扫码到货</span>
+              <span className="text-sm font-semibold text-[var(--color-text)]">扫码到货</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* ── もっと 上滑抽屉 ── */}
+      {/* ── 更多上滑抽屉 ── */}
       {showMoreSheet && (
         <div className="lg:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-          {/* 悬浮在导航栏上方，与导航栏同款间距和圆角 */}
+          <div className="absolute inset-0 bg-black/40" />
           <div
-            className="absolute left-4 right-4 rounded-[32px] overflow-hidden flex flex-col"
+            className="absolute left-3 right-3 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)] flex flex-col"
             style={{
-              bottom: 'calc(env(safe-area-inset-bottom) + 96px)',
-              maxHeight: '60vh',
-              background: isDark ? 'rgba(20,20,30,0.65)' : 'rgba(255,255,255,0.28)',
-              backdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
-              WebkitBackdropFilter: 'blur(48px) saturate(200%) brightness(108%)',
-              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.65)',
-              boxShadow: isDark
-                ? '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)'
-                : '0 8px 40px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.85)',
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
+              maxHeight: '68vh',
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+              <div>
+                <div className="text-sm font-semibold text-[var(--color-text)]">更多功能</div>
+                <div className="text-xs text-[var(--color-text-muted)]">账户、报表与系统工具</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoreSheet(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]"
+                aria-label="关闭"
+              >
+                <X className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
             {/* 图标网格 — 可滚动 */}
             <div className="overflow-y-auto flex-1">
-              <div className="grid grid-cols-4 gap-1 px-4 pt-4 pb-3">
+              <div className="grid grid-cols-4 gap-2 px-4 py-4">
                 {moreItems.map((item) => {
                   const active = isActive(item.href);
                   return (
@@ -572,31 +530,29 @@ export default function Navigation() {
                       key={item.href}
                       href={item.href}
                       onClick={() => triggerHaptic('light')}
-                      className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl transition-colors ${
+                      className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-[var(--radius-md)] transition-colors ${
                         active
-                          ? 'bg-apple-blue/10 text-apple-blue'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/5 active:bg-gray-100'
+                          ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                          : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
                       }`}
                     >
                       {item.icon}
-                      <span className="text-[11px] font-medium text-center leading-tight">{item.name}</span>
+                      <span className="text-[11px] font-semibold text-center leading-tight">{item.name}</span>
                     </Link>
                   );
                 })}
               </div>
             </div>
             {/* 用户信息栏 */}
-            <div className="flex-shrink-0 mx-4 border-t border-gray-200/50 dark:border-gray-700/60" />
+            <div className="flex-shrink-0 mx-4 border-t border-[var(--color-border)]" />
             <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-9 h-9 bg-apple-blue/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <div className="w-9 h-9 bg-[var(--color-primary-light)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
+                  <User className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs text-apple-gray-1">当前用户</div>
-                  <div className="text-sm text-gray-900 dark:text-white font-medium truncate">
+                  <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
+                  <div className="text-sm text-[var(--color-text)] font-semibold truncate">
                     {mounted ? (user?.email || '未登录') : '加载中...'}
                   </div>
                 </div>
@@ -604,11 +560,9 @@ export default function Navigation() {
               {mounted && (
                 <button
                   onClick={handleLogout}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm text-apple-red dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-md)] transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                  <LogOut className="h-4 w-4" strokeWidth={2} />
                   退出登录
                 </button>
               )}

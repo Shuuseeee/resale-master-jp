@@ -1,22 +1,43 @@
 export default function TransactionsLoading() {
   return (
-    <div className="p-4 lg:p-8 animate-pulse">
-      {/* 标题 + 工具栏 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-7 w-24 bg-apple-gray-5 dark:bg-white/10 rounded" />
-        <div className="h-9 w-20 bg-apple-gray-5 dark:bg-white/10 rounded-lg" />
-      </div>
-      {/* 状态标签栏 */}
-      <div className="flex gap-2 mb-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-8 w-16 bg-apple-gray-5 dark:bg-white/10 rounded-full" />
-        ))}
-      </div>
-      {/* 卡片列表 */}
-      <div className="space-y-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-36 bg-apple-gray-5 dark:bg-white/10 rounded-xl" />
-        ))}
+    <div className="min-h-screen bg-[var(--color-bg)] px-4 py-6 text-[var(--color-text)] lg:px-6">
+      <div className="mx-auto max-w-7xl animate-pulse">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="h-7 w-24 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
+          <div className="h-10 w-24 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
+        </div>
+        <div className="mb-4 flex gap-2 overflow-hidden">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-9 w-20 flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
+          ))}
+        </div>
+        <div className="space-y-3 lg:hidden">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)]">
+              <div className="mb-4 flex gap-3">
+                <div className="h-14 w-14 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
+                <div className="flex-1">
+                  <div className="mb-2 h-4 w-3/4 rounded bg-[var(--color-bg-subtle)]" />
+                  <div className="h-3 w-1/2 rounded bg-[var(--color-bg-subtle)]" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="h-8 rounded bg-[var(--color-bg-subtle)]" />
+                <div className="h-8 rounded bg-[var(--color-bg-subtle)]" />
+                <div className="h-8 rounded bg-[var(--color-bg-subtle)]" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-sm)] lg:block">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="grid grid-cols-6 gap-4 border-b border-[var(--color-border)] p-4 last:border-b-0">
+              {[...Array(6)].map((__, j) => (
+                <div key={j} className="h-4 rounded bg-[var(--color-bg-subtle)]" />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

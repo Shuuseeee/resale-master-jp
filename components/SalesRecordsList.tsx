@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import type { SalesRecord, Transaction } from '@/types/database.types';
 import { getSalesRecords, deleteSalesRecord, updateSalesRecord } from '@/lib/api/sales-records';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { card, button, badge, input } from '@/lib/theme';
+import { button, input } from '@/lib/theme';
 import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -118,12 +118,12 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
   };
 
   if (loading) {
-    return <div className="text-center py-4 text-apple-gray-1">加载中...</div>;
+    return <div className="text-center py-4 text-[var(--color-text-muted)]">加载中...</div>;
   }
 
   if (records.length === 0) {
     return (
-      <div className="text-center py-8 text-apple-gray-1">
+      <div className="text-center py-8 text-[var(--color-text-muted)]">
         暂无销售记录
       </div>
     );
@@ -132,25 +132,25 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
   return (
     <div className="space-y-4">
       {records.map((record) => (
-        <div key={record.id} className={card.secondary + ' p-4'}>
+        <div key={record.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)]">
           {editingRecord?.id === record.id ? (
             // 编辑模式
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">
                 编辑销售记录
               </h3>
 
               {!record.sale_date && (
-                <div className="bg-apple-orange/5 dark:bg-apple-orange/10 border border-apple-orange/30 rounded-lg p-3">
-                  <p className="text-sm text-amber-800 dark:text-amber-300">
-                    ⚠️ 此销售记录缺少销售日期，请补充以确保税务申报准确。
+                <div className="bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] rounded-[var(--radius-md)] p-3">
+                  <p className="text-sm text-[var(--color-warning)]">
+                    此销售记录缺少销售日期，请补充以确保税务申报准确。
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  销售日期 <span className="text-apple-red">*</span>
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                  销售日期 <span className="text-[var(--color-danger)]">*</span>
                 </label>
                 <DatePicker
                   selected={editFormData.sale_date ? parseDateFromLocal(editFormData.sale_date) : null}
@@ -161,7 +161,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                     销售数量
                   </label>
                   <input
@@ -174,7 +174,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                     单价 (¥)
                   </label>
                   <input
@@ -187,7 +187,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                     平台费用 (¥)
                   </label>
                   <input
@@ -200,7 +200,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
                 </div>
 
                 <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                     运费 (¥)
                   </label>
                   <input
@@ -214,7 +214,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
                   备注
                 </label>
                 <textarea
@@ -246,39 +246,39 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
             <>
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="text-sm text-apple-gray-1">
+                  <div className="text-sm text-[var(--color-text-muted)]">
                     {record.sale_date ? new Date(record.sale_date).toLocaleDateString('zh-CN') : '未设置销售日期'}
                   </div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="text-lg font-semibold text-[var(--color-text)]">
                     售出 {record.quantity_sold} 个
                   </div>
                   {(record as any).selling_platform && (
-                    <div className="text-xs text-apple-blue mt-0.5">
+                    <div className="text-xs text-[var(--color-primary)] mt-0.5">
                       {(record as any).selling_platform.name}
                       {record.sale_order_number && ` · ${record.sale_order_number}`}
                     </div>
                   )}
                   {!(record as any).selling_platform && record.sale_order_number && (
-                    <div className="text-xs text-apple-gray-1 mt-0.5">
-                      注文: {record.sale_order_number}
+                    <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      订单: {record.sale_order_number}
                     </div>
                   )}
                   {!record.sale_date && (
-                    <div className="text-xs text-apple-orange mt-1">
-                      ⚠️ 请编辑此记录补充销售日期
+                    <div className="text-xs text-[var(--color-warning)] mt-1">
+                      请编辑此记录补充销售日期
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(record)}
-                    className="text-apple-blue hover:text-apple-blue text-sm"
+                    className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] text-sm font-medium"
                   >
                     编辑
                   </button>
                   <button
                     onClick={() => handleCancelSale(record)}
-                    className="text-apple-red hover:text-red-700 dark:hover:text-red-200 text-sm"
+                    className="text-[var(--color-danger)] hover:opacity-80 text-sm font-medium"
                   >
                     取消销售
                   </button>
@@ -287,52 +287,52 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-apple-gray-1">单价：</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-[var(--color-text-muted)]">单价：</span>
+                  <span className="text-[var(--color-text)] font-medium">
                     {formatCurrency(record.selling_price_per_unit)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-apple-gray-1">总售价：</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-[var(--color-text-muted)]">总售价：</span>
+                  <span className="text-[var(--color-text)] font-medium">
                     {formatCurrency(record.total_selling_price)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-apple-gray-1">平台费：</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-[var(--color-text-muted)]">平台费：</span>
+                  <span className="text-[var(--color-text)] font-medium">
                     {formatCurrency(record.platform_fee)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-apple-gray-1">运费：</span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-[var(--color-text-muted)]">运费：</span>
+                  <span className="text-[var(--color-text)] font-medium">
                     {formatCurrency(record.shipping_fee)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-apple-gray-1">现金利润：</span>
-                  <span className={`font-medium ${(record.cash_profit || 0) >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+                  <span className="text-[var(--color-text-muted)]">现金利润：</span>
+                  <span className={`font-medium ${(record.cash_profit || 0) >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                     {formatCurrency(record.cash_profit || 0)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-apple-gray-1">总利润：</span>
-                  <span className={`font-medium ${(record.total_profit || 0) >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+                  <span className="text-[var(--color-text-muted)]">总利润：</span>
+                  <span className={`font-medium ${(record.total_profit || 0) >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                     {formatCurrency(record.total_profit || 0)}
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-apple-gray-1">ROI：</span>
-                  <span className={`font-bold text-lg ${(record.roi || 0) >= 0 ? 'text-apple-green' : 'text-apple-red'}`}>
+                  <span className="text-[var(--color-text-muted)]">ROI：</span>
+                  <span className={`font-bold text-lg ${(record.roi || 0) >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
                     {formatROI(record.roi || 0)}
                   </span>
                 </div>
               </div>
 
               {record.notes && (
-                <div className="mt-3 pt-3 border-t border-apple-separator dark:border-apple-sepDark">
-                  <p className="text-sm text-apple-gray-1">{record.notes}</p>
+                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                  <p className="text-sm text-[var(--color-text-muted)]">{record.notes}</p>
                 </div>
               )}
             </>

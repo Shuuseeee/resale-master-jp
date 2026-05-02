@@ -15,6 +15,7 @@ import { createPurchasePlatform } from '@/lib/api/platforms';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
+import { useJanProductAutoFill } from '@/hooks/useJanProductAutoFill';
 
 function AddTransactionPageContent() {
   const router = useRouter();
@@ -55,7 +56,6 @@ function AddTransactionPageContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, setIsPending] = useState(true); // 未着品トグル
   const [amazonConfig, setAmazonConfig] = useState<AmazonPointConfig | null>(null);
-  const [janLooking, setJanLooking] = useState(false); // JAN lookup spinner
   const [showScanner, setShowScanner] = useState(false);
 
   // 加载支付方式列表和积分平台列表
@@ -194,23 +194,16 @@ function AddTransactionPageContent() {
     }
   };
 
-  // JAN コード → 商品名自動補完
-  const handleJanBlur = async (janOverride?: string) => {
-    const jan = (janOverride ?? formData.jan_code)?.trim();
-    if (!jan || !/^\d+$/.test(jan)) return;
-
-    setJanLooking(true);
-    try {
-      const res = await fetch(`/api/jan-product/${jan}`);
-      if (!res.ok) return;
-      const { product_name } = await res.json();
-      if (product_name && !formData.product_name) {
-        setFormData(prev => ({ ...prev, product_name }));
-      }
-    } catch { /* ignore */ } finally {
-      setJanLooking(false);
-    }
-  };
+  const { isLooking: janLooking } = useJanProductAutoFill({
+    janCode: formData.jan_code || '',
+    productName: formData.product_name,
+    onProductNameChange: (productName) => {
+      setFormData(prev => ({
+        ...prev,
+        product_name: prev.product_name ? prev.product_name : productName,
+      }));
+    },
+  });
 
   // 处理输入变化
   const handleInputChange = (
@@ -468,25 +461,25 @@ function AddTransactionPageContent() {
           <h1 className={heading.h1 + ' mb-2'}>
             记录新交易
           </h1>
-          <p className="text-apple-gray-1">快速录入您的转卖商品信息</p>
+          <p className="text-[var(--color-text-muted)]">快速录入您的转卖商品信息</p>
         </div>
 
         {/* 表单卡片 */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:space-y-0">
           <div className="space-y-6">
-          <div className={card.primary + ' p-6 shadow-card'}>
+          <div className="sn-form-card">
             {/* 基本信息 */}
             <div className="space-y-5">
               <h2 className={heading.h3 + ' flex items-center gap-2'}>
-                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+                <div className="sn-form-title-bar"></div>
                 基本信息
               </h2>
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    日期 <span className="text-apple-red">*</span>
+                  <label className="sn-form-label">
+                    日期 <span className="text-[var(--color-danger)]">*</span>
                   </label>
                   <DatePicker
                     selected={formData.date ? parseDateFromLocal(formData.date) : null}
@@ -496,12 +489,12 @@ function AddTransactionPageContent() {
                         date: formatDateToLocal(date)
                       }));
                     }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full sn-form-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     JAN
                   </label>
                   <div className="flex items-center gap-2">
@@ -510,12 +503,11 @@ function AddTransactionPageContent() {
                       name="jan_code"
                       value={formData.jan_code || ''}
                       onChange={handleInputChange}
-                      onBlur={() => handleJanBlur()}
                       placeholder="4901234567890"
-                      className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="flex-1 sn-form-input"
                     />
                     {janLooking ? (
-                      <svg className="animate-spin h-5 w-5 text-apple-blue flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5 text-[var(--color-primary)] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -523,8 +515,8 @@ function AddTransactionPageContent() {
                       <button
                         type="button"
                         onClick={() => setShowScanner(true)}
-                        className="flex-shrink-0 p-2 text-gray-400 hover:text-apple-blue hover:bg-apple-blue/5 dark:hover:bg-apple-blue/10 rounded-lg transition-colors"
-                        title="バーコードをスキャン"
+                        className="flex-shrink-0 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-lg transition-colors"
+                        title="扫描条形码"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -532,14 +524,14 @@ function AddTransactionPageContent() {
                       </button>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-apple-gray-1">
+                  <p className="sn-form-muted">
                     输入JAN码后如果商品名称为空会自动补全（仅限部分常见商品）
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    商品名称 <span className="text-apple-red">*</span>
+                  <label className="sn-form-label">
+                    商品名称 <span className="text-[var(--color-danger)]">*</span>
                   </label>
                   <input
                     type="text"
@@ -547,17 +539,17 @@ function AddTransactionPageContent() {
                     value={formData.product_name}
                     onChange={handleInputChange}
                     placeholder="例: Nintendo Switch OLED"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full sn-form-input"
                     required
                   />
                   {errors.product_name && (
-                    <p className="mt-1 text-sm text-apple-red">{errors.product_name}</p>
+                    <p className="sn-form-error">{errors.product_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    数量 <span className="text-apple-red">*</span>
+                  <label className="sn-form-label">
+                    数量 <span className="text-[var(--color-danger)]">*</span>
                   </label>
                   <input
                     type="text"
@@ -566,21 +558,21 @@ function AddTransactionPageContent() {
                     value={formData.quantity || ''}
                     onChange={handleNumberChange}
                     placeholder="1"
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full sn-form-input"
                     required
                   />
-                  <p className="mt-1 text-xs text-apple-gray-1">
+                  <p className="sn-form-muted">
                     批量进货时填写总数量，如30个
                   </p>
                 </div>
 
                 {/* 未着品トグル */}
-                <div className="flex items-center justify-between p-3 bg-apple-gray-6 dark:bg-white/5 rounded-xl">
+                <div className="sn-form-subtle-panel flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-medium text-gray-900 dark:text-white">
+                    <label className="text-sm font-medium text-[var(--color-text)]">
                       未到货
                     </label>
-                    <p className="text-xs text-apple-gray-1 mt-0.5">
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                       商品尚未到达
                     </p>
                   </div>
@@ -590,7 +582,7 @@ function AddTransactionPageContent() {
                     aria-checked={isPending}
                     onClick={() => setIsPending(!isPending)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      isPending ? 'bg-apple-orange' : 'bg-apple-gray-3 dark:bg-apple-gray-1'
+                      isPending ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-border)]'
                     }`}
                   >
                     <span
@@ -605,15 +597,15 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 采购信息 */}
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
+          <div className="sn-form-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+              <h2 className="sn-form-title">
+                <div className="sn-form-title-bar"></div>
                 采购信息
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <label className="sn-form-label">
                   订单号
                 </label>
                 <input
@@ -622,12 +614,12 @@ function AddTransactionPageContent() {
                   value={formData.order_number || ''}
                   onChange={handleInputChange}
                   placeholder="订单号"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                  className="w-full sn-form-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <label className="sn-form-label">
                   单价 (¥)
                 </label>
                 <div className="relative">
@@ -652,17 +644,17 @@ function AddTransactionPageContent() {
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full sn-form-input pr-12"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                  <span className="sn-form-addon">¥</span>
                 </div>
-                <p className="mt-1 text-xs text-apple-gray-1">
+                <p className="sn-form-muted">
                   输入后采购总价将自动计算（单价 × 数量）
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <label className="sn-form-label">
                   采购平台
                 </label>
                 <div className="flex gap-2">
@@ -670,7 +662,7 @@ function AddTransactionPageContent() {
                     name="purchase_platform_id"
                     value={formData.purchase_platform_id || ''}
                     onChange={handleInputChange}
-                    className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="flex-1 sn-form-input"
                   >
                     <option value="">请选择</option>
                     {purchasePlatforms.map((p) => (
@@ -686,13 +678,13 @@ function AddTransactionPageContent() {
                     value={newPurchasePlatformName}
                     onChange={(e) => setNewPurchasePlatformName(e.target.value)}
                     placeholder="添加新的采购平台..."
-                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-lg text-sm text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="flex-1 sn-form-input py-2"
                   />
                   <button
                     type="button"
                     onClick={handleAddPurchasePlatform}
                     disabled={!newPurchasePlatformName.trim()}
-                    className="px-3 py-2 bg-apple-blue active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+                    className="px-3 py-2 bg-[var(--color-primary)] active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
                   >
                     添加
                   </button>
@@ -704,16 +696,16 @@ function AddTransactionPageContent() {
 
           <div className="space-y-6">
           {/* 采购成本 */}
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
+          <div className="sn-form-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+              <h2 className="sn-form-title">
+                <div className="sn-form-title-bar"></div>
                 采购成本
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  采购总价 <span className="text-apple-red">*</span>
+                <label className="sn-form-label">
+                  采购总价 <span className="text-[var(--color-danger)]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -736,58 +728,65 @@ function AddTransactionPageContent() {
                       }
                     }}
                     placeholder="0.00 或 3,000"
-                    className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                    className="w-full sn-form-input pr-12"
                     required
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                  <span className="sn-form-addon">¥</span>
                 </div>
                 {errors.purchase_price_total && (
-                  <p className="mt-1 text-sm text-apple-red">{errors.purchase_price_total}</p>
+                  <p className="sn-form-error">{errors.purchase_price_total}</p>
                 )}
               </div>
 
               {/* 混合支付 */}
-              <div className="grid grid-cols-1 gap-4 pt-4 border-t border-apple-separator dark:border-apple-sepDark/50">
+              <div className="grid grid-cols-1 gap-4 pt-4 border-t border-[var(--color-border)]">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    信用卡支付
-                  </label>
-                  <div className="flex gap-3">
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={formData.card_paid || ''}
-                        onChange={(e) => handlePaymentChange('card_paid', e.target.value)}
-                        placeholder="0.00 或 3,000"
-                        className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <label className="sn-form-label">
+                        信用卡支付
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={formData.card_paid || ''}
+                          onChange={(e) => handlePaymentChange('card_paid', e.target.value)}
+                          placeholder="0.00 或 3,000"
+                          className="w-full sn-form-input pr-12"
+                        />
+                        <span className="sn-form-addon">¥</span>
+                      </div>
                     </div>
-                    <select
-                      name="card_id"
-                      value={formData.card_id}
-                      onChange={handleInputChange}
-                      className="px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
-                      disabled={formData.card_paid === 0}
-                    >
-                      <option value="">选择卡片</option>
-                      {paymentMethods
-                        .filter((pm) => pm.type === 'card')
-                        .map((pm) => (
-                          <option key={pm.id} value={pm.id}>
-                            {pm.name}
-                          </option>
-                        ))}
-                    </select>
+                    <div className="min-w-0">
+                      <label className="sn-form-label">
+                        支付卡片
+                      </label>
+                      <select
+                        name="card_id"
+                        value={formData.card_id}
+                        onChange={handleInputChange}
+                        className="w-full sn-form-input"
+                        disabled={formData.card_paid === 0}
+                      >
+                        <option value="">选择卡片</option>
+                        {paymentMethods
+                          .filter((pm) => pm.type === 'card')
+                          .map((pm) => (
+                            <option key={pm.id} value={pm.id}>
+                              {pm.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   </div>
                   {errors.card_id && (
-                    <p className="mt-1 text-sm text-apple-red">{errors.card_id}</p>
+                    <p className="sn-form-error">{errors.card_id}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     积分抵扣
                   </label>
                   <div className="relative">
@@ -797,14 +796,14 @@ function AddTransactionPageContent() {
                       value={formData.point_paid || ''}
                       onChange={(e) => handlePaymentChange('point_paid', e.target.value)}
                       placeholder="0.00 或 3,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full sn-form-input pr-12"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+                    <span className="sn-form-addon">¥</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     余额支付
                   </label>
                   <div className="relative">
@@ -812,16 +811,16 @@ function AddTransactionPageContent() {
                       type="number"
                       value={formData.balance_paid || ''}
                       readOnly
-                      className="w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark/50 rounded-xl text-apple-gray-1 cursor-not-allowed"
+                      className="w-full px-4 py-3 pr-12 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-muted)] cursor-not-allowed"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1 dark:text-apple-gray-1">¥</span>
+                    <span className="sn-form-addon">¥</span>
                   </div>
-                  <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">自动计算</p>
+                  <p className="sn-form-muted">自动计算</p>
                 </div>
 
                 {errors.payment && (
-                  <div className="p-3 bg-apple-red/10 border border-apple-red/30 rounded-lg">
-                    <p className="text-sm text-apple-red">{errors.payment}</p>
+                  <div className="sn-form-alert-error">
+                    <p className="text-sm text-[var(--color-danger)]">{errors.payment}</p>
                   </div>
                 )}
               </div>
@@ -829,17 +828,17 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 预期积分 */}
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
+          <div className="sn-form-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-apple-orange to-apple-orange/60 rounded-full"></div>
+              <h2 className="sn-form-title">
+                <div className="sn-form-title-bar"></div>
                 预期积分
               </h2>
 
               {/* 平台积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     平台积分数量
                   </label>
                   <div className="relative">
@@ -850,13 +849,13 @@ function AddTransactionPageContent() {
                       value={formData.expected_platform_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full sn-form-input pr-12"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
+                    <span className="sn-form-addon">P</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     积分平台
                   </label>
                   <select
@@ -864,7 +863,7 @@ function AddTransactionPageContent() {
                     value={formData.platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -874,7 +873,7 @@ function AddTransactionPageContent() {
                     ))}
                   </select>
                   {errors.platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-apple-red">{errors.platform_points_platform_id}</p>
+                    <p className="sn-form-error">{errors.platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -882,9 +881,9 @@ function AddTransactionPageContent() {
               {/* 额外平台积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     额外积分数量
-                    <span className="text-xs text-apple-gray-1 ml-2">(如d point)</span>
+                    <span className="text-xs text-[var(--color-text-muted)] ml-2">(如d point)</span>
                   </label>
                   <div className="relative">
                     <input
@@ -894,13 +893,13 @@ function AddTransactionPageContent() {
                       value={formData.extra_platform_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full sn-form-input pr-12"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
+                    <span className="sn-form-addon">P</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     额外积分平台
                   </label>
                   <select
@@ -908,7 +907,7 @@ function AddTransactionPageContent() {
                     value={formData.extra_platform_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={!formData.extra_platform_points || formData.extra_platform_points === 0}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -918,7 +917,7 @@ function AddTransactionPageContent() {
                     ))}
                   </select>
                   {errors.extra_platform_points_platform_id && (
-                    <p className="mt-1 text-sm text-apple-red">{errors.extra_platform_points_platform_id}</p>
+                    <p className="sn-form-error">{errors.extra_platform_points_platform_id}</p>
                   )}
                 </div>
               </div>
@@ -926,10 +925,10 @@ function AddTransactionPageContent() {
               {/* 信用卡积分 - 组合式布局 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     信用卡积分数量
                     {formData.card_id && paymentMethods.find(pm => pm.id === formData.card_id) && (
-                      <span className="ml-2 text-xs text-apple-green">
+                      <span className="ml-2 text-xs text-[var(--color-primary)]">
                         (返点率: {(paymentMethods.find(pm => pm.id === formData.card_id)?.point_rate || 0) * 100}%)
                       </span>
                     )}
@@ -942,14 +941,14 @@ function AddTransactionPageContent() {
                       value={formData.expected_card_points || ''}
                       onChange={handleNumberChange}
                       placeholder="0 或 1,000"
-                      className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all"
+                      className="w-full sn-form-input pr-12"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">P</span>
+                    <span className="sn-form-addon">P</span>
                   </div>
-                  <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">根据卡片返点率自动计算，可手动调整</p>
+                  <p className="sn-form-muted">根据卡片返点率自动计算，可手动调整</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <label className="sn-form-label">
                     信用卡积分平台
                   </label>
                   <select
@@ -957,7 +956,7 @@ function AddTransactionPageContent() {
                     value={formData.card_points_platform_id || ''}
                     onChange={handleInputChange}
                     disabled={formData.expected_card_points === 0 || !formData.card_id}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">选择平台</option>
                     {pointsPlatforms.map((platform) => (
@@ -967,10 +966,10 @@ function AddTransactionPageContent() {
                     ))}
                   </select>
                   {errors.card_points_platform_id && (
-                    <p className="mt-1 text-sm text-apple-red">{errors.card_points_platform_id}</p>
+                    <p className="sn-form-error">{errors.card_points_platform_id}</p>
                   )}
                   {formData.card_id && formData.card_points_platform_id && (
-                    <p className="mt-1 text-xs text-apple-gray-1 dark:text-apple-gray-1">
+                    <p className="sn-form-muted">
                       已从支付方式自动设置
                     </p>
                   )}
@@ -980,21 +979,21 @@ function AddTransactionPageContent() {
           </div>
 
           {/* 凭证上传 */}
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
+          <div className="sn-form-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-rose-500 to-pink-500 rounded-full"></div>
+              <h2 className="sn-form-title">
+                <div className="sn-form-title-bar"></div>
                 凭证上传
               </h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <label className="sn-form-label">
                   采购截图
                 </label>
                 
                 {imagePreview ? (
                   <div className="relative group">
-                    <div className="relative w-full h-48 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark">
+                    <div className="relative h-48 w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
                       <Image
                         src={imagePreview}
                         alt="预览"
@@ -1008,7 +1007,7 @@ function AddTransactionPageContent() {
                         setSelectedImage(null);
                         setImagePreview('');
                       }}
-                      className="absolute top-2 right-2 p-2 bg-apple-red active:opacity-80 rounded-lg transition-colors"
+                      className="absolute top-2 right-2 p-2 bg-[var(--color-danger)] active:opacity-80 rounded-lg transition-colors"
                     >
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1016,15 +1015,15 @@ function AddTransactionPageContent() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-apple-separator dark:border-apple-sepDark rounded-xl cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-white dark:bg-gray-700 transition-all">
+                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-[var(--color-border)] rounded-xl cursor-pointer bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-elevated)] transition-all">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-12 h-12 mb-3 text-apple-gray-1 dark:text-apple-gray-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 mb-3 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      <p className="mb-2 text-sm text-apple-gray-1">
+                      <p className="mb-2 text-sm text-[var(--color-text-muted)]">
                         <span className="font-semibold">点击上传</span>
                       </p>
-                      <p className="text-xs text-apple-gray-1 dark:text-apple-gray-1">PNG, JPG 或 WEBP (最大 5MB)</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">PNG, JPG 或 WEBP (最大 5MB)</p>
                     </div>
                     <input
                       type="file"
@@ -1035,17 +1034,17 @@ function AddTransactionPageContent() {
                   </label>
                 )}
                 {errors.image && (
-                  <p className="mt-1 text-sm text-apple-red">{errors.image}</p>
+                  <p className="sn-form-error">{errors.image}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* 备注 */}
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-6 shadow-card">
+          <div className="sn-form-card">
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
+              <h2 className="sn-form-title">
+                <div className="sn-form-title-bar"></div>
                 备注
               </h2>
 
@@ -1055,7 +1054,7 @@ function AddTransactionPageContent() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="添加备注信息..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all resize-none"
+                className="w-full sn-form-input resize-none"
               />
             </div>
           </div>
@@ -1064,8 +1063,8 @@ function AddTransactionPageContent() {
 
           {/* 提交按钮 */}
           {errors.submit && (
-            <div className="p-4 bg-apple-red/10 border border-apple-red/30 rounded-xl">
-              <p className="text-sm text-apple-red">{errors.submit}</p>
+            <div className="p-4 rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)]">
+              <p className="text-sm text-[var(--color-danger)]">{errors.submit}</p>
             </div>
           )}
 
@@ -1073,7 +1072,7 @@ function AddTransactionPageContent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-apple-blue active:opacity-70 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none"
+              className={button.primary + ' flex-1 py-3'}
             >
               {isSubmitting && !continueAdding ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1097,7 +1096,7 @@ function AddTransactionPageContent() {
                 const form = document.querySelector('form');
                 form?.requestSubmit();
               }}
-              className="flex-1 py-4 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:bg-gray-400 text-apple-blue font-semibold rounded-xl transition-all duration-200 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none border-2 border-apple-blue"
+              className={button.secondary + ' flex-1 py-3'}
             >
               {isSubmitting && continueAdding ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1115,11 +1114,10 @@ function AddTransactionPageContent() {
         </form>
       </div>
       {showScanner && (
-        <BarcodeScanner
+          <BarcodeScanner
           onDetected={(code) => {
             setFormData(prev => ({ ...prev, jan_code: code }));
             setShowScanner(false);
-            setTimeout(() => handleJanBlur(code), 100);
           }}
           onClose={() => setShowScanner(false)}
         />
@@ -1131,8 +1129,8 @@ function AddTransactionPageContent() {
 export default function AddTransactionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[var(--color-text)]">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

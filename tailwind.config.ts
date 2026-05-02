@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -21,24 +22,24 @@ const config: Config = {
       // Apple iOS 语义色
       colors: {
         apple: {
-          bg:       '#F2F2F7',  // systemGroupedBackground
-          bgDark:   '#000000',  // dark background
-          card:     '#FFFFFF',  // secondarySystemGroupedBackground
-          cardDark: '#1C1C1E',  // dark card
-          blue:     '#007AFF',  // systemBlue
-          green:    '#34C759',  // systemGreen
-          red:      '#FF3B30',  // systemRed
-          orange:   '#FF9500',  // systemOrange
+          bg:       '#f8fafc',
+          bgDark:   '#1B1B26',
+          card:     '#FFFFFF',
+          cardDark: '#24283b',
+          blue:     '#10b981',
+          green:    '#10b981',
+          red:      '#ef4444',
+          orange:   '#f59e0b',
           gray: {
-            1: '#8E8E93',  // systemGray
-            2: '#AEAEB2',  // systemGray2
-            3: '#C7C7CC',  // systemGray3
-            4: '#D1D1D6',  // systemGray4
-            5: '#E5E5EA',  // systemGray5
-            6: '#F2F2F7',  // systemGray6
+            1: '#64748b',
+            2: '#94a3b8',
+            3: '#cbd5e1',
+            4: '#dbe4ef',
+            5: '#e2e8f0',
+            6: '#f1f5f9',
           },
-          separator: '#C6C6C8',
-          sepDark:   '#38383A',
+          separator: '#e2e8f0',
+          sepDark:   'rgba(255,255,255,0.15)',
         },
       },
       // 动画
@@ -81,8 +82,8 @@ const config: Config = {
       },
       // 阴影（Apple 风格：极浅，仅用于区分层级）
       boxShadow: {
-        'card': '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.06)',
-        'card-md': '0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)',
+        'card': '0 1px 2px rgba(0,0,0,0.04)',
+        'card-md': '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04)',
       },
       // 字体大小优化（移动端友好）
       fontSize: {

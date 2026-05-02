@@ -24,7 +24,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0d9488',
+  viewportFit: 'cover',
+  themeColor: '#1b1b26',
 }
 
 export default function RootLayout({
@@ -33,12 +34,33 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`
+            (function () {
+              var storageKey = 'snutils-theme';
+              var theme;
+              try {
+                theme = window.localStorage.getItem(storageKey);
+              } catch (e) {}
+
+              if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+              }
+
+              document.documentElement.setAttribute('data-theme', theme);
+              document.documentElement.classList.toggle('dark', theme === 'dark');
+              if (document.body) {
+                document.body.setAttribute('data-theme', theme);
+              }
+            })();
+          `}
+        </Script>
         <ClientProviders>
-          <div className="lg:flex lg:min-h-screen">
+          <div className="lg:flex lg:min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
             <Navigation />
-            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pb-0">
+            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pt-[63px] lg:pb-0">
               {children}
             </div>
           </div>

@@ -8,6 +8,7 @@ import type { Transaction } from '@/types/database.types';
 import { createReturnRecord } from '@/lib/api/return-records';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString } from '@/lib/utils/dateUtils';
+import { button, input } from '@/lib/theme';
 
 interface ReturnFormProps {
   transaction: Pick<Transaction, 'id' | 'quantity_in_stock'>;
@@ -65,16 +66,16 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {showHeader && (
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <div className="w-1 h-6 bg-gradient-to-b from-apple-red to-apple-red/70 rounded-full"></div>
+        <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
+          <div className="h-6 w-1 rounded-full bg-[var(--color-danger)]"></div>
           记录退货
         </h2>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            退货数量 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            退货数量 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="number"
@@ -83,26 +84,26 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
             required
             min="1"
             max={transaction.quantity_in_stock}
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
-          <p className="mt-1 text-xs text-apple-gray-1">
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
             当前库存: {transaction.quantity_in_stock} 个
           </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            退货日期 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            退货日期 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="date"
             value={returnData.return_date}
             onChange={(e) => setReturnData({ ...returnData, return_date: e.target.value })}
             required
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             退款金额
           </label>
           <div className="relative">
@@ -112,13 +113,13 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
               value={returnData.return_amount || ''}
               onChange={(e) => setReturnData({ ...returnData, return_amount: parseNumberInput(e.target.value, 0) })}
               placeholder="0.00"
-              className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all"
+              className={input.base + ' w-full pr-12'}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             扣除积分
           </label>
           <input
@@ -127,13 +128,13 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
             value={returnData.points_deducted || ''}
             onChange={(e) => setReturnData({ ...returnData, points_deducted: parseNumberInput(e.target.value, 0) })}
             placeholder="退货时被扣除的积分数量"
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
           退货原因
         </label>
         <input
@@ -141,12 +142,12 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
           value={returnData.return_reason}
           onChange={(e) => setReturnData({ ...returnData, return_reason: e.target.value })}
           placeholder="不良品、尺寸不符、订单错误等"
-          className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all"
+          className={input.base + ' w-full'}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
           备注
         </label>
         <textarea
@@ -154,19 +155,19 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
           onChange={(e) => setReturnData({ ...returnData, notes: e.target.value })}
           rows={3}
           placeholder="其他退货相关信息..."
-          className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-red focus:border-transparent transition-all resize-none"
+          className={input.base + ' w-full resize-none'}
         />
       </div>
 
       {error && (
-        <p className="text-sm text-apple-red">{error}</p>
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       )}
 
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={submitting}
-          className="px-6 py-3 bg-apple-red disabled:opacity-40 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
+          className={button.danger}
         >
           {submitting ? '提交中...' : '确认退货'}
         </button>
@@ -174,7 +175,7 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="px-6 py-3 bg-white dark:bg-apple-cardDark dark:hover:bg-white/5 text-gray-900 dark:text-white rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark disabled:opacity-40"
+          className={button.secondary}
         >
           取消
         </button>

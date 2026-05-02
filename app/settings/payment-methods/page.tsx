@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentMethod } from '@/types/database.types';
-import Link from 'next/link';
-import { layout, heading, card, button, badge } from '@/lib/theme';
+import { badge, button, card, heading, layout } from '@/lib/theme';
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -44,7 +44,6 @@ export default function PaymentMethodsPage() {
 
       if (error) throw error;
 
-      // 更新本地状态
       setPaymentMethods(methods =>
         methods.map(m => m.id === id ? { ...m, payment_same_month: paymentSameMonth } : m)
       );
@@ -65,7 +64,6 @@ export default function PaymentMethodsPage() {
 
       if (error) throw error;
 
-      // 更新本地状态
       setPaymentMethods(methods =>
         methods.map(m => m.id === id ? { ...m, is_active: !isActive } : m)
       );
@@ -75,45 +73,46 @@ export default function PaymentMethodsPage() {
     }
   };
 
+  const cardMethods = paymentMethods.filter(pm => pm.type === 'card');
+  const selectClass = 'rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm text-[var(--color-text)] transition-all focus:border-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary-light)] disabled:cursor-not-allowed disabled:opacity-50';
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-          <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-xl">加载中...</span>
+      <div className={layout.page}>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="flex items-center gap-3 text-[var(--color-text)]">
+            <svg className="h-7 w-7 animate-spin text-[var(--color-primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-sm font-medium">加载中...</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-apple-bg dark:bg-apple-bgDark">
-      <div className="relative max-w-6xl mx-auto px-4 py-8">
-        {/* 标题区域 */}
-        <div className="mb-8">
+    <div className={layout.page}>
+      <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6">
+        <div className="mb-6">
           <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-apple-gray-1 hover:text-gray-900 dark:text-white transition-colors mb-4"
+            href="/settings"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-primary)]"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">返回仪表盘</span>
+            返回设置
           </Link>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">支付方式管理</h1>
-              <p className="text-apple-gray-1">配置信用卡还款周期和其他设置</p>
+              <h1 className={heading.h1}>支付方式管理</h1>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">配置信用卡还款周期、返点率和启用状态。</p>
             </div>
-            <Link
-              href="/settings/payment-methods/add"
-              className="px-6 py-3 bg-apple-blue active:opacity-70 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Link href="/settings/payment-methods/add" className={`${button.primary} gap-2`}>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               添加支付方式
@@ -121,126 +120,131 @@ export default function PaymentMethodsPage() {
           </div>
         </div>
 
-        {/* 信用卡列表 */}
-        <div className="bg-white dark:bg-apple-cardDark rounded-xl shadow-card overflow-hidden">
-          <div className="p-6 border-b border-apple-separator dark:border-apple-sepDark">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <div className="w-1 h-6 bg-apple-blue rounded-full"></div>
-              信用卡配置
-            </h2>
+        <section className="mb-6">
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-[var(--color-text)]">
+            <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
+            信用卡配置
+          </h2>
+
+          <div className="space-y-3 md:hidden">
+            {cardMethods.map(method => (
+              <div key={method.id} className={card.primary + ' p-4'}>
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-[var(--color-text)]">{method.name}</h3>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                      账单日 {method.closing_day ? `${method.closing_day} 日` : '-'} · 还款日 {method.payment_day ? `${method.payment_day} 日` : '-'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => toggleActive(method.id, method.is_active)}
+                    className={method.is_active ? badge.success : badge.neutral}
+                  >
+                    {method.is_active ? '启用' : '禁用'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3">
+                    <div className="text-xs text-[var(--color-text-muted)]">返点率</div>
+                    <div className="mt-1 font-semibold text-[var(--color-primary)]">{((method.point_rate || 0) * 100).toFixed(2)}%</div>
+                  </div>
+                  <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3">
+                    <div className="text-xs text-[var(--color-text-muted)]">还款周期</div>
+                    <select
+                      value={method.payment_same_month ? 'same' : 'next'}
+                      onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
+                      disabled={saving === method.id || !method.closing_day || !method.payment_day}
+                      className={`${selectClass} mt-1 w-full py-1.5 text-xs`}
+                    >
+                      <option value="next">次月还款</option>
+                      <option value="same">当月还款</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-[var(--color-text-muted)]">{saving === method.id ? '保存中...' : ' '}</span>
+                  <Link href={`/settings/payment-methods/${method.id}/edit`} className={button.link}>
+                    编辑
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-apple-separator dark:border-apple-sepDark">
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    名称
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    账单日
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    还款日
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    还款周期
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    返点率
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    状态
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-apple-gray-1 uppercase tracking-wider">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-apple-separator dark:divide-apple-sepDark">
-                {paymentMethods.filter(pm => pm.type === 'card').map((method) => (
-                  <tr key={method.id} className="active:bg-apple-gray-6 dark:active:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">
-                      {method.name}
-                    </td>
-                    <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
-                      {method.closing_day ? `${method.closing_day}日` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-center text-gray-900 dark:text-white">
-                      {method.payment_day ? `${method.payment_day}日` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <select
-                        value={method.payment_same_month ? 'same' : 'next'}
-                        onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
-                        disabled={saving === method.id || !method.closing_day || !method.payment_day}
-                        className="px-3 py-2 bg-white dark:bg-apple-cardDark border border-apple-separator dark:border-apple-sepDark rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/30 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="next">次月还款</option>
-                        <option value="same">当月还款</option>
-                      </select>
-                      {saving === method.id && (
-                        <div className="mt-1 text-xs text-apple-green">保存中...</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-apple-green font-medium">
-                        {(method.point_rate * 100).toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => toggleActive(method.id, method.is_active)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          method.is_active
-                            ? 'bg-apple-green/10 text-apple-green border border-apple-green/30 active:bg-apple-green/20'
-                            : 'bg-apple-gray-5 dark:bg-white/10 text-apple-gray-1 border border-apple-separator dark:border-apple-sepDark active:opacity-80'
-                        }`}
-                      >
-                        {method.is_active ? '启用' : '禁用'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <Link
-                        href={`/settings/payment-methods/${method.id}/edit`}
-                        className="inline-flex items-center px-3 py-1 text-sm text-apple-blue font-medium"
-                      >
-                        编辑
-                      </Link>
-                    </td>
+          <div className={card.primary + ' hidden overflow-hidden md:block'}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[var(--color-bg-subtle)]">
+                  <tr className="border-b border-[var(--color-border)]">
+                    {['名称', '账单日', '还款日', '还款周期', '返点率', '状态', '操作'].map(label => (
+                      <th key={label} className="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] first:text-left">
+                        {label}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {cardMethods.map(method => (
+                    <tr key={method.id} className="transition-colors hover:bg-[var(--color-bg-subtle)]">
+                      <td className="px-5 py-4 text-sm font-semibold text-[var(--color-text)]">{method.name}</td>
+                      <td className="px-5 py-4 text-center text-sm text-[var(--color-text)]">{method.closing_day ? `${method.closing_day} 日` : '-'}</td>
+                      <td className="px-5 py-4 text-center text-sm text-[var(--color-text)]">{method.payment_day ? `${method.payment_day} 日` : '-'}</td>
+                      <td className="px-5 py-4 text-center">
+                        <select
+                          value={method.payment_same_month ? 'same' : 'next'}
+                          onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
+                          disabled={saving === method.id || !method.closing_day || !method.payment_day}
+                          className={selectClass}
+                        >
+                          <option value="next">次月还款</option>
+                          <option value="same">当月还款</option>
+                        </select>
+                        {saving === method.id && <div className="mt-1 text-xs text-[var(--color-primary)]">保存中...</div>}
+                      </td>
+                      <td className="px-5 py-4 text-center text-sm font-semibold text-[var(--color-primary)]">
+                        {((method.point_rate || 0) * 100).toFixed(2)}%
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <button
+                          onClick={() => toggleActive(method.id, method.is_active)}
+                          className={method.is_active ? badge.success : badge.neutral}
+                        >
+                          {method.is_active ? '启用' : '禁用'}
+                        </button>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <Link href={`/settings/payment-methods/${method.id}/edit`} className={button.link}>
+                          编辑
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* 说明卡片 */}
-        <div className="mt-6 bg-apple-blue/10 backdrop-blur-xl rounded-xl p-6 border border-apple-blue/30">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-            <svg className="w-5 h-5 text-apple-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <section className={card.primary + ' p-5'}>
+          <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-[var(--color-text)]">
+            <svg className="h-5 w-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             还款周期说明
           </h3>
-          <div className="space-y-2 text-sm text-gray-900 dark:text-white">
-            <div>
-              <span className="font-medium text-gray-900 dark:text-white">次月还款：</span>
-              还款日在账单日的下个月（大部分信用卡的模式）
-              <div className="ml-4 mt-1 text-xs text-apple-gray-1">
-                示例：账单日 25日，还款日 15日 → 1月10日消费，2月15日还款
-              </div>
-            </div>
-            <div>
-              <span className="font-medium text-gray-900 dark:text-white">当月还款：</span>
-              还款日在账单日的当月（部分储蓄卡联名卡或特殊信用卡）
-              <div className="ml-4 mt-1 text-xs text-apple-gray-1">
-                示例：账单日 15日，还款日 28日 → 1月10日消费，1月28日还款
-              </div>
-            </div>
+          <div className="space-y-3 text-sm text-[var(--color-text)]">
+            <p>
+              <span className="font-semibold">次月还款：</span>
+              还款日在账单日的下个月。示例：账单日 25 日，还款日 15 日，1 月 10 日消费会在 2 月 15 日还款。
+            </p>
+            <p>
+              <span className="font-semibold">当月还款：</span>
+              还款日在账单日的当月。示例：账单日 15 日，还款日 28 日，1 月 10 日消费会在 1 月 28 日还款。
+            </p>
           </div>
-        </div>
-
+        </section>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import { quickCopyTransaction } from '@/lib/api/transactions';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString } from '@/lib/utils/dateUtils';
 import { formatCurrency } from '@/lib/financial/calculator';
+import { button, input } from '@/lib/theme';
 
 interface QuickCopyFormProps {
   source: Transaction;
@@ -60,46 +61,46 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-apple-gray-6 dark:bg-white/5 rounded-xl p-3 text-sm">
-        <div className="text-gray-900 dark:text-white font-medium line-clamp-2 break-cjk">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3 text-sm">
+        <div className="line-clamp-2 break-cjk font-medium text-[var(--color-text)]">
           {source.product_name}
         </div>
         {source.jan_code && (
-          <div className="font-mono text-xs text-apple-gray-2 mt-1">{source.jan_code}</div>
+          <div className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{source.jan_code}</div>
         )}
-        <div className="text-xs text-apple-gray-1 mt-1">
+        <div className="mt-1 text-xs text-[var(--color-text-muted)]">
           原:{source.quantity} 件 × {formatCurrency(source.unit_price ?? Math.round((source.purchase_price_total || 0) / Math.max(source.quantity, 1)))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            进货日期 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            进货日期 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             required
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">订单号</label>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">订单号</label>
           <input
             type="text"
             value={formData.order_number}
             onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
             placeholder="可选"
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            数量 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            数量 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <input
             type="number"
@@ -107,13 +108,13 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
             value={formData.quantity || ''}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? 0 : parseInt(e.target.value) })}
             required
-            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+            className={input.base + ' w-full'}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            单价 <span className="text-apple-red">*</span>
+          <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+            单价 <span className="text-[var(--color-danger)]">*</span>
           </label>
           <div className="relative">
             <input
@@ -122,33 +123,33 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
               value={formData.unit_price || ''}
               onChange={(e) => setFormData({ ...formData, unit_price: parseNumberInput(e.target.value, 0) })}
               required
-              className="w-full px-4 py-3 pr-12 bg-white dark:bg-gray-700 border border-apple-separator dark:border-apple-sepDark rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent transition-all"
+              className={input.base + ' w-full pr-12'}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-apple-gray-1">¥</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-apple-blue/5 border border-apple-blue/20 rounded-xl p-3 text-sm">
-        <div className="flex justify-between text-gray-900 dark:text-white">
-          <span className="text-apple-gray-1">合计</span>
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary)]/20 bg-[var(--color-primary-light)] p-3 text-sm">
+        <div className="flex justify-between text-[var(--color-text)]">
+          <span className="text-[var(--color-text-muted)]">合计</span>
           <span className="font-medium">{formatCurrency(newTotal)}</span>
         </div>
-        <p className="text-xs text-apple-gray-1 mt-2">
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
           其他字段(JAN、商品名、平台、积分、备注)从原交易复制。如需调整,请用{' '}
-          <Link href={`/transactions/add?copy=${source.id}`} className="text-apple-blue hover:underline">
+          <Link href={`/transactions/add?copy=${source.id}`} className="text-[var(--color-primary)] hover:underline">
             完整新建
           </Link>
         </p>
       </div>
 
-      {error && <p className="text-sm text-apple-red">{error}</p>}
+      {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting}
-          className="px-6 py-3 bg-apple-blue disabled:opacity-40 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed"
+          className={button.primary}
         >
           {submitting ? '创建中...' : '复制并创建'}
         </button>
@@ -156,7 +157,7 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="px-6 py-3 bg-white dark:bg-apple-cardDark dark:hover:bg-white/5 text-gray-900 dark:text-white rounded-xl transition-all border border-apple-separator dark:border-apple-sepDark disabled:opacity-40"
+          className={button.secondary}
         >
           取消
         </button>

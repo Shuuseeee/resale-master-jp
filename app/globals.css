@@ -2,7 +2,234 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .sn-form-card {
+    @apply bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-6;
+  }
+
+  .sn-form-title {
+    @apply flex items-center gap-2 text-[17px] font-semibold text-[var(--color-text)];
+  }
+
+  .sn-form-title-bar {
+    @apply h-6 w-1 rounded-full bg-[var(--color-primary)];
+  }
+
+  .sn-form-label {
+    @apply mb-2 block text-sm font-medium text-[var(--color-text)];
+  }
+
+  .sn-form-input {
+    @apply w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] placeholder:opacity-50 focus:border-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary-light)] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .sn-form-input-readonly {
+    @apply w-full cursor-not-allowed rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3.5 py-2.5 text-sm text-[var(--color-text-muted)];
+  }
+
+  .sn-form-muted {
+    @apply mt-1 text-xs text-[var(--color-text-muted)];
+  }
+
+  .sn-form-error {
+    @apply mt-1 text-sm text-[var(--color-danger)];
+  }
+
+  .sn-form-addon {
+    @apply absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)];
+  }
+
+  .sn-form-subtle-panel {
+    @apply rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3;
+  }
+
+  .sn-form-alert-error {
+    @apply rounded-[var(--radius-md)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-3 text-sm text-[var(--color-danger)];
+  }
+
+  .sn-upload-box {
+    @apply flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-subtle)] transition-all hover:bg-[var(--color-bg-elevated)];
+  }
+
+  .sn-detail-card {
+    @apply rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-[var(--shadow-sm)];
+  }
+
+  .sn-detail-title {
+    @apply mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)];
+  }
+
+  .sn-detail-title-lg {
+    @apply mb-4 flex items-center gap-2 text-xl font-bold text-[var(--color-text)];
+  }
+
+  .sn-detail-row {
+    @apply flex items-center justify-between gap-4;
+  }
+
+  .sn-detail-label {
+    @apply text-sm text-[var(--color-text-muted)];
+  }
+
+  .sn-detail-value {
+    @apply text-sm font-medium text-[var(--color-text)];
+  }
+
+  .sn-icon-button {
+    @apply flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)] transition-all hover:bg-[var(--color-bg-subtle)];
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+  }
+
+  .btn-theme {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition);
+    color: var(--color-header-text-muted);
+  }
+
+  .btn-theme:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--color-header-text);
+  }
+
+  .btn-theme:active {
+    transform: scale(0.95);
+  }
+
+  .btn-theme .icon-sun {
+    display: none;
+  }
+
+  .btn-theme .icon-moon {
+    display: block;
+  }
+
+  :root[data-theme="dark"] .btn-theme .icon-sun,
+  :root.dark .btn-theme .icon-sun {
+    display: block;
+  }
+
+  :root[data-theme="dark"] .btn-theme .icon-moon,
+  :root.dark .btn-theme .icon-moon {
+    display: none;
+  }
+}
+
 @layer base {
+  @font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/Outfit-Regular.ttf') format('truetype');
+  }
+
+  @font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/Outfit-Medium.ttf') format('truetype');
+  }
+
+  @font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/Outfit-SemiBold.ttf') format('truetype');
+  }
+
+  @font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/Outfit-Bold.ttf') format('truetype');
+  }
+
+  :root {
+    --color-primary: #10b981;
+    --color-primary-hover: #059669;
+    --color-primary-light: #ecfdf5;
+    --color-primary-subtle: rgba(16, 185, 129, 0.12);
+    --color-header: #1b1b26;
+    --color-header-text: #ffffff;
+    --color-header-text-muted: rgba(255, 255, 255, 0.7);
+    --color-bg: #f8fafc;
+    --color-bg-elevated: #ffffff;
+    --color-bg-subtle: #f1f5f9;
+    --color-bg-input: #ffffff;
+    --color-text: #1e293b;
+    --color-text-muted: #64748b;
+    --color-text-inverted: #ffffff;
+    --color-border: #e2e8f0;
+    --color-border-light: #f1f5f9;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-full: 9999px;
+    --transition: 0.15s ease-in-out;
+    --transition-slow: 0.3s ease-in-out;
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK SC', Arial, sans-serif;
+    --font-mono: 'SF Mono', Monaco, Inconsolata, 'Fira Code', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --color-bg: #1b1b26;
+      --color-bg-elevated: #24283b;
+      --color-bg-subtle: #24283b;
+      --color-bg-input: #1a1b26;
+      --color-text: #c0caf5;
+      --color-text-muted: #a0a9cb;
+      --color-border: rgba(255, 255, 255, 0.15);
+      --color-border-light: rgba(255, 255, 255, 0.08);
+      --color-primary-light: rgba(16, 185, 129, 0.15);
+      --color-primary-subtle: rgba(16, 185, 129, 0.12);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  :root[data-theme="dark"],
+  :root.dark {
+    --color-bg: #1b1b26;
+    --color-bg-elevated: #24283b;
+    --color-bg-subtle: #24283b;
+    --color-bg-input: #1a1b26;
+    --color-text: #c0caf5;
+    --color-text-muted: #a0a9cb;
+    --color-border: rgba(255, 255, 255, 0.15);
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-primary-light: rgba(16, 185, 129, 0.15);
+    --color-primary-subtle: rgba(16, 185, 129, 0.12);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+
   /* 触摸优化 - 移动端交互体验提升 */
   * {
     /* 禁用移动端点击高亮（使用自定义 active 状态代替） */
@@ -49,14 +276,27 @@
     appearance: textfield;
   }
 
-  /* 隐藏滚动条但保留滚动功能 */
   * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
   }
 
   *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
   }
 
   /* 移动端安全区域适配 (iPhone X+ 刘海屏) */
@@ -130,9 +370,9 @@
     line-break: auto;
   }
 
-  /* 移动端底部导航安全区域 - 防止内容被底部导航遮挡 */
+  /* 移动端底部导航安全区域 - 底栏 4rem，再留 1.5rem 呼吸空间 */
   .mobile-bottom-pad {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* Toast animation */
@@ -192,28 +432,17 @@
 
 /* 全局样式 */
 body {
-  @apply bg-apple-bg text-gray-900;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
   /* 启用字体平滑 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 深色模式 */
-@media (prefers-color-scheme: dark) {
-  body {
-    @apply bg-apple-bgDark text-gray-100;
-  }
-}
-
 /* Apple 风格分割线 */
 .apple-separator {
-  border-top: 0.5px solid theme('colors.apple.separator');
-}
-@media (prefers-color-scheme: dark) {
-  .apple-separator {
-    border-top-color: theme('colors.apple.sepDark');
-  }
+  border-top: 1px solid var(--color-border);
 }
 
 /* 移动端优化：减少动画以提升性能 */
@@ -224,4 +453,3 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
-

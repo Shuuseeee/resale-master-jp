@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
-import { layout, heading } from '@/lib/theme';
+import { badge, button, card, heading, layout } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
 import { usePushNotification } from '@/hooks/usePushNotification';
 
@@ -16,16 +16,16 @@ interface Notification {
   created_at: string;
 }
 
-type DateGroup = '今日' | '昨日' | 'それ以前';
+type DateGroup = '今天' | '昨天' | '更早';
 
 function getDateGroup(dateStr: string): DateGroup {
   const now = new Date();
   const date = new Date(dateStr);
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterdayStart = new Date(todayStart.getTime() - 86400000);
-  if (date >= todayStart) return '今日';
-  if (date >= yesterdayStart) return '昨日';
-  return 'それ以前';
+  if (date >= todayStart) return '今天';
+  if (date >= yesterdayStart) return '昨天';
+  return '更早';
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -37,17 +37,17 @@ function formatRelativeTime(dateStr: string): string {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   if (date >= todayStart) {
-    if (diffMins < 1) return 'たった今';
-    if (diffMins < 60) return `${diffMins}分前`;
-    return `${diffHours}時間前`;
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins} 分钟前`;
+    return `${diffHours} 小时前`;
   }
-  return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
 }
 
 const typeIconConfig: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
   coupon_alert: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    color: 'text-blue-500',
+    bg: 'bg-[rgba(59,130,246,0.12)]',
+    color: 'text-[var(--color-info)]',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
@@ -55,8 +55,8 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
     ),
   },
   arrival_reminder: {
-    bg: 'bg-apple-blue/5',
-    color: 'text-apple-blue',
+    bg: 'bg-[var(--color-primary-subtle)]',
+    color: 'text-[var(--color-primary)]',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -64,8 +64,8 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
     ),
   },
   monthly_report: {
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
-    color: 'text-purple-500',
+    bg: 'bg-purple-500/15',
+    color: 'text-purple-600',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -75,8 +75,8 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
 };
 
 const defaultIconConfig = {
-  bg: 'bg-apple-gray-5 dark:bg-white/10',
-  color: 'text-gray-400',
+  bg: 'bg-[var(--color-bg-subtle)]',
+  color: 'text-[var(--color-text-muted)]',
   icon: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -86,12 +86,12 @@ const defaultIconConfig = {
 
 function SkeletonCard() {
   return (
-    <div className="flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 border border-apple-separator dark:border-apple-sepDark shadow-sm animate-pulse">
-      <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-apple-gray-5 dark:bg-white/10" />
+    <div className={`${card.primary} flex animate-pulse items-start gap-3 p-4`}>
+      <div className="h-9 w-9 flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
       <div className="flex-1 space-y-2 py-0.5">
-        <div className="h-3.5 bg-apple-gray-5 dark:bg-white/10 rounded w-3/4" />
-        <div className="h-2.5 bg-gray-100 dark:bg-gray-600 rounded w-1/2" />
-        <div className="h-2 bg-gray-100 dark:bg-gray-600 rounded w-1/4" />
+        <div className="h-3.5 w-3/4 rounded bg-[var(--color-bg-subtle)]" />
+        <div className="h-2.5 w-1/2 rounded bg-[var(--color-bg-subtle)]" />
+        <div className="h-2 w-1/4 rounded bg-[var(--color-bg-subtle)]" />
       </div>
     </div>
   );
@@ -105,19 +105,19 @@ export default function NotificationsPage() {
   const [testResult, setTestResult] = useState<string | null>(null);
 
   async function sendTestPush() {
-    setTestResult('送信中...');
+    setTestResult('发送中...');
     try {
       const res = await fetch('/api/push/test', { method: 'POST' });
       const text = await res.text();
       let data: any;
       try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 200) }; }
       if (data.ok) {
-        setTestResult(`送信完了: ${data.results.length}台 ${JSON.stringify(data.results)}`);
+        setTestResult(`发送完成: ${data.results.length} 台 ${JSON.stringify(data.results)}`);
       } else {
-        setTestResult(`失敗: ${data.error}${data.hint ? ' — ' + data.hint : ''}`);
+        setTestResult(`失败: ${data.error}${data.hint ? ' - ' + data.hint : ''}`);
       }
     } catch (e) {
-      setTestResult(`エラー: ${e}`);
+      setTestResult(`错误: ${e}`);
     }
   }
 
@@ -179,7 +179,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Group by date
-  const groupOrder: DateGroup[] = ['今日', '昨日', 'それ以前'];
+  const groupOrder: DateGroup[] = ['今天', '昨天', '更早'];
   const groupMap = new Map<DateGroup, Notification[]>();
   for (const n of notifications) {
     const g = getDateGroup(n.created_at);
@@ -192,12 +192,11 @@ export default function NotificationsPage() {
     <PullToRefresh onRefresh={loadNotifications}>
     <div className={layout.page}>
       <div className={layout.container}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className={heading.h1}>通知</h1>
             {unreadCount > 0 && (
-              <span className="text-xs font-bold bg-apple-blue text-white rounded-full px-2 py-0.5 min-w-[20px] text-center">
+              <span className={badge.success + ' min-w-[20px] text-center'}>
                 {unreadCount}
               </span>
             )}
@@ -205,7 +204,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="text-xs text-apple-blue font-medium"
+              className={button.link}
             >
               全部已读
             </button>
@@ -214,18 +213,18 @@ export default function NotificationsPage() {
 
         {/* Dev-only: test push panel */}
         {process.env.NODE_ENV === 'development' && subscribed && (
-          <div className="mb-4 p-3 bg-apple-orange/5 dark:bg-apple-orange/10 border border-apple-orange/30 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-apple-orange">调试模式</span>
+          <div className="mb-4 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--color-warning)]">调试模式</span>
               <button
                 onClick={sendTestPush}
-                className="px-3 py-1 text-xs bg-apple-orange hover:bg-amber-600 text-white rounded-lg transition-colors"
+                className="rounded-[var(--radius-md)] bg-[var(--color-warning)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-amber-600"
               >
                 发送测试推送
               </button>
             </div>
             {testResult && (
-              <pre className="text-[10px] text-amber-800 dark:text-amber-200 whitespace-pre-wrap break-all">{testResult}</pre>
+              <pre className="whitespace-pre-wrap break-all text-[10px] text-[var(--color-text)]">{testResult}</pre>
             )}
           </div>
         )}
@@ -238,9 +237,9 @@ export default function NotificationsPage() {
             <SkeletonCard />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <div className="flex justify-center mb-4">
-              <svg className="w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={card.primary + ' py-16 text-center text-[var(--color-text-muted)]'}>
+            <div className="mb-4 flex justify-center">
+              <svg className="h-12 w-12 text-[var(--color-text-muted)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
@@ -251,7 +250,7 @@ export default function NotificationsPage() {
             <div className="space-y-6">
               {groups.map(({ label, items }) => (
                 <div key={label}>
-                  <div className="text-xs font-semibold text-gray-400 dark:text-apple-gray-1 tracking-wide px-1 mb-2">
+                  <div className="mb-2 px-1 text-xs font-semibold tracking-wide text-[var(--color-text-muted)]">
                     {label}
                   </div>
                   <div className="space-y-2">
@@ -266,26 +265,26 @@ export default function NotificationsPage() {
                           <Link
                             href={`/notifications/${n.id}`}
                             onClick={() => { if (!n.read) markReadOptimistic(n.id); }}
-                            className={`flex items-start gap-3 bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm transition-colors border ${
+                            className={`flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] transition-colors border ${
                               n.read
-                                ? 'border-apple-separator dark:border-apple-sepDark hover:border-apple-blue/20'
-                                : 'border-l-4 border-l-apple-blue border-apple-separator dark:border-apple-sepDark hover:border-apple-blue/20'
+                                ? 'border-[var(--color-border)] hover:border-[var(--color-primary)]/30'
+                                : 'border-l-4 border-l-[var(--color-primary)] border-[var(--color-border)] hover:border-[var(--color-primary)]/30'
                             }`}
                           >
                             {/* Type icon */}
-                            <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${iconCfg.bg} ${iconCfg.color}`}>
+                            <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] ${iconCfg.bg} ${iconCfg.color}`}>
                               {iconCfg.icon}
                             </div>
                             {/* Content */}
                             <div className="flex-1 min-w-0 pr-6">
                               <div className="flex items-center gap-2">
-                                <p className={`font-semibold text-sm truncate ${n.read ? 'text-apple-gray-1' : 'text-gray-900 dark:text-white'}`}>
+                                <p className={`truncate text-sm font-semibold ${n.read ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>
                                   {n.title}
                                 </p>
-                                {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-apple-blue" />}
+                                {!n.read && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--color-primary)]" />}
                               </div>
-                              {n.body && <p className="text-xs text-apple-gray-1 mt-0.5 line-clamp-2">{n.body}</p>}
-                              <p className="text-[10px] text-gray-400 mt-1">
+                              {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-muted)]">{n.body}</p>}
+                              <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
                                 {formatRelativeTime(n.created_at)}
                               </p>
                             </div>
@@ -294,8 +293,8 @@ export default function NotificationsPage() {
                           {/* Delete button */}
                           <button
                             onClick={(e) => deleteNotification(n.id, e)}
-                            className="absolute right-3 top-3 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 dark:text-gray-600 hover:text-apple-red hover:bg-apple-red/5 dark:hover:bg-apple-red/10 active:text-apple-red transition-colors opacity-60 hover:opacity-100"
-                            aria-label="削除"
+                            className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-text-muted)] opacity-60 transition-colors hover:bg-[rgba(239,68,68,0.1)] hover:text-[var(--color-danger)] hover:opacity-100 active:text-[var(--color-danger)]"
+                            aria-label="删除"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -311,7 +310,7 @@ export default function NotificationsPage() {
 
             {/* 50-item cap hint */}
             {notifications.length >= 50 && (
-              <p className="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-6">
+              <p className="mt-6 text-center text-[10px] text-[var(--color-text-muted)]">
                 仅显示最近 50 条通知
               </p>
             )}
@@ -319,35 +318,35 @@ export default function NotificationsPage() {
         )}
 
         {/* Push notification settings */}
-        <div className="mt-8 pt-6 border-t border-apple-separator dark:border-apple-sepDark">
-          <h2 className="text-xs font-semibold text-gray-400 dark:text-apple-gray-1 tracking-wide mb-3 px-1">通知設定</h2>
-          <div className="bg-white dark:bg-apple-cardDark rounded-xl p-4 shadow-sm">
+        <div className="mt-8 border-t border-[var(--color-border)] pt-6">
+          <h2 className="mb-3 px-1 text-xs font-semibold tracking-wide text-[var(--color-text-muted)]">通知设置</h2>
+          <div className={card.primary + ' p-4'}>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">プッシュ通知</p>
+                <p className="text-sm font-medium text-[var(--color-text)]">推送通知</p>
                 {permission === 'denied' && (
-                  <p className="text-xs text-gray-400 mt-0.5">ブラウザで通知が拒否されています</p>
+                  <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">浏览器已拒绝通知权限</p>
                 )}
               </div>
               <button
                 onClick={subscribed ? unsubscribe : subscribe}
                 disabled={pushLoading || permission === 'denied'}
-                className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                className={`flex flex-shrink-0 items-center gap-2 rounded-[var(--radius-md)] border px-3 py-1.5 text-sm font-medium transition-all ${
                   permission === 'denied'
-                    ? 'bg-apple-gray-5 dark:bg-white/10 text-gray-400 border-apple-separator dark:border-apple-sepDark cursor-not-allowed'
+                    ? 'cursor-not-allowed border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]'
                     : subscribed
-                    ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/30'
-                    : 'bg-apple-gray-5 dark:bg-white/10 text-apple-gray-1 border-apple-separator dark:border-apple-sepDark'
+                    ? 'border-[var(--color-primary)]/30 bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]'
                 }`}
               >
-                <div className={`w-8 h-4 rounded-full relative transition-colors ${
-                  subscribed ? 'bg-apple-blue' : 'bg-gray-300 dark:bg-gray-600'
+                <div className={`relative h-4 w-8 rounded-full transition-colors ${
+                  subscribed ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'
                 }`}>
-                  <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${
+                  <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${
                     subscribed ? 'left-4' : 'left-0.5'
                   }`} />
                 </div>
-                {permission === 'denied' ? '拒否済み' : subscribed ? 'オン' : 'オフ'}
+                {permission === 'denied' ? '已拒绝' : subscribed ? '开启' : '关闭'}
               </button>
             </div>
           </div>
