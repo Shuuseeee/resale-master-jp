@@ -4,9 +4,11 @@
 import { useState, useEffect } from 'react';
 import {
   generateTaxReportDetails,
+  generateTaxInventoryItems,
   generateTaxReportSummary,
   getAvailableYears,
   type TaxReportDetail,
+  type TaxInventoryItem,
   type TaxReportSummary,
 } from '@/lib/api/tax-report';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -29,6 +31,7 @@ export default function TaxReportPage() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [summary, setSummary] = useState<TaxReportSummary | null>(null);
   const [details, setDetails] = useState<TaxReportDetail[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<TaxInventoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -57,8 +60,10 @@ export default function TaxReportPage() {
         generateTaxReportSummary(selectedYear),
         generateTaxReportDetails(selectedYear),
       ]);
+      const inventoryData = await generateTaxInventoryItems(selectedYear);
       setSummary(summaryData);
       setDetails(detailsData);
+      setInventoryItems(inventoryData);
       setCurrentPage(1);
     } catch (error) {
       console.error('加载税务报表失败:', error);
@@ -98,10 +103,13 @@ export default function TaxReportPage() {
         ['雑所得金額（収入 - 経費）', summary.netIncome],
         ['現金ベース収支', summary.cashIncome],
         ['販売記録件数', summary.transactionCount],
+        ['期末棚卸数量（参考）', summary.endingInventoryQuantity],
+        ['期末棚卸金額（参考）', summary.endingInventoryValue],
         [],
         ['注記'],
-        ['本サマリーは申告入力・税理士確認用の集計資料です。提出書類の要否は年度の収入金額等により異なります。'],
-        ['ポイント相当額および棚卸資産の取扱いは、実際の申告方針に合わせて確認してください。'],
+        ['本資料は申告入力・記帳・税理士確認用の補助資料です。税務署への提出書類そのものではありません。'],
+        ['ポイント相当額、売上原価、期末棚卸資産、消耗品費の取扱いは、実際の申告方針または税理士の判断に合わせて確認してください。'],
+        ['期末棚卸は、購入日が年度末以前で、年度末までの販売・返品数量を差し引いた参考値です。'],
       ];
 
       const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
@@ -114,8 +122,13 @@ export default function TaxReportPage() {
           '購入日',
           '購入先',
           '商品名',
+          'JAN',
+          '仕入注文番号',
+          '販売注文番号',
           '数量',
           '販売数量',
+          '仕入単価',
+          '販売単価',
           '仕入金額',
           '売却価格',
           '販売先',
@@ -131,8 +144,13 @@ export default function TaxReportPage() {
           d.purchaseDate,
           d.purchasePlatformName || '',
           d.productName,
+          d.janCode,
+          d.purchaseOrderNumber,
+          d.saleOrderNumber,
           d.quantity,
           d.quantitySold,
+          d.purchaseUnitPrice,
+          d.sellingPricePerUnit,
           d.purchasePrice,
           d.sellingPrice,
           d.sellingPlatformName || '',
@@ -148,7 +166,42 @@ export default function TaxReportPage() {
       const detailsSheet = XLSX.utils.aoa_to_sheet(detailsData);
       XLSX.utils.book_append_sheet(workbook, detailsSheet, '保存用取引台帳');
 
-      XLSX.writeFile(workbook, `確定申告資料_${summary.year}年度.xlsx`);
+      // 年末棚卸参考表
+      const inventoryData = [
+        [
+          '仕入日',
+          '購入先',
+          '商品名',
+          'JAN',
+          '仕入注文番号',
+          '仕入数量',
+          '年度末までの販売数量',
+          '年度末までの返品数量',
+          '期末数量',
+          '仕入単価',
+          '期末棚卸金額',
+          '備考',
+        ],
+        ...inventoryItems.map(item => [
+          item.purchaseDate,
+          item.purchasePlatformName || '',
+          item.productName,
+          item.janCode,
+          item.purchaseOrderNumber,
+          item.quantityPurchased,
+          item.quantitySoldByYearEnd,
+          item.quantityReturnedByYearEnd,
+          item.endingQuantity,
+          item.unitCost,
+          item.endingInventoryValue,
+          item.notes,
+        ]),
+      ];
+
+      const inventorySheet = XLSX.utils.aoa_to_sheet(inventoryData);
+      XLSX.utils.book_append_sheet(workbook, inventorySheet, '期末棚卸参考表');
+
+      XLSX.writeFile(workbook, `kakutei_shinkoku_${summary.year}_support.xlsx`);
     } catch (error) {
       console.error('Excel导出失败:', error);
       alert('导出失败，请重试');
@@ -197,6 +250,8 @@ export default function TaxReportPage() {
           ['雑所得金額', formatCurrency(summary.netIncome)],
           ['現金ベース収支', formatCurrency(summary.cashIncome)],
           ['販売記録件数', summary.transactionCount.toString() + '件'],
+          ['期末棚卸数量（参考）', summary.endingInventoryQuantity.toString() + '点'],
+          ['期末棚卸金額（参考）', formatCurrency(summary.endingInventoryValue)],
         ],
         theme: 'grid',
         styles: {
@@ -228,6 +283,7 @@ export default function TaxReportPage() {
             '販売日',
             '購入先',
             '商品名',
+            'JAN',
             '数量',
             '仕入金額',
             '売却価格',
@@ -242,6 +298,7 @@ export default function TaxReportPage() {
           d.saleDate,
           d.purchasePlatformName || '',
           d.productName,
+          d.janCode,
           d.quantitySold.toString(),
           formatCurrency(d.purchasePrice),
           formatCurrency(d.sellingPrice),
@@ -268,19 +325,71 @@ export default function TaxReportPage() {
           0: { cellWidth: 18, halign: 'center' },
           1: { cellWidth: 18 },
           2: { cellWidth: 28 },
-          3: { cellWidth: 10, halign: 'center' },
-          4: { cellWidth: 18, halign: 'right' },
-          5: { cellWidth: 18, halign: 'right' },
-          6: { cellWidth: 18 },
-          7: { cellWidth: 16, halign: 'right' },
-          8: { cellWidth: 16, halign: 'right' },
-          9: { cellWidth: 16, halign: 'right' },
-          10: { cellWidth: 20, halign: 'right' },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 9, halign: 'center' },
+          5: { cellWidth: 17, halign: 'right' },
+          6: { cellWidth: 17, halign: 'right' },
+          7: { cellWidth: 18 },
+          8: { cellWidth: 15, halign: 'right' },
+          9: { cellWidth: 15, halign: 'right' },
+          10: { cellWidth: 15, halign: 'right' },
+          11: { cellWidth: 19, halign: 'right' },
         },
         margin: { left: 5, right: 5 },
       });
 
-      doc.save(`確定申告資料_${summary.year}年度.pdf`);
+      doc.addPage();
+      doc.setFontSize(11);
+      doc.text('期末棚卸参考表', 14, 15);
+
+      autoTable(doc, {
+        startY: 22,
+        head: [
+          [
+            '仕入日',
+            '購入先',
+            '商品名',
+            'JAN',
+            '期末数量',
+            '仕入単価',
+            '棚卸金額',
+          ],
+        ],
+        body: inventoryItems.map(item => [
+          item.purchaseDate,
+          item.purchasePlatformName || '',
+          item.productName,
+          item.janCode,
+          item.endingQuantity.toString(),
+          formatCurrency(item.unitCost),
+          formatCurrency(item.endingInventoryValue),
+        ]),
+        theme: 'grid',
+        styles: {
+          font: 'NotoSansJP',
+          fontSize: 7,
+          cellPadding: 2,
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 7,
+          halign: 'center',
+        },
+        columnStyles: {
+          0: { cellWidth: 22, halign: 'center' },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 56 },
+          3: { cellWidth: 28 },
+          4: { cellWidth: 18, halign: 'center' },
+          5: { cellWidth: 28, halign: 'right' },
+          6: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      doc.save(`kakutei_shinkoku_${summary.year}_support.pdf`);
     } catch (error) {
       console.error('PDF导出失败:', error);
       alert('导出失败，请重试');
@@ -335,7 +444,7 @@ export default function TaxReportPage() {
             <div>
               <h1 className={heading.h1 + ' mb-2'}>税务申报报告</h1>
               <p className="text-[var(--color-text-muted)]">
-                页面用于中文操作；导出的 Excel/PDF 会使用日本报税资料语境的日文术语。
+                页面用于中文操作；导出的 Excel/PDF 使用日本报税资料语境的日文术语和文件名。
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -360,7 +469,7 @@ export default function TaxReportPage() {
             <div className="mb-8 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-4 text-sm text-[var(--color-text)]">
               <div className="mb-2 font-semibold text-[var(--color-warning)]">日本报税说明</div>
               <p className="leading-relaxed text-[var(--color-text-muted)]">
-                导出的逐笔明细定位为保存用取引台帳 / 税理士核对资料，不等同于默认需要把全部交易明细提交给国税厅。积分相当额、棚卸资产和売上原価的处理可能影响申告口径，请按实际申告方针或税理士意见确认。
+                导出资料定位为申告输入、记账保存和税理士核对用的补助资料，不等同于默认需要把全部交易明细提交给国税厅。积分相当额、売上原価、期末棚卸资产和消耗品费的处理会影响申告口径，请按实际申告方针或税理士意见确认。
               </p>
             </div>
 
@@ -501,7 +610,7 @@ export default function TaxReportPage() {
                 <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-info)]">
                   所得金额
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className={card.stat + ' border-[rgba(59,130,246,0.3)]'}>
                     <div className={statLabelClass}>
                       杂项所得估算（收入 - 经费）
@@ -526,6 +635,22 @@ export default function TaxReportPage() {
                       {summary.transactionCount}
                     </div>
                   </div>
+                  <div className={card.stat}>
+                    <div className={statLabelClass}>
+                      期末棚卸数量（参考）
+                    </div>
+                    <div className={'text-3xl ' + statValueClass}>
+                      {summary.endingInventoryQuantity}
+                    </div>
+                  </div>
+                  <div className={card.stat + ' border-[rgba(245,158,11,0.3)]'}>
+                    <div className={statLabelClass}>
+                      期末棚卸金额（参考）
+                    </div>
+                    <div className="text-3xl font-bold text-[var(--color-warning)]">
+                      {formatCurrency(summary.endingInventoryValue)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -535,7 +660,7 @@ export default function TaxReportPage() {
               <div className="p-6 border-b border-[var(--color-border)]">
                 <h2 className={heading.h2}>交易明细表</h2>
                 <p className="text-[var(--color-text-muted)] mt-2">
-                  共 {details.length} 条交易
+                  共 {details.length} 条销售记录；导出文件会追加保存用取引台帳和期末棚卸参考表。
                 </p>
               </div>
 
@@ -572,6 +697,12 @@ export default function TaxReportPage() {
                           </th>
                           <th className={tableHeadClass + ' text-left'}>
                             商品名
+                          </th>
+                          <th className={tableHeadClass + ' text-left'}>
+                            JAN
+                          </th>
+                          <th className={tableHeadClass + ' text-left'}>
+                            订单号
                           </th>
                           <th className={tableHeadClass + ' text-center'}>
                             数量
@@ -613,6 +744,12 @@ export default function TaxReportPage() {
                             </td>
                             <td className={tableCellClass}>
                               {detail.productName}
+                            </td>
+                            <td className={tableCellClass + ' whitespace-nowrap font-mono'}>
+                              {detail.janCode || '-'}
+                            </td>
+                            <td className={tableCellClass + ' whitespace-nowrap'}>
+                              {detail.saleOrderNumber || detail.purchaseOrderNumber || '-'}
                             </td>
                             <td className={tableCellClass + ' text-center'}>
                               {detail.quantitySold}

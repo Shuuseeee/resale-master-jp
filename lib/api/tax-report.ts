@@ -14,8 +14,13 @@ export interface TaxReportDetail {
   saleDate: string; // 販売日（税務申告の基準日）
   purchaseDate: string; // 購入日（参考）
   productName: string;
+  janCode: string;
+  purchaseOrderNumber: string;
+  saleOrderNumber: string;
   quantity: number;
   quantitySold: number;
+  purchaseUnitPrice: number;
+  sellingPricePerUnit: number;
   purchasePrice: number; // 購入価格
   sellingPrice: number; // 売却価格
   platformFee: number; // 販売手数料
@@ -45,6 +50,28 @@ export interface TaxReportSummary {
   netIncome: number; // 所得金額（収入 - 経費）
   cashIncome: number; // 現金収入
   transactionCount: number; // 取引件数
+  endingInventoryValue: number; // 期末棚卸資産
+  endingInventoryQuantity: number; // 期末在庫数量
+  inventoryItemCount: number; // 期末在庫品目数
+}
+
+/**
+ * 年末棚卸参考データ
+ */
+export interface TaxInventoryItem {
+  transactionId: string;
+  purchaseDate: string;
+  purchasePlatformName: string;
+  productName: string;
+  janCode: string;
+  purchaseOrderNumber: string;
+  quantityPurchased: number;
+  quantitySoldByYearEnd: number;
+  quantityReturnedByYearEnd: number;
+  endingQuantity: number;
+  unitCost: number;
+  endingInventoryValue: number;
+  notes: string;
 }
 
 /**
@@ -64,8 +91,10 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
           id,
           date,
           product_name,
+          jan_code,
           quantity,
           purchase_price_total,
+          unit_price,
           point_paid,
           expected_platform_points,
           expected_card_points,
@@ -74,6 +103,7 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
           card_points_platform_id,
           extra_platform_points_platform_id,
           purchase_platform_id,
+          order_number,
           purchase_platform:purchase_platform_id(name),
           notes
         )
@@ -177,8 +207,13 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
         saleDate: record.sale_date || '', // 販売日（税務申告の基準）
         purchaseDate: transaction?.date || '', // 購入日（参考）
         productName: transaction?.product_name || '',
+        janCode: transaction?.jan_code || '',
+        purchaseOrderNumber: transaction?.order_number || '',
+        saleOrderNumber: record.sale_order_number || '',
         quantity: transaction?.quantity || 1,
         quantitySold: record.quantity_sold,
+        purchaseUnitPrice: transaction?.unit_price || costPerUnit,
+        sellingPricePerUnit: record.selling_price_per_unit || 0,
         purchasePrice: allocatedPurchasePrice,
         sellingPrice: record.total_selling_price || 0,
         platformFee: record.platform_fee || 0,
@@ -201,12 +236,108 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
 }
 
 /**
+ * 指定年度末時点の棚卸参考データを生成
+ */
+export async function generateTaxInventoryItems(year: number): Promise<TaxInventoryItem[]> {
+  try {
+    const endDate = `${year}-12-31`;
+
+    const { data: transactions, error: txError } = await supabase
+      .from('transactions')
+      .select(`
+        id,
+        date,
+        product_name,
+        jan_code,
+        quantity,
+        purchase_price_total,
+        unit_price,
+        order_number,
+        notes,
+        purchase_platform:purchase_platform_id(name)
+      `)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    if (txError) throw txError;
+    if (!transactions || transactions.length === 0) return [];
+
+    const transactionIds = transactions.map(t => t.id);
+
+    const { data: salesRecords, error: salesError } = await supabase
+      .from('sales_records')
+      .select('transaction_id, quantity_sold, sale_date')
+      .in('transaction_id', transactionIds)
+      .lte('sale_date', endDate);
+
+    if (salesError) throw salesError;
+
+    const { data: returnRecords, error: returnError } = await supabase
+      .from('return_records')
+      .select('transaction_id, quantity_returned, return_date')
+      .in('transaction_id', transactionIds)
+      .lte('return_date', endDate);
+
+    if (returnError) throw returnError;
+
+    const soldByTransaction = new Map<string, number>();
+    for (const record of salesRecords || []) {
+      soldByTransaction.set(
+        record.transaction_id,
+        (soldByTransaction.get(record.transaction_id) || 0) + (record.quantity_sold || 0),
+      );
+    }
+
+    const returnedByTransaction = new Map<string, number>();
+    for (const record of returnRecords || []) {
+      returnedByTransaction.set(
+        record.transaction_id,
+        (returnedByTransaction.get(record.transaction_id) || 0) + (record.quantity_returned || 0),
+      );
+    }
+
+    return transactions
+      .map(tx => {
+        const quantityPurchased = tx.quantity || 1;
+        const quantitySoldByYearEnd = soldByTransaction.get(tx.id) || 0;
+        const quantityReturnedByYearEnd = returnedByTransaction.get(tx.id) || 0;
+        const endingQuantity = Math.max(
+          0,
+          quantityPurchased - quantitySoldByYearEnd - quantityReturnedByYearEnd,
+        );
+        const unitCost = tx.unit_price || ((tx.purchase_price_total || 0) / quantityPurchased);
+
+        return {
+          transactionId: tx.id,
+          purchaseDate: tx.date || '',
+          purchasePlatformName: (tx.purchase_platform as any)?.name || '',
+          productName: tx.product_name || '',
+          janCode: tx.jan_code || '',
+          purchaseOrderNumber: tx.order_number || '',
+          quantityPurchased,
+          quantitySoldByYearEnd,
+          quantityReturnedByYearEnd,
+          endingQuantity,
+          unitCost,
+          endingInventoryValue: unitCost * endingQuantity,
+          notes: tx.notes || '',
+        };
+      })
+      .filter(item => item.endingQuantity > 0);
+  } catch (error) {
+    console.error('棚卸参考データの生成に失敗:', error);
+    return [];
+  }
+}
+
+/**
  * 税務レポート年度集計を生成（販売記録ベース）
  */
 export async function generateTaxReportSummary(year: number): Promise<TaxReportSummary> {
   try {
     const details = await generateTaxReportDetails(year);
     const yearlySuppliesCosts = await getYearlySuppliesCosts(year);
+    const inventoryItems = await generateTaxInventoryItems(year);
 
     // 各項目を計算（販売記録から集計）
     const totalRevenue = details.reduce((sum, d) => sum + d.sellingPrice, 0);
@@ -220,6 +351,8 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
     const totalExpenses = purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts;
     const netIncome = totalIncome - totalExpenses;
     const cashIncome = totalRevenue - (purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts);
+    const endingInventoryValue = inventoryItems.reduce((sum, item) => sum + item.endingInventoryValue, 0);
+    const endingInventoryQuantity = inventoryItems.reduce((sum, item) => sum + item.endingQuantity, 0);
 
     return {
       year,
@@ -234,6 +367,9 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
       netIncome,
       cashIncome,
       transactionCount: details.length, // 販売記録の件数
+      endingInventoryValue,
+      endingInventoryQuantity,
+      inventoryItemCount: inventoryItems.length,
     };
   } catch (error) {
     console.error('税務レポート集計の生成に失敗:', error);
@@ -250,6 +386,9 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
       netIncome: 0,
       cashIncome: 0,
       transactionCount: 0,
+      endingInventoryValue: 0,
+      endingInventoryQuantity: 0,
+      inventoryItemCount: 0,
     };
   }
 }
@@ -259,20 +398,31 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
  */
 export async function getAvailableYears(): Promise<number[]> {
   try {
-    const { data, error } = await supabase
+    const { data: transactionDates, error: txError } = await supabase
       .from('transactions')
       .select('date')
       .order('date', { ascending: false });
 
-    if (error) throw error;
+    if (txError) throw txError;
 
-    if (!data || data.length === 0) {
+    const { data: saleDates, error: saleError } = await supabase
+      .from('sales_records')
+      .select('sale_date')
+      .not('sale_date', 'is', null)
+      .order('sale_date', { ascending: false });
+
+    if (saleError) throw saleError;
+
+    if ((!transactionDates || transactionDates.length === 0) && (!saleDates || saleDates.length === 0)) {
       return [new Date().getFullYear()];
     }
 
-    // 全年度を抽出して重複を削除
-    const years = data
-      .map(t => (parseDateFromLocal(t.date) ?? new Date()).getFullYear())
+    const years = [
+      ...(transactionDates || []).map(t => t.date),
+      ...(saleDates || []).map(s => s.sale_date),
+    ]
+      .filter((date): date is string => !!date)
+      .map(date => (parseDateFromLocal(date) ?? new Date()).getFullYear())
       .filter((year, index, self) => self.indexOf(year) === index)
       .sort((a, b) => b - a); // 降順
 
