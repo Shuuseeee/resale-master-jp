@@ -1,5 +1,5 @@
 import { type Browser, type BrowserContext, chromium } from 'playwright';
-import { CONFIG } from './config.js';
+import { CONFIG, buildProductUrl } from './config.js';
 import { log, logError } from './logger.js';
 
 interface ScrapedPrice {
@@ -48,7 +48,7 @@ export async function scrapeProduct(jan: string): Promise<ScrapeResult | null> {
 
   const page = await context.newPage();
   try {
-    const url = `${CONFIG.BASE_URL}/${jan}`;
+    const url = buildProductUrl(jan);
     log(`Navigating to ${url}`);
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CONFIG.PAGE_TIMEOUT });

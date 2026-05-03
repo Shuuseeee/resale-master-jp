@@ -14,8 +14,12 @@ export const CONFIG = {
   USER_DATA_DIR: './browser-data',
 
   // KaitoriX
-  BASE_URL: 'https://kaitorix.app/product',
+  BASE_URL: 'https://kaitorix.app',
 };
+
+export function buildProductUrl(jan: string): string {
+  return `${CONFIG.BASE_URL}/dp/${encodeURIComponent(jan)}?from=search`;
+}
 
 /** 在 base 基础上加 ±30% 随机抖动 */
 export function jitter(base: number): number {

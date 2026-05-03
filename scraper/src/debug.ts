@@ -2,9 +2,10 @@
 import 'dotenv/config';
 import { chromium } from 'playwright';
 import { writeFileSync } from 'fs';
+import { buildProductUrl } from './config.js';
 
 const jan = process.argv[2] || '4547410529845';
-const url = `https://kaitorix.app/product/${jan}`;
+const url = buildProductUrl(jan);
 
 (async () => {
   const context = await chromium.launchPersistentContext('./browser-data', {
