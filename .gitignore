@@ -49,6 +49,7 @@ fix_*.sql
 # Claude Code 对话日志
 *command-messag*.txt
 中断*.txt
+conversation-*.txt
 
 # Scraper
 scraper/.env

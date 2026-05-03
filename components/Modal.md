@@ -1,14 +1,14 @@
 # Modal 组件使用文档
 
-## 基础用法
-
-### 1. 导入组件
+`components/Modal.tsx` 提供三个导出：
 
 ```tsx
 import Modal, { ModalWithFooter, ConfirmModal } from '@/components/Modal';
 ```
 
-### 2. 基础 Modal
+组件是客户端组件，使用 portal 渲染到 `document.body`，打开时会锁定页面滚动位置。
+
+## 基础用法
 
 ```tsx
 const [isOpen, setIsOpen] = useState(false);
@@ -22,27 +22,32 @@ const [isOpen, setIsOpen] = useState(false);
 </Modal>
 ```
 
-### 3. 带页脚的 Modal
+## 带页脚的 Modal
 
 ```tsx
+import { button } from '@/lib/theme';
+
 <ModalWithFooter
   isOpen={isOpen}
   onClose={() => setIsOpen(false)}
   title="编辑信息"
+  size="lg"
   footer={
-    <div className="flex gap-3 justify-end">
-      <button onClick={() => setIsOpen(false)}>取消</button>
-      <button onClick={handleSave}>保存</button>
+    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button type="button" onClick={() => setIsOpen(false)} className={button.secondary}>
+        取消
+      </button>
+      <button type="button" onClick={handleSave} className={button.primary}>
+        保存
+      </button>
     </div>
   }
 >
-  <form>
-    {/* 表单内容 */}
-  </form>
+  <form>{/* 表单内容 */}</form>
 </ModalWithFooter>
 ```
 
-### 4. 确认对话框
+## 确认对话框
 
 ```tsx
 <ConfirmModal
@@ -58,149 +63,89 @@ const [isOpen, setIsOpen] = useState(false);
 />
 ```
 
-## Props 说明
+## Props
 
-### Modal Props
-
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| isOpen | boolean | - | 是否显示模态框 |
-| onClose | () => void | - | 关闭回调函数 |
-| title | string | - | 标题（可选） |
-| children | ReactNode | - | 内容 |
-| size | 'sm' \| 'md' \| 'lg' \| 'xl' \| 'full' | 'md' | 尺寸 |
-| showCloseButton | boolean | true | 是否显示关闭按钮 |
-| closeOnOverlayClick | boolean | true | 点击遮罩层关闭 |
-| closeOnEsc | boolean | true | ESC 键关闭 |
-
-### ConfirmModal Props
+### Modal
 
 | 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| isOpen | boolean | - | 是否显示 |
-| onClose | () => void | - | 关闭回调 |
-| onConfirm | () => void | - | 确认回调 |
-| title | string | - | 标题 |
-| message | string | - | 提示信息 |
-| confirmText | string | '确认' | 确认按钮文字 |
-| cancelText | string | '取消' | 取消按钮文字 |
-| confirmVariant | 'primary' \| 'danger' | 'primary' | 确认按钮样式 |
-| isLoading | boolean | false | 加载状态 |
+|---|---|---|---|
+| `isOpen` | `boolean` | - | 是否显示 |
+| `onClose` | `() => void` | - | 关闭回调 |
+| `title` | `string` | - | 标题，可选 |
+| `children` | `React.ReactNode` | - | 内容 |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'full'` | `'md'` | 桌面端最大宽度 |
+| `showCloseButton` | `boolean` | `true` | 是否显示关闭按钮 |
+| `closeOnOverlayClick` | `boolean` | `true` | 点击遮罩是否关闭 |
+| `closeOnEsc` | `boolean` | `true` | 按 ESC 是否关闭 |
 
-## 特性
+### ConfirmModal
 
-### 移动端优化
-- ✅ 移动端底部弹出，桌面端居中显示
-- ✅ 移动端顶部拖动指示器
-- ✅ 触摸友好的关闭按钮（44x44px）
-- ✅ 防止滚动穿透
-- ✅ 平滑动画过渡
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `isOpen` | `boolean` | - | 是否显示 |
+| `onClose` | `() => void` | - | 关闭回调 |
+| `onConfirm` | `() => void` | - | 确认回调 |
+| `title` | `string` | - | 标题 |
+| `message` | `string` | - | 提示信息 |
+| `confirmText` | `string` | `'确认'` | 确认按钮文字 |
+| `cancelText` | `string` | `'取消'` | 取消按钮文字 |
+| `confirmVariant` | `'primary' \| 'danger'` | `'primary'` | 确认按钮样式 |
+| `isLoading` | `boolean` | `false` | 加载中禁用关闭和按钮 |
 
-### 无障碍性
-- ✅ 正确的 ARIA 属性
-- ✅ ESC 键关闭支持
-- ✅ 焦点管理
-- ✅ 键盘导航
+## 行为说明
 
-### 响应式设计
-- ✅ 不同尺寸适配
-- ✅ 自适应高度
-- ✅ 滚动内容支持
+- 移动端从底部弹出，桌面端居中显示。
+- 移动端标题栏显示拖动指示器，但当前没有拖拽关闭逻辑。
+- 内容区带 `data-modal-scroll`，允许内部滚动；外层遮罩会阻止滚动穿透。
+- `showCloseButton` 为 `true` 时显示 44px 触控尺寸关闭按钮。
+- `ConfirmModal` 加载中会禁用遮罩点击关闭和 ESC 关闭。
 
-## 实际应用示例
-
-### 删除确认
-
-```tsx
-function TransactionList() {
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteTransaction(deleteId!);
-      setDeleteId(null);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <>
-      {/* 列表内容 */}
-      <button onClick={() => setDeleteId(transaction.id)}>
-        删除
-      </button>
-
-      {/* 确认对话框 */}
-      <ConfirmModal
-        isOpen={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={handleDelete}
-        title="确认删除"
-        message="确定要删除这条交易记录吗？此操作无法撤销。"
-        confirmVariant="danger"
-        isLoading={isDeleting}
-      />
-    </>
-  );
-}
-```
-
-### 表单编辑
+## 实际示例
 
 ```tsx
+import { useState } from 'react';
+import { button } from '@/lib/theme';
+import { ModalWithFooter } from '@/components/Modal';
+
 function EditForm() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({});
 
-  const handleSave = async () => {
+  async function handleSave() {
     setIsSaving(true);
     try {
-      await saveData(formData);
+      await saveData();
       setIsOpen(false);
-    } catch (error) {
-      console.error(error);
     } finally {
       setIsSaving(false);
     }
-  };
+  }
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)}>编辑</button>
+      <button type="button" onClick={() => setIsOpen(true)} className={button.primary}>
+        编辑
+      </button>
 
       <ModalWithFooter
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title="编辑交易"
         size="lg"
+        closeOnOverlayClick={!isSaving}
+        closeOnEsc={!isSaving}
         footer={
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={() => setIsOpen(false)}
-              disabled={isSaving}
-              className="px-4 py-2 bg-gray-100 rounded-lg"
-            >
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setIsOpen(false)} disabled={isSaving} className={button.secondary}>
               取消
             </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-            >
+            <button type="button" onClick={handleSave} disabled={isSaving} className={button.primary}>
               {isSaving ? '保存中...' : '保存'}
             </button>
           </div>
         }
       >
-        <form>
-          {/* 表单字段 */}
-        </form>
+        <form className="space-y-4">{/* 表单字段 */}</form>
       </ModalWithFooter>
     </>
   );

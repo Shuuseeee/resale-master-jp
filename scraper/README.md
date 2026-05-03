@@ -1,12 +1,17 @@
 # Kaitorix Scraper
 
-买取価格定期取得スクレイパー。Supabase のキューを監視し、JAN コードごとに kaitorix.app の価格情報を取得・キャッシュする。
+Supabase の `kaitorix_scrape_queue` を監視し、JAN コードごとに kaitorix.app の買取価格を取得して `kaitorix_price_cache` に保存する独立 Node.js サービス。
+
+このディレクトリは Next.js PWA とは別プロジェクトであり、PWA の `npm run build` には含まれない。
 
 ## 仕組み
 
-1. フロントエンドがユーザーから JAN コードを受け取ると、`/api/kaitorix/[jan]` 経由で Supabase の `kaitorix_scrape_queue` にジョブを追加する
-2. このスクレイパーがキューを定期的にポーリングし、Playwright で kaitorix.app を開いて価格を取得する
-3. 取得した価格を `kaitorix_price_cache` に保存する（TTL: 30 分）
+1. PWA 側の `/api/kaitorix/[jan]` または `/api/jan-product/[jan]` がキャッシュミス時に Supabase のキューへ JAN を追加する。
+2. scraper がキューをポーリングし、未処理 JAN を原子的に取得する。
+3. Playwright で kaitorix.app を開き、店舗別の買取価格を取得する。
+4. 結果を `kaitorix_price_cache` に保存し、PWA 側は以後キャッシュから価格と商品名を表示する。
+
+PWA の JAN 商品名補完は、最初に API 直接検索を試し、取得できない場合はキュー投入後もフロント側で一定時間リトライする。
 
 ## 初期セットアップ
 
@@ -24,24 +29,24 @@ npx playwright install chromium
 cp .env.example .env
 ```
 
-`.env` を開いて以下を記入：
+`.env` に以下を設定する：
 
-```
+```env
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-### 3. PM2 のインストール（初回のみ）
+`SUPABASE_SERVICE_ROLE_KEY` はキュー取得とキャッシュ更新に必要。ブラウザ向けの anon key は使わない。
+
+### 3. PM2 のインストール
 
 ```bash
 npm install -g pm2
 ```
 
-## 起動方法（バックグラウンド実行）
+## 起動方法
 
-VSCode のターミナルを使わず、システムバックグラウンドで常時稼働させる手順。
-
-### 起動
+### バックグラウンド実行
 
 ```bash
 cd scraper
@@ -52,11 +57,6 @@ pm2 start ecosystem.config.js
 
 ```bash
 pm2 status
-```
-
-### ログ確認
-
-```bash
 pm2 logs kaitorix-scraper --lines 50
 ```
 
@@ -68,25 +68,28 @@ pm2 restart kaitorix-scraper
 pm2 delete kaitorix-scraper
 ```
 
-## macOS での注意事項（TMPDIR 問題）
-
-tsx 4.x は起動時に IPC サーバーを立ち上げるために `TMPDIR` に一時ディレクトリを作成する。
-PM2 デーモンはユーザーのシェル環境変数を継承しないため、デフォルトで `/var/folders/zz/...`（root の一時領域）に書き込もうとして `EACCES` エラーになる。
-
-**解決策**：`ecosystem.config.js` で `TMPDIR: '/private/tmp'`（全ユーザー書き込み可能）を明示的に指定済み。
-
-VSCode のターミナルで動くのに PM2 で動かない場合、まずログでこのエラーを確認すること：
-
-```
-Error: EACCES: permission denied, mkdir '/var/folders/zz/.../T/tsx-xxx'
-```
-
-## 開発モード（フォアグラウンド実行）
+## 開発モード
 
 ログをリアルタイムで確認したい場合：
 
 ```bash
 cd scraper
-npm run dev    # tsx watch src/index.ts（ファイル変更で自動再起動）
-npm start      # tsx src/index.ts（通常起動）
+npm run dev    # tsx watch src/index.ts
+npm start      # tsx src/index.ts
 ```
+
+## macOS / PM2 の TMPDIR 注意点
+
+`tsx` は起動時に `TMPDIR` 配下へ IPC 用ディレクトリを作成する。PM2 デーモンは通常のシェル環境変数を継承しないため、環境によっては `/var/folders/zz/...` に書き込もうとして `EACCES` になることがある。
+
+`ecosystem.config.js` では `TMPDIR: '/private/tmp'` を明示している。VSCode のターミナルでは動くが PM2 では失敗する場合、まず以下のようなログを確認する：
+
+```text
+Error: EACCES: permission denied, mkdir '/var/folders/zz/.../T/tsx-xxx'
+```
+
+## 運用メモ
+
+- Supabase のマイグレーション `05_fix_scraper_queue_atomic.sql` が適用済みであることを確認する。
+- 価格取得に失敗した JAN は PWA 側では pending / stale として扱われる場合がある。
+- scraper は private service role key を扱うため、`.env` と PM2 ログを公開リポジトリへ含めない。
