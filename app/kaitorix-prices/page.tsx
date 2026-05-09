@@ -290,7 +290,7 @@ export default function KaitorixPricesPage() {
             <button
               onClick={batchRefresh}
               disabled={selectedJans.size === 0 || batchRefreshing}
-              className={button.primary + ' disabled:opacity-40 disabled:cursor-not-allowed'}
+              className={button.primary + ' min-h-11 whitespace-nowrap px-4 disabled:opacity-40 disabled:cursor-not-allowed'}
             >
               {batchRefreshing ? '强刷中...' : `批量强刷${selectedJans.size ? ` (${selectedJans.size})` : ''}`}
             </button>
@@ -352,41 +352,63 @@ export default function KaitorixPricesPage() {
                   key={item.jan}
                   className="grid gap-3 px-4 py-4 lg:grid-cols-[44px_1.8fr_0.7fr_0.8fr_0.8fr_0.8fr_0.8fr_120px] lg:items-center hover:bg-[var(--color-bg-subtle)]"
                 >
-                  <div>
+                  <div className="flex items-start justify-between gap-3 lg:block">
                     <button
                       onClick={() => toggleSelect(item.jan)}
-                      className={`h-5 w-5 rounded border flex items-center justify-center ${selectedJans.has(item.jan) ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)]'}`}
+                      className={`flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border lg:h-5 lg:w-5 ${selectedJans.has(item.jan) ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)]'}`}
                       aria-label="选择 JAN"
                     >
                       {selectedJans.has(item.jan) && <span className="text-xs text-white">✓</span>}
                     </button>
+                    <div className="flex items-center gap-2 lg:hidden">
+                      <button
+                        onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }}
+                        className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] whitespace-nowrap"
+                      >
+                        详情
+                      </button>
+                      <button
+                        onClick={() => refreshOne(item.jan)}
+                        disabled={refreshingJan === item.jan || batchRefreshing}
+                        className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-primary)] active:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
+                      >
+                        {refreshingJan === item.jan ? '强刷中' : '官方强刷'}
+                      </button>
+                    </div>
                   </div>
                   <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-w-0 text-left">
                     <div className="font-semibold text-[var(--color-text)] line-clamp-2 break-cjk">{item.productName}</div>
                     <div className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{item.jan}</div>
                   </button>
-                  <div className="text-sm text-[var(--color-text)] lg:text-right">
-                    <span className="lg:hidden text-[var(--color-text-muted)]">库存 </span>{item.totalStock}
-                    <span className="ml-1 text-xs text-[var(--color-text-muted)]">/ {item.transactionCount}笔</span>
+                  <div className="grid grid-cols-2 gap-3 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3 lg:contents">
+                    <div className="text-sm text-[var(--color-text)] lg:text-right">
+                      <span className="block text-xs text-[var(--color-text-muted)] lg:hidden">库存</span>{item.totalStock}
+                      <span className="ml-1 text-xs text-[var(--color-text-muted)]">/ {item.transactionCount}笔</span>
+                    </div>
+                    <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">
+                      <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">仕入</span>{formatCurrency(item.totalCostForStock)}
+                    </div>
+                    <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">
+                      <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">最高价</span>
+                      {item.maxPrice > 0 ? formatCurrency(item.maxPrice) : '-'}
+                      {item.maxStore && <div className="text-xs text-[var(--color-primary)]">{item.maxStore}</div>}
+                    </div>
+                    <div className={`font-mono text-sm lg:text-right ${item.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                      <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">预估利润</span>
+                      {item.maxPrice > 0 ? formatCurrency(item.expectedProfit) : '-'}
+                    </div>
                   </div>
-                  <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">{formatCurrency(item.totalCostForStock)}</div>
-                  <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">
-                    {item.maxPrice > 0 ? formatCurrency(item.maxPrice) : '-'}
-                    {item.maxStore && <div className="text-xs text-[var(--color-primary)]">{item.maxStore}</div>}
-                  </div>
-                  <div className={`font-mono text-sm lg:text-right ${item.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-                    {item.maxPrice > 0 ? formatCurrency(item.expectedProfit) : '-'}
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">
-                    <div>{formatAge(item.lastFetchedAt)}</div>
+                  <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3 text-xs text-[var(--color-text-muted)] lg:bg-transparent lg:p-0">
+                    <span className="block text-xs text-[var(--color-text-muted)] lg:hidden">刷新</span>
+                    <div className="text-[var(--color-text)] lg:text-[var(--color-text-muted)]">{formatAge(item.lastFetchedAt)}</div>
                     <div>{sourceLabel(item.source)}</div>
                   </div>
-                  <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] rounded">详情</button>
+                  <div className="hidden items-center justify-end gap-2 lg:flex">
+                    <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">详情</button>
                     <button
                       onClick={() => refreshOne(item.jan)}
                       disabled={refreshingJan === item.jan || batchRefreshing}
-                      className="px-2 py-1 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded disabled:opacity-50 disabled:cursor-wait"
+                      className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
                     >
                       {refreshingJan === item.jan ? '强刷中' : '官方强刷'}
                     </button>
@@ -402,6 +424,10 @@ export default function KaitorixPricesPage() {
         <div className="fixed inset-0 z-[10000] flex justify-end bg-black/40" onClick={() => setSelectedJan(null)}>
           <aside
             className="h-full w-full max-w-3xl overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg)] shadow-[var(--shadow-lg)]"
+            style={{
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
+            }}
             onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
@@ -410,7 +436,7 @@ export default function KaitorixPricesPage() {
                   <h2 className="text-lg font-bold text-[var(--color-text)] break-cjk">{selectedSummary.productName}</h2>
                   <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{selectedSummary.jan}</p>
                 </div>
-                <button onClick={() => setSelectedJan(null)} className="rounded-[var(--radius-md)] px-2 py-1 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]">关闭</button>
+                <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] whitespace-nowrap">关闭</button>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div><div className="text-xs text-[var(--color-text-muted)]">库存</div><div className="font-semibold text-[var(--color-text)]">{selectedSummary.totalStock}</div></div>
@@ -433,7 +459,7 @@ export default function KaitorixPricesPage() {
                       .map((price, index) => {
                         const diff = selectedSummary.maxPrice - price.price;
                         return (
-                          <div key={`${price.store}-${index}`} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-4 py-3 text-sm">
+                          <div key={`${price.store}-${index}`} className="grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center">
                             <div className="min-w-0">
                               {price.url ? (
                                 <a href={price.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--color-primary)] hover:underline">{price.store}</a>
@@ -443,7 +469,7 @@ export default function KaitorixPricesPage() {
                               <div className="text-xs text-[var(--color-text-muted)]">{price.updated || '更新时间不明'}</div>
                             </div>
                             <div className="font-mono font-semibold text-[var(--color-text)]">{formatCurrency(price.price)}</div>
-                            <div className={diff === 0 ? 'text-xs text-[var(--color-success)]' : 'text-xs text-[var(--color-text-muted)]'}>
+                            <div className={diff === 0 ? 'col-span-2 text-xs text-[var(--color-success)] sm:col-span-1' : 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1'}>
                               {diff === 0 ? '最高' : `-${formatCurrency(diff)}`}
                             </div>
                           </div>
