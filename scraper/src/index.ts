@@ -34,6 +34,8 @@ async function pollQueue() {
         max_store: result.max_store,
         prices: result.prices,
         fetched_at: new Date().toISOString(),
+        raw_response: result,
+        last_fetch_source: 'scraper',
       }, { onConflict: 'jan' });
 
     if (upsertErr) {

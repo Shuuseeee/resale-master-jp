@@ -365,6 +365,8 @@ export interface KaitorixPriceCache {
   max_price: number;
   max_store: string | null;
   prices: KaitorixCachedPrice[];
+  raw_response?: unknown | null;
+  last_fetch_source?: 'scraper' | 'official' | 'cache' | null;
   fetched_at: string;
   created_at: string;
   updated_at: string;

@@ -117,6 +117,11 @@ export default function Navigation() {
       icon: <Ticket className="h-5 w-5" strokeWidth={2} />,
     },
     {
+      name: '买取价格',
+      href: '/kaitorix-prices',
+      icon: <ScanBarcode className="h-5 w-5" strokeWidth={2} />,
+    },
+    {
       name: '设置',
       href: '/settings',
       icon: <Settings className="h-5 w-5" strokeWidth={2} />,
@@ -168,6 +173,11 @@ export default function Navigation() {
       name: '数据分析',
       href: '/analytics',
       icon: <BarChart3 className="h-6 w-6" strokeWidth={2} />,
+    },
+    {
+      name: '买取价格',
+      href: '/kaitorix-prices',
+      icon: <ScanBarcode className="h-6 w-6" strokeWidth={2} />,
     },
     {
       name: '税务申报',

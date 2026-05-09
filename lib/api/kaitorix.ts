@@ -17,11 +17,25 @@ interface KaitorixResponse {
   prices: KaitorixPrice[];
   _source?: string;
   _fetched_at?: string; // ISO string — actual time data was scraped (only present for stale)
+  rateLimit?: KaitorixRateLimit;
 }
 
 interface CacheEntry {
   data: KaitorixResponse;
   timestamp: number;
+}
+
+export interface KaitorixRateLimit {
+  limit: number;
+  remaining: number | null;
+  reset: string | null;
+}
+
+export interface ForceRefreshResult {
+  data: KaitorixResponse | null;
+  rateLimit?: KaitorixRateLimit;
+  error?: string;
+  status?: number;
 }
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -108,6 +122,47 @@ export async function fetchBuybackPrice(
 
   pendingRequests.set(jan, request);
   return request;
+}
+
+export async function forceRefreshBuybackPrice(jan: string): Promise<ForceRefreshResult> {
+  try {
+    const response = await fetch('/api/kaitorix/force-refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jan }),
+    });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: payload?.error || 'Kaitorix 官方强刷失败',
+        rateLimit: payload?.rateLimit,
+        status: response.status,
+      };
+    }
+
+    if (!payload?.jan || !Array.isArray(payload.prices)) {
+      return { data: null, error: 'Kaitorix 官方 API 返回格式不正确', status: response.status };
+    }
+
+    if (payload.prices.length > 0) {
+      discoverStores(payload.prices.map((p: KaitorixPrice) => p.store));
+    }
+
+    cache.set(jan, { data: payload, timestamp: Date.now() });
+    if (payload.jan !== jan) {
+      cache.set(payload.jan, { data: payload, timestamp: Date.now() });
+    }
+
+    return {
+      data: payload,
+      rateLimit: payload.rateLimit,
+      status: response.status,
+    };
+  } catch {
+    return { data: null, error: 'Kaitorix 官方 API 请求失败' };
+  }
 }
 
 export interface FetchProgress {

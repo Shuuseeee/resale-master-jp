@@ -1,10 +1,18 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { fetchBuybackPrices, getBestPrice, getFilteredPrices, type FetchProgress } from '@/lib/api/kaitorix';
+import {
+  fetchBuybackPrices,
+  forceRefreshBuybackPrice,
+  getBestPrice,
+  getFilteredPrices,
+  type FetchProgress,
+  type KaitorixRateLimit,
+} from '@/lib/api/kaitorix';
 import { loadKaitorixConfig } from '@/lib/kaitorix-config';
 
 interface Transaction {
   id: string;
   jan_code?: string | null;
+  status?: string | null;
   purchase_price_total: number;
   quantity: number;
   quantity_in_stock?: number | null;
@@ -30,8 +38,11 @@ export interface KaitorixState {
   isLoading: boolean;
   progress: FetchProgress | null;
   enabled: boolean;
+  forceRefreshingJan: string | null;
+  rateLimit: KaitorixRateLimit | null;
   refresh: (transactionsToFetch?: Transaction[]) => void;
   refreshMissing: () => void;
+  forceRefresh: (jan: string, transactionsToRefresh?: Transaction[]) => Promise<{ ok: boolean; error?: string; rateLimit?: KaitorixRateLimit }>;
   stop: () => void;
 }
 
@@ -171,12 +182,16 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   const [buybackMap, setBuybackMap] = useState<Map<string, BuybackInfo>>(() => loadCacheFromStorage());
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<FetchProgress | null>(null);
+  const [forceRefreshingJan, setForceRefreshingJan] = useState<string | null>(null);
+  const [rateLimit, setRateLimit] = useState<KaitorixRateLimit | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const isLoadingRef = useRef(false);
   const buybackMapRef = useRef(buybackMap);
+  const forceRefreshingJanRef = useRef<string | null>(null);
 
   // Keep refs in sync
   useEffect(() => { buybackMapRef.current = buybackMap; }, [buybackMap]);
+  useEffect(() => { forceRefreshingJanRef.current = forceRefreshingJan; }, [forceRefreshingJan]);
 
   // Read config once per render cycle (not per callback call)
   const config = useMemo(() => loadKaitorixConfig(), []);
@@ -193,7 +208,13 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   const buildJanMap = useCallback((txList: Transaction[]) => {
     const map = new Map<string, Transaction[]>();
     txList
-      .filter(t => t.quantity - (t.quantity_sold ?? 0) > 0 && t.jan_code)
+      .filter(t => {
+        if (!t.jan_code) return false;
+        if (t.status === 'sold' || t.status === 'returned') return false;
+        const remainingQty = t.quantity_in_stock ??
+          Math.max(0, t.quantity - (t.quantity_sold ?? 0) - (t.quantity_returned ?? 0));
+        return remainingQty > 0;
+      })
       .forEach(t => {
         const list = map.get(t.jan_code!) || [];
         list.push(t);
@@ -221,11 +242,73 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
     runFetch(janToTransactions, buybackMapRef, config, abortRef, isLoadingRef, setIsLoading, setProgress, setBuybackMap);
   }, [enabled, transactions, config, buildJanMap]);
 
+  const forceRefresh = useCallback(async (jan: string, transactionsToRefresh?: Transaction[]) => {
+    if (!enabled || forceRefreshingJanRef.current) {
+      return { ok: false, error: 'Kaitorix 正在刷新中' };
+    }
+
+    const targetTransactions = (transactionsToRefresh || transactions).filter(t => t.jan_code === jan);
+    if (targetTransactions.length === 0) {
+      return { ok: false, error: '没有找到该 JAN 的交易' };
+    }
+
+    forceRefreshingJanRef.current = jan;
+    setForceRefreshingJan(jan);
+
+    const result = await forceRefreshBuybackPrice(jan);
+    if (result.rateLimit) setRateLimit(result.rateLimit);
+
+    if (!result.data) {
+      forceRefreshingJanRef.current = null;
+      setForceRefreshingJan(null);
+      return { ok: false, error: result.error || '官方强刷失败', rateLimit: result.rateLimit };
+    }
+
+    const bestPrice = getBestPrice(result.data, config.enabledStores);
+    const newMap = new Map(buybackMapRef.current);
+
+    targetTransactions.forEach(tx => {
+      if (bestPrice) {
+        const totalPoints = (tx.expected_platform_points ?? 0) +
+          (tx.expected_card_points ?? 0) +
+          (tx.extra_platform_points ?? 0);
+        const costPerUnit = (tx.purchase_price_total - totalPoints) / tx.quantity;
+        const remainingQty = tx.quantity_in_stock ??
+          Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+        const expectedProfit = (bestPrice.maxPrice - costPerUnit) * remainingQty;
+
+        newMap.set(tx.id, {
+          maxPrice: bestPrice.maxPrice,
+          maxStore: bestPrice.maxStore,
+          expectedProfit,
+          loading: false,
+          allPrices: getFilteredPrices(result.data, config.enabledStores),
+          source: 'cache',
+          fetchedAt: result.data?._fetched_at ? new Date(result.data._fetched_at).getTime() : Date.now(),
+        });
+      } else {
+        newMap.set(tx.id, {
+          maxPrice: 0,
+          maxStore: '',
+          expectedProfit: 0,
+          loading: false,
+          source: 'pending',
+        });
+      }
+    });
+
+    setBuybackMap(newMap);
+    saveCacheToStorage(newMap);
+    forceRefreshingJanRef.current = null;
+    setForceRefreshingJan(null);
+    return { ok: true, rateLimit: result.rateLimit };
+  }, [enabled, transactions, config]);
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
     isLoadingRef.current = false;
     setIsLoading(false);
   }, []);
 
-  return { buybackMap, isLoading, progress, enabled, refresh, refreshMissing, stop };
+  return { buybackMap, isLoading, progress, enabled, forceRefreshingJan, rateLimit, refresh, refreshMissing, forceRefresh, stop };
 }

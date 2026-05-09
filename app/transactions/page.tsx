@@ -139,7 +139,15 @@ function TransactionsContent() {
   // KaitoriX 买取价格
   // 注意：hook 接收全部 transactions 用于缓存查找，但 refresh 时只获取当前筛选的
   const kaitorixState = useKaitorixPrices(transactions);
-  const { buybackMap: buybackPrices, isLoading: kaitorixLoading, progress: kaitorixProgress, enabled: kaitorixEnabled, refresh: refreshKaitorix, refreshMissing: refreshMissingKaitorix, stop: stopKaitorix } = kaitorixState;
+  const {
+    buybackMap: buybackPrices,
+    isLoading: kaitorixLoading,
+    progress: kaitorixProgress,
+    enabled: kaitorixEnabled,
+    refresh: refreshKaitorix,
+    refreshMissing: refreshMissingKaitorix,
+    stop: stopKaitorix,
+  } = kaitorixState;
 
   useEffect(() => {
     loadTransactions();
@@ -794,6 +802,15 @@ function TransactionsContent() {
                 </svg>
                 <span className="hidden sm:inline">{compareMode ? '选择中' : '多选'}</span>
               </button>
+              <Link
+                href="/kaitorix-prices"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] whitespace-nowrap"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h5M5 7h14a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" />
+                </svg>
+                <span className="hidden sm:inline">价格中心</span>
+              </Link>
               {kaitorixEnabled && (
                 <button
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
