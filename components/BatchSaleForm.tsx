@@ -17,9 +17,10 @@ interface BatchSaleFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   onDataRefresh?: () => void;
+  closeOnSuccess?: boolean;
 }
 
-export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh }: BatchSaleFormProps) {
+export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh, closeOnSuccess = false }: BatchSaleFormProps) {
   const [formData, setFormData] = useState<SalesRecordFormData>({
     quantity_sold: 1,
     selling_price_per_unit: 0,
@@ -109,7 +110,11 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
 
       // 刷新父组件数据（更新库存显示等），但不关闭表单
       if (onDataRefresh) {
-        onDataRefresh();
+        await onDataRefresh();
+      }
+
+      if (closeOnSuccess) {
+        onSuccess();
       }
     } catch (err: any) {
       setError(err.message || '保存失败，请重试');

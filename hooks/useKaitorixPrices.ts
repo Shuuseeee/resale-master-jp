@@ -7,10 +7,12 @@ interface Transaction {
   jan_code?: string | null;
   purchase_price_total: number;
   quantity: number;
+  quantity_in_stock?: number | null;
   expected_platform_points?: number | null;
   expected_card_points?: number | null;
   extra_platform_points?: number | null;
   quantity_sold: number;
+  quantity_returned?: number | null;
 }
 
 export interface BuybackInfo {
@@ -128,7 +130,8 @@ function runFetch(
             (tx.expected_card_points ?? 0) +
             (tx.extra_platform_points ?? 0);
           const costPerUnit = (tx.purchase_price_total - totalPoints) / tx.quantity;
-          const remainingQty = tx.quantity - (tx.quantity_sold ?? 0);
+          const remainingQty = tx.quantity_in_stock ??
+            Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
           const expectedProfit = (bestPrice.maxPrice - costPerUnit) * remainingQty;
 
           // fetchedAt: use server's _fetched_at for stale data so the UI shows correct age;

@@ -1336,6 +1336,8 @@ function TransactionsContent() {
                 loadTransactions();
                 setToastMsg('销售已记录');
               }}
+              onDataRefresh={loadTransactions}
+              closeOnSuccess
               onCancel={() => setSaleModalId(null)}
             />
           </Modal>
