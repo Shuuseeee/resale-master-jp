@@ -127,6 +127,19 @@ function jsonError(message: string, status: number, extra?: Record<string, unkno
   return NextResponse.json({ error: message, ...extra }, { status });
 }
 
+function getAuthorizationHeader(apiKey: string): string {
+  return apiKey.toLowerCase().startsWith('bearer ') ? apiKey : `Bearer ${apiKey}`;
+}
+
+async function readUpstreamError(response: Response): Promise<string> {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const json = await response.json().catch(() => null);
+    return json?.error || json?.message || '';
+  }
+  return response.text().catch(() => '');
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await getUserClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -168,13 +181,17 @@ export async function POST(request: NextRequest) {
   try {
     response = await fetch(`https://kaitorix.app/open/api/product/${encodeURIComponent(jan)}`, {
       headers: {
-        Authorization: `Bearer ${KAITORIX_OPEN_API_KEY}`,
+        Authorization: getAuthorizationHeader(KAITORIX_OPEN_API_KEY),
         Accept: 'application/json',
       },
       signal: AbortSignal.timeout(10000),
     });
-  } catch {
-    return jsonError('Kaitorix 官方 API 请求失败', 502);
+  } catch (error) {
+    return jsonError('无法连接 Kaitorix 官方 API，请检查本地/部署环境网络', 502, {
+      detail: process.env.NODE_ENV === 'production'
+        ? undefined
+        : error instanceof Error ? error.message : String(error),
+    });
   }
 
   const rateLimit = parseRateLimitHeaders(response.headers);
@@ -191,16 +208,33 @@ export async function POST(request: NextRequest) {
     return jsonError('Kaitorix 未找到该商品', 404, { rateLimit });
   }
 
+  if (response.status === 401 || response.status === 403) {
+    const upstreamError = await readUpstreamError(response);
+    await recordUsage(usageDate, response.status, rateLimit, upstreamError || `status ${response.status}`);
+    return jsonError('Kaitorix Open API Key 无效或无权限', 401, { rateLimit });
+  }
+
+  if (response.status === 400) {
+    const upstreamError = await readUpstreamError(response);
+    await recordUsage(usageDate, response.status, rateLimit, upstreamError || 'bad request');
+    return jsonError(upstreamError || 'Kaitorix 官方 API 参数错误', 400, { rateLimit });
+  }
+
   if (!response.ok) {
-    await recordUsage(usageDate, response.status, rateLimit, `status ${response.status}`);
-    return jsonError('Kaitorix 官方 API 失败', 502, { rateLimit });
+    const upstreamError = await readUpstreamError(response);
+    await recordUsage(usageDate, response.status, rateLimit, upstreamError || `status ${response.status}`);
+    return jsonError(
+      upstreamError || `Kaitorix 官方 API 暂时不可用 (${response.status})`,
+      response.status >= 500 ? 502 : response.status,
+      { rateLimit },
+    );
   }
 
   const data = await response.json().catch(() => null) as OpenApiProductResponse | null;
   const prices = normalizePrices(data?.prices);
   if (!data || prices.length === 0) {
     await recordUsage(usageDate, response.status, rateLimit, 'empty prices');
-    return jsonError('Kaitorix 官方 API 未返回价格数据', 502, { rateLimit });
+    return jsonError('Kaitorix 官方 API 未返回价格数据', 422, { rateLimit });
   }
 
   const best = prices.reduce((max, current) => current.price > max.price ? current : max, prices[0]);
