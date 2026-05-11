@@ -139,6 +139,12 @@ function getAuthorizationHeader(apiKey: string): string {
   return `Bearer ${apiKey}`;
 }
 
+function buildProductUrl(jan: string, apiKey?: string): string {
+  const url = new URL(`https://kaitorix.app/open/api/product/${encodeURIComponent(jan)}`);
+  if (apiKey) url.searchParams.set('key', apiKey);
+  return url.toString();
+}
+
 async function readUpstreamError(response: Response): Promise<string> {
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
@@ -188,13 +194,23 @@ export async function POST(request: NextRequest) {
 
   let response: Response;
   try {
-    response = await fetch(`https://kaitorix.app/open/api/product/${encodeURIComponent(jan)}`, {
+    response = await fetch(buildProductUrl(jan), {
       headers: {
         Authorization: getAuthorizationHeader(kaitorixApiKey),
         Accept: 'application/json',
       },
       signal: AbortSignal.timeout(10000),
     });
+
+    // Kaitorix docs also allow ?key=. Some hosting/proxy paths can behave
+    // differently with Authorization headers, so retry once with the documented
+    // query-param auth before surfacing an auth failure.
+    if (response.status === 401 || response.status === 403) {
+      response = await fetch(buildProductUrl(jan, kaitorixApiKey), {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      });
+    }
   } catch (error) {
     return jsonError('无法连接 Kaitorix 官方 API，请检查本地/部署环境网络', 502, {
       detail: process.env.NODE_ENV === 'production'
