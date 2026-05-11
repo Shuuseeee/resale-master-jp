@@ -127,8 +127,16 @@ function jsonError(message: string, status: number, extra?: Record<string, unkno
   return NextResponse.json({ error: message, ...extra }, { status });
 }
 
+function normalizeApiKey(apiKey: string | undefined): string {
+  return (apiKey || '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .replace(/^bearer\s+/i, '')
+    .trim();
+}
+
 function getAuthorizationHeader(apiKey: string): string {
-  return apiKey.toLowerCase().startsWith('bearer ') ? apiKey : `Bearer ${apiKey}`;
+  return `Bearer ${apiKey}`;
 }
 
 async function readUpstreamError(response: Response): Promise<string> {
@@ -145,7 +153,8 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return jsonError('请先登录后再使用官方强刷', 401);
 
-  if (!KAITORIX_OPEN_API_KEY) {
+  const kaitorixApiKey = normalizeApiKey(KAITORIX_OPEN_API_KEY);
+  if (!kaitorixApiKey) {
     return jsonError('未配置 Kaitorix Open API Key', 500);
   }
 
@@ -181,7 +190,7 @@ export async function POST(request: NextRequest) {
   try {
     response = await fetch(`https://kaitorix.app/open/api/product/${encodeURIComponent(jan)}`, {
       headers: {
-        Authorization: getAuthorizationHeader(KAITORIX_OPEN_API_KEY),
+        Authorization: getAuthorizationHeader(kaitorixApiKey),
         Accept: 'application/json',
       },
       signal: AbortSignal.timeout(10000),
