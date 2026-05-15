@@ -14,10 +14,9 @@ interface ReturnFormProps {
   transaction: Pick<Transaction, 'id' | 'quantity_in_stock'>;
   onSuccess: () => void;
   onCancel: () => void;
-  showHeader?: boolean;
 }
 
-export default function ReturnForm({ transaction, onSuccess, onCancel, showHeader = false }: ReturnFormProps) {
+export default function ReturnForm({ transaction, onSuccess, onCancel }: ReturnFormProps) {
   const [returnData, setReturnData] = useState({
     quantity_returned: 1,
     return_date: getTodayString(),
@@ -65,13 +64,6 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, showHeade
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {showHeader && (
-        <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-          <div className="h-6 w-1 rounded-full bg-[var(--color-danger)]"></div>
-          记录退货
-        </h2>
-      )}
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">

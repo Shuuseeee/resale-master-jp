@@ -14,6 +14,7 @@ import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
 import ReturnRecordsList from '@/components/ReturnRecordsList';
 import ReturnForm from '@/components/ReturnForm';
+import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 
 interface TransactionWithPayment extends Transaction {
@@ -83,7 +84,6 @@ export default function TransactionDetailPage() {
   const [transaction, setTransaction] = useState<TransactionWithPayment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSaleForm, setShowSaleForm] = useState(false);
-  const [showBatchSaleForm, setShowBatchSaleForm] = useState(false); // 批量销售表单
   const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
   const [showToast, setShowToast] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -137,12 +137,8 @@ export default function TransactionDetailPage() {
       if (error) throw error;
 
       setTransaction(data);
-      if (autoSale && data) {
-        if (data.quantity > 1) {
-          setShowBatchSaleForm(true);
-        } else if (data.status === 'in_stock') {
-          setShowSaleForm(true);
-        }
+      if (autoSale && data && data.status === 'in_stock') {
+        setShowSaleForm(true);
       }
       if (autoReturn && data && (data.status === 'in_stock' || data.status === 'pending')) {
         setShowReturnForm(true);
@@ -325,20 +321,11 @@ export default function TransactionDetailPage() {
                   确认到货
                 </button>
               )}
-              {/* 批量商品显示批量销售按钮 */}
-              {transaction.quantity > 1 && transaction.quantity_in_stock > 0 && !showBatchSaleForm && (
-                <button
-                  onClick={() => setShowBatchSaleForm(true)}
-                  className={button.primary + " gap-1.5 whitespace-nowrap"}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  记录销售
-                </button>
-              )}
-              {/* 单品显示原有的记录销售按钮 */}
-              {transaction.quantity === 1 && transaction.status === 'in_stock' && !showSaleForm && (
+              {/* 记录销售按钮 */}
+              {!showSaleForm && (
+                (transaction.quantity > 1 && transaction.quantity_in_stock > 0) ||
+                (transaction.quantity === 1 && transaction.status === 'in_stock')
+              ) && (
                 <button
                   onClick={() => setShowSaleForm(true)}
                   className={button.primary + " gap-1.5 whitespace-nowrap"}
@@ -422,55 +409,35 @@ export default function TransactionDetailPage() {
           </div>
         </div>
 
-        {/* 退货表单 */}
-        {showReturnForm && (
-          <div className="mb-6 sn-detail-card border-[rgba(239,68,68,0.3)]">
-            <ReturnForm
-              transaction={transaction}
-              onSuccess={handleReturnSuccess}
-              onCancel={() => setShowReturnForm(false)}
-              showHeader
-            />
-          </div>
-        )}
+        <Modal
+          isOpen={showReturnForm}
+          onClose={() => setShowReturnForm(false)}
+          title="记录退货"
+          size="lg"
+        >
+          <ReturnForm
+            transaction={transaction}
+            onSuccess={handleReturnSuccess}
+            onCancel={() => setShowReturnForm(false)}
+          />
+        </Modal>
 
-        {/* 批量销售表单 */}
-        {showBatchSaleForm && transaction.quantity > 1 && (
-          <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
-            <h2 className="sn-detail-title-lg">
-              <div className="sn-form-title-bar"></div>
-              销售记录
-            </h2>
-            <BatchSaleForm
-              transaction={transaction}
-              onSuccess={() => {
-                setShowBatchSaleForm(false);
-                loadTransaction();
-              }}
-              onDataRefresh={loadTransaction}
-              onCancel={() => setShowBatchSaleForm(false)}
-            />
-          </div>
-        )}
-
-        {/* 销售表单（统一使用批量销售表单） */}
-        {showSaleForm && transaction.status === 'in_stock' && (
-          <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
-            <h2 className="sn-detail-title-lg">
-              <div className="sn-form-title-bar"></div>
-              销售记录
-            </h2>
-            <BatchSaleForm
-              transaction={transaction}
-              onSuccess={() => {
-                setShowSaleForm(false);
-                loadTransaction();
-              }}
-              onDataRefresh={loadTransaction}
-              onCancel={() => setShowSaleForm(false)}
-            />
-          </div>
-        )}
+        <Modal
+          isOpen={showSaleForm}
+          onClose={() => setShowSaleForm(false)}
+          title="记录销售"
+          size="lg"
+        >
+          <BatchSaleForm
+            transaction={transaction}
+            onSuccess={() => {
+              setShowSaleForm(false);
+              loadTransaction();
+            }}
+            onDataRefresh={loadTransaction}
+            onCancel={() => setShowSaleForm(false)}
+          />
+        </Modal>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧主要内容 */}
