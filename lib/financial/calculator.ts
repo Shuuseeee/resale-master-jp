@@ -1,6 +1,30 @@
 // lib/financial/calculator.ts
 // 财务计算工具函数库
 
+/** 计算单件成本（扣除积分后的实际成本）。接受的字段在 TransactionForCompare / Transaction 上都有。 */
+export function getUnitCost(t: {
+  purchase_price_total: number;
+  quantity: number;
+  expected_platform_points?: number | null;
+  expected_card_points?: number | null;
+  extra_platform_points?: number | null;
+}): number {
+  const totalPoints = (t.expected_platform_points || 0) +
+    (t.expected_card_points || 0) +
+    (t.extra_platform_points || 0);
+  return (t.purchase_price_total - totalPoints) / (t.quantity || 1);
+}
+
+/** 计算可用库存数量。接受的字段在 TransactionForCompare / Transaction 上都有。 */
+export function getAvailableQty(t: {
+  quantity_in_stock?: number | null;
+  quantity: number;
+  quantity_sold?: number | null;
+  quantity_returned?: number | null;
+}): number {
+  return t.quantity_in_stock ?? Math.max(0, t.quantity - (t.quantity_sold || 0) - (t.quantity_returned || 0));
+}
+
 /**
  * 计算现金利润
  * @param sellingPrice 销售价格

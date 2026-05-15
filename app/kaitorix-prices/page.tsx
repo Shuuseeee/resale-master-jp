@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
-import { formatCurrency } from '@/lib/financial/calculator';
+import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import { forceRefreshBuybackPrice, type KaitorixRateLimit } from '@/lib/api/kaitorix';
 import type { KaitorixCachedPrice, KaitorixPriceCache, Transaction } from '@/types/database.types';
@@ -44,17 +44,6 @@ interface JanSummary {
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 
-function getStockQty(tx: Transaction): number {
-  return tx.quantity_in_stock ?? Math.max(0, tx.quantity - (tx.quantity_sold || 0) - (tx.quantity_returned || 0));
-}
-
-function getUnitCost(tx: Transaction): number {
-  const totalPoints = (tx.expected_platform_points || 0) +
-    (tx.expected_card_points || 0) +
-    (tx.extra_platform_points || 0);
-  return (tx.purchase_price_total - totalPoints) / (tx.quantity || 1);
-}
-
 function formatAge(dateString: string | null): string {
   if (!dateString) return '未获取';
   const time = new Date(dateString).getTime();
@@ -85,7 +74,7 @@ function buildSummaries(
   const janMap = new Map<string, TransactionWithPlatform[]>();
 
   transactions
-    .filter(tx => tx.jan_code && tx.status !== 'sold' && tx.status !== 'returned' && getStockQty(tx) > 0)
+    .filter(tx => tx.jan_code && tx.status !== 'sold' && tx.status !== 'returned' && getAvailableQty(tx) > 0)
     .forEach(tx => {
       const list = janMap.get(tx.jan_code!) || [];
       list.push(tx);
@@ -99,9 +88,9 @@ function buildSummaries(
       ? prices.reduce((max, current) => current.price > max.price ? current : max, prices[0])
       : null;
 
-    const totalStock = txs.reduce((sum, tx) => sum + getStockQty(tx), 0);
+    const totalStock = txs.reduce((sum, tx) => sum + getAvailableQty(tx), 0);
     const totalPurchasePrice = txs.reduce((sum, tx) => sum + tx.purchase_price_total, 0);
-    const totalCostForStock = txs.reduce((sum, tx) => sum + getUnitCost(tx) * getStockQty(tx), 0);
+    const totalCostForStock = txs.reduce((sum, tx) => sum + getUnitCost(tx) * getAvailableQty(tx), 0);
     const maxPrice = cache?.max_price || best?.price || 0;
     const maxStore = cache?.max_store || best?.store || '';
     const expectedProfit = maxPrice > 0 ? (maxPrice * totalStock) - totalCostForStock : 0;
@@ -483,7 +472,7 @@ export default function KaitorixPricesPage() {
                 <div className="border-b border-[var(--color-border)] px-4 py-3 font-semibold text-[var(--color-text)]">关联交易</div>
                 <div className="divide-y divide-[var(--color-border)]">
                   {selectedSummary.transactions.map(tx => {
-                    const stock = getStockQty(tx);
+                    const stock = getAvailableQty(tx);
                     const unitCost = getUnitCost(tx);
                     const profit = selectedSummary.maxPrice > 0 ? (selectedSummary.maxPrice - unitCost) * stock : 0;
                     return (
