@@ -1,7 +1,7 @@
 // app/transactions/[id]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
@@ -14,7 +14,8 @@ import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
 import ReturnRecordsList from '@/components/ReturnRecordsList';
 import ReturnForm from '@/components/ReturnForm';
-import Modal from '@/components/Modal';
+import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
+import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import Toast from '@/components/Toast';
 
 interface TransactionWithPayment extends Transaction {
@@ -93,6 +94,11 @@ export default function TransactionDetailPage() {
       setShowToast(true);
     });
   };
+
+  const closeReturn = useCallback(() => setShowReturnForm(false), []);
+  const closeSale = useCallback(() => setShowSaleForm(false), []);
+  const returnGuard = useModalCloseGuard(closeReturn);
+  const saleGuard = useModalCloseGuard(closeSale);
 
   useEffect(() => {
     loadTransaction();
@@ -411,20 +417,27 @@ export default function TransactionDetailPage() {
 
         <Modal
           isOpen={showReturnForm}
-          onClose={() => setShowReturnForm(false)}
+          onClose={returnGuard.doClose}
+          beforeClose={returnGuard.handleCloseRequest}
+          closeOnEsc={!returnGuard.showConfirm}
+          closeOnOverlayClick={!returnGuard.showConfirm}
           title="记录退货"
           size="lg"
         >
           <ReturnForm
             transaction={transaction}
             onSuccess={handleReturnSuccess}
-            onCancel={() => setShowReturnForm(false)}
+            onCancel={returnGuard.doClose}
+            onDirtyChange={returnGuard.setIsDirty}
           />
         </Modal>
 
         <Modal
           isOpen={showSaleForm}
-          onClose={() => setShowSaleForm(false)}
+          onClose={saleGuard.doClose}
+          beforeClose={saleGuard.handleCloseRequest}
+          closeOnEsc={!saleGuard.showConfirm}
+          closeOnOverlayClick={!saleGuard.showConfirm}
           title="记录销售"
           size="lg"
         >
@@ -435,9 +448,29 @@ export default function TransactionDetailPage() {
               loadTransaction();
             }}
             onDataRefresh={loadTransaction}
-            onCancel={() => setShowSaleForm(false)}
+            onCancel={saleGuard.doClose}
+            onDirtyChange={saleGuard.setIsDirty}
           />
         </Modal>
+
+        <ConfirmModal
+          isOpen={returnGuard.showConfirm}
+          onClose={returnGuard.cancelConfirm}
+          onConfirm={returnGuard.doClose}
+          title={UNSAVED_CHANGES_CONFIRM.title}
+          message={UNSAVED_CHANGES_CONFIRM.message}
+          confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+          cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+        />
+        <ConfirmModal
+          isOpen={saleGuard.showConfirm}
+          onClose={saleGuard.cancelConfirm}
+          onConfirm={saleGuard.doClose}
+          title={UNSAVED_CHANGES_CONFIRM.title}
+          message={UNSAVED_CHANGES_CONFIRM.message}
+          confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+          cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧主要内容 */}

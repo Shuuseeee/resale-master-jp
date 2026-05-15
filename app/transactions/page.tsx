@@ -15,7 +15,8 @@ import TransactionRow from '@/components/TransactionRow';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
 import TransactionGroupRow from '@/components/TransactionGroupRow';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
-import Modal, { ConfirmModal } from '@/components/Modal';
+import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
+import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import ReturnForm from '@/components/ReturnForm';
 import QuickEditForm from '@/components/QuickEditForm';
@@ -131,6 +132,16 @@ function TransactionsContent() {
   const [copyModalId, setCopyModalId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  const closeSale = useCallback(() => setSaleModalId(null), []);
+  const closeReturn = useCallback(() => setReturnModalId(null), []);
+  const closeEdit = useCallback(() => setEditModalId(null), []);
+  const closeCopy = useCallback(() => setCopyModalId(null), []);
+  const saleGuard = useModalCloseGuard(closeSale);
+  const returnGuard = useModalCloseGuard(closeReturn);
+  const editGuard = useModalCloseGuard(closeEdit);
+  const copyGuard = useModalCloseGuard(closeCopy);
+
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [batchPaymentModalOpen, setBatchPaymentModalOpen] = useState(false);
   const [tabPaymentModalOpen, setTabPaymentModalOpen] = useState(false);
@@ -1423,7 +1434,10 @@ function TransactionsContent() {
         return (
           <Modal
             isOpen={!!saleModalId}
-            onClose={() => setSaleModalId(null)}
+            onClose={saleGuard.doClose}
+            beforeClose={saleGuard.handleCloseRequest}
+            closeOnEsc={!saleGuard.showConfirm}
+            closeOnOverlayClick={!saleGuard.showConfirm}
             title="记录销售"
             size="lg"
           >
@@ -1436,7 +1450,8 @@ function TransactionsContent() {
               }}
               onDataRefresh={loadTransactions}
               closeOnSuccess
-              onCancel={() => setSaleModalId(null)}
+              onCancel={saleGuard.doClose}
+              onDirtyChange={saleGuard.setIsDirty}
             />
           </Modal>
         );
@@ -1449,7 +1464,10 @@ function TransactionsContent() {
         return (
           <Modal
             isOpen={!!returnModalId}
-            onClose={() => setReturnModalId(null)}
+            onClose={returnGuard.doClose}
+            beforeClose={returnGuard.handleCloseRequest}
+            closeOnEsc={!returnGuard.showConfirm}
+            closeOnOverlayClick={!returnGuard.showConfirm}
             title="记录退货"
             size="lg"
           >
@@ -1460,7 +1478,8 @@ function TransactionsContent() {
                 loadTransactions();
                 setToastMsg('退货已记录');
               }}
-              onCancel={() => setReturnModalId(null)}
+              onCancel={returnGuard.doClose}
+              onDirtyChange={returnGuard.setIsDirty}
             />
           </Modal>
         );
@@ -1473,7 +1492,10 @@ function TransactionsContent() {
         return (
           <Modal
             isOpen={!!editModalId}
-            onClose={() => setEditModalId(null)}
+            onClose={editGuard.doClose}
+            beforeClose={editGuard.handleCloseRequest}
+            closeOnEsc={!editGuard.showConfirm}
+            closeOnOverlayClick={!editGuard.showConfirm}
             title="快速编辑"
             size="lg"
           >
@@ -1486,7 +1508,8 @@ function TransactionsContent() {
                 loadTransactions();
                 setToastMsg('已保存');
               }}
-              onCancel={() => setEditModalId(null)}
+              onCancel={editGuard.doClose}
+              onDirtyChange={editGuard.setIsDirty}
             />
           </Modal>
         );
@@ -1499,7 +1522,10 @@ function TransactionsContent() {
         return (
           <Modal
             isOpen={!!copyModalId}
-            onClose={() => setCopyModalId(null)}
+            onClose={copyGuard.doClose}
+            beforeClose={copyGuard.handleCloseRequest}
+            closeOnEsc={!copyGuard.showConfirm}
+            closeOnOverlayClick={!copyGuard.showConfirm}
             title="复制交易"
             size="lg"
           >
@@ -1510,11 +1536,50 @@ function TransactionsContent() {
                 loadTransactions();
                 setToastMsg('已创建新交易');
               }}
-              onCancel={() => setCopyModalId(null)}
+              onCancel={copyGuard.doClose}
+              onDirtyChange={copyGuard.setIsDirty}
             />
           </Modal>
         );
       })()}
+
+      {/* 放弃修改确认 */}
+      <ConfirmModal
+        isOpen={saleGuard.showConfirm}
+        onClose={saleGuard.cancelConfirm}
+        onConfirm={saleGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
+      <ConfirmModal
+        isOpen={returnGuard.showConfirm}
+        onClose={returnGuard.cancelConfirm}
+        onConfirm={returnGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
+      <ConfirmModal
+        isOpen={editGuard.showConfirm}
+        onClose={editGuard.cancelConfirm}
+        onConfirm={editGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
+      <ConfirmModal
+        isOpen={copyGuard.showConfirm}
+        onClose={copyGuard.cancelConfirm}
+        onConfirm={copyGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
 
       {/* 删除确认 */}
       <ConfirmModal

@@ -14,6 +14,7 @@ interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEsc?: boolean;
+  beforeClose?: () => void;
 }
 
 export default function Modal({
@@ -25,6 +26,7 @@ export default function Modal({
   showCloseButton = true,
   closeOnOverlayClick = true,
   closeOnEsc = true,
+  beforeClose,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -34,13 +36,13 @@ export default function Modal({
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (beforeClose) { beforeClose(); } else { onClose(); }
       }
     };
 
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose, closeOnEsc]);
+  }, [isOpen, onClose, closeOnEsc, beforeClose]);
 
   // 防止滚动穿透
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function Modal({
   // 点击外部关闭
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
-      onClose();
+      if (beforeClose) { beforeClose(); } else { onClose(); }
     }
   };
 
@@ -129,7 +131,7 @@ export default function Modal({
 
             {showCloseButton && (
               <button
-                onClick={onClose}
+                onClick={beforeClose || onClose}
                 className="ml-auto p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text)] transition-colors rounded-[var(--radius-md)] min-h-touch min-w-touch flex items-center justify-center"
                 aria-label="关闭"
               >
@@ -255,3 +257,10 @@ export function ConfirmModal({
     </Modal>
   );
 }
+
+export const UNSAVED_CHANGES_CONFIRM = {
+  title: '放弃修改？',
+  message: '表单有未保存的修改，确定要放弃吗？',
+  confirmText: '放弃',
+  cancelText: '继续编辑',
+} as const;

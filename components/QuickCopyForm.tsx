@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { Transaction } from '@/types/database.types';
 import { quickCopyTransaction } from '@/lib/api/transactions';
@@ -11,14 +11,16 @@ import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString } from '@/lib/utils/dateUtils';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { button, input } from '@/lib/theme';
+import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 
 interface QuickCopyFormProps {
   source: Transaction;
   onSuccess: () => void;
   onCancel: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopyFormProps) {
+export default function QuickCopyForm({ source, onSuccess, onCancel, onDirtyChange }: QuickCopyFormProps) {
   const [formData, setFormData] = useState({
     date: getTodayString(),
     quantity: source.quantity,
@@ -27,6 +29,28 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const initialDataRef = useRef({ ...formData });
+
+  const isDirty = useMemo(() => {
+    if (submitting) return false;
+    const i = initialDataRef.current;
+    return (
+      formData.date !== i.date ||
+      formData.quantity !== i.quantity ||
+      formData.unit_price !== i.unit_price ||
+      formData.order_number !== i.order_number
+    );
+  }, [formData, submitting]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const handleCancel = () => {
+    if (isDirty && !window.confirm(UNSAVED_CHANGES_CONFIRM.message)) return;
+    onCancel();
+  };
 
   const newTotal = formData.unit_price * formData.quantity;
 
@@ -155,7 +179,7 @@ export default function QuickCopyForm({ source, onSuccess, onCancel }: QuickCopy
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={submitting}
           className={button.secondary}
         >

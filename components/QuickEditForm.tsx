@@ -4,12 +4,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { Transaction, TransactionStatus, PaymentMethod, PurchasePlatform } from '@/types/database.types';
 import { quickUpdateTransaction, type QuickEditPayload } from '@/lib/api/transactions';
 import { parseNumberInput } from '@/lib/number-utils';
 import { button, input } from '@/lib/theme';
+import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 
 interface QuickEditFormProps {
   transaction: Transaction;
@@ -17,6 +18,7 @@ interface QuickEditFormProps {
   purchasePlatforms: Array<Pick<PurchasePlatform, 'id' | 'name'>>;
   onSuccess: () => void;
   onCancel: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const STATUS_OPTIONS: Array<{ value: TransactionStatus; label: string }> = [
@@ -33,6 +35,7 @@ export default function QuickEditForm({
   purchasePlatforms,
   onSuccess,
   onCancel,
+  onDirtyChange,
 }: QuickEditFormProps) {
   const canEditStatus =
     (transaction.status === 'pending' || transaction.status === 'in_stock') &&
@@ -49,6 +52,39 @@ export default function QuickEditForm({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const initialDataRef = useRef({
+    status: transaction.status,
+    quantity: transaction.quantity,
+    unit_price: transaction.unit_price ?? 0,
+    order_number: transaction.order_number ?? '',
+    card_id: transaction.card_id ?? '',
+    purchase_platform_id: transaction.purchase_platform_id ?? '',
+    notes: transaction.notes ?? '',
+  });
+
+  const isDirty = useMemo(() => {
+    if (submitting) return false;
+    const i = initialDataRef.current;
+    return (
+      formData.status !== i.status ||
+      formData.quantity !== i.quantity ||
+      formData.unit_price !== i.unit_price ||
+      formData.order_number !== i.order_number ||
+      formData.card_id !== i.card_id ||
+      formData.purchase_platform_id !== i.purchase_platform_id ||
+      formData.notes !== i.notes
+    );
+  }, [formData, submitting]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const handleCancel = () => {
+    if (isDirty && !window.confirm(UNSAVED_CHANGES_CONFIRM.message)) return;
+    onCancel();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,7 +237,7 @@ export default function QuickEditForm({
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={submitting}
           className={button.secondary}
         >

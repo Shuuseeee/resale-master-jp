@@ -3,10 +3,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
+import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
@@ -31,9 +32,10 @@ interface BatchSaleFormProps {
   onCancel: () => void;
   onDataRefresh?: () => void;
   closeOnSuccess?: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh, closeOnSuccess = false }: BatchSaleFormProps) {
+export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh, closeOnSuccess = false, onDirtyChange }: BatchSaleFormProps) {
   const [formData, setFormData] = useState<SalesRecordFormData>(() => getInitialFormData());
 
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +45,26 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
 
   const prevTransactionId = useRef<string | undefined>(transaction.id);
+  const initialDataRef = useRef<SalesRecordFormData>(getInitialFormData());
+
+  const isDirty = useMemo(() => {
+    if (submitting) return false;
+    const i = initialDataRef.current;
+    return (
+      formData.quantity_sold !== i.quantity_sold ||
+      formData.selling_price_per_unit !== i.selling_price_per_unit ||
+      formData.platform_fee !== i.platform_fee ||
+      formData.shipping_fee !== i.shipping_fee ||
+      formData.sale_date !== i.sale_date ||
+      formData.selling_platform_id !== i.selling_platform_id ||
+      formData.sale_order_number !== i.sale_order_number ||
+      formData.notes !== i.notes
+    );
+  }, [formData, submitting]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   useEffect(() => {
     getSellingPlatforms().then(setSellingPlatforms);
@@ -51,7 +73,9 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   useEffect(() => {
     if (prevTransactionId.current === transaction.id) return;
     prevTransactionId.current = transaction.id;
-    setFormData(getInitialFormData());
+    const initial = getInitialFormData();
+    setFormData(initial);
+    initialDataRef.current = initial;
     setSuccessCount(0);
     setError('');
   }, [transaction.id]);
@@ -115,12 +139,16 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       setSuccessCount(prev => prev + 1);
 
       // 保留売却先、単価、費用，只清空数量和注文ID
-      setFormData(prev => ({
-        ...prev,
-        quantity_sold: 1,
-        sale_order_number: '',
-        notes: '',
-      }));
+      setFormData(prev => {
+        const reset = {
+          ...prev,
+          quantity_sold: 1,
+          sale_order_number: '',
+          notes: '',
+        };
+        initialDataRef.current = { ...reset };
+        return reset;
+      });
 
       // 刷新父组件数据（更新库存显示等），但不关闭表单
       if (onDataRefresh) {
@@ -314,8 +342,10 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
         <button
           type="button"
           onClick={() => {
-            if (successCount > 0 && onDataRefresh) {
-              onDataRefresh();
+            if (successCount > 0) {
+              onDataRefresh?.();
+            } else if (isDirty && !window.confirm(UNSAVED_CHANGES_CONFIRM.message)) {
+              return;
             }
             onCancel();
           }}

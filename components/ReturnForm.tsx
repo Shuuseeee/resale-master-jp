@@ -3,20 +3,22 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Transaction } from '@/types/database.types';
 import { createReturnRecord } from '@/lib/api/return-records';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString } from '@/lib/utils/dateUtils';
 import { button, input } from '@/lib/theme';
+import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 
 interface ReturnFormProps {
   transaction: Pick<Transaction, 'id' | 'quantity_in_stock'>;
   onSuccess: () => void;
   onCancel: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function ReturnForm({ transaction, onSuccess, onCancel }: ReturnFormProps) {
+export default function ReturnForm({ transaction, onSuccess, onCancel, onDirtyChange }: ReturnFormProps) {
   const [returnData, setReturnData] = useState({
     quantity_returned: 1,
     return_date: getTodayString(),
@@ -27,6 +29,30 @@ export default function ReturnForm({ transaction, onSuccess, onCancel }: ReturnF
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const initialDataRef = useRef({ ...returnData });
+
+  const isDirty = useMemo(() => {
+    if (submitting) return false;
+    const i = initialDataRef.current;
+    return (
+      returnData.quantity_returned !== i.quantity_returned ||
+      returnData.return_date !== i.return_date ||
+      returnData.return_amount !== i.return_amount ||
+      returnData.points_deducted !== i.points_deducted ||
+      returnData.return_reason !== i.return_reason ||
+      returnData.notes !== i.notes
+    );
+  }, [returnData, submitting]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const handleCancel = () => {
+    if (isDirty && !window.confirm(UNSAVED_CHANGES_CONFIRM.message)) return;
+    onCancel();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +191,7 @@ export default function ReturnForm({ transaction, onSuccess, onCancel }: ReturnF
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={submitting}
           className={button.secondary}
         >
