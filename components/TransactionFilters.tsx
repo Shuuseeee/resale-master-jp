@@ -301,7 +301,7 @@ export default function TransactionFilters({
                   : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
               }`}
             >
-              购买
+              采购
             </button>
             <button
               type="button"

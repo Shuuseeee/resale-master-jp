@@ -439,7 +439,7 @@ export default function TransactionDetailPage() {
           <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
             <h2 className="sn-detail-title-lg">
               <div className="sn-form-title-bar"></div>
-              记录销售信息
+              销售记录
             </h2>
             <BatchSaleForm
               transaction={transaction}
@@ -458,7 +458,7 @@ export default function TransactionDetailPage() {
           <div className="mb-6 sn-detail-card border-[rgba(16,185,129,0.3)]">
             <h2 className="sn-detail-title-lg">
               <div className="sn-form-title-bar"></div>
-              记录销售信息
+              销售记录
             </h2>
             <BatchSaleForm
               transaction={transaction}

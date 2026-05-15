@@ -524,12 +524,12 @@ export default function EditTransactionPage() {
             </div>
           </div>
 
-          {/* 购买信息 */}
+          {/* 采购信息 */}
           <div className="sn-form-card">
             <div className="space-y-5">
               <h2 className="sn-form-title">
                 <div className="sn-form-title-bar"></div>
-                购买信息
+                采购信息
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
@@ -613,7 +613,7 @@ export default function EditTransactionPage() {
 
               <div>
                 <label className="sn-form-label">
-                  购买平台
+                  采购平台
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -635,7 +635,7 @@ export default function EditTransactionPage() {
                     type="text"
                     value={newPurchasePlatformName}
                     onChange={(e) => setNewPurchasePlatformName(e.target.value)}
-                    placeholder="请输入新的购买平台..."
+                    placeholder="请输入新的采购平台..."
                     className="flex-1 sn-form-input py-2"
                   />
                   <button

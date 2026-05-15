@@ -640,7 +640,7 @@ function TransactionsContent() {
     const { error } = await deleteTransactionApi(deleteModalId);
     setDeleteSubmitting(false);
     if (error) {
-      alert(error?.message || '删除失败,请重试');
+      setToastMsg(error?.message || '删除失败,请重试');
       return;
     }
     setTransactions(prev => prev.filter(t => t.id !== deleteModalId));
@@ -665,7 +665,7 @@ function TransactionsContent() {
       const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
       downloadCSV(csv, `purchases_${dateStr}${suffix}.csv`);
     } catch (error: any) {
-      alert(error.message || 'CSV导出失败');
+      setToastMsg(error.message || 'CSV导出失败');
     } finally {
       setExporting(false);
     }
@@ -713,7 +713,7 @@ function TransactionsContent() {
       );
       setSelectedIds(new Set());
     } else {
-      alert('到货处理失败');
+      setToastMsg('到货处理失败');
     }
   }, [selectedIds, transactions]);
 
@@ -729,7 +729,7 @@ function TransactionsContent() {
       setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
       exitCompareMode();
     } else {
-      alert('删除失败');
+      setToastMsg('删除失败');
     }
   }, [selectedIds, exitCompareMode]);
 
@@ -769,7 +769,7 @@ function TransactionsContent() {
         prev.map(t => t.id === id ? { ...t, status: 'in_stock' as const } : t)
       );
     } else {
-      alert('到货处理失败');
+      setToastMsg('到货处理失败');
     }
   }, []);
 
@@ -841,7 +841,7 @@ function TransactionsContent() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                <span className="hidden sm:inline">{compareMode ? '选择中' : '多选'}</span>
+                <span className="hidden sm:inline">{compareMode ? `退出多选(${selectedIds.size})` : '多选'}</span>
               </button>
               <Link
                 href="/kaitorix-prices"
@@ -1133,18 +1133,33 @@ function TransactionsContent() {
 
         {/* 交易列表 */}
         {filteredTransactions.length === 0 ? (
-          <div className={card.primary + ' p-12 text-center'}>
-            <svg className="w-16 h-16 text-[var(--color-primary)] opacity-60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p className="text-[var(--color-text-muted)] text-lg">暂无交易记录</p>
-            <Link
-              href="/transactions/add"
-              className={button.primary + ' inline-block mt-4'}
-            >
-              添加第一条交易
-            </Link>
-          </div>
+          transactions.length === 0 ? (
+            <div className={card.primary + ' p-12 text-center'}>
+              <svg className="w-16 h-16 text-[var(--color-primary)] opacity-60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p className="text-[var(--color-text-muted)] text-lg">暂无交易记录</p>
+              <Link
+                href="/transactions/add"
+                className={button.primary + ' inline-block mt-4'}
+              >
+                添加第一条交易
+              </Link>
+            </div>
+          ) : (
+            <div className={card.primary + ' p-12 text-center'}>
+              <svg className="w-16 h-16 text-[var(--color-text-muted)] opacity-40 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-[var(--color-text-muted)] text-lg">没有匹配此条件的记录</p>
+              <button
+                onClick={() => { window.location.href = '/transactions'; }}
+                className={button.primary + ' inline-block mt-4'}
+              >
+                清空筛选
+              </button>
+            </div>
+          )
         ) : (
           <>
             {/* 移动端：卡片列表 */}
@@ -1313,7 +1328,7 @@ function TransactionsContent() {
 
       {/* 多选模式浮动操作栏 */}
       {compareMode && (
-        <div className="fixed bottom-24 md:bottom-6 inset-x-0 flex justify-center px-3 z-[9998] pointer-events-none">
+        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 inset-x-0 flex justify-center px-3 z-[9998] pointer-events-none">
           <div className="pointer-events-auto bg-[var(--color-header)] text-white rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-3 py-3 flex items-center gap-2 max-w-lg w-full border border-white/10">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
