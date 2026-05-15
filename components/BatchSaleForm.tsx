@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
@@ -11,6 +11,19 @@ import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
+
+function getInitialFormData(): SalesRecordFormData {
+  return {
+    quantity_sold: 1,
+    selling_price_per_unit: 0,
+    platform_fee: 0,
+    shipping_fee: 0,
+    sale_date: getTodayString(),
+    selling_platform_id: '',
+    sale_order_number: '',
+    notes: '',
+  };
+}
 
 interface BatchSaleFormProps {
   transaction: Transaction;
@@ -21,16 +34,7 @@ interface BatchSaleFormProps {
 }
 
 export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh, closeOnSuccess = false }: BatchSaleFormProps) {
-  const [formData, setFormData] = useState<SalesRecordFormData>({
-    quantity_sold: 1,
-    selling_price_per_unit: 0,
-    platform_fee: 0,
-    shipping_fee: 0,
-    sale_date: getTodayString(),
-    selling_platform_id: '',
-    sale_order_number: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState<SalesRecordFormData>(() => getInitialFormData());
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -38,9 +42,19 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   const [sellingPlatforms, setSellingPlatforms] = useState<SellingPlatform[]>([]);
   const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
 
+  const prevTransactionId = useRef<string | undefined>(transaction.id);
+
   useEffect(() => {
     getSellingPlatforms().then(setSellingPlatforms);
   }, []);
+
+  useEffect(() => {
+    if (prevTransactionId.current === transaction.id) return;
+    prevTransactionId.current = transaction.id;
+    setFormData(getInitialFormData());
+    setSuccessCount(0);
+    setError('');
+  }, [transaction.id]);
 
   const handleAddSellingPlatform = async () => {
     const name = newSellingPlatformName.trim();
