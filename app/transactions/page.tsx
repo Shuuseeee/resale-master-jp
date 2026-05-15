@@ -1153,7 +1153,7 @@ function TransactionsContent() {
               </svg>
               <p className="text-[var(--color-text-muted)] text-lg">没有匹配此条件的记录</p>
               <button
-                onClick={() => { window.location.href = '/transactions'; }}
+                onClick={() => { handleClearFilters(); setSearchTerm(''); setStatusFilter('all'); }}
                 className={button.primary + ' inline-block mt-4'}
               >
                 清空筛选
