@@ -85,7 +85,12 @@ function TransactionsContent() {
   );
   const [sortField, setSortField] = useState<SortField>(() => (searchParams.get('sort') as SortField) || 'date');
   const [sortOrder, setSortOrder] = useState<SortOrder>(() => (searchParams.get('order') as SortOrder) || 'desc');
-  const [dateSortMode, setDateSortMode] = useState<DateSortMode>(() => (searchParams.get('dsm') as DateSortMode) || 'purchase');
+  const [dateSortMode, setDateSortMode] = useState<DateSortMode>(() => {
+    const dsm = searchParams.get('dsm') as DateSortMode;
+    if (dsm) return dsm;
+    if (searchParams.get('dm') === 'sale') return 'sale';
+    return 'purchase';
+  });
   const [profitSortMode, setProfitSortMode] = useState<ProfitSortMode>('actual');
   const [activeFilters, setActiveFilters] = useState<FilterValues | null>(() => {
     // 从 URL 恢复高级筛选
@@ -100,9 +105,8 @@ function TransactionsContent() {
     const sellingPlatformIds = (searchParams.get('sp') || '').split(',').filter(Boolean);
     const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
     const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
-    const dateMode = (searchParams.get('dm') as 'purchase' | 'sale') || 'purchase';
     if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
-      return { dateFrom, dateTo, dateMode, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
+      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -203,7 +207,6 @@ function TransactionsContent() {
     if (activeFilters) {
       if (activeFilters.dateFrom) params.set('df', activeFilters.dateFrom);
       if (activeFilters.dateTo) params.set('dt', activeFilters.dateTo);
-      if (activeFilters.dateMode === 'sale') params.set('dm', 'sale');
       if (activeFilters.productName) params.set('pn', activeFilters.productName);
       if (activeFilters.janCode) params.set('jan', activeFilters.janCode);
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
@@ -401,8 +404,8 @@ function TransactionsContent() {
 
       // 高级筛选
       if (activeFilters) {
-        // 日期筛选（购买日期 or 售出日期）
-        if (activeFilters.dateMode === 'sale') {
+        // 日期筛选（购买日期 or 售出日期，由 dateSortMode 统一控制）
+        if (dateSortMode === 'sale') {
           const saleDate = (t as any).latest_sale_date;
           if (activeFilters.dateFrom && (!saleDate || saleDate < activeFilters.dateFrom)) return false;
           if (activeFilters.dateTo && (!saleDate || saleDate > activeFilters.dateTo)) return false;
@@ -1229,7 +1232,7 @@ function TransactionsContent() {
                                     </svg>
                                   )}
                                 </button>
-                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="px-1 py-0.5 text-[10px] bg-[var(--color-bg-elevated)] rounded hover:text-[var(--color-primary)] transition-colors" title="切换日期类型">⇄</button>
+                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="ml-2 px-1.5 py-0.5 text-[11px] bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors" title={dateSortMode === 'purchase' ? '切换为按售出日期' : '切换为按进货日期'}>{dateSortMode === 'purchase' ? '售出' : '进货'}</button>
                               </div>
                             </th>
                           );

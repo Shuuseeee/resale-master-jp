@@ -10,7 +10,6 @@ import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 export interface FilterValues {
   dateFrom: string;
   dateTo: string;
-  dateMode: 'purchase' | 'sale';
   productName: string;
   janCode: string;
   janFilterMode: 'include' | 'exclude';
@@ -37,7 +36,6 @@ interface TransactionFiltersProps {
 export const emptyFilters: FilterValues = {
   dateFrom: '',
   dateTo: '',
-  dateMode: 'purchase',
   productName: '',
   janCode: '',
   janFilterMode: 'include',
@@ -289,32 +287,7 @@ export default function TransactionFilters({
       {/* Row 1 */}
       <div className="grid grid-cols-1 gap-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
         {/* Date range */}
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 lg:w-auto lg:grid-cols-[auto_150px_auto_150px]">
-          {/* 购买/售出 日期模式切换 */}
-          <div className="col-span-3 flex overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] text-xs lg:col-span-1">
-            <button
-              type="button"
-              onClick={() => updateFilter('dateMode', 'purchase')}
-              className={`flex-1 px-3 py-2 font-semibold transition-colors lg:flex-none ${
-                filters.dateMode === 'purchase'
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
-              }`}
-            >
-              采购
-            </button>
-            <button
-              type="button"
-              onClick={() => updateFilter('dateMode', 'sale')}
-              className={`flex-1 border-l border-[var(--color-border)] px-3 py-2 font-semibold transition-colors lg:flex-none ${
-                filters.dateMode === 'sale'
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
-              }`}
-            >
-              售出
-            </button>
-          </div>
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 lg:w-auto lg:grid-cols-[150px_auto_150px]">
           <div className="relative min-w-0 lg:w-[150px]">
             <DatePicker
               selected={filters.dateFrom ? parseDateFromLocal(filters.dateFrom) : null}
