@@ -23,6 +23,7 @@ interface TransactionGroupCardProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onConfirmPayment?: (id: string) => void;
   onQuickSale?: (id: string) => void;
   onQuickReturn?: (id: string) => void;
   onQuickEdit?: (id: string) => void;
@@ -43,6 +44,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onConfirmPayment,
   onQuickSale,
   onQuickReturn,
   onQuickEdit,
@@ -189,6 +191,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 dateSortMode={dateSortMode}
                 onDelete={onDelete}
                 onMarkArrived={onMarkArrived}
+                onConfirmPayment={onConfirmPayment}
                 onQuickSale={onQuickSale}
                 onQuickReturn={onQuickReturn}
                 onQuickEdit={onQuickEdit}

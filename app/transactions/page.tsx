@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { markTransactionArrived } from '@/lib/api/financial';
+import { markTransactionArrived, confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
@@ -128,6 +128,8 @@ function TransactionsContent() {
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [batchPaymentModalOpen, setBatchPaymentModalOpen] = useState(false);
+  const [tabPaymentModalOpen, setTabPaymentModalOpen] = useState(false);
 
   // searchTerm 防抖：避免每次击键都触发 filter+sort
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
@@ -731,6 +733,35 @@ function TransactionsContent() {
     }
   }, [selectedIds, exitCompareMode]);
 
+  // 共享：将指定 ID 列表的交易本地状态标记为 sold
+  const markTransactionsAsSold = useCallback((ids: string[]) => {
+    const idSet = new Set(ids);
+    setTransactions(prev =>
+      prev.map(t => idSet.has(t.id) ? { ...t, status: 'sold' as const } : t)
+    );
+  }, []);
+
+  const handleBatchPaymentConfirm = useCallback(async () => {
+    const paymentIds = transactions
+      .filter(t => selectedIds.has(t.id) && t.status === 'awaiting_payment')
+      .map(t => t.id);
+    if (paymentIds.length === 0) return;
+    const { confirmed, skipped } = await confirmBatchPaymentReceived(paymentIds);
+    if (confirmed > 0) markTransactionsAsSold(paymentIds);
+    setSelectedIds(new Set());
+    setToastMsg(`已确认 ${confirmed} 笔，跳过 ${skipped} 笔`);
+    setBatchPaymentModalOpen(false);
+  }, [selectedIds, transactions, markTransactionsAsSold]);
+
+  const handleTabPaymentConfirm = useCallback(async () => {
+    const paymentIds = filteredTransactions.map(t => t.id);
+    if (paymentIds.length === 0) return;
+    const { confirmed, skipped } = await confirmBatchPaymentReceived(paymentIds);
+    if (confirmed > 0) markTransactionsAsSold(paymentIds);
+    setToastMsg(`已确认 ${confirmed} 笔，跳过 ${skipped} 笔`);
+    setTabPaymentModalOpen(false);
+  }, [filteredTransactions, markTransactionsAsSold]);
+
   const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
     if (success) {
@@ -739,6 +770,16 @@ function TransactionsContent() {
       );
     } else {
       alert('到货处理失败');
+    }
+  }, []);
+
+  const handleConfirmPayment = useCallback(async (id: string) => {
+    const success = await confirmPaymentReceived(id);
+    if (success) {
+      setTransactions(prev =>
+        prev.map(t => t.id === id ? { ...t, status: 'sold' as const } : t)
+      );
+      setToastMsg('入账已确认');
     }
   }, []);
 
@@ -995,6 +1036,15 @@ function TransactionsContent() {
               </span>
             </button>
           ))}
+          {/* F3: Tab 全确认入账 */}
+          {statusFilter === 'awaiting_payment' && filteredTransactions.length > 0 && (
+            <button
+              onClick={() => setTabPaymentModalOpen(true)}
+              className="ml-auto flex h-[42px] flex-shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+            >
+              全部确认入账({filteredTransactions.length})
+            </button>
+          )}
         </div>
 
         {/* 高级筛选器 */}
@@ -1109,6 +1159,7 @@ function TransactionsContent() {
                     dateSortMode={dateSortMode}
                     onDelete={deleteTransaction}
                     onMarkArrived={handleMarkArrived}
+                    onConfirmPayment={handleConfirmPayment}
                     onQuickSale={openQuickSale}
                     onQuickReturn={openQuickReturn}
                     onQuickEdit={openQuickEdit}
@@ -1128,6 +1179,7 @@ function TransactionsContent() {
                     dateSortMode={dateSortMode}
                     onDelete={deleteTransaction}
                     onMarkArrived={handleMarkArrived}
+                    onConfirmPayment={handleConfirmPayment}
                     onQuickSale={openQuickSale}
                     onQuickReturn={openQuickReturn}
                     onQuickEdit={openQuickEdit}
@@ -1216,6 +1268,7 @@ function TransactionsContent() {
                             dateSortMode={dateSortMode}
                             onDelete={deleteTransaction}
                             onMarkArrived={handleMarkArrived}
+                            onConfirmPayment={handleConfirmPayment}
                             onQuickSale={openQuickSale}
                             onQuickReturn={openQuickReturn}
                             onQuickEdit={openQuickEdit}
@@ -1235,6 +1288,7 @@ function TransactionsContent() {
                             dateSortMode={dateSortMode}
                             onDelete={deleteTransaction}
                             onMarkArrived={handleMarkArrived}
+                            onConfirmPayment={handleConfirmPayment}
                             onQuickSale={openQuickSale}
                             onQuickReturn={openQuickReturn}
                             onQuickEdit={openQuickEdit}
@@ -1268,12 +1322,21 @@ function TransactionsContent() {
               }
             </div>
             {/* 批量到货 */}
-            {[...selectedIds].some(id => transactions.find(t => t.id === id && t.status === 'pending')) && (
+            {transactions.some(t => selectedIds.has(t.id) && t.status === 'pending') && (
               <button
                 onClick={handleBatchArrival}
                 className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-warning)] active:opacity-80 text-white transition-all whitespace-nowrap"
               >
                 批量到货
+              </button>
+            )}
+            {/* 批量入账 */}
+            {transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment') && (
+              <button
+                onClick={() => setBatchPaymentModalOpen(true)}
+                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-primary)] active:opacity-80 text-white transition-all whitespace-nowrap"
+              >
+                批量入账
               </button>
             )}
             {/* 批量删除 */}
@@ -1445,6 +1508,26 @@ function TransactionsContent() {
         confirmText="删除"
         confirmVariant="danger"
         isLoading={deleteSubmitting}
+      />
+
+      {/* 批量入账确认 */}
+      <ConfirmModal
+        isOpen={batchPaymentModalOpen}
+        onClose={() => setBatchPaymentModalOpen(false)}
+        onConfirm={handleBatchPaymentConfirm}
+        title="批量确认入账"
+        message={`确定要将已选的 ${transactions.filter(t => selectedIds.has(t.id) && t.status === 'awaiting_payment').length} 笔交易标记为已入账吗？`}
+        confirmText="确认入账"
+      />
+
+      {/* Tab 全确认入账 */}
+      <ConfirmModal
+        isOpen={tabPaymentModalOpen}
+        onClose={() => setTabPaymentModalOpen(false)}
+        onConfirm={handleTabPaymentConfirm}
+        title="全部确认入账"
+        message={`确定要将当前筛选结果中的 ${filteredTransactions.length} 笔待入账交易全部标记为已入账吗？`}
+        confirmText="全部确认"
       />
 
       {/* 列定制 Modal */}

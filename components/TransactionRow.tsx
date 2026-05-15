@@ -29,6 +29,7 @@ interface TransactionRowProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onConfirmPayment?: (id: string) => void;
   onQuickSale?: (id: string) => void;
   onQuickReturn?: (id: string) => void;
   onQuickEdit?: (id: string) => void;
@@ -47,6 +48,7 @@ const TransactionRow = memo(function TransactionRow({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onConfirmPayment,
   onQuickSale,
   onQuickReturn,
   onQuickEdit,
@@ -282,6 +284,14 @@ const TransactionRow = memo(function TransactionRow({
             >
               出售
             </button>
+            {transaction.status === 'awaiting_payment' && onConfirmPayment && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onConfirmPayment(transaction.id); }}
+                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+              >
+                确认入账
+              </button>
+            )}
           </div>
           <div className="flex gap-1">
             <button

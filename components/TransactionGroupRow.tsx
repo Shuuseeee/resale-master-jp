@@ -23,6 +23,7 @@ interface TransactionGroupRowProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onConfirmPayment?: (id: string) => void;
   onQuickSale?: (id: string) => void;
   onQuickReturn?: (id: string) => void;
   onQuickEdit?: (id: string) => void;
@@ -43,6 +44,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onConfirmPayment,
   onQuickSale,
   onQuickReturn,
   onQuickEdit,
@@ -192,6 +194,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
           dateSortMode={dateSortMode}
           onDelete={onDelete}
           onMarkArrived={onMarkArrived}
+          onConfirmPayment={onConfirmPayment}
           onQuickSale={onQuickSale}
           onQuickReturn={onQuickReturn}
           onQuickEdit={onQuickEdit}

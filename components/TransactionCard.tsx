@@ -31,6 +31,7 @@ interface TransactionCardProps {
   dateSortMode: 'purchase' | 'sale';
   onDelete: (id: string) => void;
   onMarkArrived?: (id: string) => void;
+  onConfirmPayment?: (id: string) => void;
   onQuickSale?: (id: string) => void;
   onQuickReturn?: (id: string) => void;
   onQuickEdit?: (id: string) => void;
@@ -48,6 +49,7 @@ const TransactionCard = memo(function TransactionCard({
   dateSortMode,
   onDelete,
   onMarkArrived,
+  onConfirmPayment,
   onQuickSale,
   onQuickReturn,
   onQuickEdit,
@@ -322,6 +324,14 @@ const TransactionCard = memo(function TransactionCard({
           >
             编辑
           </button>
+          {transaction.status === 'awaiting_payment' && onConfirmPayment && (
+            <button
+              onClick={(e) => { e.stopPropagation(); triggerHaptic('medium'); onConfirmPayment(transaction.id); }}
+              className="px-2 py-1 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
+            >
+              确认入账
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickSale?.(transaction.id); }}
             disabled={hasSoldOut}
