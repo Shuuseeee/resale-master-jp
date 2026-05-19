@@ -277,19 +277,21 @@ const TransactionRow = memo(function TransactionRow({
             >
               编辑
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onQuickSale?.(transaction.id); }}
-              disabled={transaction.quantity_in_stock <= 0}
-              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              出售
-            </button>
+            {transaction.status !== 'awaiting_payment' && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onQuickSale?.(transaction.id); }}
+                disabled={transaction.quantity_in_stock <= 0}
+                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                出售
+              </button>
+            )}
             {transaction.status === 'awaiting_payment' && onConfirmPayment && (
               <button
                 onClick={(e) => { e.stopPropagation(); onConfirmPayment(transaction.id); }}
                 className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
               >
-                确认入账
+                入账
               </button>
             )}
           </div>
