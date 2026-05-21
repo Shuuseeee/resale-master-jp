@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
@@ -136,6 +137,12 @@ export default function KaitorixPricesPage() {
   const [batchRefreshing, setBatchRefreshing] = useState(false);
   const [rawOpen, setRawOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [mobileSelectMode, setMobileSelectMode] = useState(false);
+
+  const toggleMobileSelectMode = () => {
+    setSelectedJans(new Set());
+    setMobileSelectMode(v => !v);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -277,9 +284,15 @@ export default function KaitorixPricesPage() {
               </div>
             )}
             <button
+              onClick={toggleMobileSelectMode}
+              className={button.secondary + ' min-h-11 whitespace-nowrap px-4 lg:!hidden'}
+            >
+              {mobileSelectMode ? '取消' : '批量'}
+            </button>
+            <button
               onClick={batchRefresh}
               disabled={selectedJans.size === 0 || batchRefreshing}
-              className={button.primary + ' min-h-11 whitespace-nowrap px-4 disabled:opacity-40 disabled:cursor-not-allowed'}
+              className={`${button.primary} min-h-11 whitespace-nowrap px-4 disabled:opacity-40 disabled:cursor-not-allowed ${mobileSelectMode ? '' : '!hidden lg:!inline-flex'}`}
             >
               {batchRefreshing ? '强刷中...' : `批量强刷${selectedJans.size ? ` (${selectedJans.size})` : ''}`}
             </button>
@@ -341,15 +354,21 @@ export default function KaitorixPricesPage() {
                   key={item.jan}
                   className="grid gap-3 px-4 py-4 lg:grid-cols-[44px_1.8fr_0.7fr_0.8fr_0.8fr_0.8fr_0.8fr_120px] lg:items-center hover:bg-[var(--color-bg-subtle)]"
                 >
-                  <div className="flex items-start justify-between gap-3 lg:block">
+                  <div className="flex items-start gap-3 lg:block">
                     <button
                       onClick={() => toggleSelect(item.jan)}
-                      className={`flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border lg:h-5 lg:w-5 ${selectedJans.has(item.jan) ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)]'}`}
+                      className={`h-11 w-11 -ml-2 items-center justify-center rounded-[var(--radius-md)] active:bg-[var(--color-bg-subtle)] lg:flex lg:h-5 lg:w-5 lg:ml-0 ${mobileSelectMode ? 'flex' : 'hidden'}`}
                       aria-label="选择 JAN"
+                      role="checkbox"
+                      aria-checked={selectedJans.has(item.jan)}
                     >
-                      {selectedJans.has(item.jan) && <span className="text-xs text-white">✓</span>}
+                      {selectedJans.has(item.jan) ? (
+                        <CheckSquare className="h-5 w-5 text-[var(--color-primary)] lg:h-4 lg:w-4" strokeWidth={2.25} />
+                      ) : (
+                        <Square className="h-5 w-5 text-[var(--color-text-muted)] lg:h-4 lg:w-4" strokeWidth={2} />
+                      )}
                     </button>
-                    <div className="flex items-center gap-2 lg:hidden">
+                    <div className="flex items-center gap-2 ml-auto lg:hidden">
                       <button
                         onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }}
                         className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] whitespace-nowrap"
