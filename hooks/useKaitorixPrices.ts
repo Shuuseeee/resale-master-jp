@@ -7,7 +7,7 @@ import {
   type FetchProgress,
   type KaitorixRateLimit,
 } from '@/lib/api/kaitorix';
-import { loadKaitorixConfig } from '@/lib/kaitorix-config';
+import { loadKaitorixConfig, isKaitorixPriceStale } from '@/lib/kaitorix-config';
 
 interface Transaction {
   id: string;
@@ -68,14 +68,17 @@ function loadCacheFromStorage(): Map<string, BuybackInfo> {
     const map = new Map<string, BuybackInfo>();
     Object.entries(parsed.data || {}).forEach(([id, info]: [string, any]) => {
       if (now - info.timestamp < TTL) {
+        const fetchedAt = info.fetchedAt ?? info.timestamp;
+        // 24h 过期：保留条目但将价格归零，让展示组件自动隐藏
+        const stale = isKaitorixPriceStale(fetchedAt);
         map.set(id, {
-          maxPrice: info.maxPrice,
-          maxStore: info.maxStore,
-          expectedProfit: info.expectedProfit,
+          maxPrice: stale ? 0 : info.maxPrice,
+          maxStore: stale ? '' : info.maxStore,
+          expectedProfit: stale ? 0 : info.expectedProfit,
           loading: false,
-          allPrices: info.allPrices || [],
-          source: info.source,
-          fetchedAt: info.fetchedAt ?? info.timestamp, // prefer original scrape time, fall back to save time
+          allPrices: stale ? [] : (info.allPrices || []),
+          source: stale ? 'stale' : info.source,
+          fetchedAt,
         });
       }
     });
@@ -151,15 +154,28 @@ function runFetch(
             ? new Date(result._fetched_at).getTime()
             : Date.now();
 
-          newMap.set(tx.id, {
-            maxPrice: bestPrice.maxPrice,
-            maxStore: bestPrice.maxStore,
-            expectedProfit,
-            loading: false,
-            allPrices: getFilteredPrices(result ?? null, config.enabledStores),
-            source: (result?._source as BuybackInfo['source']) ?? 'cache',
-            fetchedAt,
-          });
+          // 24h 过期：价格归零，展示组件自动隐藏
+          if (isKaitorixPriceStale(fetchedAt)) {
+            newMap.set(tx.id, {
+              maxPrice: 0,
+              maxStore: '',
+              expectedProfit: 0,
+              loading: false,
+              allPrices: [],
+              source: (result?._source as BuybackInfo['source']) ?? 'stale',
+              fetchedAt,
+            });
+          } else {
+            newMap.set(tx.id, {
+              maxPrice: bestPrice.maxPrice,
+              maxStore: bestPrice.maxStore,
+              expectedProfit,
+              loading: false,
+              allPrices: getFilteredPrices(result ?? null, config.enabledStores),
+              source: (result?._source as BuybackInfo['source']) ?? 'cache',
+              fetchedAt,
+            });
+          }
         } else {
           newMap.set(tx.id, {
             maxPrice: 0,
@@ -268,7 +284,8 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
     const newMap = new Map(buybackMapRef.current);
 
     targetTransactions.forEach(tx => {
-      if (bestPrice) {
+      const fetchedAt = result.data?._fetched_at ? new Date(result.data._fetched_at).getTime() : Date.now();
+      if (bestPrice && !isKaitorixPriceStale(fetchedAt)) {
         const totalPoints = (tx.expected_platform_points ?? 0) +
           (tx.expected_card_points ?? 0) +
           (tx.extra_platform_points ?? 0);
@@ -284,7 +301,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
           loading: false,
           allPrices: getFilteredPrices(result.data, config.enabledStores),
           source: 'cache',
-          fetchedAt: result.data?._fetched_at ? new Date(result.data._fetched_at).getTime() : Date.now(),
+          fetchedAt,
         });
       } else {
         newMap.set(tx.id, {
@@ -293,6 +310,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
           expectedProfit: 0,
           loading: false,
           source: 'pending',
+          fetchedAt,
         });
       }
     });

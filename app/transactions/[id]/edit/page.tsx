@@ -112,6 +112,16 @@ export default function EditTransactionPage() {
 
       if (error) throw error;
 
+      // Fire-and-forget: JAN 有效 → 按 JAN 入队补共享缩略图缓存
+      const jan = fd.jan_code?.trim();
+      if (jan && /^\d{8,13}$/.test(jan)) {
+        fetch('/api/thumbnail/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jan }),
+        }).catch(() => {});
+      }
+
       router.push(`/transactions/${id}`);
     },
   });

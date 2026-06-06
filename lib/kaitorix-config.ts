@@ -1,5 +1,14 @@
 // KaitoriX 買取価格チェック設定
 
+/** 买取价格数据超过此时长视为过期，不纳入展示与计算 */
+export const KAITORIX_STALE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/** fetchedAt 为 undefined 或超过 24 小时时返回 true */
+export function isKaitorixPriceStale(fetchedAt: number | undefined): boolean {
+  if (fetchedAt == null) return true;
+  return Date.now() - fetchedAt > KAITORIX_STALE_MS;
+}
+
 export interface KaitorixStore {
   key: string;
   name: string;

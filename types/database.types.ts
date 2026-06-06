@@ -114,7 +114,7 @@ export interface Transaction {
   purchase_platform_id: string | null;
   order_number: string | null;
 
-  // 凭证
+  // 凭证：用户手动上传的采购截图（per-transaction）。商品缩略图按 JAN 共享，见 JanThumbnailCache
   image_url: string | null;
 
   // 备注
@@ -126,6 +126,17 @@ export interface Transaction {
   return_notes?: string;
   points_deducted?: number;
 
+  created_at: string;
+  updated_at: string;
+}
+
+// JAN 维度的商品缩略图缓存（全站同 JAN 共享一张图，由 1-chome scraper 填充）
+export interface JanThumbnailCache {
+  jan: string;
+  image_url: string | null;
+  image_fetched_at: string | null;
+  image_fetch_failed_count: number;
+  error_message: string | null;
   created_at: string;
   updated_at: string;
 }

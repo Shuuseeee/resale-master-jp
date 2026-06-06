@@ -42,6 +42,8 @@ interface TransactionCardProps {
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onLongPress?: (id: string) => void;
+  /** JAN 共享缓存缩略图（已 cache-bust）；手动凭证缺省时的 fallback */
+  thumbnailUrl?: string | null;
 }
 
 const TransactionCard = memo(function TransactionCard({
@@ -60,6 +62,7 @@ const TransactionCard = memo(function TransactionCard({
   isSelected = false,
   onToggleSelect,
   onLongPress,
+  thumbnailUrl,
 }: TransactionCardProps) {
   const router = useRouter();
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
@@ -186,11 +189,11 @@ const TransactionCard = memo(function TransactionCard({
           )}
         </div>
       )}
-      {/* 顶部：图片 + 商品名 + 状态 */}
+      {/* 顶部：图片 + 商品名 + 状态。手动凭证优先，否则用 JAN 共享缩略图 */}
       <div className="flex gap-3 mb-2">
-        {transaction.image_url && (
+        {(transaction.image_url || thumbnailUrl) && (
           <ProductImage
-            src={transaction.image_url}
+            src={transaction.image_url || thumbnailUrl!}
             alt={transaction.product_name}
             size="sm"
             className="flex-shrink-0"

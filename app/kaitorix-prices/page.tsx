@@ -8,6 +8,7 @@ import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/ca
 import { button, card, heading, input, layout } from '@/lib/theme';
 import { forceRefreshBuybackPrice, type KaitorixRateLimit } from '@/lib/api/kaitorix';
 import type { KaitorixCachedPrice, KaitorixPriceCache, Transaction } from '@/types/database.types';
+import { KAITORIX_STALE_MS } from '@/lib/kaitorix-config';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
 type SortMode = 'stale' | 'expected_profit' | 'stock_value' | 'buyback_price' | 'name';
@@ -41,9 +42,10 @@ interface JanSummary {
   source: 'official' | 'scraper' | 'cache' | 'missing' | 'pending';
   rawResponse: unknown;
   prices: KaitorixCachedPrice[];
+  isStale: boolean;
 }
 
-const STALE_MS = 24 * 60 * 60 * 1000;
+
 
 function formatAge(dateString: string | null): string {
   if (!dateString) return '未获取';
@@ -96,6 +98,9 @@ function buildSummaries(
     const maxStore = cache?.max_store || best?.store || '';
     const expectedProfit = maxPrice > 0 ? (maxPrice * totalStock) - totalCostForStock : 0;
 
+    const isStale = !cache?.fetched_at ||
+      Date.now() - new Date(cache.fetched_at).getTime() > KAITORIX_STALE_MS;
+
     return {
       jan,
       productName: cache?.product_name || txs[0]?.product_name || '未命名商品',
@@ -119,6 +124,7 @@ function buildSummaries(
         fetched_at: cache.fetched_at,
       } : null),
       prices,
+      isStale,
     };
   });
 }
@@ -188,9 +194,9 @@ export default function KaitorixPricesPage() {
       .filter(item => {
         if (term && !item.productName.toLowerCase().includes(term) && !item.jan.includes(term)) return false;
         if (filterMode === 'missing') return item.prices.length === 0;
-        if (filterMode === 'stale') return !item.lastFetchedAt || Date.now() - new Date(item.lastFetchedAt).getTime() > STALE_MS;
-        if (filterMode === 'profitable') return item.expectedProfit > 0;
-        if (filterMode === 'loss') return item.maxPrice > 0 && item.expectedProfit < 0;
+        if (filterMode === 'stale') return item.isStale;
+        if (filterMode === 'profitable') return !item.isStale && item.expectedProfit > 0;
+        if (filterMode === 'loss') return !item.isStale && item.maxPrice > 0 && item.expectedProfit < 0;
         return true;
       })
       .sort((a, b) => {
@@ -396,14 +402,15 @@ export default function KaitorixPricesPage() {
                     <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">
                       <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">仕入</span>{formatCurrency(item.totalCostForStock)}
                     </div>
-                    <div className="font-mono text-sm text-[var(--color-text)] lg:text-right">
+                    <div className={`font-mono text-sm lg:text-right ${item.isStale ? 'opacity-40' : ''}`}>
                       <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">最高价</span>
                       {item.maxPrice > 0 ? formatCurrency(item.maxPrice) : '-'}
-                      {item.maxStore && <div className="text-xs text-[var(--color-primary)]">{item.maxStore}</div>}
+                      {item.isStale && item.maxPrice > 0 && <span className="ml-1 text-[10px] text-[var(--color-warning)]">过期</span>}
+                      {!item.isStale && item.maxStore && <div className="text-xs text-[var(--color-primary)]">{item.maxStore}</div>}
                     </div>
-                    <div className={`font-mono text-sm lg:text-right ${item.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                    <div className={`font-mono text-sm lg:text-right ${item.isStale ? 'opacity-40' : item.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                       <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">预估利润</span>
-                      {item.maxPrice > 0 ? formatCurrency(item.expectedProfit) : '-'}
+                      {item.isStale ? '-' : item.maxPrice > 0 ? formatCurrency(item.expectedProfit) : '-'}
                     </div>
                   </div>
                   <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3 text-xs text-[var(--color-text-muted)] lg:bg-transparent lg:p-0">

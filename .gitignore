@@ -54,6 +54,8 @@ conversation-*.txt
 # Scraper
 scraper/.env
 scraper/browser-data/
+scraper/browser-data-thumbnail/
+kaitorix-features.md
 scraper/logs/
 scraper/node_modules/
 scraper/debug-page.html

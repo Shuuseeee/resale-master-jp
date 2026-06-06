@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "thumbnail": "tsx src/thumbnail-fetcher.ts",
+    "thumbnail:dev": "tsx watch src/thumbnail-fetcher.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "dotenv": "^16.4.7",
     "playwright": "^1.50.1",
+    "sharp": "^0.34.0",
     "tsx": "^4.19.2"
   }
 }

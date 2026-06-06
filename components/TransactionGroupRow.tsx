@@ -206,6 +206,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
           onToggleSelect={onToggleSelect}
           isGroupChild
           visibleColumns={visibleColumns}
+          thumbnailUrl={group.imageUrl}
         />
       ))}
     </>

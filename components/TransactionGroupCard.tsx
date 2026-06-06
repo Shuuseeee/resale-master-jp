@@ -202,6 +202,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 isSelected={selectedIds.has(tx.id)}
                 onToggleSelect={onToggleSelect}
                 onLongPress={onLongPress}
+                thumbnailUrl={group.imageUrl}
               />
             </div>
           ))}

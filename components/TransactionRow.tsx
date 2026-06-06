@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import Toast from '@/components/Toast';
 import type { TransactionColumnKey } from '@/lib/transactions/columns';
+import { ProductImage } from '@/components/OptimizedImage';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -41,6 +42,8 @@ interface TransactionRowProps {
   onToggleSelect?: (id: string) => void;
   isGroupChild?: boolean;
   visibleColumns: TransactionColumnKey[];
+  /** JAN 共享缓存缩略图（已 cache-bust）；手动凭证缺省时的 fallback */
+  thumbnailUrl?: string | null;
 }
 
 const TransactionRow = memo(function TransactionRow({
@@ -60,6 +63,7 @@ const TransactionRow = memo(function TransactionRow({
   onToggleSelect,
   isGroupChild = false,
   visibleColumns,
+  thumbnailUrl,
 }: TransactionRowProps) {
   const remainingQty = transaction.quantity - (transaction.quantity_sold || 0);
   const [showToast, setShowToast] = useState(false);
@@ -124,30 +128,41 @@ const TransactionRow = memo(function TransactionRow({
       </td>
     ),
 
-    product: () => (
-      <td key="product" className="px-3 py-2">
-        <div className="flex items-center gap-2">
-          {selectCheckbox}
-          <div className="min-w-0">
-            <Link
-              href={`/transactions/${transaction.id}`}
-              className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] line-clamp-2 break-cjk leading-snug text-sm font-medium"
-            >
-              {transaction.product_name}
-            </Link>
-            {transaction.jan_code && (
-              <button
-                onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
-                className="block mt-0.5 font-mono text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                title="点击复制JAN"
-              >
-                {transaction.jan_code}
-              </button>
+    product: () => {
+      const thumbSrc = transaction.image_url || thumbnailUrl;
+      return (
+        <td key="product" className="px-3 py-2">
+          <div className="flex items-center gap-2">
+            {selectCheckbox}
+            {thumbSrc && (
+              <ProductImage
+                src={thumbSrc}
+                alt={transaction.product_name}
+                size="sm"
+                className="flex-shrink-0"
+              />
             )}
+            <div className="min-w-0">
+              <Link
+                href={`/transactions/${transaction.id}`}
+                className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] line-clamp-2 break-cjk leading-snug text-sm font-medium"
+              >
+                {transaction.product_name}
+              </Link>
+              {transaction.jan_code && (
+                <button
+                  onClick={(e) => copyToClipboard(transaction.jan_code!, e)}
+                  className="block mt-0.5 font-mono text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+                  title="点击复制JAN"
+                >
+                  {transaction.jan_code}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </td>
-    ),
+        </td>
+      );
+    },
 
     price: () => (
       <td key="price" className="px-4 py-3 whitespace-nowrap">

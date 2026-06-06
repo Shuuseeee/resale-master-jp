@@ -18,6 +18,8 @@ import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import BatchSaleForm from '@/components/BatchSaleForm';
+import { withImageCacheBuster } from '@/lib/image-utils';
+import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
 import ReturnForm from '@/components/ReturnForm';
 import QuickEditForm from '@/components/QuickEditForm';
 import QuickCopyForm from '@/components/QuickCopyForm';
@@ -78,6 +80,7 @@ function TransactionsContent() {
   const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
+  const [janThumbnails, setJanThumbnails] = useState<JanThumbnailMap>(new Map());
   const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
@@ -376,6 +379,26 @@ function TransactionsContent() {
     [transactions]
   );
 
+  // 批量加载 JAN 维度共享缩略图（同 JAN 全站一份）
+  useEffect(() => {
+    if (janCodes.length === 0) {
+      setJanThumbnails(new Map());
+      return;
+    }
+    let cancelled = false;
+    fetchJanThumbnails(janCodes).then(map => {
+      if (!cancelled) setJanThumbnails(map);
+    });
+    return () => { cancelled = true; };
+  }, [janCodes]);
+
+  // 单笔交易的 JAN 缩略图 fallback（已 cache-bust）
+  const getJanThumbnail = useCallback((janCode: string | null | undefined): string | undefined => {
+    if (!janCode) return undefined;
+    const t = janThumbnails.get(janCode);
+    return withImageCacheBuster(t?.image_url, t?.image_fetched_at);
+  }, [janThumbnails]);
+
   // 筛选和排序
   const filteredTransactions = useMemo(() => {
     // 搜索相关预计算（移出 filter 循环，每次 memo 只算一次）
@@ -559,10 +582,17 @@ function TransactionsContent() {
       }
     });
 
+    // 优先组内任意一笔的手动凭证；没有则用 JAN 共享缓存缩略图
+    const manualUrl = txs.find(t => t.image_url)?.image_url ?? null;
+    const janThumb = janThumbnails.get(janCode);
+    const imageUrl = manualUrl
+      ?? withImageCacheBuster(janThumb?.image_url, janThumb?.image_fetched_at)
+      ?? null;
+
     return {
       janCode,
       productName: txs[0].product_name,
-      imageUrl: txs.find(t => t.image_url)?.image_url ?? null,
+      imageUrl,
       transactions: txs,
       totalQuantity,
       totalInStock,
@@ -575,7 +605,7 @@ function TransactionsContent() {
       bestExpectedProfit,
       latestDate,
     };
-  }, [buybackPrices]);
+  }, [buybackPrices, janThumbnails]);
 
   // displayItems: filteredTransactions を分組/平铺に変換
   const displayItems = useMemo((): DisplayItem[] => {
@@ -1219,6 +1249,7 @@ function TransactionsContent() {
                     isSelected={selectedIds.has(item.data.id)}
                     onToggleSelect={toggleSelect}
                     onLongPress={(id) => { setCompareMode(true); toggleSelect(id); }}
+                    thumbnailUrl={getJanThumbnail(item.data.jan_code)}
                   />
                 )
               )}
@@ -1328,6 +1359,7 @@ function TransactionsContent() {
                             isSelected={selectedIds.has(item.data.id)}
                             onToggleSelect={toggleSelect}
                             visibleColumns={visibleColumns}
+                            thumbnailUrl={getJanThumbnail(item.data.jan_code)}
                           />
                         )
                       )}

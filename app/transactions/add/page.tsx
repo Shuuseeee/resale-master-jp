@@ -101,6 +101,16 @@ function AddTransactionPageContent() {
         }).catch(() => {});
       }
 
+      // Fire-and-forget: JAN 有效 → 按 JAN 入队，scraper 抓 1-chome 主图存共享缓存
+      // （JAN 维度去重，同 JAN 已缓存/已在队列则 RPC 内部跳过）
+      if (jan && /^\d{8,13}$/.test(jan)) {
+        fetch('/api/thumbnail/enqueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jan }),
+        }).catch(() => {});
+      }
+
       if (continueAdding && newRecord) {
         router.push(`/transactions/add?copy=${newRecord.id}`);
       } else {

@@ -192,3 +192,19 @@ export function isValidImageFile(file: File): boolean {
     file.name.toLowerCase().endsWith('.heif')
   );
 }
+
+/**
+ * 给缩略图 URL 拼接 ?v= 时间戳，强制浏览器在覆盖上传后取新图
+ * 同一商品多次抓取/重传时，公共 URL 不变但内容已变，缓存破坏是必须的
+ */
+export function withImageCacheBuster(
+  url: string | null | undefined,
+  fetchedAt: string | null | undefined,
+): string | undefined {
+  if (!url) return undefined;
+  if (!fetchedAt) return url;
+  const ts = new Date(fetchedAt).getTime();
+  if (!Number.isFinite(ts)) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${ts}`;
+}
