@@ -8,6 +8,7 @@ import {
   type KaitorixRateLimit,
 } from '@/lib/api/kaitorix';
 import { loadKaitorixConfig, isKaitorixPriceStale } from '@/lib/kaitorix-config';
+import { getUnitCost, getAvailableQty } from '@/lib/financial/calculator';
 
 interface Transaction {
   id: string;
@@ -140,12 +141,8 @@ function runFetch(
 
       txList.forEach(tx => {
         if (bestPrice) {
-          const totalPoints = (tx.expected_platform_points ?? 0) +
-            (tx.expected_card_points ?? 0) +
-            (tx.extra_platform_points ?? 0);
-          const costPerUnit = (tx.purchase_price_total - totalPoints) / tx.quantity;
-          const remainingQty = tx.quantity_in_stock ??
-            Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+          const costPerUnit = getUnitCost(tx);
+          const remainingQty = getAvailableQty(tx);
           const expectedProfit = (bestPrice.maxPrice - costPerUnit) * remainingQty;
 
           // fetchedAt: use server's _fetched_at for stale data so the UI shows correct age;
@@ -220,6 +217,31 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
     }
   }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Recalculate expectedProfit when transaction data changes (e.g. after a sale/return)
+  useEffect(() => {
+    if (buybackMap.size === 0 || isLoading) return;
+    const txById = new Map(transactions.map(tx => [tx.id, tx]));
+    let changed = false;
+    const newMap = new Map(buybackMap);
+
+    newMap.forEach((info, txId) => {
+      if (info.maxPrice <= 0) return;
+      const tx = txById.get(txId);
+      if (!tx) return;
+      const costPerUnit = getUnitCost(tx);
+      const remainingQty = getAvailableQty(tx);
+      const recalculated = (info.maxPrice - costPerUnit) * remainingQty;
+      if (Math.round(recalculated) !== Math.round(info.expectedProfit)) {
+        newMap.set(txId, { ...info, expectedProfit: recalculated });
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setBuybackMap(newMap);
+    }
+  }, [transactions]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Build janToTransactions map from a list of transactions (only those with stock)
   const buildJanMap = useCallback((txList: Transaction[]) => {
     const map = new Map<string, Transaction[]>();
@@ -286,12 +308,8 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
     targetTransactions.forEach(tx => {
       const fetchedAt = result.data?._fetched_at ? new Date(result.data._fetched_at).getTime() : Date.now();
       if (bestPrice && !isKaitorixPriceStale(fetchedAt)) {
-        const totalPoints = (tx.expected_platform_points ?? 0) +
-          (tx.expected_card_points ?? 0) +
-          (tx.extra_platform_points ?? 0);
-        const costPerUnit = (tx.purchase_price_total - totalPoints) / tx.quantity;
-        const remainingQty = tx.quantity_in_stock ??
-          Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
+        const costPerUnit = getUnitCost(tx);
+        const remainingQty = getAvailableQty(tx);
         const expectedProfit = (bestPrice.maxPrice - costPerUnit) * remainingQty;
 
         newMap.set(tx.id, {
