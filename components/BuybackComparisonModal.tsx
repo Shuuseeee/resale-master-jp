@@ -30,7 +30,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="买取价格比较" size="xl">
       <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-[var(--color-border)] pb-2 text-sm text-[var(--color-text-muted)]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--color-border)] pb-2 text-sm text-[var(--color-text-muted)]">
           <span>已选 <span className="font-semibold text-[var(--color-text)]">{selectedTransactions.length}</span> 件商品</span>
           <span>·</span>
           <span>比较数量 <span className="font-semibold text-[var(--color-text)]">{totalSelectedQty}</span> 个</span>
@@ -54,8 +54,9 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                   const maxQty = getAvailableQty(t);
                   const qty = quantities[t.id] ?? maxQty;
                   return (
-                    <div key={t.id} className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-bg-elevated)] px-3 py-2">
-                      <div className="min-w-0 flex-1">
+                    // 移动端：商品名独占一行，库存/成本与步进器同行；桌面端：单行紧凑布局
+                    <div key={t.id} className="rounded-[var(--radius-md)] bg-[var(--color-bg-elevated)] px-3 py-2.5 md:flex md:items-center md:gap-2 md:py-2">
+                      <div className="min-w-0 md:flex-1">
                         <div className="flex items-center gap-1.5">
                           <div className="truncate text-sm font-medium text-[var(--color-text)]" title={t.product_name}>
                             {t.product_name}
@@ -63,7 +64,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                           {t.jan_code && (
                             <Link
                               href={`/kaitorix-prices?jan=${encodeURIComponent(t.jan_code)}`}
-                              className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
+                              className="-m-2 flex-shrink-0 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
                               title="在比价中心查看"
                               aria-label="在比价中心查看"
                             >
@@ -71,34 +72,40 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                             </Link>
                           )}
                         </div>
-                        <div className="text-xs text-[var(--color-text-muted)]">
+                        <div className="hidden text-xs text-[var(--color-text-muted)] md:block">
                           库存 {maxQty} · 成本 {formatCurrency(getUnitCost(t))}/件
                         </div>
                       </div>
-                      <div className="flex h-8 items-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]">
-                        <button
-                          type="button"
-                          onClick={() => updateQty(t.id, qty - 1)}
-                          className="h-8 w-8 text-sm font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]"
-                          aria-label="减少数量"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min={0}
-                          value={qty}
-                          onChange={(e) => updateQty(t.id, parseInt(e.target.value, 10))}
-                          className="h-8 w-12 border-x border-[var(--color-border)] bg-transparent text-center text-sm font-semibold text-[var(--color-text)] outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateQty(t.id, qty + 1)}
-                          className="h-8 w-8 text-sm font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]"
-                          aria-label="增加数量"
-                        >
-                          +
-                        </button>
+                      <div className="mt-1.5 flex items-center justify-between gap-2 md:mt-0 md:block">
+                        <div className="text-xs text-[var(--color-text-muted)] md:hidden">
+                          库存 {maxQty} · 成本 {formatCurrency(getUnitCost(t))}/件
+                        </div>
+                        <div className="flex h-11 items-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] md:h-8">
+                          <button
+                            type="button"
+                            onClick={() => updateQty(t.id, qty - 1)}
+                            className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] md:h-8 md:w-8 md:text-sm"
+                            aria-label="减少数量"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            value={qty}
+                            onChange={(e) => updateQty(t.id, parseInt(e.target.value, 10))}
+                            className="h-11 w-14 border-x border-[var(--color-border)] bg-transparent text-center text-sm font-semibold text-[var(--color-text)] outline-none md:h-8 md:w-12"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateQty(t.id, qty + 1)}
+                            className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] md:h-8 md:w-8 md:text-sm"
+                            aria-label="增加数量"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
