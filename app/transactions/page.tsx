@@ -1283,34 +1283,37 @@ function TransactionsContent() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-xs text-[var(--color-text-muted)] uppercase tracking-[0.04em]">
+                        {/* 多选模式：独立选择列，与列定制解耦 */}
+                        {compareMode && (
+                          <th key="select" className="w-10 pl-4 pr-1 py-3">
+                            <button
+                              type="button"
+                              onClick={toggleSelectAllVisible}
+                              aria-label="全选当前显示的记录"
+                              title="全选当前显示的记录"
+                              className="flex items-center"
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                allVisibleSelected
+                                  ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                                  : someVisibleSelected
+                                    ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
+                                    : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
+                              }`}>
+                                {allVisibleSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                )}
+                                {someVisibleSelected && (
+                                  <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
+                                )}
+                              </div>
+                            </button>
+                          </th>
+                        )}
                         {visibleColumns.map(key => {
                           if (key === 'date') return (
                             <th key="date" className="px-4 py-3 text-left font-semibold">
                               <div className="flex items-center gap-1">
-                                {compareMode && (
-                                  <button
-                                    type="button"
-                                    onClick={toggleSelectAllVisible}
-                                    aria-label="全选当前显示的记录"
-                                    title="全选当前显示的记录"
-                                    className="mr-1.5 flex-shrink-0"
-                                  >
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                      allVisibleSelected
-                                        ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
-                                        : someVisibleSelected
-                                          ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
-                                          : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
-                                    }`}>
-                                      {allVisibleSelected && (
-                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                      )}
-                                      {someVisibleSelected && (
-                                        <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
-                                      )}
-                                    </div>
-                                  </button>
-                                )}
                                 <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
                                   {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
                                   {sortField === 'date' && (

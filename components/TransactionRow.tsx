@@ -123,7 +123,6 @@ const TransactionRow = memo(function TransactionRow({
     date: () => (
       <td key="date" className="px-4 py-3 text-[var(--color-text)] whitespace-nowrap">
         <div className="flex items-center gap-2">
-          {selectCheckbox}
           <span>{displayDate}</span>
         </div>
       </td>
@@ -353,6 +352,10 @@ const TransactionRow = memo(function TransactionRow({
           : ''
       }`}
     >
+      {/* 多选模式：独立选择列，与列定制解耦（与表头全选框同列） */}
+      {compareMode && (
+        <td className="w-10 pl-4 pr-1 py-3">{selectCheckbox}</td>
+      )}
       {visibleColumns.map(key => cellMap[key]())}
     </tr>
     {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
