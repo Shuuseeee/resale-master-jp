@@ -493,11 +493,14 @@ function TransactionsContent() {
         }
 
         // 买取店铺筛选（仅对已加载买取数据的记录有效）
+        // 并列最高价时 maxStore 只记录其中一家，因此用 allPrices 判断「该店是否为并列最高之一」
         if (activeFilters.buybackStore) {
           const buyback = buybackPrices.get(t.id);
-          if (!buyback) return false;
-          const storeTerm = activeFilters.buybackStore.toLowerCase();
-          if (!buyback.maxStore?.toLowerCase().includes(storeTerm)) return false;
+          if (!buyback || !buyback.maxPrice) return false;
+          const matched = buyback.allPrices?.some(
+            p => p.store === activeFilters.buybackStore && p.price === buyback.maxPrice
+          ) ?? false;
+          if (!matched) return false;
         }
       }
 
