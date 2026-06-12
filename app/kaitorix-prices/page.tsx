@@ -6,10 +6,17 @@ import { CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
-import { forceRefreshBuybackPrice, type KaitorixRateLimit } from '@/lib/api/kaitorix';
-import type { KaitorixCachedPrice, KaitorixPriceCache, Transaction } from '@/types/database.types';
+import type { Transaction } from '@/types/database.types';
 import { isKaitorixPriceStale } from '@/lib/kaitorix-config';
-import { getBestEntry, groupTransactionsByJan } from '@/lib/kaitorix-domain';
+import {
+  expectedProfitForTx,
+  filterPricesByStores,
+  getBestEntry,
+  groupTransactionsByJan,
+  type JanPriceData,
+  type KaitorixPriceEntry,
+} from '@/lib/kaitorix-domain';
+import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import CopyableJan from '@/components/CopyableJan';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
@@ -32,28 +39,26 @@ interface JanSummary {
   jan: string;
   productName: string;
   transactions: TransactionWithPlatform[];
-  cache: KaitorixPriceCache | null;
   totalStock: number;
   transactionCount: number;
-  totalPurchasePrice: number;
   totalCostForStock: number;
+  /** 仅启用店铺口径（与交易页一致） */
   maxPrice: number;
   maxStore: string;
   expectedProfit: number;
-  lastFetchedAt: string | null;
-  source: 'official' | 'scraper' | 'cache' | 'missing' | 'pending';
-  rawResponse: unknown;
-  prices: KaitorixCachedPrice[];
+  lastFetchedAt: number | null;
+  source: JanPriceData['source'] | 'missing';
+  /** 全部店铺明细（含未启用，UI 标灰） */
+  prices: KaitorixPriceEntry[];
   isStale: boolean;
 }
 
 
 
-function formatAge(dateString: string | null): string {
-  if (!dateString) return '未获取';
-  const time = new Date(dateString).getTime();
-  if (!Number.isFinite(time)) return '未知';
-  const mins = Math.floor((Date.now() - time) / 60000);
+function formatAge(fetchedAt: number | null): string {
+  if (!fetchedAt) return '未获取';
+  if (!Number.isFinite(fetchedAt)) return '未知';
+  const mins = Math.floor((Date.now() - fetchedAt) / 60000);
   if (mins < 1) return '刚刚';
   if (mins < 60) return `${mins}分钟前`;
   const hours = Math.floor(mins / 60);
@@ -66,6 +71,7 @@ function sourceLabel(source: JanSummary['source']): string {
     case 'official': return '官方 API';
     case 'scraper': return '爬虫';
     case 'cache': return '缓存';
+    case 'stale': return '缓存';
     case 'pending': return '等待中';
     default: return '未获取';
   }
@@ -73,49 +79,38 @@ function sourceLabel(source: JanSummary['source']): string {
 
 function buildSummaries(
   transactions: TransactionWithPlatform[],
-  caches: KaitorixPriceCache[],
+  janPriceMap: Map<string, JanPriceData>,
+  enabledStores: string[],
 ): JanSummary[] {
-  const cacheMap = new Map(caches.map(c => [c.jan, c]));
   const janMap = groupTransactionsByJan(transactions);
 
   return Array.from(janMap.entries()).map(([jan, txs]) => {
-    const cache = cacheMap.get(jan) || null;
-    const prices = cache?.prices || [];
-    const best = getBestEntry(prices);
+    const data = janPriceMap.get(jan) || null;
+    const prices = data?.prices || [];
+    // 最高价/利润口径与交易页一致：只看启用店铺；明细仍展示全部店铺
+    const best = getBestEntry(filterPricesByStores(prices, enabledStores));
 
     const totalStock = txs.reduce((sum, tx) => sum + getAvailableQty(tx), 0);
-    const totalPurchasePrice = txs.reduce((sum, tx) => sum + tx.purchase_price_total, 0);
     const totalCostForStock = txs.reduce((sum, tx) => sum + getUnitCost(tx) * getAvailableQty(tx), 0);
-    const maxPrice = cache?.max_price || best?.price || 0;
-    const maxStore = cache?.max_store || best?.store || '';
-    const expectedProfit = maxPrice > 0 ? (maxPrice * totalStock) - totalCostForStock : 0;
+    const maxPrice = best?.price ?? 0;
+    const expectedProfit = maxPrice > 0
+      ? txs.reduce((sum, tx) => sum + expectedProfitForTx(maxPrice, tx), 0)
+      : 0;
 
-    const isStale = isKaitorixPriceStale(
-      cache?.fetched_at ? new Date(cache.fetched_at).getTime() : undefined
-    );
+    const isStale = isKaitorixPriceStale(data?.fetchedAt ?? undefined);
 
     return {
       jan,
-      productName: cache?.product_name || txs[0]?.product_name || '未命名商品',
+      productName: data?.productName || txs[0]?.product_name || '未命名商品',
       transactions: txs,
-      cache,
       totalStock,
       transactionCount: txs.length,
-      totalPurchasePrice,
       totalCostForStock,
       maxPrice,
-      maxStore,
+      maxStore: best?.store ?? '',
       expectedProfit,
-      lastFetchedAt: cache?.fetched_at || null,
-      source: (cache?.last_fetch_source as JanSummary['source']) || (cache ? 'cache' : 'missing'),
-      rawResponse: cache?.raw_response ?? (cache ? {
-        jan: cache.jan,
-        name: cache.product_name,
-        max_price: cache.max_price,
-        max_store: cache.max_store,
-        prices: cache.prices,
-        fetched_at: cache.fetched_at,
-      } : null),
+      lastFetchedAt: data?.fetchedAt ?? null,
+      source: data?.source ?? 'missing',
       prices,
       isStale,
     };
@@ -124,7 +119,6 @@ function buildSummaries(
 
 export default function KaitorixPricesPage() {
   const [transactions, setTransactions] = useState<TransactionWithPlatform[]>([]);
-  const [caches, setCaches] = useState<KaitorixPriceCache[]>([]);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedJan, setSelectedJan] = useState<string | null>(null);
@@ -132,50 +126,103 @@ export default function KaitorixPricesPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [sortMode, setSortMode] = useState<SortMode>('stale');
   const [searchTerm, setSearchTerm] = useState('');
-  const [refreshingJan, setRefreshingJan] = useState<string | null>(null);
   const [batchRefreshing, setBatchRefreshing] = useState(false);
   const [rawOpen, setRawOpen] = useState(false);
+  const [rawData, setRawData] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [mobileSelectMode, setMobileSelectMode] = useState(false);
+
+  // 共享数据层：与交易页同一份 JAN 价格数据、同一套缓存与强刷
+  const {
+    janPriceMap,
+    enabled: kaitorixEnabled,
+    enabledStores,
+    isLoading: syncing,
+    progress,
+    refresh,
+    forceRefresh,
+    forceRefreshingJan,
+  } = useKaitorixPrices(transactions);
+
+  const enabledStoreSet = useMemo(() => new Set(enabledStores), [enabledStores]);
 
   const toggleMobileSelectMode = () => {
     setSelectedJans(new Set());
     setMobileSelectMode(v => !v);
   };
 
+  const loadUsage = useCallback(async () => {
+    try {
+      const usageRes = await fetch('/api/kaitorix/open-usage');
+      if (usageRes.ok) setUsage(await usageRes.json());
+    } catch {
+      // 配额信息非关键，失败时静默
+    }
+  }, []);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data: txData, error: txError }, { data: cacheData, error: cacheError }] = await Promise.all([
-        supabase
-          .from('transactions')
-          .select('*, purchase_platform:purchase_platforms(id, name)')
-          .order('date', { ascending: false }),
-        supabase
-          .from('kaitorix_price_cache')
-          .select('*'),
-      ]);
+      const { data: txData, error: txError } = await supabase
+        .from('transactions')
+        .select('*, purchase_platform:purchase_platforms(id, name)')
+        .order('date', { ascending: false });
 
       if (txError) throw txError;
-      if (cacheError) throw cacheError;
       setTransactions((txData || []) as TransactionWithPlatform[]);
-      setCaches((cacheData || []) as KaitorixPriceCache[]);
-
-      const usageRes = await fetch('/api/kaitorix/open-usage');
-      if (usageRes.ok) setUsage(await usageRes.json());
+      await loadUsage();
     } catch (error) {
       console.error('加载买取价格数据失败:', error);
       setMessage('加载买取价格数据失败');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadUsage]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const summaries = useMemo(() => buildSummaries(transactions, caches), [transactions, caches]);
+  // 交易加载后同步价格：bulk 读缓存 + 自动把缺失/过期 JAN 入队补抓（与交易页一致）
+  useEffect(() => {
+    if (transactions.length > 0) refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions.length]);
+
+  // 原始响应按需查询：体积大，不进共享数据层
+  useEffect(() => {
+    if (!rawOpen || !selectedJan) {
+      setRawData(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('kaitorix_price_cache')
+      .select('jan, product_name, max_price, max_store, prices, fetched_at, raw_response')
+      .eq('jan', selectedJan)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (!data) {
+          setRawData(null);
+          return;
+        }
+        setRawData(data.raw_response ?? {
+          jan: data.jan,
+          name: data.product_name,
+          max_price: data.max_price,
+          max_store: data.max_store,
+          prices: data.prices,
+          fetched_at: data.fetched_at,
+        });
+      });
+    return () => { cancelled = true; };
+  }, [rawOpen, selectedJan]);
+
+  const summaries = useMemo(
+    () => buildSummaries(transactions, janPriceMap, enabledStores),
+    [transactions, janPriceMap, enabledStores],
+  );
   const selectedSummary = useMemo(
     () => summaries.find(item => item.jan === selectedJan) || null,
     [summaries, selectedJan],
@@ -197,9 +244,7 @@ export default function KaitorixPricesPage() {
         if (sortMode === 'stock_value') return b.totalCostForStock - a.totalCostForStock;
         if (sortMode === 'buyback_price') return b.maxPrice - a.maxPrice;
         if (sortMode === 'name') return a.productName.localeCompare(b.productName, 'ja');
-        const aTime = a.lastFetchedAt ? new Date(a.lastFetchedAt).getTime() : 0;
-        const bTime = b.lastFetchedAt ? new Date(b.lastFetchedAt).getTime() : 0;
-        return aTime - bTime;
+        return (a.lastFetchedAt ?? 0) - (b.lastFetchedAt ?? 0);
       });
   }, [summaries, filterMode, searchTerm, sortMode]);
 
@@ -208,19 +253,17 @@ export default function KaitorixPricesPage() {
     const remainingText = usage ? `当前剩余 ${usage.remaining}/${usage.limit} 次` : '剩余次数暂未知';
     if (!confirm(`将消耗 1 次 Kaitorix 官方 API 配额。\n${remainingText}\n\n刷新 ${target?.productName || jan} 吗？`)) return false;
 
-    setRefreshingJan(jan);
-    const result = await forceRefreshBuybackPrice(jan);
-    setRefreshingJan(null);
+    const result = await forceRefresh(jan);
 
-    if (!result.data) {
+    if (!result.ok) {
       alert(result.error || '官方强刷失败');
       return false;
     }
 
-    await loadData();
+    await loadUsage();
     setMessage(result.rateLimit?.remaining == null ? '官方价格已刷新' : `官方价格已刷新，剩余 ${result.rateLimit.remaining} 次`);
     return true;
-  }, [loadData, summaries, usage]);
+  }, [forceRefresh, loadUsage, summaries, usage]);
 
   const batchRefresh = useCallback(async () => {
     const jans = Array.from(selectedJans);
@@ -234,21 +277,19 @@ export default function KaitorixPricesPage() {
     setBatchRefreshing(true);
     let success = 0;
     for (const jan of jans) {
-      setRefreshingJan(jan);
-      const result = await forceRefreshBuybackPrice(jan);
-      if (!result.data) {
+      const result = await forceRefresh(jan);
+      if (!result.ok) {
         alert(result.error || `刷新 ${jan} 失败`);
         if (result.status === 429) break;
       } else {
         success++;
       }
     }
-    setRefreshingJan(null);
     setBatchRefreshing(false);
     setSelectedJans(new Set());
-    await loadData();
+    await loadUsage();
     setMessage(`批量强刷完成：成功 ${success}/${jans.length}`);
-  }, [loadData, selectedJans, usage]);
+  }, [forceRefresh, loadUsage, selectedJans, usage]);
 
   const toggleSelect = (jan: string) => {
     setSelectedJans(prev => {
@@ -297,6 +338,18 @@ export default function KaitorixPricesPage() {
             </button>
           </div>
         </div>
+
+        {!kaitorixEnabled && (
+          <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-2 text-sm text-[var(--color-warning)]">
+            买取价格检查已禁用，仅展示已有缓存，数据不会自动更新。可在设置中开启。
+          </div>
+        )}
+
+        {syncing && (
+          <div className="mb-4 text-xs text-[var(--color-text-muted)]">
+            正在同步价格数据{progress ? `... ${progress.completed}/${progress.total}` : '...'}
+          </div>
+        )}
 
         {message && (
           <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary-light)] px-4 py-2 text-sm text-[var(--color-primary)]">
@@ -376,10 +429,10 @@ export default function KaitorixPricesPage() {
                       </button>
                       <button
                         onClick={() => refreshOne(item.jan)}
-                        disabled={refreshingJan === item.jan || batchRefreshing}
+                        disabled={forceRefreshingJan === item.jan || batchRefreshing}
                         className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-primary)] active:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
                       >
-                        {refreshingJan === item.jan ? '强刷中' : '官方强刷'}
+                        {forceRefreshingJan === item.jan ? '强刷中' : '官方强刷'}
                       </button>
                     </div>
                   </div>
@@ -415,10 +468,10 @@ export default function KaitorixPricesPage() {
                     <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">详情</button>
                     <button
                       onClick={() => refreshOne(item.jan)}
-                      disabled={refreshingJan === item.jan || batchRefreshing}
+                      disabled={forceRefreshingJan === item.jan || batchRefreshing}
                       className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded disabled:opacity-50 disabled:cursor-wait whitespace-nowrap"
                     >
-                      {refreshingJan === item.jan ? '强刷中' : '官方强刷'}
+                      {forceRefreshingJan === item.jan ? '强刷中' : '官方强刷'}
                     </button>
                   </div>
                 </div>
@@ -465,9 +518,10 @@ export default function KaitorixPricesPage() {
                       .slice()
                       .sort((a, b) => b.price - a.price)
                       .map((price, index) => {
+                        const isEnabled = enabledStoreSet.has(price.store);
                         const diff = selectedSummary.maxPrice - price.price;
                         return (
-                          <div key={`${price.store}-${index}`} className="grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                          <div key={`${price.store}-${index}`} className={`grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center ${isEnabled ? '' : 'opacity-50'}`}>
                             <div className="min-w-0">
                               {price.url ? (
                                 <a href={price.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--color-primary)] hover:underline">{price.store}</a>
@@ -477,8 +531,8 @@ export default function KaitorixPricesPage() {
                               <div className="text-xs text-[var(--color-text-muted)]">{price.updated || '更新时间不明'}</div>
                             </div>
                             <div className="font-mono font-semibold text-[var(--color-text)]">{formatCurrency(price.price)}</div>
-                            <div className={diff === 0 ? 'col-span-2 text-xs text-[var(--color-success)] sm:col-span-1' : 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1'}>
-                              {diff === 0 ? '最高' : `-${formatCurrency(diff)}`}
+                            <div className={!isEnabled ? 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1' : diff === 0 ? 'col-span-2 text-xs text-[var(--color-success)] sm:col-span-1' : 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1'}>
+                              {!isEnabled ? '未启用' : diff === 0 ? '最高' : `-${formatCurrency(diff)}`}
                             </div>
                           </div>
                         );
@@ -519,7 +573,7 @@ export default function KaitorixPricesPage() {
                 </button>
                 {rawOpen && (
                   <pre className="max-h-96 overflow-auto border-t border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-4 text-xs text-[var(--color-text)]">
-                    {JSON.stringify(selectedSummary.rawResponse, null, 2)}
+                    {rawData == null ? '加载中或暂无数据' : JSON.stringify(rawData, null, 2)}
                   </pre>
                 )}
               </section>

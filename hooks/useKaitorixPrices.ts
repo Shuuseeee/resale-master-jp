@@ -36,11 +36,13 @@ export interface KaitorixState {
   isLoading: boolean;
   progress: FetchProgress | null;
   enabled: boolean;
+  /** 当前启用的店铺名列表，供 JAN 级消费方按同一口径过滤 */
+  enabledStores: string[];
   forceRefreshingJan: string | null;
   rateLimit: KaitorixRateLimit | null;
   refresh: (transactionsToFetch?: Transaction[]) => void;
   refreshMissing: () => void;
-  forceRefresh: (jan: string) => Promise<{ ok: boolean; error?: string; rateLimit?: KaitorixRateLimit }>;
+  forceRefresh: (jan: string) => Promise<{ ok: boolean; error?: string; rateLimit?: KaitorixRateLimit; status?: number }>;
   stop: () => void;
 }
 
@@ -270,7 +272,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       if (result.rateLimit) setRateLimit(result.rateLimit);
 
       if (!result.data) {
-        return { ok: false, error: result.error || '官方强刷失败', rateLimit: result.rateLimit };
+        return { ok: false, error: result.error || '官方强刷失败', rateLimit: result.rateLimit, status: result.status };
       }
 
       const newMap = new Map(janPriceMapRef.current);
@@ -296,5 +298,5 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
     setIsLoading(false);
   }, []);
 
-  return { buybackMap, janPriceMap, isLoading, progress, enabled, forceRefreshingJan, rateLimit, refresh, refreshMissing, forceRefresh, stop };
+  return { buybackMap, janPriceMap, isLoading, progress, enabled, enabledStores: config.enabledStores, forceRefreshingJan, rateLimit, refresh, refreshMissing, forceRefresh, stop };
 }
