@@ -80,8 +80,8 @@ export function buildStoreRows(
 
     const items: StoreItem[] = transactions.map(t => {
       const info = buybackMap.get(t.id);
-      const maxQty = maxQtys.get(t.id)!;
-      const qty = Math.max(0, Math.min(maxQty, quantities[t.id] ?? maxQty));
+      // 默认用库存数；用户临时调整后不设上限
+      const qty = Math.max(0, quantities[t.id] ?? maxQtys.get(t.id)!);
       const unitCost = unitCosts.get(t.id)!;
       const priceEntry = info?.allPrices?.find(p => p.store === storeName);
       const hasData = !!priceEntry;
@@ -173,11 +173,10 @@ export function useBuybackComparison({
     [selectedTransactions, buybackMap, quantities]
   );
 
+  // 比较数量无上限：仅临时用于比较计算，不会修改库存
   const updateQty = (transactionId: string, value: number) => {
-    const tx = txMap.get(transactionId);
-    if (!tx) return;
-    const maxQty = getAvailableQty(tx);
-    const qty = Math.max(0, Math.min(maxQty, Number.isFinite(value) ? value : 0));
+    if (!txMap.has(transactionId)) return;
+    const qty = Math.max(0, Number.isFinite(value) ? value : 0);
     setQuantities(prev => ({ ...prev, [transactionId]: qty }));
   };
 

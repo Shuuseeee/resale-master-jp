@@ -73,7 +73,6 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                         <input
                           type="number"
                           min={0}
-                          max={maxQty}
                           value={qty}
                           onChange={(e) => updateQty(t.id, parseInt(e.target.value, 10))}
                           className="h-8 w-12 border-x border-[var(--color-border)] bg-transparent text-center text-sm font-semibold text-[var(--color-text)] outline-none"
