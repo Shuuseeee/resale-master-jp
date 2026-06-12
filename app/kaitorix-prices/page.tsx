@@ -8,7 +8,8 @@ import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/ca
 import { button, card, heading, input, layout } from '@/lib/theme';
 import { forceRefreshBuybackPrice, type KaitorixRateLimit } from '@/lib/api/kaitorix';
 import type { KaitorixCachedPrice, KaitorixPriceCache, Transaction } from '@/types/database.types';
-import { KAITORIX_STALE_MS } from '@/lib/kaitorix-config';
+import { isKaitorixPriceStale } from '@/lib/kaitorix-config';
+import { getBestEntry, groupTransactionsByJan } from '@/lib/kaitorix-domain';
 import CopyableJan from '@/components/CopyableJan';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
@@ -75,22 +76,12 @@ function buildSummaries(
   caches: KaitorixPriceCache[],
 ): JanSummary[] {
   const cacheMap = new Map(caches.map(c => [c.jan, c]));
-  const janMap = new Map<string, TransactionWithPlatform[]>();
-
-  transactions
-    .filter(tx => tx.jan_code && tx.status !== 'sold' && tx.status !== 'returned' && getAvailableQty(tx) > 0)
-    .forEach(tx => {
-      const list = janMap.get(tx.jan_code!) || [];
-      list.push(tx);
-      janMap.set(tx.jan_code!, list);
-    });
+  const janMap = groupTransactionsByJan(transactions);
 
   return Array.from(janMap.entries()).map(([jan, txs]) => {
     const cache = cacheMap.get(jan) || null;
     const prices = cache?.prices || [];
-    const best = prices.length > 0
-      ? prices.reduce((max, current) => current.price > max.price ? current : max, prices[0])
-      : null;
+    const best = getBestEntry(prices);
 
     const totalStock = txs.reduce((sum, tx) => sum + getAvailableQty(tx), 0);
     const totalPurchasePrice = txs.reduce((sum, tx) => sum + tx.purchase_price_total, 0);
@@ -99,8 +90,9 @@ function buildSummaries(
     const maxStore = cache?.max_store || best?.store || '';
     const expectedProfit = maxPrice > 0 ? (maxPrice * totalStock) - totalCostForStock : 0;
 
-    const isStale = !cache?.fetched_at ||
-      Date.now() - new Date(cache.fetched_at).getTime() > KAITORIX_STALE_MS;
+    const isStale = isKaitorixPriceStale(
+      cache?.fetched_at ? new Date(cache.fetched_at).getTime() : undefined
+    );
 
     return {
       jan,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { Transaction } from '@/types/database.types';
 import { getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
+import { getBestEntry } from '@/lib/kaitorix-domain';
 
 export interface TransactionForCompare extends Pick<Transaction,
   'id' | 'product_name' | 'purchase_price_total' | 'quantity' |
@@ -62,11 +63,9 @@ export function buildStoreRows(
   // Pre-compute per-transaction values once (not S×T times)
   const maxQtys = new Map(transactions.map(t => [t.id, getAvailableQty(t)]));
   const unitCosts = new Map(transactions.map(t => [t.id, getUnitCost(t)]));
-  const bestEntries = new Map(transactions.map(t => {
-    const prices = buybackMap.get(t.id)?.allPrices;
-    if (!prices?.length) return [t.id, null] as const;
-    return [t.id, prices.reduce((best, cur) => cur.price > best.price ? cur : best)] as const;
-  }));
+  const bestEntries = new Map(transactions.map(t =>
+    [t.id, getBestEntry(buybackMap.get(t.id)?.allPrices)] as const
+  ));
 
   let totalSelectedQty = 0;
 

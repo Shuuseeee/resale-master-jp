@@ -1,6 +1,7 @@
 // KaitoriX API client with caching and batch fetching
 
 import { discoverStores } from '@/lib/kaitorix-config';
+import { filterPricesByStores, getBestEntry } from '@/lib/kaitorix-domain';
 
 interface KaitorixPrice {
   store: string;
@@ -209,15 +210,12 @@ export async function fetchBuybackPrices(
   return resultMap;
 }
 
+// enabledStoreKeys 现在直接存储店铺名（新版）或旧版 key（已在 loadKaitorixConfig 迁移）
 export function getFilteredPrices(
   result: KaitorixResponse | null,
   enabledStoreKeys: string[]
 ): Array<{ store: string; price: number; url: string }> {
-  if (!result?.prices?.length) return [];
-  // enabledStoreKeys 现在直接存储店铺名（新版）或旧版 key（已在 loadKaitorixConfig 迁移）
-  const enabledSet = new Set(enabledStoreKeys);
-  return result.prices
-    .filter(p => enabledSet.has(p.store))
+  return filterPricesByStores(result?.prices, enabledStoreKeys)
     .map(p => ({ store: p.store, price: p.price, url: p.url }));
 }
 
@@ -225,24 +223,6 @@ export function getBestPrice(
   result: KaitorixResponse | null,
   enabledStoreKeys: string[]
 ): { maxPrice: number; maxStore: string } | null {
-  if (!result || !result.prices || result.prices.length === 0) {
-    return null;
-  }
-
-  const enabledSet = new Set(enabledStoreKeys);
-  const filteredPrices = result.prices.filter(p => enabledSet.has(p.store));
-
-  if (filteredPrices.length === 0) {
-    return null;
-  }
-
-  // Find max price
-  const best = filteredPrices.reduce((max, current) =>
-    current.price > max.price ? current : max
-  );
-
-  return {
-    maxPrice: best.price,
-    maxStore: best.store,
-  };
+  const best = getBestEntry(filterPricesByStores(result?.prices, enabledStoreKeys));
+  return best ? { maxPrice: best.price, maxStore: best.store } : null;
 }

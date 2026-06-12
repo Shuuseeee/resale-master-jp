@@ -32,6 +32,7 @@ import { DEFAULT_COLUMNS, effectiveColumns, visibleColumnKeys, COLUMN_LABELS } f
 import type { ColumnConfig } from '@/lib/transactions/columns';
 import TransactionColumnPicker from '@/components/TransactionColumnPicker';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
+import { getMaxEntries } from '@/lib/kaitorix-domain';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import PullToRefresh from '@/components/PullToRefresh';
 
@@ -494,13 +495,12 @@ function TransactionsContent() {
         }
 
         // 买取店铺筛选（仅对已加载买取数据的记录有效）
-        // 并列最高价时 maxStore 只记录其中一家，因此用 allPrices 判断「该店是否为并列最高之一」
+        // 并列最高价时 maxStore 只记录其中一家，因此用 getMaxEntries 判断「该店是否为并列最高之一」
         if (activeFilters.buybackStore) {
           const buyback = buybackPrices.get(t.id);
           if (!buyback || !buyback.maxPrice) return false;
-          const matched = buyback.allPrices?.some(
-            p => p.store === activeFilters.buybackStore && p.price === buyback.maxPrice
-          ) ?? false;
+          const matched = getMaxEntries(buyback.allPrices).entries
+            .some(p => p.store === activeFilters.buybackStore);
           if (!matched) return false;
         }
       }

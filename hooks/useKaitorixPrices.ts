@@ -8,21 +8,10 @@ import {
   type KaitorixRateLimit,
 } from '@/lib/api/kaitorix';
 import { loadKaitorixConfig, isKaitorixPriceStale } from '@/lib/kaitorix-config';
+import { groupTransactionsByJan, type TransactionBuybackFields } from '@/lib/kaitorix-domain';
 import { getUnitCost, getAvailableQty } from '@/lib/financial/calculator';
 
-interface Transaction {
-  id: string;
-  jan_code?: string | null;
-  status?: string | null;
-  purchase_price_total: number;
-  quantity: number;
-  quantity_in_stock?: number | null;
-  expected_platform_points?: number | null;
-  expected_card_points?: number | null;
-  extra_platform_points?: number | null;
-  quantity_sold: number;
-  quantity_returned?: number | null;
-}
+type Transaction = TransactionBuybackFields;
 
 export interface BuybackInfo {
   maxPrice: number;
@@ -243,23 +232,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   }, [transactions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build janToTransactions map from a list of transactions (only those with stock)
-  const buildJanMap = useCallback((txList: Transaction[]) => {
-    const map = new Map<string, Transaction[]>();
-    txList
-      .filter(t => {
-        if (!t.jan_code) return false;
-        if (t.status === 'sold' || t.status === 'returned') return false;
-        const remainingQty = t.quantity_in_stock ??
-          Math.max(0, t.quantity - (t.quantity_sold ?? 0) - (t.quantity_returned ?? 0));
-        return remainingQty > 0;
-      })
-      .forEach(t => {
-        const list = map.get(t.jan_code!) || [];
-        list.push(t);
-        map.set(t.jan_code!, list);
-      });
-    return map;
-  }, []);
+  const buildJanMap = useCallback((txList: Transaction[]) => groupTransactionsByJan(txList), []);
 
   // Full refresh — fetches all transactions in the provided list (or all transactions)
   const refresh = useCallback((transactionsToFetch?: Transaction[]) => {
