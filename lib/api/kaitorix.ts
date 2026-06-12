@@ -1,7 +1,8 @@
 // KaitoriX API client with caching and batch fetching
 
 import { discoverStores } from '@/lib/kaitorix-config';
-import { filterPricesByStores, getBestEntry } from '@/lib/kaitorix-domain';
+import type { JanPriceData, KaitorixSource } from '@/lib/kaitorix-domain';
+import { supabase } from '@/lib/supabase/client';
 
 interface KaitorixPrice {
   store: string;
@@ -10,7 +11,7 @@ interface KaitorixPrice {
   updated: string;
 }
 
-interface KaitorixResponse {
+export interface KaitorixResponse {
   jan: string;
   name: string;
   max_price: number;
@@ -210,19 +211,40 @@ export async function fetchBuybackPrices(
   return resultMap;
 }
 
-// enabledStoreKeys 现在直接存储店铺名（新版）或旧版 key（已在 loadKaitorixConfig 迁移）
-export function getFilteredPrices(
-  result: KaitorixResponse | null,
-  enabledStoreKeys: string[]
-): Array<{ store: string; price: number; url: string }> {
-  return filterPricesByStores(result?.prices, enabledStoreKeys)
-    .map(p => ({ store: p.store, price: p.price, url: p.url }));
-}
+/**
+ * 批量读取 DB 价格缓存（每 200 个 JAN 一次往返，替代逐 JAN XHR）。
+ * 只读：不触发补抓入队；需要入队时走 /api/kaitorix/[jan]（fetchBuybackPrice）。
+ */
+export async function fetchCachedPricesBulk(jans: string[]): Promise<Map<string, JanPriceData>> {
+  const map = new Map<string, JanPriceData>();
+  const CHUNK_SIZE = 200;
 
-export function getBestPrice(
-  result: KaitorixResponse | null,
-  enabledStoreKeys: string[]
-): { maxPrice: number; maxStore: string } | null {
-  const best = getBestEntry(filterPricesByStores(result?.prices, enabledStoreKeys));
-  return best ? { maxPrice: best.price, maxStore: best.store } : null;
+  for (let i = 0; i < jans.length; i += CHUNK_SIZE) {
+    const chunk = jans.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('kaitorix_price_cache')
+      .select('jan, product_name, prices, fetched_at, last_fetch_source')
+      .in('jan', chunk);
+
+    if (error) {
+      console.error('批量读取买取价格缓存失败:', error);
+      break;
+    }
+
+    (data || []).forEach(row => {
+      const prices = (row.prices || []) as KaitorixPrice[];
+      if (prices.length > 0) {
+        discoverStores(prices.map(p => p.store));
+      }
+      map.set(row.jan, {
+        jan: row.jan,
+        productName: row.product_name || '',
+        prices,
+        fetchedAt: row.fetched_at ? new Date(row.fetched_at).getTime() : null,
+        source: (row.last_fetch_source as KaitorixSource) || 'cache',
+      });
+    });
+  }
+
+  return map;
 }

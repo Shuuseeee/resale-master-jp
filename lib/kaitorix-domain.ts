@@ -12,6 +12,19 @@ export interface KaitorixPriceEntry {
   updated?: string;
 }
 
+/** 价格数据来源：official/scraper/cache 来自 DB 缓存表，stale/pending 来自 API 路由语义 */
+export type KaitorixSource = 'official' | 'scraper' | 'cache' | 'stale' | 'pending';
+
+/** 单个 JAN 的原始价格数据 —— 共享数据层的规范形态（不过滤店铺、不归零） */
+export interface JanPriceData {
+  jan: string;
+  productName: string;
+  prices: KaitorixPriceEntry[];
+  /** 实际抓取时间（unix ms）；未知 / 尚无数据为 null */
+  fetchedAt: number | null;
+  source: KaitorixSource;
+}
+
 /** 含买取相关字段的交易（结构化子集，Transaction / TransactionForCompare 均满足） */
 export interface TransactionBuybackFields {
   id: string;
