@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/financial/calculator';
 import type { TransactionGroup } from '@/app/transactions/page';
 import { ProductImage } from '@/components/OptimizedImage';
 import TransactionCard from '@/components/TransactionCard';
+import CopyableJan from '@/components/CopyableJan';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 
@@ -142,7 +143,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 ×{group.transactions.length}
               </span>
             </div>
-            <p className="text-xs text-[var(--color-text-muted)] font-mono">{group.janCode}</p>
+            <CopyableJan jan={group.janCode} className="block text-xs text-[var(--color-text-muted)]" />
             <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-text-muted)]">
               <span>库存 <span className="font-semibold text-[var(--color-text)]">{group.totalInStock}</span></span>
               {group.totalPending > 0 && (

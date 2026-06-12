@@ -5,6 +5,7 @@ import { memo } from 'react';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { TransactionGroup } from '@/app/transactions/page';
 import TransactionRow from '@/components/TransactionRow';
+import CopyableJan from '@/components/CopyableJan';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import type { TransactionColumnKey } from '@/lib/transactions/columns';
@@ -116,7 +117,7 @@ const TransactionGroupRow = memo(function TransactionGroupRow({
                 ×{group.transactions.length}
               </span>
             </div>
-            <div className="text-xs text-apple-gray-2 font-mono">{group.janCode}</div>
+            <CopyableJan jan={group.janCode} className="block text-xs text-apple-gray-2" />
           </div>
         </div>
       </td>

@@ -12,6 +12,7 @@ import { getTodayString } from '@/lib/utils/dateUtils';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { button, input } from '@/lib/theme';
 import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
+import CopyableJan from '@/components/CopyableJan';
 
 interface QuickCopyFormProps {
   source: Transaction;
@@ -90,7 +91,7 @@ export default function QuickCopyForm({ source, onSuccess, onCancel, onDirtyChan
           {source.product_name}
         </div>
         {source.jan_code && (
-          <div className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{source.jan_code}</div>
+          <CopyableJan jan={source.jan_code} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
         )}
         <div className="mt-1 text-xs text-[var(--color-text-muted)]">
           原:{source.quantity} 件 × {formatCurrency(source.unit_price ?? Math.round((source.purchase_price_total || 0) / Math.max(source.quantity, 1)))}

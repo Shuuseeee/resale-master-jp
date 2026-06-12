@@ -9,6 +9,7 @@ import { button, card, heading, input, layout } from '@/lib/theme';
 import { forceRefreshBuybackPrice, type KaitorixRateLimit } from '@/lib/api/kaitorix';
 import type { KaitorixCachedPrice, KaitorixPriceCache, Transaction } from '@/types/database.types';
 import { KAITORIX_STALE_MS } from '@/lib/kaitorix-config';
+import CopyableJan from '@/components/CopyableJan';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
 type SortMode = 'stale' | 'expected_profit' | 'stock_value' | 'buyback_price' | 'name';
@@ -392,7 +393,7 @@ export default function KaitorixPricesPage() {
                   </div>
                   <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-w-0 text-left">
                     <div className="font-semibold text-[var(--color-text)] line-clamp-2 break-cjk">{item.productName}</div>
-                    <div className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{item.jan}</div>
+                    <CopyableJan jan={item.jan} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
                   </button>
                   <div className="grid grid-cols-2 gap-3 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3 lg:contents">
                     <div className="text-sm text-[var(--color-text)] lg:text-right">
@@ -449,7 +450,7 @@ export default function KaitorixPricesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-lg font-bold text-[var(--color-text)] break-cjk">{selectedSummary.productName}</h2>
-                  <p className="mt-1 font-mono text-xs text-[var(--color-text-muted)]">{selectedSummary.jan}</p>
+                  <CopyableJan jan={selectedSummary.jan} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
                 </div>
                 <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] whitespace-nowrap">关闭</button>
               </div>

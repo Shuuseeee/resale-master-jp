@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { loadJapaneseFont } from '@/lib/pdf-font-loader';
+import CopyableJan from '@/components/CopyableJan';
 
 const reportCardClass = 'sn-detail-card';
 const statLabelClass = 'text-sm text-[var(--color-text-muted)] mb-1';
@@ -746,7 +747,7 @@ export default function TaxReportPage() {
                               {detail.productName}
                             </td>
                             <td className={tableCellClass + ' whitespace-nowrap font-mono'}>
-                              {detail.janCode || '-'}
+                              {detail.janCode ? <CopyableJan jan={detail.janCode} /> : '-'}
                             </td>
                             <td className={tableCellClass + ' whitespace-nowrap'}>
                               {detail.saleOrderNumber || detail.purchaseOrderNumber || '-'}
