@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
@@ -117,11 +118,13 @@ function buildSummaries(
   });
 }
 
-export default function KaitorixPricesPage() {
+function KaitorixPricesContent() {
+  const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState<TransactionWithPlatform[]>([]);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedJan, setSelectedJan] = useState<string | null>(null);
+  // 支持 ?jan= 深链：从交易页比价弹窗跳转时直接打开对应 JAN 详情
+  const [selectedJan, setSelectedJan] = useState<string | null>(() => searchParams.get('jan'));
   const [selectedJans, setSelectedJans] = useState<Set<string>>(new Set());
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [sortMode, setSortMode] = useState<SortMode>('stale');
@@ -497,7 +500,15 @@ export default function KaitorixPricesPage() {
                   <h2 className="text-lg font-bold text-[var(--color-text)] break-cjk">{selectedSummary.productName}</h2>
                   <CopyableJan jan={selectedSummary.jan} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
                 </div>
-                <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] whitespace-nowrap">关闭</button>
+                <div className="flex flex-shrink-0 items-center gap-1">
+                  <Link
+                    href={`/transactions?tab=in_stock&jan=${encodeURIComponent(selectedSummary.jan)}`}
+                    className="min-h-11 flex items-center rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] whitespace-nowrap"
+                  >
+                    在交易列表查看
+                  </Link>
+                  <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] whitespace-nowrap">关闭</button>
+                </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div><div className="text-xs text-[var(--color-text-muted)]">库存</div><div className="font-semibold text-[var(--color-text)]">{selectedSummary.totalStock}</div></div>
@@ -582,5 +593,17 @@ export default function KaitorixPricesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function KaitorixPricesPage() {
+  return (
+    <Suspense fallback={
+      <div className={layout.page + ' flex items-center justify-center'}>
+        <div className="text-[var(--color-text)]">加载买取价格数据...</div>
+      </div>
+    }>
+      <KaitorixPricesContent />
+    </Suspense>
   );
 }
