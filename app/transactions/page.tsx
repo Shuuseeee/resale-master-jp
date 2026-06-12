@@ -1227,6 +1227,34 @@ function TransactionsContent() {
           )
         ) : (
           <>
+            {/* 移动端：多选模式全选栏（桌面端在表头独立选择列） */}
+            {compareMode && (
+              <button
+                type="button"
+                onClick={toggleSelectAllVisible}
+                className="md:hidden mb-3 flex w-full min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-medium text-[var(--color-text)] active:bg-[var(--color-bg-subtle)] transition-colors"
+              >
+                <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                  allVisibleSelected
+                    ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                    : someVisibleSelected
+                      ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
+                      : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
+                }`}>
+                  {allVisibleSelected && (
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  )}
+                  {someVisibleSelected && (
+                    <div className="w-2.5 h-0.5 bg-[var(--color-primary)] rounded" />
+                  )}
+                </div>
+                <span>全选当前显示（{visibleIds.length} 件）</span>
+                {selectedIds.size > 0 && (
+                  <span className="ml-auto text-xs text-[var(--color-text-muted)]">已选 {selectedIds.size}</span>
+                )}
+              </button>
+            )}
+
             {/* 移动端：卡片列表 */}
             <div className="md:hidden space-y-3">
               {displayItems.map((item) =>
