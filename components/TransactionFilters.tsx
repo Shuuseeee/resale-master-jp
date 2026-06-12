@@ -436,11 +436,8 @@ export default function TransactionFilters({
           minWidth="100px"
         />
 
-      </div>
-
-      {/* Row 2: 买取店铺筛选 */}
-      {hasBuybackData && (
-        <div className="mt-3 grid grid-cols-1 gap-3 border-t border-[var(--color-border)] pt-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
+        {/* 最高报价店：与其他筛选器平级，加入同一行自动换行（买取数据加载后出现） */}
+        {hasBuybackData && (
           <div className="relative w-full sm:w-auto">
             <select
               value={filters.buybackStore}
@@ -458,8 +455,9 @@ export default function TransactionFilters({
               </button>
             )}
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
       </div>{/* end 折叠内容 */}
     </div>
   );
