@@ -123,6 +123,7 @@ const TransactionRow = memo(function TransactionRow({
     date: () => (
       <td key="date" className="px-4 py-3 text-[var(--color-text)] whitespace-nowrap">
         <div className="flex items-center gap-2">
+          {selectCheckbox}
           <span>{displayDate}</span>
         </div>
       </td>
@@ -133,7 +134,6 @@ const TransactionRow = memo(function TransactionRow({
       return (
         <td key="product" className="px-3 py-2">
           <div className="flex items-center gap-2">
-            {selectCheckbox}
             {thumbSrc && (
               <ProductImage
                 src={thumbSrc}

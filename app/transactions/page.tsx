@@ -740,6 +740,23 @@ function TransactionsContent() {
     });
   }, []);
 
+  // 表头全选：作用于当前筛选后显示的全部记录（含折叠分组内的子记录）
+  const visibleIds = useMemo(() => filteredTransactions.map(t => t.id), [filteredTransactions]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  const someVisibleSelected = !allVisibleSelected && visibleIds.some(id => selectedIds.has(id));
+  const toggleSelectAllVisible = useCallback(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      const all = visibleIds.length > 0 && visibleIds.every(id => next.has(id));
+      if (all) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  }, [visibleIds]);
+
   const exitCompareMode = useCallback(() => {
     setCompareMode(false);
     setSelectedIds(new Set());
@@ -1270,6 +1287,30 @@ function TransactionsContent() {
                           if (key === 'date') return (
                             <th key="date" className="px-4 py-3 text-left font-semibold">
                               <div className="flex items-center gap-1">
+                                {compareMode && (
+                                  <button
+                                    type="button"
+                                    onClick={toggleSelectAllVisible}
+                                    aria-label="全选当前显示的记录"
+                                    title="全选当前显示的记录"
+                                    className="mr-1.5 flex-shrink-0"
+                                  >
+                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                      allVisibleSelected
+                                        ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                                        : someVisibleSelected
+                                          ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
+                                          : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
+                                    }`}>
+                                      {allVisibleSelected && (
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                      )}
+                                      {someVisibleSelected && (
+                                        <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
+                                      )}
+                                    </div>
+                                  </button>
+                                )}
                                 <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
                                   {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
                                   {sortField === 'date' && (
