@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
-import { formatCurrency, formatROI } from '@/lib/financial/calculator';
+import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calculator';
 import { markTransactionArrived, confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
@@ -24,6 +24,7 @@ import ReturnForm from '@/components/ReturnForm';
 import QuickEditForm from '@/components/QuickEditForm';
 import QuickCopyForm from '@/components/QuickCopyForm';
 import Toast from '@/components/Toast';
+import CopyableJan from '@/components/CopyableJan';
 import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { getColumnPreferences, saveColumnPreferences } from '@/lib/api/user-preferences';
@@ -1696,15 +1697,19 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
 
   // 找出所有商品价格合计最高的那家店，列表统一用该店的 URL
   const { bestStore, bestStoreTotal, items, missingCount } = useMemo(() => {
-    // Step 1: 按 JAN 去重，收集每个 JAN 的所有店铺报价
-    const janMap = new Map<string, { name: string; allPrices: Array<{ store: string; price: number; url: string }> }>();
+    // Step 1: 按 JAN 去重，收集每个 JAN 的所有店铺报价，并累加当前库存数量
+    const janMap = new Map<string, { name: string; qty: number; allPrices: Array<{ store: string; price: number; url: string }> }>();
     for (const tx of transactions) {
       if (!tx.jan_code) continue;
       const bb = buybackMap.get(tx.id);
-      if (!janMap.has(tx.jan_code)) {
-        janMap.set(tx.jan_code, { name: tx.product_name || tx.jan_code, allPrices: bb?.allPrices ?? [] });
-      } else if (bb?.allPrices?.length && !janMap.get(tx.jan_code)!.allPrices.length) {
-        janMap.get(tx.jan_code)!.allPrices = bb.allPrices;
+      const existing = janMap.get(tx.jan_code);
+      if (!existing) {
+        janMap.set(tx.jan_code, { name: tx.product_name || tx.jan_code, qty: getAvailableQty(tx), allPrices: bb?.allPrices ?? [] });
+      } else {
+        existing.qty += getAvailableQty(tx);
+        if (bb?.allPrices?.length && !existing.allPrices.length) {
+          existing.allPrices = bb.allPrices;
+        }
       }
     }
 
@@ -1731,7 +1736,7 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
     const items = Array.from(janMap.entries()).map(([jan, info]) => {
       const d = bestData?.janData.get(jan);
       if (!d) missingCount++;
-      return { jan, name: info.name, price: d?.price ?? 0, storeUrl: d?.url ?? '' };
+      return { jan, name: info.name, qty: info.qty, price: d?.price ?? 0, storeUrl: d?.url ?? '' };
     }).sort((a, b) => b.price - a.price);
 
     return { bestStore, bestStoreTotal, items, missingCount };
@@ -1802,8 +1807,13 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
                 className="flex items-center gap-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--color-border)] px-4 py-3 shadow-[var(--shadow-sm)] active:opacity-70"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--color-text)] truncate">{item.name}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono">{item.jan}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-[var(--color-text)] truncate min-w-0">{item.name}</p>
+                    <span className="flex-shrink-0 text-xs bg-[var(--color-primary)] text-white px-1.5 py-0.5 rounded-full font-semibold">
+                      ×{item.qty}
+                    </span>
+                  </div>
+                  <CopyableJan jan={item.jan} className="block mt-0.5 text-xs text-[var(--color-text-muted)]" />
                 </div>
                 <div className="text-right flex-shrink-0">
                   {item.price > 0 ? (
