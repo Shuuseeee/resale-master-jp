@@ -18,6 +18,7 @@ import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import BatchSaleForm from '@/components/BatchSaleForm';
+import MultiItemSaleForm from '@/components/MultiItemSaleForm';
 import { withImageCacheBuster } from '@/lib/image-utils';
 import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
 import ReturnForm from '@/components/ReturnForm';
@@ -146,6 +147,11 @@ function TransactionsContent() {
   const returnGuard = useModalCloseGuard(closeReturn);
   const editGuard = useModalCloseGuard(closeEdit);
   const copyGuard = useModalCloseGuard(closeCopy);
+
+  // 同一订单售出 Modal
+  const [multiSaleModalOpen, setMultiSaleModalOpen] = useState(false);
+  const closeMultiSale = useCallback(() => setMultiSaleModalOpen(false), []);
+  const multiSaleGuard = useModalCloseGuard(closeMultiSale);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [batchPaymentModalOpen, setBatchPaymentModalOpen] = useState(false);
@@ -554,6 +560,16 @@ function TransactionsContent() {
   const selectedTransactions = useMemo(
     () => filteredTransactions.filter(t => selectedIds.has(t.id)),
     [filteredTransactions, selectedIds]
+  );
+
+  // 多选中"可售"子集：库存>0 且不是未到货/已退货
+  const sellableSelected = useMemo(
+    () => selectedTransactions.filter(t =>
+      (t.quantity_in_stock ?? 0) > 0 &&
+      t.status !== 'pending' &&
+      t.status !== 'returned'
+    ),
+    [selectedTransactions]
   );
 
   // 分组汇总辅助函数
@@ -1467,6 +1483,15 @@ function TransactionsContent() {
                 批量到货
               </button>
             )}
+            {/* 同一订单售出 */}
+            {sellableSelected.length >= 1 && (
+              <button
+                onClick={() => setMultiSaleModalOpen(true)}
+                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-primary)] active:opacity-80 text-white transition-all whitespace-nowrap"
+              >
+                同一订单售出{sellableSelected.length < selectedIds.size ? `(${sellableSelected.length})` : ''}
+              </button>
+            )}
             {/* 批量入账 */}
             {transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment') && (
               <button
@@ -1534,6 +1559,29 @@ function TransactionsContent() {
         transactions={compareMode && selectedIds.size > 0 ? selectedTransactions : filteredTransactions}
         buybackMap={buybackPrices}
       />
+
+      {/* 同一订单售出 Modal */}
+      <Modal
+        isOpen={multiSaleModalOpen}
+        onClose={multiSaleGuard.doClose}
+        beforeClose={multiSaleGuard.handleCloseRequest}
+        closeOnEsc={!multiSaleGuard.showConfirm}
+        closeOnOverlayClick={!multiSaleGuard.showConfirm}
+        title={`同一订单售出 (${sellableSelected.length} 件)`}
+        size="xl"
+      >
+        <MultiItemSaleForm
+          transactions={sellableSelected}
+          onSuccess={(orderId) => {
+            setMultiSaleModalOpen(false);
+            loadTransactions();
+            exitCompareMode();
+            setToastMsg(`订单已记录 (${sellableSelected.length} 件)`);
+          }}
+          onCancel={multiSaleGuard.doClose}
+          onDirtyChange={multiSaleGuard.setIsDirty}
+        />
+      </Modal>
 
       {/* 出售 Modal */}
       {(() => {
@@ -1683,6 +1731,15 @@ function TransactionsContent() {
         isOpen={copyGuard.showConfirm}
         onClose={copyGuard.cancelConfirm}
         onConfirm={copyGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
+      <ConfirmModal
+        isOpen={multiSaleGuard.showConfirm}
+        onClose={multiSaleGuard.cancelConfirm}
+        onConfirm={multiSaleGuard.doClose}
         title={UNSAVED_CHANGES_CONFIRM.title}
         message={UNSAVED_CHANGES_CONFIRM.message}
         confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}

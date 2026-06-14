@@ -298,6 +298,35 @@ export interface TransactionFormData {
   notes?: string;
 }
 
+// 销售订单接口（多件商品归属同一订单）
+export interface SaleOrder {
+  id: string;
+  user_id: string;
+  sale_date: string;
+  selling_platform_id: string | null;
+  sale_order_number: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// 订单级聚合视图
+export interface SaleOrderSummary {
+  sale_group_id: string;
+  user_id: string;
+  sale_date: string;
+  selling_platform_id: string | null;
+  sale_order_number: string | null;
+  notes: string | null;
+  created_at: string;
+  item_count: number;
+  total_selling_price: number;
+  total_fees: number;
+  total_profit: number;
+  total_cash_profit: number;
+  total_cash_spent: number;
+}
+
 // 销售记录接口
 export interface SalesRecord {
   id: string;
@@ -315,6 +344,7 @@ export interface SalesRecord {
   actual_cash_spent: number | null;
   selling_platform_id: string | null;
   sale_order_number: string | null;
+  sale_group_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

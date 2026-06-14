@@ -4,6 +4,61 @@
 import { supabase } from '@/lib/supabase/client';
 import type { SalesRecord, SalesRecordFormData } from '@/types/database.types';
 
+// ============================================================
+// 利润计算 helper（纯同步函数，供 create/update/批量售出共用）
+// ============================================================
+
+export interface SaleMathInput {
+  quantity_sold: number;
+  selling_price_per_unit: number;
+  platform_fee: number;
+  shipping_fee: number;
+}
+
+export interface SaleMathTxBasis {
+  purchase_price_total: number;
+  quantity: number;
+  expected_platform_points: number;
+  expected_card_points: number;
+  extra_platform_points: number;
+  platform_points_platform_id: string | null;
+  card_points_platform_id: string | null;
+  extra_platform_points_platform_id: string | null;
+}
+
+export interface SaleMathResult {
+  cash_profit: number;
+  total_profit: number;
+  roi: number;
+  actual_cash_spent: number;
+}
+
+/**
+ * 计算单次售出的利润与ROI（纯同步，无副作用）
+ * 积分当前按 1:1（1点=1円）计算，platformId 为 null 时积分价值为 0
+ */
+export function computeSaleProfit(input: SaleMathInput, tx: SaleMathTxBasis): SaleMathResult {
+  const costPerUnit = tx.purchase_price_total / tx.quantity;
+  const totalCost = costPerUnit * input.quantity_sold;
+  const totalSellingPrice = input.selling_price_per_unit * input.quantity_sold;
+  const cashProfit = totalSellingPrice - totalCost - input.platform_fee - input.shipping_fee;
+
+  const pointsRatio = input.quantity_sold / tx.quantity;
+
+  // All points are 1:1 (1 point = 1 yen); platformId null → 0
+  const platformPointsValue = (tx.expected_platform_points && tx.platform_points_platform_id)
+    ? tx.expected_platform_points * pointsRatio : 0;
+  const cardPointsValue = (tx.expected_card_points && tx.card_points_platform_id)
+    ? tx.expected_card_points * pointsRatio : 0;
+  const extraPointsValue = (tx.extra_platform_points && tx.extra_platform_points_platform_id)
+    ? tx.extra_platform_points * pointsRatio : 0;
+
+  const totalProfit = cashProfit + platformPointsValue + cardPointsValue + extraPointsValue;
+  const actualCashSpent = tx.purchase_price_total * pointsRatio;
+  const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
+
+  return { cash_profit: cashProfit, total_profit: totalProfit, roi, actual_cash_spent: actualCashSpent };
+}
 
 /**
  * 创建销售记录
@@ -14,18 +69,7 @@ import type { SalesRecord, SalesRecordFormData } from '@/types/database.types';
 export async function createSalesRecord(
   transactionId: string,
   formData: SalesRecordFormData,
-  transaction: {
-    purchase_price_total: number;
-    point_paid: number;
-    quantity: number;
-    expected_platform_points: number;
-    expected_card_points: number;
-    extra_platform_points: number;
-    platform_points_platform_id: string | null;
-    card_points_platform_id: string | null;
-    extra_platform_points_platform_id: string | null;
-    date: string; // 添加交易日期用于耗材成本分摊
-  }
+  transaction: SaleMathTxBasis & { point_paid: number; date: string }
 ): Promise<{ data: SalesRecord | null; error: any }> {
   try {
     // 获取当前用户
@@ -34,43 +78,7 @@ export async function createSalesRecord(
       return { data: null, error: { message: '未登录' } };
     }
 
-    // 计算单个商品的成本
-    const costPerUnit = transaction.purchase_price_total / transaction.quantity;
-    const totalCost = costPerUnit * formData.quantity_sold;
-
-    // 计算总售价
-    const totalSellingPrice = formData.selling_price_per_unit * formData.quantity_sold;
-
-    // 计算现金利润
-    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee;
-
-    // 计算积分价值（按比例分配）
-    const pointsRatio = formData.quantity_sold / transaction.quantity;
-
-    // 获取积分平台兑换率
-    const platformPointsValue = await getPointsValue(
-      transaction.expected_platform_points * pointsRatio,
-      transaction.platform_points_platform_id
-    );
-    const cardPointsValue = await getPointsValue(
-      transaction.expected_card_points * pointsRatio,
-      transaction.card_points_platform_id
-    );
-    const extraPointsValue = await getPointsValue(
-      transaction.extra_platform_points * pointsRatio,
-      transaction.extra_platform_points_platform_id
-    );
-
-    const totalPointsValue = platformPointsValue + cardPointsValue + extraPointsValue;
-
-    // 计算总利润
-    const totalProfit = cashProfit + totalPointsValue;
-
-    // 计算实际现金支出（按比例）
-    const actualCashSpent = transaction.purchase_price_total * pointsRatio;
-
-    // 计算 ROI
-    const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
+    const { cash_profit, total_profit, roi, actual_cash_spent } = computeSaleProfit(formData, transaction);
 
     // 插入销售记录
     const { data, error } = await supabase
@@ -83,10 +91,10 @@ export async function createSalesRecord(
         platform_fee: formData.platform_fee,
         shipping_fee: formData.shipping_fee,
         sale_date: formData.sale_date,
-        cash_profit: cashProfit,
-        total_profit: totalProfit,
-        roi: roi,
-        actual_cash_spent: actualCashSpent,
+        cash_profit,
+        total_profit,
+        roi,
+        actual_cash_spent,
         selling_platform_id: formData.selling_platform_id || null,
         sale_order_number: formData.sale_order_number || null,
         notes: formData.notes || null,
@@ -104,16 +112,6 @@ export async function createSalesRecord(
     console.error('创建销售记录失败:', error);
     return { data: null, error };
   }
-}
-
-/**
- * 获取积分价值
- */
-async function getPointsValue(points: number, platformId: string | null): Promise<number> {
-  if (!points || !platformId) return 0;
-
-  // All points are 1:1 (1 point = 1 yen)
-  return points;
 }
 
 /**
@@ -147,47 +145,10 @@ export async function updateSalesRecord(
     shipping_fee: number;
     notes: string;
   },
-  transaction: {
-    purchase_price_total: number;
-    point_paid: number;
-    quantity: number;
-    expected_platform_points: number;
-    expected_card_points: number;
-    extra_platform_points: number;
-    platform_points_platform_id: string | null;
-    card_points_platform_id: string | null;
-    extra_platform_points_platform_id: string | null;
-    date: string;
-  }
+  transaction: SaleMathTxBasis & { point_paid: number; date: string }
 ): Promise<{ data: SalesRecord | null; error: any }> {
   try {
-    const costPerUnit = transaction.purchase_price_total / transaction.quantity;
-    const totalCost = costPerUnit * formData.quantity_sold;
-
-    const totalSellingPrice = formData.selling_price_per_unit * formData.quantity_sold;
-
-    const cashProfit = totalSellingPrice - totalCost - formData.platform_fee - formData.shipping_fee;
-
-    const pointsRatio = formData.quantity_sold / transaction.quantity;
-
-    const platformPointsValue = await getPointsValue(
-      transaction.expected_platform_points * pointsRatio,
-      transaction.platform_points_platform_id
-    );
-    const cardPointsValue = await getPointsValue(
-      transaction.expected_card_points * pointsRatio,
-      transaction.card_points_platform_id
-    );
-    const extraPointsValue = await getPointsValue(
-      transaction.extra_platform_points * pointsRatio,
-      transaction.extra_platform_points_platform_id
-    );
-
-    const totalPointsValue = platformPointsValue + cardPointsValue + extraPointsValue;
-    const totalProfit = cashProfit + totalPointsValue;
-
-    const actualCashSpent = transaction.purchase_price_total * pointsRatio;
-    const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
+    const { cash_profit, total_profit, roi, actual_cash_spent } = computeSaleProfit(formData, transaction);
 
     const { data, error } = await supabase
       .from('sales_records')
@@ -198,10 +159,10 @@ export async function updateSalesRecord(
         platform_fee: formData.platform_fee,
         shipping_fee: formData.shipping_fee,
         notes: formData.notes || null,
-        cash_profit: cashProfit,
-        total_profit: totalProfit,
-        roi: roi,
-        actual_cash_spent: actualCashSpent,
+        cash_profit,
+        total_profit,
+        roi,
+        actual_cash_spent,
       })
       .eq('id', recordId)
       .select()
