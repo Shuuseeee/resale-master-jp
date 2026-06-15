@@ -155,6 +155,8 @@ function TransactionsContent() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [batchPaymentModalOpen, setBatchPaymentModalOpen] = useState(false);
   const [tabPaymentModalOpen, setTabPaymentModalOpen] = useState(false);
+  const [awaitingPaymentView, setAwaitingPaymentView] = useState<'list' | 'order'>('list');
+  const [orderPaymentConfirm, setOrderPaymentConfirm] = useState<{ ids: string[]; label: string } | null>(null);
 
   // searchTerm 防抖：避免每次击键都触发 filter+sort
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
@@ -622,6 +624,37 @@ function TransactionsContent() {
     return items;
   }, [filteredTransactions, isGrouped, buildGroupSummary]);
 
+  // 待入账"按订单"视图：按 (selling_platform, sale_order_number) 分组
+  interface OrderGroup {
+    key: string;
+    sellingPlatformId: string | null;
+    orderNumber: string | null;
+    transactions: TransactionWithPayment[];
+    totalSellingPrice: number;
+    saleDate: string;
+    daysPending: number;
+  }
+
+  const orderGroups = useMemo((): OrderGroup[] => {
+    if (statusFilter !== 'awaiting_payment' || awaitingPaymentView !== 'order') return [];
+    const groupMap = new Map<string, OrderGroup>();
+    const today = new Date();
+    for (const tx of filteredTransactions) {
+      const platformId = tx.aggregated_selling_platform_ids?.[0] ?? null;
+      const orderNum = tx.aggregated_sale_order_numbers?.[0] ?? null;
+      const key = `${platformId ?? ''}__${orderNum ?? tx.id}`;
+      if (!groupMap.has(key)) {
+        const saleDate = tx.latest_sale_date ?? tx.date;
+        const daysPending = Math.floor((today.getTime() - new Date(saleDate).getTime()) / 86400000);
+        groupMap.set(key, { key, sellingPlatformId: platformId, orderNumber: orderNum, transactions: [], totalSellingPrice: 0, saleDate, daysPending });
+      }
+      const g = groupMap.get(key)!;
+      g.transactions.push(tx);
+      g.totalSellingPrice += tx.aggregated_total_selling_price ?? 0;
+    }
+    return Array.from(groupMap.values()).sort((a, b) => a.saleDate.localeCompare(b.saleDate));
+  }, [filteredTransactions, statusFilter, awaitingPaymentView]);
+
   const toggleGroupExpand = useCallback((janCode: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -787,6 +820,15 @@ function TransactionsContent() {
     setToastMsg(`已确认 ${confirmed} 笔，跳过 ${skipped} 笔`);
     setTabPaymentModalOpen(false);
   }, [filteredTransactions, markTransactionsAsSold]);
+
+  const handleOrderPaymentConfirm = useCallback(async () => {
+    if (!orderPaymentConfirm) return;
+    const { ids } = orderPaymentConfirm;
+    const { confirmed, skipped } = await confirmBatchPaymentReceived(ids);
+    if (confirmed > 0) markTransactionsAsSold(ids);
+    setToastMsg(`已确认 ${confirmed} 笔，跳过 ${skipped} 笔`);
+    setOrderPaymentConfirm(null);
+  }, [orderPaymentConfirm, markTransactionsAsSold]);
 
   const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
@@ -1062,16 +1104,34 @@ function TransactionsContent() {
               </span>
             </button>
           ))}
-          {/* F3: Tab 全确认入账 */}
-          {statusFilter === 'awaiting_payment' && filteredTransactions.length > 0 && (
-            <button
-              onClick={() => setTabPaymentModalOpen(true)}
-              className="ml-auto flex h-[42px] flex-shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
-            >
-              全部确认入账({filteredTransactions.length})
-            </button>
-          )}
         </div>
+
+        {/* 待入账工具栏：按订单切换 + 全部确认（独立一行，移动端可见） */}
+        {statusFilter === 'awaiting_payment' && filteredTransactions.length > 0 && (
+          <div className="flex items-center justify-between gap-2 mb-3 -mt-2">
+            <button
+              onClick={() => setAwaitingPaymentView(v => v === 'list' ? 'order' : 'list')}
+              className={`flex min-h-[44px] items-center gap-1.5 rounded-[var(--radius-md)] border px-3 text-xs font-semibold transition-all ${
+                awaitingPaymentView === 'order'
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                  : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              按订单
+            </button>
+            {awaitingPaymentView === 'list' && (
+              <button
+                onClick={() => setTabPaymentModalOpen(true)}
+                className="flex min-h-[44px] items-center whitespace-nowrap px-3 text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] active:opacity-70 transition-colors"
+              >
+                全部确认({filteredTransactions.length})
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 高级筛选器 */}
         <TransactionFilters
@@ -1157,8 +1217,60 @@ function TransactionsContent() {
           </div>
         )}
 
-        {/* 交易列表 */}
-        {filteredTransactions.length === 0 ? (
+        {/* 待入账"按订单"视图 */}
+        {statusFilter === 'awaiting_payment' && awaitingPaymentView === 'order' && (
+          <div className="space-y-3">
+            {orderGroups.length === 0 ? (
+              <div className={card.primary + ' p-12 text-center'}>
+                <p className="text-[var(--color-text-muted)]">没有待入账订单</p>
+              </div>
+            ) : orderGroups.map(g => {
+              const platformName = sellingPlatforms.find(p => p.id === g.sellingPlatformId)?.name;
+              const ids = g.transactions.map(t => t.id);
+              const urgentClass = g.daysPending >= 14 ? 'text-[var(--color-danger)]' : g.daysPending >= 7 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]';
+              return (
+                <div key={g.key} className={card.primary + ' p-4'}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      {platformName && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+                          {platformName}
+                        </span>
+                      )}
+                      <span className="text-sm font-semibold text-[var(--color-text)] truncate">
+                        {g.orderNumber ? `订单 ${g.orderNumber}` : '无订单号'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setOrderPaymentConfirm({ ids, label: g.orderNumber ? `订单 ${g.orderNumber}` : (platformName ?? '此订单') })}
+                      className="shrink-0 min-h-[44px] px-4 py-2 text-xs font-semibold bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] hover:opacity-90 active:opacity-80 transition-opacity inline-flex items-center"
+                    >
+                      确认入账
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3 text-xs text-[var(--color-text-muted)]">
+                    <span>{g.saleDate}</span>
+                    <span className={urgentClass + ' font-medium'}>待 {g.daysPending} 天</span>
+                    <span className="ml-auto font-semibold text-[var(--color-text)] text-sm">
+                      ¥{g.totalSellingPrice.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {g.transactions.map(tx => (
+                      <div key={tx.id} className="flex items-center justify-between text-xs text-[var(--color-text-muted)] py-0.5">
+                        <span className="truncate mr-2">{tx.product_name}</span>
+                        <span className="shrink-0">×{tx.quantity_sold}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 交易列表（非订单视图时显示） */}
+        {(statusFilter !== 'awaiting_payment' || awaitingPaymentView !== 'order') && (filteredTransactions.length === 0 ? (
           transactions.length === 0 ? (
             <div className={card.primary + ' p-12 text-center'}>
               <svg className="w-16 h-16 text-[var(--color-primary)] opacity-60 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1406,7 +1518,7 @@ function TransactionsContent() {
               </div>
             </div>
           </>
-        )}
+        ))}
       </div>
 
       {/* 多选模式浮动操作栏 */}
@@ -1721,6 +1833,16 @@ function TransactionsContent() {
         title="全部确认入账"
         message={`确定要将当前筛选结果中的 ${filteredTransactions.length} 笔待入账交易全部标记为已入账吗？`}
         confirmText="全部确认"
+      />
+
+      {/* 按订单入账确认 */}
+      <ConfirmModal
+        isOpen={!!orderPaymentConfirm}
+        onClose={() => setOrderPaymentConfirm(null)}
+        onConfirm={handleOrderPaymentConfirm}
+        title="确认订单入账"
+        message={`确定将「${orderPaymentConfirm?.label ?? ''}」的 ${orderPaymentConfirm?.ids.length ?? 0} 笔交易标记为已入账吗？`}
+        confirmText="确认入账"
       />
 
       {/* 列定制 Modal */}

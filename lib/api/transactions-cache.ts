@@ -13,6 +13,7 @@ export interface TransactionWithProfit extends Transaction {
   aggregated_profit?: number | null;
   aggregated_roi?: number | null;
   aggregated_actual_cash_spent?: number | null;
+  aggregated_total_selling_price?: number | null;
   aggregated_selling_platform_ids?: string[];
   aggregated_sale_order_numbers?: string[];
 }
@@ -28,6 +29,7 @@ interface SalesRecordRow {
   transaction_id: string;
   total_profit: number | null;
   actual_cash_spent: number | null;
+  total_selling_price: number | null;
   sale_date: string;
   selling_platform_id: string | null;
   sale_order_number: string | null;
@@ -52,7 +54,7 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
   if (ids.length > 0) {
     const { data: srData } = await supabase
       .from('sales_records')
-      .select('transaction_id, total_profit, actual_cash_spent, sale_date, selling_platform_id, sale_order_number')
+      .select('transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number')
       .in('transaction_id', ids)
       .order('sale_date', { ascending: false });
     salesRows = (srData as SalesRecordRow[] | null) || [];
@@ -73,6 +75,7 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
     let aggregated_profit: number | null = null;
     let aggregated_roi: number | null = null;
     let aggregated_actual_cash_spent: number | null = null;
+    let aggregated_total_selling_price: number | null = null;
     let aggregated_selling_platform_ids: string[] = [];
 
     if (salesRecords.length > 0) {
@@ -83,6 +86,7 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
         const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
         aggregated_actual_cash_spent = totalCashSpent;
         aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
+        aggregated_total_selling_price = salesRecords.reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
       }
       aggregated_selling_platform_ids = Array.from(
         new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
@@ -99,6 +103,7 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
       aggregated_profit,
       aggregated_roi,
       aggregated_actual_cash_spent,
+      aggregated_total_selling_price,
       aggregated_selling_platform_ids,
       aggregated_sale_order_numbers,
     } as TransactionWithProfit;
