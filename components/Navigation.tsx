@@ -48,7 +48,7 @@ export default function Navigation() {
         .eq('read', false)
         .then(({ count }) => setUnreadCount(count ?? 0));
     });
-  }, [user, pathname]);
+  }, [user]); // pathname 已由 Realtime 订阅维护，移除每次导航的冗余 count 查询
 
   // Realtime: keep unread badge in sync without needing page navigation
   useEffect(() => {

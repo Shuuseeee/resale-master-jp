@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calculator';
 import { markTransactionArrived, confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import Link from 'next/link';
@@ -36,16 +35,15 @@ import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import { getMaxEntries } from '@/lib/kaitorix-domain';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import PullToRefresh from '@/components/PullToRefresh';
+import {
+  type TransactionWithProfit,
+  fetchTransactionsWithProfit,
+  getTxCache,
+  setTxCache,
+} from '@/lib/api/transactions-cache';
 
-interface TransactionWithPayment extends Transaction {
-  payment_method?: PaymentMethod;
-  latest_sale_date?: string | null;
-  aggregated_profit?: number | null;
-  aggregated_roi?: number | null;
-  aggregated_actual_cash_spent?: number | null;
-  aggregated_selling_platform_ids?: string[];
-  aggregated_sale_order_numbers?: string[];
-}
+// 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
+type TransactionWithPayment = TransactionWithProfit;
 
 export interface TransactionGroup {
   janCode: string;
@@ -81,11 +79,12 @@ interface PaymentMethodBasic {
 function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [transactions, setTransactions] = useState<TransactionWithPayment[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithPayment[]>(() => getTxCache() ?? []);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
   const [janThumbnails, setJanThumbnails] = useState<JanThumbnailMap>(new Map());
   const { purchasePlatforms, sellingPlatforms } = usePlatforms();
-  const [loading, setLoading] = useState(true);
+  // 有缓存时跳过整页 spinner，直接显示缓存数据并在后台静默刷新
+  const [loading, setLoading] = useState(() => getTxCache() === null);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
     () => (searchParams.get('tab') as any) || 'all'
@@ -194,6 +193,11 @@ function TransactionsContent() {
     return () => window.removeEventListener('bfcache-restore', handler);
   }, []);
 
+  // 把任何 transactions 变化（含批量到货/售出/删除/复制等乐观更新）同步进内存缓存
+  useEffect(() => {
+    if (getTxCache() !== null) setTxCache(transactions);
+  }, [transactions]);
+
   useEffect(() => {
     if (!showExportMenu) return;
     const handler = () => setShowExportMenu(false);
@@ -249,76 +253,17 @@ function TransactionsContent() {
   }, [searchTerm, statusFilter, sortField, sortOrder, dateSortMode, activeFilters, loading]);
 
   const loadTransactions = async () => {
-    setLoading(true);
+    // 有缓存时后台静默刷新，不显示整页 spinner；首屏（null）才显示
+    if (getTxCache() === null) setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          payment_method:payment_methods(id, name)
-        `)
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      const txList = data || [];
-
-      // 一次性批量拉取所有 sales_records，避免 N+1 查询
-      const ids = txList.map(t => t.id);
-      const { data: allSalesRecords } = ids.length > 0
-        ? await supabase
-            .from('sales_records')
-            .select('transaction_id, total_profit, actual_cash_spent, sale_date, selling_platform_id, sale_order_number')
-            .in('transaction_id', ids)
-            .order('sale_date', { ascending: false })
-        : { data: [] };
-
-      // 按 transaction_id 分组
-      const salesByTx = new Map<string, typeof allSalesRecords>();
-      (allSalesRecords || []).forEach(r => {
-        const list = salesByTx.get(r.transaction_id) || [];
-        list.push(r);
-        salesByTx.set(r.transaction_id, list);
-      });
-
-      const transactionsWithPartialProfit = txList.map(transaction => {
-        const salesRecords = salesByTx.get(transaction.id) || [];
-
-        let latest_sale_date = null;
-        let aggregated_profit = null;
-        let aggregated_roi = null;
-        let aggregated_actual_cash_spent = null;
-        let aggregated_selling_platform_ids: string[] = [];
-
-        if (salesRecords.length > 0) {
-          latest_sale_date = salesRecords[0].sale_date;
-
-          if (transaction.quantity_sold > 0) {
-            aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
-            const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
-            aggregated_actual_cash_spent = totalCashSpent;
-            aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
-          }
-          aggregated_selling_platform_ids = Array.from(
-            new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
-          );
-        }
-
-        const aggregated_sale_order_numbers = salesRecords
-          .map(r => r.sale_order_number)
-          .filter(Boolean) as string[];
-
-        return {
-          ...transaction,
-          latest_sale_date,
-          aggregated_profit,
-          aggregated_roi,
-          aggregated_actual_cash_spent,
-          aggregated_selling_platform_ids,
-          aggregated_sale_order_numbers,
-        };
-      });
-
-      setTransactions(transactionsWithPartialProfit);
+      const result = await fetchTransactionsWithProfit();
+      const cached = getTxCache();
+      // 后台刷新：数据无变化时跳过 setTransactions，避免列表无故跳动
+      const dataChanged = !cached ||
+        cached.length !== result.length ||
+        result.some((t, i) => t.id !== cached[i].id || t.updated_at !== cached[i].updated_at);
+      if (dataChanged) setTransactions(result);
+      setTxCache(result);
     } catch (error) {
       console.error('加载交易记录失败:', error);
     } finally {
@@ -350,7 +295,7 @@ function TransactionsContent() {
         case 'sold':
           sold++;
           totalProfit += t.total_profit || 0;
-          totalActualCashSpent += (t as any).aggregated_actual_cash_spent || 0;
+          totalActualCashSpent += t.aggregated_actual_cash_spent || 0;
           break;
         case 'returned': returned++; break;
       }
@@ -448,7 +393,7 @@ function TransactionsContent() {
       if (activeFilters) {
         // 日期筛选（购买日期 or 售出日期，由 dateSortMode 统一控制）
         if (dateSortMode === 'sale') {
-          const saleDate = (t as any).latest_sale_date;
+          const saleDate = t.latest_sale_date;
           if (activeFilters.dateFrom && (!saleDate || saleDate < activeFilters.dateFrom)) return false;
           if (activeFilters.dateTo && (!saleDate || saleDate > activeFilters.dateTo)) return false;
         } else {
