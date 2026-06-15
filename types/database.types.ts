@@ -433,3 +433,72 @@ export type DatabaseError = {
   hint: string;
   code: string;
 };
+
+// ── 通知系统 ────────────────────────────────────────────────────────────────
+
+export type NotificationType = 'coupon_alert' | 'arrival_reminder' | 'monthly_report';
+
+/** 优惠券详情（daily cron 填入 notification.data.starting / expiring） */
+export interface CouponItem {
+  platform: string;
+  name: string;
+  discount_str: string;
+  condition_str: string;
+  coupon_code?: string;
+  expiry_date: string;
+  notes?: string;
+  is_online_only?: boolean;
+  is_offline_only?: boolean;
+}
+
+/** 穿衣指数（可能是字符串 HTML / 带 img 的对象 / 带 html 字段的对象） */
+export type DressIndex =
+  | string
+  | { img: string; text_cn?: string; text_jp?: string }
+  | { html: string }
+  | { text: string }
+  | { label: string }
+  | Record<string, unknown>;
+
+/** notifications.data JSONB 的结构（coupon_alert 类型） */
+export interface NotificationData {
+  target_date?: string;
+  weather?: {
+    weather: string;
+    current: string;
+    high: string;
+    low: string;
+    precip: string;
+    wind: string;
+    dress_morning?: DressIndex;
+    dress_daytime?: DressIndex;
+    dress_evening?: DressIndex;
+  };
+  starting?: CouponItem[];
+  /** key 为剩余天数（"0"/"1"/"3"/"7" 等） */
+  expiring?: Record<string, CouponItem[]>;
+  total_count?: number;
+}
+
+/** notifications 表行 */
+export interface Notification {
+  id: string;
+  user_id?: string;
+  /** 已知类型见 NotificationType；保持 string 以兼容未来新类型 */
+  type: string;
+  title: string;
+  body: string | null;
+  data: NotificationData;
+  read: boolean;
+  created_at: string;
+}
+
+/** push_subscriptions 表行 */
+export interface PushSubscription {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+}

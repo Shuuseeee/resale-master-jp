@@ -3,18 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import {
+  getNotifications,
+  getUnreadCount,
+  markAllRead as apiMarkAllRead,
+  deleteNotification as apiDeleteNotification,
+  dispatchNotificationsChanged,
+} from '@/lib/api/notifications';
+import type { Notification } from '@/types/database.types';
 import { badge, button, card, heading, layout } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
 import { usePushNotification } from '@/hooks/usePushNotification';
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  read: boolean;
-  created_at: string;
-}
 
 type DateGroup = '今天' | '昨天' | '更早';
 
@@ -100,6 +99,8 @@ function SkeletonCard() {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotification();
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -109,10 +110,10 @@ export default function NotificationsPage() {
     try {
       const res = await fetch('/api/push/test', { method: 'POST' });
       const text = await res.text();
-      let data: any;
+      let data: { ok?: boolean; results?: unknown[]; error?: string; hint?: string };
       try { data = JSON.parse(text); } catch { data = { error: text.slice(0, 200) }; }
       if (data.ok) {
-        setTestResult(`发送完成: ${data.results.length} 台 ${JSON.stringify(data.results)}`);
+        setTestResult(`发送完成: ${data.results?.length ?? 0} 台 ${JSON.stringify(data.results)}`);
       } else {
         setTestResult(`失败: ${data.error}${data.hint ? ' - ' + data.hint : ''}`);
       }
@@ -121,6 +122,7 @@ export default function NotificationsPage() {
     }
   }
 
+  // bfcache 恢复时刷新
   useEffect(() => {
     const handler = () => loadNotifications();
     window.addEventListener('bfcache-restore', handler);
@@ -130,7 +132,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     loadNotifications();
 
-    // Realtime: new notifications auto-appear at top
+    // Realtime: 新通知自动插到列表顶部，按 id 去重防止并发重复
     const channel = supabase
       .channel('notifications-page')
       .on(
@@ -138,7 +140,12 @@ export default function NotificationsPage() {
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
           const newNotif = payload.new as Notification;
-          setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+          setNotifications(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev].slice(0, 50);
+          });
+          // 新通知到达时刷新未读数
+          setUnreadCount(prev => prev + 1);
         }
       )
       .subscribe();
@@ -147,18 +154,35 @@ export default function NotificationsPage() {
   }, []);
 
   async function loadNotifications() {
-    const { data } = await supabase
-      .from('notifications')
-      .select('id,type,title,body,read,created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    setNotifications(data || []);
+    setLoadError(false);
+    const { data, error } = await getNotifications(50);
+    if (error) {
+      setLoadError(true);
+      setLoading(false);
+      return;
+    }
+    setNotifications(data);
     setLoading(false);
+    // 统一从服务端取精确未读数，与 Navigation 同源
+    const count = await getUnreadCount();
+    setUnreadCount(count);
   }
 
   async function markAllRead() {
-    await supabase.from('notifications').update({ read: true }).eq('read', false);
+    // 乐观更新
+    const snapshot = notifications;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const prevCount = unreadCount;
+    setUnreadCount(0);
+
+    const ok = await apiMarkAllRead();
+    if (!ok) {
+      // 回滚
+      setNotifications(snapshot);
+      setUnreadCount(prevCount);
+      return;
+    }
+    dispatchNotificationsChanged();
   }
 
   function markReadOptimistic(id: string) {
@@ -168,15 +192,30 @@ export default function NotificationsPage() {
   async function deleteNotification(id: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    // Animate out, then remove
+
+    const snapshot = notifications;
+    const wasUnread = notifications.find(n => n.id === id)?.read === false;
+
+    // 动画
     setDeletingIds(prev => new Set([...prev, id]));
     await new Promise(r => setTimeout(r, 220));
-    await supabase.from('notifications').delete().eq('id', id);
+
+    const ok = await apiDeleteNotification(id);
+    if (!ok) {
+      // 删除失败：还原
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+      setNotifications(snapshot);
+      return;
+    }
+
     setNotifications(prev => prev.filter(n => n.id !== id));
     setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
-  }
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+    if (wasUnread) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      dispatchNotificationsChanged();
+    }
+  }
 
   // Group by date
   const groupOrder: DateGroup[] = ['今天', '昨天', '更早'];
@@ -235,6 +274,21 @@ export default function NotificationsPage() {
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
+          </div>
+        ) : loadError ? (
+          <div className={card.primary + ' py-16 text-center'}>
+            <div className="mb-4 flex justify-center">
+              <svg className="h-10 w-10 text-[var(--color-text-muted)] opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="mb-3 text-sm text-[var(--color-text-muted)]">加载失败，请重试</div>
+            <button
+              onClick={loadNotifications}
+              className={button.secondary}
+            >
+              重试
+            </button>
           </div>
         ) : notifications.length === 0 ? (
           <div className={card.primary + ' py-16 text-center text-[var(--color-text-muted)]'}>

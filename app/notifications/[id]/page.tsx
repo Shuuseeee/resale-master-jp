@@ -2,75 +2,61 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import {
+  getNotification,
+  markRead,
+  dispatchNotificationsChanged,
+} from '@/lib/api/notifications';
+import type { Notification, CouponItem, DressIndex } from '@/types/database.types';
 import Link from 'next/link';
-
-interface CouponItem {
-  platform: string;
-  name: string;
-  discount_str: string;
-  condition_str: string;
-  coupon_code?: string;
-  expiry_date: string;
-  notes?: string;
-  is_online_only?: boolean;
-  is_offline_only?: boolean;
-}
-
-interface NotificationData {
-  target_date?: string;
-  weather?: {
-    weather: string;
-    current: string;
-    high: string;
-    low: string;
-    precip: string;
-    wind: string;
-    dress_morning?: any;
-    dress_daytime?: any;
-    dress_evening?: any;
-  };
-  starting?: CouponItem[];
-  expiring?: Record<string, CouponItem[]>;
-  total_count?: number;
-}
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  data: NotificationData;
-  read: boolean;
-  created_at: string;
-}
 
 export default function NotificationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [notification, setNotification] = useState<Notification | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  async function load() {
+    setLoadError(false);
+    const { data, error } = await getNotification(id);
+    if (error) {
+      setLoadError(true);
+      setLoading(false);
+      return;
+    }
+    setNotification(data);
+    setLoading(false);
+    if (data && !data.read) {
+      const ok = await markRead(id);
+      if (ok) dispatchNotificationsChanged();
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('id', id)
-        .single();
-      setNotification(data);
-      setLoading(false);
-      if (data && !data.read) {
-        await supabase.from('notifications').update({ read: true }).eq('id', id);
-      }
-    }
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
         <div className="text-[var(--color-text-muted)]">加载中...</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col items-center justify-center gap-4">
+        <div className="text-[var(--color-text-muted)]">加载失败，请重试</div>
+        <button
+          onClick={load}
+          className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
+        >
+          重试
+        </button>
+        <Link href="/notifications" className="text-[var(--color-primary)] text-sm font-medium hover:text-[var(--color-primary-hover)]">← 返回通知列表</Link>
       </div>
     );
   }
@@ -120,31 +106,32 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
 
   const expiringEntries = Object.entries(d.expiring || {}).sort((a, b) => Number(a[0]) - Number(b[0]));
 
-  const renderDress = (dress: any) => {
+  const renderDress = (dress: DressIndex | undefined) => {
     if (!dress) return <span>-</span>;
     if (typeof dress === 'string') return <div dangerouslySetInnerHTML={{ __html: dress }} />;
     if (typeof dress === 'object') {
-      if (dress.img) {
+      const d = dress as Record<string, unknown>;
+      if (d.img) {
         return (
           <div className="flex flex-col items-center gap-1 mt-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={dress.img} alt="dress index" className="w-10 h-10 object-contain" />
+            <img src={d.img as string} alt="dress index" className="w-10 h-10 object-contain" />
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-[10px] leading-tight text-center max-w-[85px] text-[var(--color-text)]">
-                {dress.text_cn || dress.text_jp}
+                {(d.text_cn || d.text_jp) as string}
               </span>
-              {dress.text_cn && dress.text_jp && (
+              {Boolean(d.text_cn && d.text_jp) && (
                 <span className="text-[8px] leading-tight text-center max-w-[85px] text-[var(--color-text-muted)]">
-                  {dress.text_jp}
+                  {d.text_jp as string}
                 </span>
               )}
             </div>
           </div>
         );
       }
-      if (dress.html) return <div dangerouslySetInnerHTML={{ __html: dress.html }} />;
-      if (dress.text) return <span>{dress.text}</span>;
-      if (dress.label) return <span>{dress.label}</span>;
+      if (d.html) return <div dangerouslySetInnerHTML={{ __html: d.html as string }} />;
+      if (d.text) return <span>{d.text as string}</span>;
+      if (d.label) return <span>{d.label as string}</span>;
       return <span className="text-[10px] break-all">{JSON.stringify(dress)}</span>;
     }
     return <span>-</span>;

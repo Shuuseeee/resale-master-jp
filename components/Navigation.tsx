@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getUnreadCount } from '@/lib/api/notifications';
+import { supabase } from '@/lib/supabase/client';
 import {
   BarChart3,
   Bell,
@@ -41,33 +43,27 @@ export default function Navigation() {
     setMounted(true);
   }, []);
 
+  // 初始加载未读数 + Realtime 订阅维护角标（已静态 import，无 import-race 泄漏风险）
   useEffect(() => {
     if (!user) return;
-    import('@/lib/supabase/client').then(({ supabase }) => {
-      supabase.from('notifications').select('id', { count: 'exact', head: true })
-        .eq('read', false)
-        .then(({ count }) => setUnreadCount(count ?? 0));
-    });
-  }, [user]); // pathname 已由 Realtime 订阅维护，移除每次导航的冗余 count 查询
 
-  // Realtime: keep unread badge in sync without needing page navigation
-  useEffect(() => {
-    if (!user) return;
-    let cleanup: (() => void) | null = null;
-    import('@/lib/supabase/client').then(({ supabase }) => {
-      const refresh = () =>
-        supabase.from('notifications').select('id', { count: 'exact', head: true })
-          .eq('read', false)
-          .then(({ count }) => setUnreadCount(count ?? 0));
+    // 首屏取一次精确 count
+    getUnreadCount().then(setUnreadCount);
 
-      const channel = supabase
-        .channel('nav-notifications-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, refresh)
-        .subscribe();
+    // Realtime：任意通知变更时重查 count（兜底：即使 Realtime publication 已开启）
+    const refresh = () => getUnreadCount().then(setUnreadCount);
+    const channel = supabase
+      .channel('nav-notifications-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, refresh)
+      .subscribe();
 
-      cleanup = () => { supabase.removeChannel(channel); };
-    });
-    return () => { cleanup?.(); };
+    // 本人操作（标记已读/删除）触发的即时刷新事件
+    window.addEventListener('notifications-changed', refresh);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('notifications-changed', refresh);
+    };
   }, [user]);
 
   // 路由变化时关闭抽屉和 FAB 菜单
