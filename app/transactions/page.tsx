@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calculator';
@@ -38,9 +39,9 @@ import PullToRefresh from '@/components/PullToRefresh';
 import {
   type TransactionWithProfit,
   fetchTransactionsWithProfit,
-  getTxCache,
-  setTxCache,
+  fetchSingleTransaction,
 } from '@/lib/api/transactions-cache';
+import type { QuickEditPayload } from '@/lib/api/transactions';
 
 // 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
 type TransactionWithPayment = TransactionWithProfit;
@@ -79,12 +80,14 @@ interface PaymentMethodBasic {
 function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [transactions, setTransactions] = useState<TransactionWithPayment[]>(() => getTxCache() ?? []);
+  const queryClient = useQueryClient();
+  const { data: transactions = [], isLoading: loading } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: fetchTransactionsWithProfit,
+  });
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
   const [janThumbnails, setJanThumbnails] = useState<JanThumbnailMap>(new Map());
   const { purchasePlatforms, sellingPlatforms } = usePlatforms();
-  // 有缓存时跳过整页 spinner，直接显示缓存数据并在后台静默刷新
-  const [loading, setLoading] = useState(() => getTxCache() === null);
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
     () => (searchParams.get('tab') as any) || 'all'
@@ -179,7 +182,6 @@ function TransactionsContent() {
   } = kaitorixState;
 
   useEffect(() => {
-    loadTransactions();
     loadPaymentMethods();
     getColumnPreferences().then(saved => {
       if (saved) {
@@ -190,15 +192,10 @@ function TransactionsContent() {
   }, []);
 
   useEffect(() => {
-    const handler = () => loadTransactions();
+    const handler = () => queryClient.invalidateQueries({ queryKey: ['transactions'] });
     window.addEventListener('bfcache-restore', handler);
     return () => window.removeEventListener('bfcache-restore', handler);
-  }, []);
-
-  // 把任何 transactions 变化（含批量到货/售出/删除/复制等乐观更新）同步进内存缓存
-  useEffect(() => {
-    if (getTxCache() !== null) setTxCache(transactions);
-  }, [transactions]);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!showExportMenu) return;
@@ -254,24 +251,16 @@ function TransactionsContent() {
     }
   }, [searchTerm, statusFilter, sortField, sortOrder, dateSortMode, activeFilters, loading]);
 
-  const loadTransactions = async () => {
-    // 有缓存时后台静默刷新，不显示整页 spinner；首屏（null）才显示
-    if (getTxCache() === null) setLoading(true);
+  const patchTransaction = useCallback(async (id: string) => {
     try {
-      const result = await fetchTransactionsWithProfit();
-      const cached = getTxCache();
-      // 后台刷新：数据无变化时跳过 setTransactions，避免列表无故跳动
-      const dataChanged = !cached ||
-        cached.length !== result.length ||
-        result.some((t, i) => t.id !== cached[i].id || t.updated_at !== cached[i].updated_at);
-      if (dataChanged) setTransactions(result);
-      setTxCache(result);
-    } catch (error) {
-      console.error('加载交易记录失败:', error);
-    } finally {
-      setLoading(false);
+      const updated = await fetchSingleTransaction(id);
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.map(t => t.id === updated.id ? updated : t) ?? []
+      );
+    } catch {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     }
-  };
+  }, [queryClient]);
 
   const loadPaymentMethods = async () => {
     const { data, error } = await supabase
@@ -685,7 +674,9 @@ function TransactionsContent() {
       setToastMsg(error?.message || '删除失败,请重试');
       return;
     }
-    setTransactions(prev => prev.filter(t => t.id !== deleteModalId));
+    queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+      old?.filter(t => t.id !== deleteModalId) ?? []
+    );
     setDeleteModalId(null);
     setToastMsg('已删除');
   }, [deleteModalId]);
@@ -767,8 +758,8 @@ function TransactionsContent() {
       .update({ status: 'in_stock' })
       .in('id', pendingIds);
     if (!error) {
-      setTransactions(prev =>
-        prev.map(t => pendingIds.includes(t.id) ? { ...t, status: 'in_stock' as const } : t)
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.map(t => pendingIds.includes(t.id) ? { ...t, status: 'in_stock' as const } : t) ?? []
       );
       setSelectedIds(new Set());
     } else {
@@ -785,7 +776,9 @@ function TransactionsContent() {
       .delete()
       .in('id', ids);
     if (!error) {
-      setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.filter(t => !ids.includes(t.id)) ?? []
+      );
       exitCompareMode();
     } else {
       setToastMsg('删除失败');
@@ -795,10 +788,10 @@ function TransactionsContent() {
   // 共享：将指定 ID 列表的交易本地状态标记为 sold
   const markTransactionsAsSold = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
-    setTransactions(prev =>
-      prev.map(t => idSet.has(t.id) ? { ...t, status: 'sold' as const } : t)
+    queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+      old?.map(t => idSet.has(t.id) ? { ...t, status: 'sold' as const } : t) ?? []
     );
-  }, []);
+  }, [queryClient]);
 
   const handleBatchPaymentConfirm = useCallback(async () => {
     const paymentIds = transactions
@@ -833,23 +826,23 @@ function TransactionsContent() {
   const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
     if (success) {
-      setTransactions(prev =>
-        prev.map(t => t.id === id ? { ...t, status: 'in_stock' as const } : t)
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.map(t => t.id === id ? { ...t, status: 'in_stock' as const } : t) ?? []
       );
     } else {
       setToastMsg('到货处理失败');
     }
-  }, []);
+  }, [queryClient]);
 
   const handleConfirmPayment = useCallback(async (id: string) => {
     const success = await confirmPaymentReceived(id);
     if (success) {
-      setTransactions(prev =>
-        prev.map(t => t.id === id ? { ...t, status: 'sold' as const } : t)
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.map(t => t.id === id ? { ...t, status: 'sold' as const } : t) ?? []
       );
       setToastMsg('入账已确认');
     }
-  }, []);
+  }, [queryClient]);
 
   if (loading) {
     return (
@@ -866,7 +859,7 @@ function TransactionsContent() {
   }
 
   return (
-    <PullToRefresh onRefresh={loadTransactions}>
+    <PullToRefresh onRefresh={() => queryClient.invalidateQueries({ queryKey: ['transactions'] })}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
@@ -1631,9 +1624,17 @@ function TransactionsContent() {
           transactions={sellableSelected}
           onSuccess={(orderId) => {
             setMultiSaleModalOpen(false);
-            loadTransactions();
             exitCompareMode();
             setToastMsg(`订单已记录 (${sellableSelected.length} 件)`);
+            Promise.all(sellableSelected.map(t => fetchSingleTransaction(t.id)))
+              .then(updates => {
+                queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old => {
+                  if (!old) return old;
+                  const map = new Map(updates.map(u => [u.id, u]));
+                  return old.map(t => map.get(t.id) ?? t);
+                });
+              })
+              .catch(() => queryClient.invalidateQueries({ queryKey: ['transactions'] }));
           }}
           onCancel={multiSaleGuard.doClose}
           onDirtyChange={multiSaleGuard.setIsDirty}
@@ -1658,10 +1659,10 @@ function TransactionsContent() {
               transaction={tx}
               onSuccess={() => {
                 setSaleModalId(null);
-                loadTransactions();
                 setToastMsg('销售已记录');
+                if (saleModalId) patchTransaction(saleModalId);
               }}
-              onDataRefresh={loadTransactions}
+              onDataRefresh={() => queryClient.invalidateQueries({ queryKey: ['transactions'] })}
               closeOnSuccess
               onCancel={saleGuard.doClose}
               onDirtyChange={saleGuard.setIsDirty}
@@ -1688,8 +1689,8 @@ function TransactionsContent() {
               transaction={tx}
               onSuccess={() => {
                 setReturnModalId(null);
-                loadTransactions();
                 setToastMsg('退货已记录');
+                if (returnModalId) patchTransaction(returnModalId);
               }}
               onCancel={returnGuard.doClose}
               onDirtyChange={returnGuard.setIsDirty}
@@ -1716,10 +1717,16 @@ function TransactionsContent() {
               transaction={tx}
               paymentMethods={paymentMethods}
               purchasePlatforms={purchasePlatforms}
-              onSuccess={() => {
+              onSuccess={(payload) => {
+                const id = editModalId!;
+                // 乐观更新：已知字段立即反映
+                queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+                  old?.map(t => t.id === id ? { ...t, ...payload } : t) ?? []
+                );
                 setEditModalId(null);
-                loadTransactions();
                 setToastMsg('已保存');
+                // 后台单条刷新，同步聚合字段（aggregated_profit 等）
+                patchTransaction(id);
               }}
               onCancel={editGuard.doClose}
               onDirtyChange={editGuard.setIsDirty}
@@ -1746,8 +1753,9 @@ function TransactionsContent() {
               source={tx}
               onSuccess={() => {
                 setCopyModalId(null);
-                loadTransactions();
                 setToastMsg('已创建新交易');
+                // 复制产生新记录，需全量刷新
+                queryClient.invalidateQueries({ queryKey: ['transactions'] });
               }}
               onCancel={copyGuard.doClose}
               onDirtyChange={copyGuard.setIsDirty}

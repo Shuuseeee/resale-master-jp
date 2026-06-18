@@ -1,8 +1,5 @@
 // lib/api/transactions-cache.ts
-// 交易列表内存缓存 + 查询聚合（stale-while-revalidate）
-//
-// 模块级内存缓存跨页面导航存活，整页刷新/PWA 冷启动时自动清空。
-// null = 本会话从未加载过（需显示 spinner）；[] = 已加载但确实无交易记录。
+// 交易列表查询聚合（TanStack Query 驱动，无需手动内存缓存）
 
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
@@ -17,12 +14,6 @@ export interface TransactionWithProfit extends Transaction {
   aggregated_selling_platform_ids?: string[];
   aggregated_sale_order_numbers?: string[];
 }
-
-// ------- 内存缓存 -------
-let txCache: TransactionWithProfit[] | null = null;
-export const getTxCache = (): TransactionWithProfit[] | null => txCache;
-export const setTxCache = (data: TransactionWithProfit[]): void => { txCache = data; };
-export const clearTxCache = (): void => { txCache = null; };
 
 // sales_records 查询结果的元素类型（仅包含列表页所需字段）
 interface SalesRecordRow {
@@ -108,4 +99,58 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
       aggregated_sale_order_numbers,
     } as TransactionWithProfit;
   });
+}
+
+// ------- 单条刷新（mutation 后精准更新，避免全量重拉）-------
+export async function fetchSingleTransaction(id: string): Promise<TransactionWithProfit> {
+  const { data: tx, error } = await supabase
+    .from('transactions')
+    .select('*, payment_method:payment_methods(id, name)')
+    .eq('id', id)
+    .single();
+  if (error || !tx) throw error ?? new Error('Transaction not found');
+
+  const { data: srData } = await supabase
+    .from('sales_records')
+    .select('transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number')
+    .eq('transaction_id', id)
+    .order('sale_date', { ascending: false });
+
+  const salesRecords = (srData as SalesRecordRow[] | null) ?? [];
+
+  let latest_sale_date: string | null = null;
+  let aggregated_profit: number | null = null;
+  let aggregated_roi: number | null = null;
+  let aggregated_actual_cash_spent: number | null = null;
+  let aggregated_total_selling_price: number | null = null;
+  let aggregated_selling_platform_ids: string[] = [];
+
+  if (salesRecords.length > 0) {
+    latest_sale_date = salesRecords[0].sale_date;
+    if (tx.quantity_sold > 0) {
+      aggregated_profit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+      const totalCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
+      aggregated_actual_cash_spent = totalCashSpent;
+      aggregated_roi = totalCashSpent > 0 ? (aggregated_profit / totalCashSpent) * 100 : 0;
+      aggregated_total_selling_price = salesRecords.reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
+    }
+    aggregated_selling_platform_ids = Array.from(
+      new Set(salesRecords.map(r => r.selling_platform_id).filter(Boolean) as string[])
+    );
+  }
+
+  const aggregated_sale_order_numbers = salesRecords
+    .map(r => r.sale_order_number)
+    .filter(Boolean) as string[];
+
+  return {
+    ...tx,
+    latest_sale_date,
+    aggregated_profit,
+    aggregated_roi,
+    aggregated_actual_cash_spent,
+    aggregated_total_selling_price,
+    aggregated_selling_platform_ids,
+    aggregated_sale_order_numbers,
+  } as TransactionWithProfit;
 }

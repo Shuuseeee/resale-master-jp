@@ -1,9 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 // Detect bfcache restore (iOS Safari swipe back/forward) and force a data refresh
 // by dispatching a custom event that pages can listen to.
@@ -23,13 +34,15 @@ function BfcacheRefreshListener() {
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <PlatformsProvider>
-          <BfcacheRefreshListener />
-          {children}
-        </PlatformsProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <PlatformsProvider>
+            <BfcacheRefreshListener />
+            {children}
+          </PlatformsProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 }

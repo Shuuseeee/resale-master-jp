@@ -16,7 +16,7 @@ interface QuickEditFormProps {
   transaction: Transaction;
   paymentMethods: Array<Pick<PaymentMethod, 'id' | 'name'>>;
   purchasePlatforms: Array<Pick<PurchasePlatform, 'id' | 'name'>>;
-  onSuccess: () => void;
+  onSuccess: (payload: QuickEditPayload) => void;
   onCancel: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
 }
@@ -115,7 +115,7 @@ export default function QuickEditForm({
       setError(apiError?.message || '保存失败,请重试');
       return;
     }
-    onSuccess();
+    onSuccess(payload);
   };
 
   return (
