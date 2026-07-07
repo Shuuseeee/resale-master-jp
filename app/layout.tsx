@@ -66,7 +66,27 @@ export default function RootLayout({
           </div>
         </ClientProviders>
         <Script id="sw-register" strategy="afterInteractive">
-          {`if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }`}
+          {`
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.register('/sw.js').then(function (reg) {
+                // If a waiting SW already exists (from a previous visit), trigger update
+                if (reg.waiting) {
+                  window.dispatchEvent(new CustomEvent('sw-update-available'));
+                }
+                // Listen for new SW installing
+                reg.addEventListener('updatefound', function () {
+                  var newWorker = reg.installing;
+                  if (newWorker) {
+                    newWorker.addEventListener('statechange', function () {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        window.dispatchEvent(new CustomEvent('sw-update-available'));
+                      }
+                    });
+                  }
+                });
+              });
+            }
+          `}
         </Script>
       </body>
     </html>

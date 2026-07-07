@@ -25,6 +25,9 @@ export default function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // 空字符串 src 等同于无图，直接走 fallback 路径
+  const effectiveSrc = src || fallbackSrc;
+
   // 宽高比映射
   const aspectRatioClasses = {
     '1/1': 'aspect-square',
@@ -46,13 +49,13 @@ export default function OptimizedImage({
 
       {/* 图片 */}
       <Image
-        src={hasError ? fallbackSrc : src}
+        src={hasError ? fallbackSrc : effectiveSrc}
         alt={alt}
         className={`
           transition-opacity duration-300
           ${isLoading ? 'opacity-0' : 'opacity-100'}
         `}
-        onLoadingComplete={() => setIsLoading(false)}
+        onLoad={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
           setIsLoading(false);

@@ -60,6 +60,10 @@ scraper/logs/
 scraper/node_modules/
 scraper/debug-page.html
 
+# Generated Service Worker (build artifact from workbox-webpack-plugin)
+/public/sw.js
+/public/sw.js.map
+
 # Claude Code 配置
 .claude/
 CLAUDE.md
