@@ -77,8 +77,8 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/70">
+      {/* ヘッダー：pt に safe-area を加算し、PWA 全画面時にノッチと重ならないようにする */}
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-black/70">
         <p className="text-white text-sm font-medium">
           {error ? '' : 'バーコードをカメラに向けてください'}
         </p>
@@ -131,7 +131,7 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
       </div>
 
       {/* フッター */}
-      <div className="px-4 py-4 bg-black/70 flex justify-center">
+      <div className="px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-black/70 flex justify-center">
         <button
           onClick={handleClose}
           className="px-8 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-sm font-medium transition-colors"

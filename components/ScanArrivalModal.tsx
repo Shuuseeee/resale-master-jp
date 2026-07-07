@@ -181,8 +181,8 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         <div className="absolute inset-0 z-10 bg-red-500/20 pointer-events-none" />
       )}
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/70 z-20 flex-shrink-0">
+      {/* Top bar：pt 叠加 safe-area，避免 PWA 全屏下按钮被刘海遮挡 */}
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-black/70 z-20 flex-shrink-0">
         <div className="flex items-center gap-1">
           {/* Torch */}
           {torchSupported && (
@@ -273,7 +273,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
         {/* Not found toast */}
         {notFound && (
-          <div className="absolute inset-x-0 bottom-6 flex justify-center pointer-events-none">
+          <div className="absolute inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex justify-center pointer-events-none">
             <div className="bg-red-500/90 backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
               未着荷の商品が見つかりませんでした
             </div>
@@ -295,7 +295,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Results bottom sheet */}
       {phase === 'results' && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md flex flex-col max-h-[55vh] flex-shrink-0">
+        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md flex flex-col max-h-[55vh] flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-apple-separator dark:border-apple-sepDark">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">取引を選択</h3>
             <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -326,7 +326,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Confirming bottom sheet */}
       {phase === 'confirming' && selected && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md px-4 pt-4 pb-8 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md px-4 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">着荷確認</h3>
             <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
