@@ -1,9 +1,11 @@
 // components/TransactionFilters.tsx
-// 交易列表筛选组件 - 平铺展开式筛选
+// 交易列表筛选组件 - 桌面端平铺展开；移动端 chip 栏 + 底部弹层（即点即生效）
 
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronDown, Check, X } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -160,7 +162,119 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
 }
 // ─────────────────────────────────────────────────────────
 
-const FILTER_PIN_KEY = 'tx_filter_panel_pinned';
+// ── 移动端筛选 chip ──────────────────────────────────────
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex h-9 flex-shrink-0 items-center gap-1 rounded-full border px-3 text-sm transition-colors ${
+        active
+          ? 'border-[var(--color-primary)]/40 bg-[var(--color-primary-light)] font-semibold text-[var(--color-primary)]'
+          : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)]'
+      }`}
+    >
+      <span className="max-w-[40vw] truncate">{label}</span>
+      <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 ${active ? '' : 'text-[var(--color-text-muted)]'}`} />
+    </button>
+  );
+}
+
+// ── 移动端筛选底部弹层 ──────────────────────────────────
+interface FilterSheetProps {
+  title: string;
+  onClose: () => void;
+  onReset?: () => void;
+  showReset?: boolean;
+  children: React.ReactNode;
+}
+
+function FilterSheet({ title, onClose, onReset, showReset = false, children }: FilterSheetProps) {
+  // 锁定背景滚动（与 Modal 相同策略）
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[10010] lg:hidden">
+      <div
+        className="absolute inset-0 bg-black/50 animate-fade-in"
+        onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-x-0 bottom-0 flex max-h-[70vh] flex-col rounded-t-[20px] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] animate-slide-up">
+        <div className="mx-auto mt-2 h-1 w-12 flex-shrink-0 rounded-full bg-[var(--color-border)]" />
+        <div className="flex flex-shrink-0 items-center justify-between px-4 pb-1 pt-1.5">
+          <h3 className="text-base font-semibold text-[var(--color-text)]">{title}</h3>
+          <div className="flex items-center">
+            {showReset && onReset && (
+              <button type="button" onClick={onReset} className="px-3 py-1.5 text-sm text-[var(--color-text-muted)] active:text-[var(--color-danger)]">
+                重置
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm font-semibold text-[var(--color-primary)]">
+              完成
+            </button>
+          </div>
+        </div>
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-1">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── 弹层内多选列表（即点即生效）──────────────────────────
+function SheetCheckList({
+  options,
+  selected,
+  onToggle,
+  mono = false,
+}: {
+  options: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (value: string) => void;
+  mono?: boolean;
+}) {
+  if (options.length === 0) {
+    return <div className="px-3 py-4 text-center text-sm text-[var(--color-text-muted)]">无可选项</div>;
+  }
+  return (
+    <div>
+      {options.map(opt => {
+        const checked = selected.includes(opt.value);
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onToggle(opt.value)}
+            className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${mono ? 'font-mono' : ''} ${
+              checked ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
+            }`}
+          >
+            <span className="truncate">{opt.label}</span>
+            {checked && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────
+
+type SheetKey = 'date' | 'status' | 'purchase' | 'selling' | 'payment' | 'jan' | 'buyback';
 
 export default function TransactionFilters({
   onApply,
@@ -179,20 +293,8 @@ export default function TransactionFilters({
   const [janSearch, setJanSearch] = useState('');
   const janRef = useRef<HTMLDivElement>(null);
 
-  // 折叠面板 & pin 偏好
-  const [pinned, setPinned] = useState(() => {
-    try { return localStorage.getItem(FILTER_PIN_KEY) === '1'; } catch { return false; }
-  });
-  const [isExpanded, setIsExpanded] = useState(() => {
-    try { return localStorage.getItem(FILTER_PIN_KEY) === '1'; } catch { return false; }
-  });
-
-  const togglePin = () => {
-    const next = !pinned;
-    setPinned(next);
-    try { localStorage.setItem(FILTER_PIN_KEY, next ? '1' : '0'); } catch {}
-    if (next) setIsExpanded(true);
-  };
+  // 移动端：当前打开的筛选弹层
+  const [openSheet, setOpenSheet] = useState<SheetKey | null>(null);
 
   // 激活的筛选条件数量
   const activeCount = [
@@ -240,50 +342,69 @@ export default function TransactionFilters({
     }));
   };
 
+  // ── 移动端 chip 文案 ──
+  const mmdd = (s: string) => (s ? s.slice(5).replace('-', '/') : '');
+  const dateChipLabel = filters.dateFrom || filters.dateTo
+    ? `${mmdd(filters.dateFrom) || '…'}〜${mmdd(filters.dateTo) || '…'}`
+    : '日期';
+  const multiChipLabel = (noun: string, ids: string[], resolve: (id: string) => string) =>
+    ids.length === 0 ? noun : ids.length === 1 ? resolve(ids[0]) : `${resolve(ids[0])} +${ids.length - 1}`;
+  const statusChipLabel = multiChipLabel('状态', filters.status, v => statusOptions.find(o => o.value === v)?.label ?? v);
+  const purchaseChipLabel = multiChipLabel('采购平台', filters.purchasePlatformIds, id => (purchasePlatforms || []).find(p => p.id === id)?.name ?? id);
+  const sellingChipLabel = multiChipLabel('售出平台', filters.sellingPlatformIds, id => (sellingPlatforms || []).find(p => p.id === id)?.name ?? id);
+  const paymentChipLabel = multiChipLabel('账号', filters.paymentMethodIds, id => paymentMethods.find(p => p.id === id)?.name ?? id);
+  const janChipLabel = filters.janCode
+    ? filters.janCode
+    : filters.excludeJanCodes.length > 0 ? `排除 ${filters.excludeJanCodes.length} 个JAN` : 'JAN';
+
+  const applyDatePreset = (kind: '7d' | '30d' | 'month') => {
+    const today = new Date();
+    const from = new Date(today);
+    if (kind === '7d') from.setDate(today.getDate() - 6);
+    else if (kind === '30d') from.setDate(today.getDate() - 29);
+    else from.setDate(1);
+    setFilters(prev => ({ ...prev, dateFrom: formatDateToLocal(from), dateTo: formatDateToLocal(today) }));
+  };
+
+  const toggleIn = (list: string[], v: string) => (list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
+
   return (
     <div className="mb-4 space-y-2" data-testid="filter-panel">
-      {/* 折叠面板头部 (仅移动端显示) */}
-      <div className="flex items-center gap-2 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setIsExpanded(v => !v)}
-          className="flex min-h-[40px] flex-1 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-colors active:bg-[var(--color-bg-subtle)]"
-        >
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-          </svg>
-          <span>筛选条件</span>
-          {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold">
-              {activeCount}
-            </span>
-          )}
-          <svg
-            className={`w-4 h-4 ml-auto text-[var(--color-text-muted)] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      {/* 移动端：横向 chip 栏，点击弹出对应筛选弹层 */}
+      <div className="flex gap-2 overflow-x-auto lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setFilters({ ...emptyFilters })}
+            className="flex h-9 flex-shrink-0 items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 text-sm text-[var(--color-text-muted)] active:text-[var(--color-danger)]"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {/* Pin 按钮 */}
-        <button
-          type="button"
-          onClick={togglePin}
-          title={pinned ? '取消固定（下次默认折叠）' : '固定展开（下次默认展开）'}
-          className={`flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border transition-colors ${
-            pinned
-              ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]/30 text-[var(--color-primary)]'
-              : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
-          }`}
-        >
-          <svg className="w-4 h-4" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-        </button>
+            <X className="h-3.5 w-3.5" />
+            清除
+          </button>
+        )}
+        <Chip label={dateChipLabel} active={!!(filters.dateFrom || filters.dateTo)} onClick={() => setOpenSheet('date')} />
+        <Chip label={statusChipLabel} active={filters.status.length > 0} onClick={() => setOpenSheet('status')} />
+        {(purchasePlatforms || []).length > 0 && (
+          <Chip label={purchaseChipLabel} active={filters.purchasePlatformIds.length > 0} onClick={() => setOpenSheet('purchase')} />
+        )}
+        {(sellingPlatforms || []).length > 0 && (
+          <Chip label={sellingChipLabel} active={filters.sellingPlatformIds.length > 0} onClick={() => setOpenSheet('selling')} />
+        )}
+        <Chip label={paymentChipLabel} active={filters.paymentMethodIds.length > 0} onClick={() => setOpenSheet('payment')} />
+        {janCodes.length > 0 && (
+          <Chip
+            label={janChipLabel}
+            active={!!filters.janCode || filters.excludeJanCodes.length > 0}
+            onClick={() => { setJanSearch(''); setOpenSheet('jan'); }}
+          />
+        )}
+        {hasBuybackData && (
+          <Chip label={filters.buybackStore || '最高报价店'} active={!!filters.buybackStore} onClick={() => setOpenSheet('buyback')} />
+        )}
       </div>
 
-      {/* 筛选内容：移动端受折叠控制，桌面端始终展开 */}
-      <div className={`rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 shadow-[var(--shadow-sm)] lg:block ${isExpanded ? 'block' : 'hidden'}`}>
+      {/* 桌面端平铺筛选面板 */}
+      <div className="hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3 shadow-[var(--shadow-sm)] lg:block">
       {/* Row 1 */}
       <div className="grid grid-cols-1 gap-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
         {/* Date range */}
@@ -458,7 +579,200 @@ export default function TransactionFilters({
         )}
 
       </div>
-      </div>{/* end 折叠内容 */}
+      </div>{/* end 桌面面板 */}
+
+      {/* ── 移动端筛选弹层 ── */}
+      {openSheet === 'date' && (
+        <FilterSheet
+          title="日期范围"
+          onClose={() => setOpenSheet(null)}
+          showReset={!!(filters.dateFrom || filters.dateTo)}
+          onReset={() => setFilters(prev => ({ ...prev, dateFrom: '', dateTo: '' }))}
+        >
+          <div className="space-y-3 px-2 pt-1">
+            <div className="flex gap-2">
+              {([['7d', '近7天'], ['30d', '近30天'], ['month', '本月']] as const).map(([kind, label]) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => applyDatePreset(kind)}
+                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] py-2 text-sm text-[var(--color-text)] active:bg-[var(--color-primary-light)]"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <DatePicker
+                selected={filters.dateFrom ? parseDateFromLocal(filters.dateFrom) : null}
+                onChange={(date) => updateFilter('dateFrom', date ? formatDateToLocal(date) : '')}
+                placeholder="开始日期"
+                maxDate={filters.dateTo ? parseDateFromLocal(filters.dateTo) ?? undefined : undefined}
+                className={inputClass + ' w-full'}
+              />
+              <span className="text-sm text-[var(--color-text-muted)]">~</span>
+              <DatePicker
+                selected={filters.dateTo ? parseDateFromLocal(filters.dateTo) : null}
+                onChange={(date) => updateFilter('dateTo', date ? formatDateToLocal(date) : '')}
+                placeholder="结束日期"
+                minDate={filters.dateFrom ? parseDateFromLocal(filters.dateFrom) ?? undefined : undefined}
+                className={inputClass + ' w-full'}
+              />
+            </div>
+          </div>
+        </FilterSheet>
+      )}
+
+      {openSheet === 'status' && (
+        <FilterSheet
+          title="状态"
+          onClose={() => setOpenSheet(null)}
+          showReset={filters.status.length > 0}
+          onReset={() => updateFilter('status', [])}
+        >
+          <SheetCheckList
+            options={statusOptions}
+            selected={filters.status}
+            onToggle={(v) => updateFilter('status', toggleIn(filters.status, v) as FilterValues['status'])}
+          />
+        </FilterSheet>
+      )}
+
+      {openSheet === 'purchase' && (
+        <FilterSheet
+          title="采购平台"
+          onClose={() => setOpenSheet(null)}
+          showReset={filters.purchasePlatformIds.length > 0}
+          onReset={() => updateFilter('purchasePlatformIds', [])}
+        >
+          <SheetCheckList
+            options={(purchasePlatforms || []).map(p => ({ value: p.id, label: p.name }))}
+            selected={filters.purchasePlatformIds}
+            onToggle={(v) => updateFilter('purchasePlatformIds', toggleIn(filters.purchasePlatformIds, v))}
+          />
+        </FilterSheet>
+      )}
+
+      {openSheet === 'selling' && (
+        <FilterSheet
+          title="售出平台"
+          onClose={() => setOpenSheet(null)}
+          showReset={filters.sellingPlatformIds.length > 0}
+          onReset={() => updateFilter('sellingPlatformIds', [])}
+        >
+          <SheetCheckList
+            options={(sellingPlatforms || []).map(p => ({ value: p.id, label: p.name }))}
+            selected={filters.sellingPlatformIds}
+            onToggle={(v) => updateFilter('sellingPlatformIds', toggleIn(filters.sellingPlatformIds, v))}
+          />
+        </FilterSheet>
+      )}
+
+      {openSheet === 'payment' && (
+        <FilterSheet
+          title="账号"
+          onClose={() => setOpenSheet(null)}
+          showReset={filters.paymentMethodIds.length > 0}
+          onReset={() => updateFilter('paymentMethodIds', [])}
+        >
+          <SheetCheckList
+            options={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
+            selected={filters.paymentMethodIds}
+            onToggle={(v) => updateFilter('paymentMethodIds', toggleIn(filters.paymentMethodIds, v))}
+          />
+        </FilterSheet>
+      )}
+
+      {openSheet === 'jan' && (
+        <FilterSheet
+          title="JAN 筛选"
+          onClose={() => setOpenSheet(null)}
+          showReset={!!filters.janCode || filters.excludeJanCodes.length > 0}
+          onReset={() => setFilters(prev => ({ ...prev, janCode: '', excludeJanCodes: [] }))}
+        >
+          <div className="px-2 pt-1">
+            <div className="mb-2 flex overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] text-xs">
+              <button
+                type="button"
+                onClick={() => switchJanMode('include')}
+                className={`flex-1 py-2 font-semibold transition-colors ${
+                  filters.janFilterMode === 'include' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-muted)]'
+                }`}
+              >
+                包含
+              </button>
+              <button
+                type="button"
+                onClick={() => switchJanMode('exclude')}
+                className={`flex-1 border-l border-[var(--color-border)] py-2 font-semibold transition-colors ${
+                  filters.janFilterMode === 'exclude' ? 'bg-[var(--color-warning)] text-white' : 'text-[var(--color-text-muted)]'
+                }`}
+              >
+                排除
+              </button>
+            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={janSearch}
+              onChange={(e) => setJanSearch(e.target.value)}
+              placeholder="搜索 JAN..."
+              className={inputClass + ' mb-1 w-full'}
+            />
+            {filters.janFilterMode === 'include' ? (
+              filteredJanCodes.length === 0 ? (
+                <div className="px-3 py-4 text-center text-sm text-[var(--color-text-muted)]">无匹配</div>
+              ) : (
+                filteredJanCodes.map(jan => (
+                  <button
+                    key={jan}
+                    type="button"
+                    onClick={() => { updateFilter('janCode', filters.janCode === jan ? '' : jan); setOpenSheet(null); }}
+                    className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left font-mono text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${
+                      filters.janCode === jan ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
+                    }`}
+                  >
+                    {jan}
+                    {filters.janCode === jan && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
+                  </button>
+                ))
+              )
+            ) : (
+              <SheetCheckList
+                options={filteredJanCodes.map(j => ({ value: j, label: j }))}
+                selected={filters.excludeJanCodes}
+                onToggle={(v) => updateFilter('excludeJanCodes', toggleIn(filters.excludeJanCodes, v))}
+                mono
+              />
+            )}
+          </div>
+        </FilterSheet>
+      )}
+
+      {openSheet === 'buyback' && (
+        <FilterSheet
+          title="最高报价店"
+          onClose={() => setOpenSheet(null)}
+          showReset={!!filters.buybackStore}
+          onReset={() => updateFilter('buybackStore', '')}
+        >
+          <div className="px-2 pt-1">
+            {buybackStores.map(store => (
+              <button
+                key={store}
+                type="button"
+                onClick={() => { updateFilter('buybackStore', filters.buybackStore === store ? '' : store); setOpenSheet(null); }}
+                className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${
+                  filters.buybackStore === store ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
+                }`}
+              >
+                <span className="truncate">{store}</span>
+                {filters.buybackStore === store && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
+              </button>
+            ))}
+          </div>
+        </FilterSheet>
+      )}
     </div>
   );
 }
