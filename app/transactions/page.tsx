@@ -120,7 +120,6 @@ function TransactionsContent() {
     return null;
   });
   const [exporting, setExporting] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showComparison, setShowComparison] = useState(false);
@@ -196,13 +195,6 @@ function TransactionsContent() {
     window.addEventListener('bfcache-restore', handler);
     return () => window.removeEventListener('bfcache-restore', handler);
   }, [queryClient]);
-
-  useEffect(() => {
-    if (!showExportMenu) return;
-    const handler = () => setShowExportMenu(false);
-    document.addEventListener('click', handler, { capture: true });
-    return () => document.removeEventListener('click', handler, { capture: true });
-  }, [showExportMenu]);
 
   // 交易加载完成后自动补查缺失的买取价格（有缓存的跳过，不增加爬虫压力）
   useEffect(() => {
@@ -686,17 +678,14 @@ function TransactionsContent() {
   const openQuickEdit = useCallback((id: string) => setEditModalId(id), []);
   const openQuickCopy = useCallback((id: string) => setCopyModalId(id), []);
 
-  const handleExportCSV = async (mode: 'filtered' | 'all' = 'filtered') => {
+  const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const ids = mode === 'all'
-        ? transactions.map(t => t.id)
-        : filteredTransactions.map(t => t.id);
+      const ids = filteredTransactions.map(t => t.id);
       const csv = await exportTransactionsToCSV(ids);
-      const suffix = mode === 'all' ? '_all' : '_filtered';
       const now = new Date();
       const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      downloadCSV(csv, `purchases_${dateStr}${suffix}.csv`);
+      downloadCSV(csv, `purchases_${dateStr}.csv`);
     } catch (error: any) {
       setToastMsg(error.message || 'CSV导出失败');
     } finally {
@@ -958,64 +947,26 @@ function TransactionsContent() {
                   <span className="hidden sm:inline">JAN 列表</span>
                 </button>
               )}
-              {/* CSV 导出：有筛选时提供筛选结果/全部两个选项 */}
-              <div className="relative">
-                <div className="flex">
-                  <button
-                    onClick={() => handleExportCSV('filtered')}
-                    disabled={exporting}
-                    className={'inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap' + (filteredTransactions.length < transactions.length ? ' rounded-r-none border-r-0' : '')}
-                  >
-                    {exporting ? (
-                      <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    )}
-                    <span className="hidden sm:inline">
-                      {exporting ? '导出中...' : `CSV (${filteredTransactions.length})`}
-                    </span>
-                  </button>
-                  {filteredTransactions.length < transactions.length && (
-                    <button
-                      onClick={() => setShowExportMenu(v => !v)}
-                      disabled={exporting}
-                      className="inline-flex items-center justify-center rounded-[var(--radius-md)] rounded-l-none border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-2 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
-                      title="导出选项"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)]">
-                    <button
-                      onClick={() => { handleExportCSV('filtered'); setShowExportMenu(false); }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
-                    >
-                      <svg className="w-4 h-4 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-                      </svg>
-                      筛选结果 ({filteredTransactions.length}条)
-                    </button>
-                    <button
-                      onClick={() => { handleExportCSV('all'); setShowExportMenu(false); }}
-                      className="flex w-full items-center gap-2 border-t border-[var(--color-border)] px-4 py-2.5 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]"
-                    >
-                      <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                      </svg>
-                      全部 ({transactions.length}条)
-                    </button>
-                  </div>
+              {/* CSV 导出：固定导出当前列表（所见即所得），全量导出通过「全部」tab 达成 */}
+              <button
+                onClick={handleExportCSV}
+                disabled={exporting}
+                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
+              >
+                {exporting ? (
+                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 )}
-              </div>
+                <span className="hidden sm:inline">
+                  {exporting ? '导出中...' : `CSV (${filteredTransactions.length})`}
+                </span>
+              </button>
               {/* 列定制齿轮 — 仅桌面表格视图 */}
               <button
                 onClick={() => { setPickerDraft(columns); setPickerOpen(true); }}
