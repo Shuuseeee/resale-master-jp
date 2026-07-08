@@ -1,6 +1,7 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
+import { updateThemeColorMeta } from '@/lib/theme-palette';
 
 const THEME_STORAGE_KEY = 'snutils-theme';
 
@@ -19,6 +20,8 @@ function applyTheme(theme: 'light' | 'dark') {
   root.setAttribute('data-theme', theme);
   root.classList.toggle('dark', theme === 'dark');
   document.body?.setAttribute('data-theme', theme);
+  // 浅 header 主题（如微信绿）深浅模式 header 颜色不同，meta 需跟随
+  updateThemeColorMeta();
 }
 
 export default function ThemeToggleButton() {

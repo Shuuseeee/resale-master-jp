@@ -4,7 +4,7 @@
 // ⚠️ app/layout.tsx 的 theme-init 内联脚本中有一份 headerColor 精简副本
 //    （该脚本必须零依赖、先于 paint 执行），新增主题时需同步两处。
 
-export type PaletteId = 'emerald' | 'horizon' | 'fluent';
+export type PaletteId = 'emerald' | 'horizon' | 'fluent' | 'wechat';
 
 export const PALETTE_STORAGE_KEY = 'snutils-palette';
 export const DEFAULT_PALETTE: PaletteId = 'emerald';
@@ -13,8 +13,8 @@ export interface PaletteMeta {
   id: PaletteId;
   label: string;
   description: string;
-  /** <meta name="theme-color"> 用（Android/桌面浏览器 chrome 颜色） */
-  headerColor: string;
+  /** <meta name="theme-color"> 用（Android/桌面浏览器 chrome 颜色），按深浅模式取值 */
+  headerColor: { light: string; dark: string };
   /** 选择器色板预览：[primary, header, bg] */
   preview: [string, string, string];
 }
@@ -24,22 +24,29 @@ export const PALETTES: PaletteMeta[] = [
     id: 'emerald',
     label: '翡翠绿',
     description: '默认主题',
-    headerColor: '#1b1b26',
+    headerColor: { light: '#1b1b26', dark: '#1b1b26' },
     preview: ['#10b981', '#1b1b26', '#f8fafc'],
   },
   {
     id: 'horizon',
     label: 'Horizon 蓝',
     description: 'SAP Horizon 风格',
-    headerColor: '#354a5f',
+    headerColor: { light: '#354a5f', dark: '#354a5f' },
     preview: ['#0070f2', '#354a5f', '#f5f6f7'],
   },
   {
     id: 'fluent',
     label: 'Fluent 蓝',
     description: 'Microsoft Fluent 风格',
-    headerColor: '#1b1a19',
+    headerColor: { light: '#1b1a19', dark: '#1b1a19' },
     preview: ['#0078d4', '#1b1a19', '#faf9f8'],
+  },
+  {
+    id: 'wechat',
+    label: '微信绿',
+    description: 'WeChat / WeUI 风格',
+    headerColor: { light: '#ededed', dark: '#1e1e1e' },
+    preview: ['#07c160', '#ededed', '#f7f7f7'],
   },
 ];
 

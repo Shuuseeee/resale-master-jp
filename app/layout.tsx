@@ -58,6 +58,7 @@ export default function RootLayout({
 
               // 配色主题（data-palette 轴）— headerColors 是 lib/themes.ts 注册表的
               // 零依赖精简副本（本脚本先于 paint 执行，不能 import），新增主题需同步。
+              // 值为 [light, dark]：浅 header 主题（如微信绿）两种模式 header 颜色不同。
               var palette;
               try {
                 palette = window.localStorage.getItem('snutils-palette');
@@ -65,10 +66,15 @@ export default function RootLayout({
               if (palette && palette !== 'emerald') {
                 document.documentElement.setAttribute('data-palette', palette);
               }
-              var headerColors = { horizon: '#354a5f', fluent: '#1b1a19' };
+              var headerColors = {
+                horizon: ['#354a5f', '#354a5f'],
+                fluent: ['#1b1a19', '#1b1a19'],
+                wechat: ['#ededed', '#1e1e1e']
+              };
+              var hc = headerColors[palette] || ['#1b1b26', '#1b1b26'];
               var meta = document.querySelector('meta[name="theme-color"]');
               if (meta) {
-                meta.setAttribute('content', headerColors[palette] || '#1b1b26');
+                meta.setAttribute('content', theme === 'dark' ? hc[1] : hc[0]);
               }
             })();
           `}

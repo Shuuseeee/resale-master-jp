@@ -191,7 +191,7 @@ export default function Navigation() {
             <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
           </div>
           <div className="leading-tight">
-            <div className="text-white text-base font-bold tracking-[-0.3px]">Resale Master</div>
+            <div className="text-[var(--color-header-text)] text-base font-bold tracking-[-0.3px]">Resale Master</div>
             <div className="text-[var(--color-primary)] text-xs font-medium uppercase tracking-[0.5px]">财务控制台</div>
           </div>
         </Link>
@@ -199,7 +199,7 @@ export default function Navigation() {
         <div className="flex items-center gap-3">
           <Link
             href="/notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-header-chip-hover)] hover:text-[var(--color-header-text)]"
             title="通知"
           >
             <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
@@ -212,8 +212,8 @@ export default function Navigation() {
 
           <ThemeToggleButton />
 
-          <div className="hidden xl:flex items-center h-9 overflow-hidden rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70">
-            <div className="flex h-full items-center gap-2 px-3 transition-colors hover:bg-white/10">
+          <div className="hidden xl:flex items-center h-9 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)]">
+            <div className="flex h-full items-center gap-2 px-3 transition-colors hover:bg-[var(--color-header-chip)]">
               <User className="h-4 w-4 flex-shrink-0 opacity-70" strokeWidth={2} />
               <span className="max-w-[240px] truncate text-[13px] font-medium">
                 {mounted ? (user?.email || '未登录') : '加载中...'}
@@ -223,7 +223,7 @@ export default function Navigation() {
               <button
                 onClick={handleLogout}
                 title="退出登录"
-                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-white/10 text-white/70 transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-soft)]"
+                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-soft)]"
               >
                 <LogOut className="h-4 w-4" strokeWidth={2} />
               </button>
@@ -328,7 +328,7 @@ export default function Navigation() {
               <TrendingUp className="h-[18px] w-[18px] text-[var(--color-primary)]" strokeWidth={2} />
             </div>
             <div className="leading-tight">
-              <div className="text-sm font-bold text-white">Resale Master</div>
+              <div className="text-sm font-bold text-[var(--color-header-text)]">Resale Master</div>
               <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>
             </div>
           </Link>
@@ -336,7 +336,7 @@ export default function Navigation() {
           {/* 通知铃铛 */}
           <Link
             href="/notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10 text-white/70 active:bg-white/15"
+            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)] active:bg-[var(--color-header-chip-hover)]"
             onClick={() => triggerHaptic('light')}
             aria-label="通知"
           >

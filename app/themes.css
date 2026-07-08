@@ -183,3 +183,93 @@
   --color-primary-hover: #3aa0f3;
   --color-primary-light: rgba(0, 120, 212, 0.15);
 }
+
+/* ============ 微信绿 — WeChat / WeUI ============ */
+
+:root[data-palette='wechat'] {
+  /* Brand / Primary — WeChat green */
+  --color-primary: #07c160;
+  --color-primary-hover: #06ad56;
+  --color-primary-light: #e7f8ee;
+  --color-primary-bright: #2aae67;
+
+  /* Header — 首个浅色 header 主题：header-text 变深色，
+   * header 上的 chip 由 --color-header-chip 派生 token 自动跟随 */
+  --color-header: #ededed;
+  --color-header-text: #191919;
+  --color-header-text-muted: rgba(25, 25, 25, 0.55);
+
+  --color-bg: #f7f7f7;
+  --color-bg-subtle: #ededed;
+
+  --color-text: rgba(0, 0, 0, 0.9);
+  --color-text-muted: rgba(0, 0, 0, 0.5);
+
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.05);
+
+  /* Semantic — WeUI colors */
+  --color-success: #07c160;
+  --color-warning: #fa9d3b;
+  --color-warning-hover: #e88a24;
+  --color-danger: #fa5151;
+  --color-danger-hover: #e64340;
+  --color-info: #10aeff;
+
+  /* Accent — WeChat link navy */
+  --color-accent: #576b95;
+
+  --shadow-float: 0 -10px 24px rgba(0, 0, 0, 0.08);
+
+  /* 图表分类色 — WeUI 色板序列 */
+  --chart-1: #07c160;
+  --chart-2: #10aeff;
+  --chart-3: #ffc300;
+  --chart-4: #fa5151;
+  --chart-5: #6467f0;
+  --chart-6: #fa9d3b;
+  --chart-7: #576b95;
+  --chart-8: #07b9b9;
+
+  /* Typography — 全系统字体（PingFang / 雅黑），无需打包 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace;
+}
+
+/* WeChat dark — 系统深色（未显式选择深浅色时）
+ * 注意：header 在 dark 下改为深色，theme-color meta 按模式取值 */
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='wechat']:not([data-theme]) {
+    --color-bg: #111111;
+    --color-bg-elevated: #1e1e1e;
+    --color-bg-subtle: #191919;
+    --color-bg-input: #1e1e1e;
+    --color-text: rgba(255, 255, 255, 0.85);
+    --color-text-muted: rgba(255, 255, 255, 0.45);
+    --color-accent: #7d90b3;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-border-light: rgba(255, 255, 255, 0.06);
+    --color-primary-light: rgba(7, 193, 96, 0.15);
+    --color-header: #1e1e1e;
+    --color-header-text: rgba(255, 255, 255, 0.85);
+    --color-header-text-muted: rgba(255, 255, 255, 0.45);
+  }
+}
+
+/* WeChat dark — 显式深色 */
+:root[data-palette='wechat'][data-theme='dark'],
+:root[data-palette='wechat'].dark {
+  --color-bg: #111111;
+  --color-bg-elevated: #1e1e1e;
+  --color-bg-subtle: #191919;
+  --color-bg-input: #1e1e1e;
+  --color-text: rgba(255, 255, 255, 0.85);
+  --color-text-muted: rgba(255, 255, 255, 0.45);
+  --color-accent: #7d90b3;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-light: rgba(255, 255, 255, 0.06);
+  --color-primary-light: rgba(7, 193, 96, 0.15);
+  --color-header: #1e1e1e;
+  --color-header-text: rgba(255, 255, 255, 0.85);
+  --color-header-text-muted: rgba(255, 255, 255, 0.45);
+}

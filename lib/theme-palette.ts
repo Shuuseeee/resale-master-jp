@@ -19,6 +19,15 @@ export function getCurrentPalette(): PaletteId {
   return isPaletteId(v) ? v : DEFAULT_PALETTE;
 }
 
+/** theme-color meta 跟随 palette × 深浅模式（浅 header 主题两种模式颜色不同） */
+export function updateThemeColorMeta(id: PaletteId = getCurrentPalette()) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const palette = PALETTES.find(p => p.id === id);
+  if (!meta || !palette) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  meta.setAttribute('content', isDark ? palette.headerColor.dark : palette.headerColor.light);
+}
+
 /** 切换配色主题：DOM 属性 + theme-color meta + localStorage +（可选）云端 */
 export function applyPalette(id: PaletteId, { sync = true }: { sync?: boolean } = {}) {
   const root = document.documentElement;
@@ -28,9 +37,7 @@ export function applyPalette(id: PaletteId, { sync = true }: { sync?: boolean } 
     root.setAttribute('data-palette', id);
   }
 
-  const meta = document.querySelector('meta[name="theme-color"]');
-  const palette = PALETTES.find(p => p.id === id);
-  if (meta && palette) meta.setAttribute('content', palette.headerColor);
+  updateThemeColorMeta(id);
 
   try {
     window.localStorage.setItem(PALETTE_STORAGE_KEY, id);

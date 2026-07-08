@@ -91,8 +91,8 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--color-header-chip);
+    border: 1px solid var(--color-header-chip-hover);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition);
@@ -100,8 +100,8 @@
   }
 
   .btn-theme:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: var(--color-header-chip-hover);
+    border-color: color-mix(in srgb, var(--color-header-text) 25%, transparent);
     color: var(--color-header-text);
   }
 
@@ -202,6 +202,9 @@
     --color-header: #1b1b26;
     --color-header-text: #ffffff;
     --color-header-text-muted: rgba(255, 255, 255, 0.7);
+    /* header 上的 chip/按钮底色：从 header-text 派生，浅色 header 主题（如微信绿）自动变为黑色系 */
+    --color-header-chip: color-mix(in srgb, var(--color-header-text) 10%, transparent);
+    --color-header-chip-hover: color-mix(in srgb, var(--color-header-text) 15%, transparent);
     --color-bg: #f8fafc;
     --color-bg-elevated: #ffffff;
     --color-bg-subtle: #f1f5f9;
