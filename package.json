@@ -31,6 +31,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@fontsource/noto-sans": "^5.2.10",
     "@types/node": "^20.10.0",
     "@types/react": "^19.0.0",
     "@types/react-datepicker": "^6.2.0",

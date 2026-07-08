@@ -42,9 +42,13 @@ import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { layout, heading, input } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-const CHART_GRID = '#e2e8f0';
-const CHART_TICK = '#64748b';
+// 图表颜色走 token（SVG presentation attribute 参与 CSS 级联，var() 直接生效），随主题/深浅色联动
+const COLORS = [
+  'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)',
+  'var(--chart-5)', 'var(--chart-6)', 'var(--chart-7)', 'var(--chart-8)',
+];
+const CHART_GRID = 'var(--color-border)';
+const CHART_TICK = 'var(--color-text-muted)';
 const chartCardClass = 'sn-detail-card';
 const statCardClass = 'rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)]';
 const listRowClass = 'flex items-center justify-between gap-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3';
@@ -359,8 +363,8 @@ export default function AnalyticsPage() {
                 <Area
                   type="monotone"
                   dataKey="sales"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
+                  stroke="var(--chart-2)"
+                  fill="var(--chart-2)"
                   fillOpacity={0.3}
                   name="销售额"
                 />
@@ -389,10 +393,10 @@ export default function AnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="profit"
-                  stroke="#10b981"
+                  stroke="var(--chart-1)"
                   strokeWidth={2}
                   name="利润"
-                  dot={{ fill: '#10b981' }}
+                  dot={{ fill: 'var(--chart-1)' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -419,10 +423,10 @@ export default function AnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="roi"
-                  stroke="#f59e0b"
+                  stroke="var(--chart-3)"
                   strokeWidth={2}
                   name="ROI"
-                  dot={{ fill: '#f59e0b' }}
+                  dot={{ fill: 'var(--chart-3)' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -445,7 +449,7 @@ export default function AnalyticsPage() {
                   itemStyle={tooltipItemStyle}
                   labelStyle={tooltipLabelStyle}
                 />
-                <Bar dataKey="transactions" fill="#8b5cf6" name="交易数量" />
+                <Bar dataKey="transactions" fill="var(--chart-5)" name="交易数量" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -534,7 +538,7 @@ export default function AnalyticsPage() {
                   labelStyle={tooltipLabelStyle}
                   formatter={(value) => formatCurrency(value as number)}
                 />
-                <Bar dataKey="totalPointsValue" fill="#06b6d4" name="积分价值" />
+                <Bar dataKey="totalPointsValue" fill="var(--chart-7)" name="积分价值" />
               </BarChart>
             </ResponsiveContainer>
 

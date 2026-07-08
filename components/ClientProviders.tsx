@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { SWUpdatePrompt } from '@/components/SWUpdatePrompt';
+import { ThemePaletteSync } from '@/components/ThemePaletteSync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           <PlatformsProvider>
             <BfcacheRefreshListener />
+            <ThemePaletteSync />
             <SWUpdatePrompt />
             {children}
           </PlatformsProvider>

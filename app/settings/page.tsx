@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
+import { DEFAULT_PALETTE, PALETTES, type PaletteId } from '@/lib/themes';
+import { applyPalette, getCurrentPalette } from '@/lib/theme-palette';
 import { button, card, heading, input, layout } from '@/lib/theme';
 
 function Toggle({
@@ -46,12 +48,20 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 初始为默认值，effect 中读取 DOM 实际主题（避免 SSR 水合不一致）
+  const [palette, setPalette] = useState<PaletteId>(DEFAULT_PALETTE);
 
   useEffect(() => {
     setConfig(loadAmazonPointConfig());
     setKaitorixConfig(loadKaitorixConfig());
     setKnownStores(getKnownStores());
+    setPalette(getCurrentPalette());
   }, []);
+
+  const selectPalette = (id: PaletteId) => {
+    setPalette(id);
+    applyPalette(id); // 即点即生效：DOM + localStorage + 云同步
+  };
 
   const updateConfig = (field: keyof AmazonPointConfig, value: number | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
@@ -136,6 +146,56 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+          <section className={card.primary + ' p-6'}>
+            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
+              <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
+              外观主题
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">配色主题即点即生效，登录设备间自动同步；深浅色模式在导航栏切换。</p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {PALETTES.map(p => {
+                const isActive = palette === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => selectPalette(p.id)}
+                    aria-pressed={isActive}
+                    className={`rounded-[var(--radius-md)] border p-3 text-left transition-colors ${
+                      isActive
+                        ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
+                        : 'bg-[var(--color-bg-subtle)] border-[var(--color-border)] active:bg-[var(--color-bg-elevated)]'
+                    }`}
+                  >
+                    {/* mini 预览：header 色条 + bg 底 + primary 圆点 */}
+                    <div
+                      className="overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-border)]"
+                      style={{ background: p.preview[2] }}
+                    >
+                      <div className="h-2.5" style={{ background: p.preview[1] }} />
+                      <div className="flex items-center gap-1.5 p-2">
+                        <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.preview[0] }} />
+                        <span className="h-1.5 flex-1 rounded-full opacity-20" style={{ background: p.preview[1] }} />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className={`text-sm font-semibold ${isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
+                        {p.label}
+                      </span>
+                      {isActive && (
+                        <svg className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{p.description}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section className={card.primary + ' p-6'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>

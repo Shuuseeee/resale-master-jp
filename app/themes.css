@@ -1,0 +1,98 @@
+/* app/themes.css — 配色主题（data-palette 轴）token 覆盖块
+ *
+ * 默认主题 emerald = globals.css 的 :root 基础值，不需要 palette 块。
+ * 每个新主题一个三段式块（镜像 globals.css 的深浅色结构）：
+ *   1. :root[data-palette='X']                                  — light 覆盖
+ *   2. @media dark + :root[data-palette='X']:not([data-theme])  — 系统深色（无显式选择）
+ *   3. :root[data-palette='X'][data-theme='dark'] / .dark       — 显式深色
+ *
+ * 特异性说明：light 块（0-2-0）与 globals 的 base dark 块（0-2-0）同级且 source
+ * 顺序靠后，因此 dark 块必须完整覆盖 base dark 块涉及的全部 token。
+ *
+ * 只覆盖与基础值不同的字面量 token；color-mix 派生 token（*-subtle/-border、
+ * danger-soft、neutral-border 等）引用 var() 自动跟随，禁止在主题块中重复定义。
+ *
+ * 新增主题时同步：lib/themes.ts 注册表 + app/layout.tsx theme-init 内联 map。
+ */
+
+/* ============ Horizon 蓝 — SAP Horizon (Morning/Evening) ============ */
+
+:root[data-palette='horizon'] {
+  /* Brand / Primary — sapBrandColor / sapHighlightColor */
+  --color-primary: #0070f2;
+  --color-primary-hover: #0064d9;
+  --color-primary-light: #ebf5ff;
+  --color-primary-bright: #4db1f7;
+
+  /* Shell / Header — sapShellColor (Morning Horizon) */
+  --color-header: #354a5f;
+
+  /* Backgrounds — sapBackgroundColor / sapGroup_ContentBackground */
+  --color-bg: #f5f6f7;
+  --color-bg-subtle: #eaecee;
+
+  /* Text — sapTextColor / sapContent_LabelColor */
+  --color-text: #1d2d3e;
+  --color-text-muted: #556b82;
+
+  /* Borders — sapField_BorderColor / sapGroup_ContentBorderColor */
+  --color-border: #d9d9d9;
+  --color-border-light: #eaecee;
+
+  /* Semantic — sapPositive / sapCritical / sapNegative / sapInformative */
+  --color-success: #30914c;
+  --color-warning: #e76500;
+  --color-warning-hover: #c65200;
+  --color-danger: #f53232;
+  --color-danger-hover: #d41f1f;
+  --color-info: #0070f2;
+
+  /* Accent — Horizon indication/accent purple */
+  --color-accent: #7858ff;
+
+  --shadow-float: 0 -10px 24px rgba(53, 74, 95, 0.08);
+
+  /* 图表分类色 — Horizon 风格序列 */
+  --chart-1: #0070f2;
+  --chart-2: #30914c;
+  --chart-3: #e76500;
+  --chart-4: #f53232;
+  --chart-5: #7858ff;
+  --chart-6: #049f9a;
+  --chart-7: #c87b00;
+  --chart-8: #8b47d7;
+
+  /* Typography — Noto Sans（@font-face 在 globals.css，仅激活时下载） */
+  --font-sans: 'Noto Sans', 'Noto Sans JP', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+/* Evening Horizon — 系统深色（未显式选择深浅色时） */
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='horizon']:not([data-theme]) {
+    --color-bg: #1c2228;
+    --color-bg-elevated: #23272b;
+    --color-bg-subtle: #23272b;
+    --color-bg-input: #1c2228;
+    --color-text: #eaecee;
+    --color-text-muted: #a9b4be;
+    --color-accent: #a894ff;
+    --color-border: rgba(255, 255, 255, 0.15);
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-primary-light: rgba(0, 112, 242, 0.15);
+  }
+}
+
+/* Evening Horizon — 显式深色 */
+:root[data-palette='horizon'][data-theme='dark'],
+:root[data-palette='horizon'].dark {
+  --color-bg: #1c2228;
+  --color-bg-elevated: #23272b;
+  --color-bg-subtle: #23272b;
+  --color-bg-input: #1c2228;
+  --color-text: #eaecee;
+  --color-text-muted: #a9b4be;
+  --color-accent: #a894ff;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-primary-light: rgba(0, 112, 242, 0.15);
+}

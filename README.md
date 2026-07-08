@@ -97,7 +97,8 @@ resale-master-jp/
 ├── app/
 │   ├── layout.tsx                    # 根布局、主题初始化、PWA 注册
 │   ├── manifest.ts                   # PWA Manifest
-│   ├── globals.css                   # SNUtils 风格主题变量和全局组件样式
+│   ├── globals.css                   # 设计 token 定义源和全局组件样式
+│   ├── themes.css                    # 配色主题（data-palette）token 覆盖块
 │   ├── api/
 │   │   ├── jan-product/[jan]/        # JAN 商品名查询与补全
 │   │   ├── kaitorix/[jan]/           # 买取价格查询与 scrape 入队
@@ -119,11 +120,13 @@ resale-master-jp/
 │   ├── api/                          # 按业务域划分的 Supabase 调用
 │   ├── financial/calculator.ts       # ROI 和利润计算
 │   ├── supabase/client.ts            # Supabase SSR 客户端
+│   ├── themes.ts                     # 配色主题注册表
+│   ├── theme-palette.ts              # 配色主题切换与云同步
 │   └── theme.ts                      # 共用 Tailwind class 片段
 ├── public/
 │   ├── sw.js                         # Service Worker
 │   ├── icons/                        # PWA 图标
-│   └── fonts/                        # Outfit 字体
+│   └── fonts/                        # Outfit / Noto Sans 字体
 ├── supabase/migrations/              # 数据库迁移文件
 ├── scraper/                          # 独立 Kaitorix 抓取服务
 ├── types/database.types.ts           # Supabase 类型定义
@@ -144,7 +147,7 @@ resale-master-jp/
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
 - `transaction_history`：交易字段变更历史。
 - `notifications` / `push_subscriptions`：站内通知与 Web Push 订阅。
-- `user_preferences`：用户级 UI 偏好，如交易列表列设置。
+- `user_preferences`：用户级 UI 偏好，如交易列表列设置、配色主题。
 - `user_roles`：管理员角色。
 - `user_line_links`：用户与 LINE 账号绑定关系。
 
@@ -175,16 +178,19 @@ npm run dev          # 启动开发服务器，默认 localhost:3000
 npm run build        # 生产构建
 npm run lint         # ESLint 检查
 npm run type-check   # TypeScript 类型检查
+node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 ```
 
 项目当前没有 Jest / Vitest / Playwright 测试框架。手动测试入口包括 `/api/ocr/test` 和开发环境下通知页的测试推送面板。
 
 ## 设计系统
 
-- UI 已从 Apple 语义色迁移到 SNUtils 风格主题变量，主要 token 定义在 `app/globals.css`。
+- 所有颜色一律走 CSS 变量 token：基础值定义在 `app/globals.css`（含 `color-mix()` 派生色阶和图表色 `--chart-1..8`），配色主题覆盖块在 `app/themes.css`。
+- 主题为两个正交轴：深浅色（`data-theme`）+ 配色主题（`data-palette`，当前有翡翠绿 / Horizon 蓝）。配色在设置页切换，即点即生效，localStorage 秒开 + `user_preferences` 跨设备同步。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 `lucide-react`，避免新增手写 SVG。
 - 顶部桌面 banner、深浅色切换按钮、侧边栏和移动底部导航由 `components/Navigation.tsx` 统一控制。
+- `node scripts/scan-design-tokens.mjs` 扫描硬编码色值残留，无标记输出即全部落实。
 
 ## Scraper
 

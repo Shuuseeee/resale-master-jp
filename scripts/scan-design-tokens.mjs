@@ -11,8 +11,8 @@ const walk = (d) =>
       if (!['node_modules', '.next', 'sw'].includes(e.name)) walk(p);
     } else if (
       (/\.(tsx|ts)$/.test(e.name) && !/\.d\.ts$/.test(e.name)) ||
-      // CSS 也纳入扫描；globals.css 是 token 定义源，允许 hex/rgba
-      (/\.css$/.test(e.name) && e.name !== 'globals.css')
+      // CSS 也纳入扫描；globals.css / themes.css 是 token 定义源，允许 hex/rgba
+      (/\.css$/.test(e.name) && !['globals.css', 'themes.css'].includes(e.name))
     ) files.push(p);
   });
 ['app', 'components', 'lib', 'assets'].forEach(walk);

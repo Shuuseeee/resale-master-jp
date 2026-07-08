@@ -44,7 +44,7 @@
   }
 
   .sn-form-alert-error {
-    @apply rounded-[var(--radius-md)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-3 text-sm text-[var(--color-danger)];
+    @apply rounded-[var(--radius-md)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] p-3 text-sm text-[var(--color-danger)];
   }
 
   .sn-upload-box {
@@ -161,11 +161,44 @@
     src: url('/fonts/Outfit-Bold.ttf') format('truetype');
   }
 
+  /* Noto Sans — Horizon 主题字体（仅在 --font-sans 引用时才会下载，emerald 用户零开销） */
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/NotoSans-Medium.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/NotoSans-SemiBold.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Noto Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/NotoSans-Bold.woff2') format('woff2');
+  }
+
   :root {
     --color-primary: #10b981;
     --color-primary-hover: #059669;
     --color-primary-light: #ecfdf5;
-    --color-primary-subtle: rgba(16, 185, 129, 0.12);
+    --color-primary-subtle: color-mix(in srgb, var(--color-primary) 12%, transparent);
     --color-header: #1b1b26;
     --color-header-text: #ffffff;
     --color-header-text-muted: rgba(255, 255, 255, 0.7);
@@ -197,6 +230,15 @@
     --color-accent: #9333ea;
     --color-accent-subtle: color-mix(in srgb, var(--color-accent) 12%, transparent);
     --color-neutral-border: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
+    /* 图表分类色（analytics 图表引用；主题块可整组覆盖） */
+    --chart-1: #10b981;
+    --chart-2: #3b82f6;
+    --chart-3: #f59e0b;
+    --chart-4: #ef4444;
+    --chart-5: #8b5cf6;
+    --chart-6: #ec4899;
+    --chart-7: #06b6d4;
+    --chart-8: #84cc16;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
@@ -224,7 +266,6 @@
       --color-border: rgba(255, 255, 255, 0.15);
       --color-border-light: rgba(255, 255, 255, 0.08);
       --color-primary-light: rgba(16, 185, 129, 0.15);
-      --color-primary-subtle: rgba(16, 185, 129, 0.12);
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
@@ -243,7 +284,6 @@
     --color-border: rgba(255, 255, 255, 0.15);
     --color-border-light: rgba(255, 255, 255, 0.08);
     --color-primary-light: rgba(16, 185, 129, 0.15);
-    --color-primary-subtle: rgba(16, 185, 129, 0.12);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);

@@ -19,29 +19,7 @@ const config: Config = {
       '2xl': '1536px', // 大屏桌面
     },
     extend: {
-      // Apple iOS 语义色
-      colors: {
-        apple: {
-          bg:       '#f8fafc',
-          bgDark:   '#1B1B26',
-          card:     '#FFFFFF',
-          cardDark: '#24283b',
-          blue:     '#10b981',
-          green:    '#10b981',
-          red:      '#ef4444',
-          orange:   '#f59e0b',
-          gray: {
-            1: '#64748b',
-            2: '#94a3b8',
-            3: '#cbd5e1',
-            4: '#dbe4ef',
-            5: '#e2e8f0',
-            6: '#f1f5f9',
-          },
-          separator: '#e2e8f0',
-          sepDark:   'rgba(255,255,255,0.15)',
-        },
-      },
+      // 颜色一律走 var(--color-*) token（app/globals.css + app/themes.css），不在此定义调色板
       // 动画
       animation: {
         'pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

@@ -7,8 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     description: '日本業務账务管理システム',
     start_url: '/',
     display: 'standalone',
-    background_color: '#111827',
-    theme_color: '#007AFF',
+    // manifest 是静态安装产物，无法逐用户跟随主题；取默认主题 header 色
+    background_color: '#1b1b26',
+    theme_color: '#1b1b26',
     orientation: 'portrait',
     icons: [
       {
