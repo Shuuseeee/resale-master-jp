@@ -122,7 +122,7 @@ export function DataTable<TData>({
                     tableStyles.tr,
                     row.depth > 0 && tableStyles.trChild,
                     row.getIsSelected() && tableStyles.trSelected,
-                    onRowClick && tableStyles.trSelectable,
+                    // cursor 交给 rowClassName 控制（如仅多选模式下 pointer）
                     rowClassName?.(row),
                   )}
                 >
