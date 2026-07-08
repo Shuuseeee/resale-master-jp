@@ -42,6 +42,7 @@ export function DataTable<TData>({
   onRowClick,
   rowClassName,
   emptyState,
+  bare = false,
   mobile = 'none',
   renderMobileItem,
 }: DataTableProps<TData>) {
@@ -90,9 +91,8 @@ export function DataTable<TData>({
     onRowClick(row, e);
   };
 
-  const desktopTable = (
-    <div className={cx(card.primary, 'overflow-hidden')}>
-      <div className={tableStyles.wrapper}>
+  const tableInner = (
+    <div className={tableStyles.wrapper}>
         <table className={tableStyles.table}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
@@ -147,8 +147,13 @@ export function DataTable<TData>({
             )}
           </tbody>
         </table>
-      </div>
     </div>
+  );
+
+  const desktopTable = bare ? (
+    tableInner
+  ) : (
+    <div className={cx(card.primary, 'overflow-hidden')}>{tableInner}</div>
   );
 
   if (mobile === 'cards') {

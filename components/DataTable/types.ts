@@ -76,6 +76,8 @@ export interface DataTableProps<TData> {
   onRowClick?: (row: Row<TData>, e: MouseEvent<HTMLTableRowElement>) => void;
   rowClassName?: (row: Row<TData>) => string;
   emptyState?: ReactNode;
+  /** true 时不渲染 card.primary 外壳（嵌入已有卡片内时用） */
+  bare?: boolean;
 
   /* 响应式：'cards' = <md 渲染卡片分支；'none' = 移动端由调用方自渲染 */
   mobile?: 'cards' | 'none';
