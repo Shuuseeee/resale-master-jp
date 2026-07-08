@@ -221,7 +221,7 @@ const TransactionRow = memo(function TransactionRow({
               e.stopPropagation();
               onMarkArrived(transaction.id);
             }}
-            className="px-2 py-1 text-xs font-semibold bg-[var(--color-warning)] hover:bg-[#d97706] text-white rounded transition-colors whitespace-nowrap"
+            className="px-2 py-1 text-xs font-semibold bg-[var(--color-warning)] hover:bg-[var(--color-warning-hover)] text-white rounded transition-colors whitespace-nowrap"
           >
             着荷
           </button>

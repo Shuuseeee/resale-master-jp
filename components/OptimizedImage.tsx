@@ -44,7 +44,7 @@ export default function OptimizedImage({
     <div className={containerClass}>
       {/* 骨架屏 */}
       {skeleton && isLoading && (
-        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        <div className="absolute inset-0 bg-[var(--color-bg-subtle)] animate-pulse" />
       )}
 
       {/* 图片 */}

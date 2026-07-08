@@ -105,14 +105,14 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
         {/* スキャン枠 */}
         {scanning && !error && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-32 border-2 border-[#007AFF] rounded-lg relative">
+            <div className="w-64 h-32 border-2 border-[var(--color-primary)] rounded-lg relative">
               {/* 四隅の強調 */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#007AFF] rounded-tl" />
-              <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#007AFF] rounded-tr" />
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#007AFF] rounded-bl" />
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#007AFF] rounded-br" />
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[var(--color-primary)] rounded-tl" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[var(--color-primary)] rounded-tr" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[var(--color-primary)] rounded-bl" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[var(--color-primary)] rounded-br" />
               {/* スキャンライン */}
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[#007AFF]/70 animate-pulse" />
+              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[var(--color-primary)] animate-pulse" />
             </div>
           </div>
         )}
@@ -134,7 +134,7 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
       <div className="px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-black/70 flex justify-center">
         <button
           onClick={handleClose}
-          className="px-8 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-xl text-sm font-medium transition-colors"
+          className="px-8 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-colors"
         >
           キャンセル
         </button>

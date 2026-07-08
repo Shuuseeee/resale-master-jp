@@ -26,8 +26,8 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
 
   return (
     <div>
-      <p className="text-sm text-apple-gray-1 mb-4">勾选要显示的列，点击箭头调整顺序。</p>
-      <ul className="divide-y divide-apple-separator dark:divide-apple-sepDark">
+      <p className="text-sm text-[var(--color-text-muted)] mb-4">勾选要显示的列，点击箭头调整顺序。</p>
+      <ul className="divide-y divide-[var(--color-border)]">
         {value.map((col, i) => (
           <li key={col.key} className="flex items-center gap-3 py-2.5">
             {/* Checkbox */}
@@ -39,8 +39,8 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
             >
               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                 col.visible
-                  ? 'bg-apple-blue border-apple-blue'
-                  : 'bg-white dark:bg-gray-800 border-apple-separator dark:border-apple-sepDark'
+                  ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                  : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
               }`}>
                 {col.visible && (
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
             </button>
 
             {/* 列名 */}
-            <span className={`flex-1 text-sm ${col.visible ? 'text-gray-900 dark:text-white' : 'text-apple-gray-2'}`}>
+            <span className={`flex-1 text-sm ${col.visible ? 'text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}>
               {COLUMN_LABELS[col.key]}
             </span>
 
@@ -61,7 +61,7 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                className="p-1 rounded text-apple-gray-1 hover:text-gray-900 dark:hover:text-white hover:bg-apple-gray-5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 aria-label="上移"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +72,7 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={i === value.length - 1}
-                className="p-1 rounded text-apple-gray-1 hover:text-gray-900 dark:hover:text-white hover:bg-apple-gray-5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 aria-label="下移"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,11 +84,11 @@ export default function TransactionColumnPicker({ value, onChange, onReset }: Pr
         ))}
       </ul>
 
-      <div className="flex justify-end pt-4 border-t border-apple-separator dark:border-apple-sepDark mt-2">
+      <div className="flex justify-end pt-4 border-t border-[var(--color-border)] mt-2">
         <button
           type="button"
           onClick={onReset}
-          className="px-3 py-1.5 text-sm text-apple-gray-1 hover:text-gray-900 dark:hover:text-white border border-apple-separator dark:border-apple-sepDark rounded-lg active:opacity-70 transition-colors"
+          className="px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] active:opacity-70 transition-colors"
         >
           重置默认
         </button>

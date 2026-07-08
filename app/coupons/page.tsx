@@ -198,7 +198,7 @@ export default function CouponsPage() {
               {stats.total}
             </div>
           </div>
-          <div className={card.stat + " border-[var(--color-primary)]/30"}>
+          <div className={card.stat + " border-[var(--color-primary-border)]"}>
             <div className="text-[var(--color-success)] text-sm mb-1">
               未使用
             </div>
@@ -206,7 +206,7 @@ export default function CouponsPage() {
               {stats.unused}
             </div>
           </div>
-          <div className={card.stat + " border-[rgba(245,158,11,0.3)]"}>
+          <div className={card.stat + " border-[var(--color-warning-border)]"}>
             <div className="text-[var(--color-warning)] text-sm mb-1">
               即将过期
             </div>
@@ -214,7 +214,7 @@ export default function CouponsPage() {
               {stats.expiring}
             </div>
           </div>
-          <div className={card.stat + " border-gray-500/30"}>
+          <div className={card.stat + " border-[var(--color-neutral-border)]"}>
             <div className="text-[var(--color-text-muted)] text-sm mb-1">
               已使用
             </div>

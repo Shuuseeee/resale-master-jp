@@ -174,11 +174,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
     <div className="fixed inset-0 z-[10002] bg-black flex flex-col">
       {/* Success flash */}
       {flashSuccess && (
-        <div className="absolute inset-0 z-10 bg-apple-blue/25 pointer-events-none" />
+        <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'color-mix(in srgb, var(--color-primary) 25%, transparent)' }} />
       )}
       {/* Not-found flash */}
       {notFound && (
-        <div className="absolute inset-0 z-10 bg-red-500/20 pointer-events-none" />
+        <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'color-mix(in srgb, var(--color-danger) 20%, transparent)' }} />
       )}
 
       {/* Top bar：pt 叠加 safe-area，避免 PWA 全屏下按钮被刘海遮挡 */}
@@ -188,7 +188,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           {torchSupported && (
             <button
               onClick={toggleTorch}
-              className={`p-2 rounded-lg transition-colors ${torchOn ? 'text-yellow-400' : 'text-white/50 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-colors ${torchOn ? 'text-[var(--color-warning)]' : 'text-white/50 hover:text-white'}`}
               aria-label="フラッシュ"
             >
               <svg className="w-6 h-6" fill={torchOn ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +199,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           {/* Manual input toggle */}
           <button
             onClick={() => setManualMode(m => !m)}
-            className={`p-2 rounded-lg transition-colors ${manualMode ? 'text-apple-blue' : 'text-white/50 hover:text-white'}`}
+            className={`p-2 rounded-lg transition-colors ${manualMode ? 'text-[var(--color-primary)]' : 'text-white/50 hover:text-white'}`}
             aria-label="手動入力"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
         <div className="flex items-center gap-2">
           {successCount > 0 && (
-            <span className="text-apple-blue text-sm font-semibold">{successCount}件✓</span>
+            <span className="text-[var(--color-primary)] text-sm font-semibold">{successCount}件✓</span>
           )}
           <button onClick={onClose} className="p-2 text-white/60 hover:text-white" aria-label="閉じる">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,11 +235,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
             onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
             placeholder="JANコードを入力..."
             autoFocus
-            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none focus:border-apple-blue"
+            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none focus:border-[var(--color-primary)]"
           />
           <button
             onClick={handleManualSubmit}
-            className="px-4 py-2 bg-apple-blue hover:bg-apple-blue/90 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-text-inverted)] rounded-lg text-sm font-medium transition-colors"
           >
             検索
           </button>
@@ -259,11 +259,11 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {cameraReady && !cameraError && phase === 'scanning' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-64 h-32 relative">
-              <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-apple-blue rounded-tl-sm" />
-              <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-apple-blue rounded-tr-sm" />
-              <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-apple-blue rounded-bl-sm" />
-              <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-apple-blue rounded-br-sm" />
-              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-apple-blue/60 animate-pulse" />
+              <div className="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-[var(--color-primary)] rounded-tl-sm" />
+              <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-[var(--color-primary)] rounded-tr-sm" />
+              <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-[var(--color-primary)] rounded-bl-sm" />
+              <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-[var(--color-primary)] rounded-br-sm" />
+              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-[var(--color-primary)] animate-pulse" />
             </div>
             <p className="absolute bottom-[calc(50%-80px)] text-white/50 text-xs">
               バーコードを枠に合わせてください
@@ -274,7 +274,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {/* Not found toast */}
         {notFound && (
           <div className="absolute inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex justify-center pointer-events-none">
-            <div className="bg-red-500/90 backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
+            <div className="bg-[var(--color-danger)] backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
               未着荷の商品が見つかりませんでした
             </div>
           </div>
@@ -295,10 +295,10 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Results bottom sheet */}
       {phase === 'results' && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md flex flex-col max-h-[55vh] flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-apple-separator dark:border-apple-sepDark">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">取引を選択</h3>
-            <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+        <div className="bg-[var(--color-bg-elevated)] rounded-t-2xl shadow-[var(--shadow-lg)] flex flex-col max-h-[55vh] flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--color-border)]">
+            <h3 className="font-semibold text-[var(--color-text)] text-sm">取引を選択</h3>
+            <button onClick={handleBack} className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -309,14 +309,14 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
               <button
                 key={tx.id}
                 onClick={() => handleSelectTransaction(tx)}
-                className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-apple-blue/5 transition-colors ${i < matches.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+                className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-[var(--color-primary-light)] transition-colors ${i < matches.length - 1 ? 'border-b border-[var(--color-border-light)]' : ''}`}
               >
-                <span className="font-medium text-gray-900 dark:text-white text-sm">{tx.product_name}</span>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-apple-gray-1">
-                  <span className="bg-apple-gray-5 dark:bg-white/10 px-1.5 py-0.5 rounded">{tx.purchase_platforms?.name ?? '—'}</span>
+                <span className="font-medium text-[var(--color-text)] text-sm">{tx.product_name}</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
+                  <span className="bg-[var(--color-bg-subtle)] px-1.5 py-0.5 rounded">{tx.purchase_platforms?.name ?? '—'}</span>
                   <span>{tx.order_number ?? '注文番号なし'}</span>
                   <span>{tx.date}</span>
-                  <span className="text-gray-900 dark:text-white font-medium">{tx.quantity}個</span>
+                  <span className="text-[var(--color-text)] font-medium">{tx.quantity}個</span>
                 </div>
               </button>
             ))}
@@ -326,10 +326,10 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
       {/* Confirming bottom sheet */}
       {phase === 'confirming' && selected && (
-        <div className="bg-white dark:bg-gray-900 rounded-t-2xl shadow-card-md px-4 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] flex-shrink-0">
+        <div className="bg-[var(--color-bg-elevated)] rounded-t-2xl shadow-[var(--shadow-lg)] px-4 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">着荷確認</h3>
-            <button onClick={handleBack} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <h3 className="font-semibold text-[var(--color-text)] text-sm">着荷確認</h3>
+            <button onClick={handleBack} className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -337,10 +337,10 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           </div>
 
           {/* Transaction info */}
-          <div className="mb-4 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
-            <p className="font-medium text-gray-900 dark:text-white text-sm mb-1">{selected.product_name}</p>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-apple-gray-1">
-              <span className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-1.5 py-0.5 rounded">{selected.purchase_platforms?.name ?? '—'}</span>
+          <div className="mb-4 bg-[var(--color-bg-subtle)] rounded-xl px-4 py-3">
+            <p className="font-medium text-[var(--color-text)] text-sm mb-1">{selected.product_name}</p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
+              <span className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-1.5 py-0.5 rounded">{selected.purchase_platforms?.name ?? '—'}</span>
               <span>{selected.order_number ?? '注文番号なし'}</span>
               <span>{selected.date}</span>
             </div>
@@ -348,16 +348,16 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
 
           {/* Quantity stepper */}
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-apple-gray-1">到着数量</span>
+            <span className="text-sm text-[var(--color-text-muted)]">到着数量</span>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setQty(q => Math.max(1, q - 1))}
-                className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-200 text-xl font-light active:scale-90 transition-transform"
+                className="w-9 h-9 rounded-full bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-text)] text-xl font-light active:scale-90 transition-transform"
               >−</button>
-              <span className="text-xl font-semibold text-gray-900 dark:text-white w-6 text-center tabular-nums">{qty}</span>
+              <span className="text-xl font-semibold text-[var(--color-text)] w-6 text-center tabular-nums">{qty}</span>
               <button
                 onClick={() => setQty(q => Math.min(selected.quantity, q + 1))}
-                className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-200 text-xl font-light active:scale-90 transition-transform"
+                className="w-9 h-9 rounded-full bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-text)] text-xl font-light active:scale-90 transition-transform"
               >＋</button>
             </div>
           </div>
@@ -365,7 +365,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full py-3.5 bg-apple-blue hover:bg-apple-blue/90 active:bg-apple-blue/80 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
+            className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] active:opacity-90 disabled:opacity-60 text-[var(--color-text-inverted)] font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
           >
             {saving ? '処理中...' : '着荷確認する'}
           </button>

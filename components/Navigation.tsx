@@ -185,9 +185,9 @@ export default function Navigation() {
   return (
     <>
       {/* 桌面端顶部栏 — SNUtils manage shell */}
-      <header className="hidden lg:flex fixed top-0 left-0 right-0 z-[9000] h-[60px] bg-[#1B1B26] shadow-[var(--shadow-md)] items-center justify-between px-6">
+      <header className="hidden lg:flex fixed top-0 left-0 right-0 z-[9000] h-[60px] bg-[var(--color-header)] shadow-[var(--shadow-md)] items-center justify-between px-6">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[var(--radius-md)] bg-[var(--color-primary)]/15 border border-[var(--color-primary)]/30 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] border border-[var(--color-primary-border)] flex items-center justify-center">
             <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
           </div>
           <div className="leading-tight">
@@ -223,7 +223,7 @@ export default function Navigation() {
               <button
                 onClick={handleLogout}
                 title="退出登录"
-                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-white/10 text-white/70 transition-colors hover:bg-[rgba(239,68,68,0.2)] hover:text-[#fca5a5]"
+                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-white/10 text-white/70 transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-soft)]"
               >
                 <LogOut className="h-4 w-4" strokeWidth={2} />
               </button>
@@ -231,7 +231,7 @@ export default function Navigation() {
           </div>
         </div>
       </header>
-      <div className="hidden lg:block fixed top-[60px] left-0 right-0 h-[3px] z-[9001] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
+      <div className="hidden lg:block fixed top-[60px] left-0 right-0 h-[3px] z-[9001] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
 
       {/* ── 桌面端侧边栏 ── */}
       <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[63px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
@@ -348,7 +348,7 @@ export default function Navigation() {
             )}
           </Link>
         </div>
-        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
+        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
       </div>
 
       {/* 移动端顶部占位 */}

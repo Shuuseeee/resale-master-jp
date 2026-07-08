@@ -170,7 +170,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       onClick={onClick}
       className={`flex h-9 flex-shrink-0 items-center gap-1 rounded-full border px-3 text-sm transition-colors ${
         active
-          ? 'border-[var(--color-primary)]/40 bg-[var(--color-primary-light)] font-semibold text-[var(--color-primary)]'
+          ? 'border-[var(--color-primary-border)] bg-[var(--color-primary-light)] font-semibold text-[var(--color-primary)]'
           : 'border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)]'
       }`}
     >

@@ -23,13 +23,13 @@ export const card = {
  */
 export const button = {
   // 主要按钮
-  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary)] to-[#059669] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(16,185,129,0.35)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 成功按钮
-  success: 'px-5 py-2.5 text-sm bg-[var(--color-success)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[#059669] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  success: 'px-5 py-2.5 text-sm bg-[var(--color-success)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 危险按钮
-  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[#dc2626] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-danger-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 次要按钮
   secondary: 'px-5 py-2.5 text-sm bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-bg-subtle)] hover:border-[var(--color-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
@@ -45,10 +45,10 @@ export const button = {
  * 徽章样式 — 去掉 border，淡底色 pill
  */
 export const badge = {
-  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)]',
+  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-warning-subtle)] text-[var(--color-warning)]',
   success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)]',
-  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]',
-  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(59,130,246,0.12)] text-[var(--color-info)]',
+  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-danger-subtle)] text-[var(--color-danger)]',
+  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-info-subtle)] text-[var(--color-info)]',
   neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]',
   awaiting: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-600 dark:text-purple-400',
 };
@@ -58,7 +58,7 @@ export const badge = {
  */
 export const input = {
   base: 'px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] placeholder:opacity-50 focus:outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary-light)] transition-all',
-  error: 'w-full px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-danger)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-4 focus:ring-[rgba(239,68,68,0.15)] transition-all',
+  error: 'w-full px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-danger)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-4 focus:ring-[var(--color-danger-subtle)] transition-all',
 };
 
 /**
@@ -113,8 +113,8 @@ export const empty = {
  * 提示消息样式 — 无 border，淡底色
  */
 export const alert = {
-  success: 'mb-4 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.3)] text-[var(--color-primary)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  error: 'mb-4 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-[var(--color-danger)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  warning: 'mb-4 bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] text-[var(--color-warning)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  info: 'mb-4 bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.3)] text-[var(--color-info)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  success: 'mb-4 bg-[var(--color-primary-subtle)] border border-[var(--color-primary-border)] text-[var(--color-primary)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  error: 'mb-4 bg-[var(--color-danger-subtle)] border border-[var(--color-danger-border)] text-[var(--color-danger)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  warning: 'mb-4 bg-[var(--color-warning-subtle)] border border-[var(--color-warning-border)] text-[var(--color-warning)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  info: 'mb-4 bg-[var(--color-info-subtle)] border border-[var(--color-info-border)] text-[var(--color-info)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
 };
