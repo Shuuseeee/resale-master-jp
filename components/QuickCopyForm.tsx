@@ -155,7 +155,7 @@ export default function QuickCopyForm({ source, onSuccess, onCancel, onDirtyChan
         </div>
       </div>
 
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary)]/20 bg-[var(--color-primary-light)] p-3 text-sm">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] p-3 text-sm">
         <div className="flex justify-between text-[var(--color-text)]">
           <span className="text-[var(--color-text-muted)]">合计</span>
           <span className="font-medium">{formatCurrency(newTotal)}</span>

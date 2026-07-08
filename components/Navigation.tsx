@@ -305,7 +305,7 @@ export default function Navigation() {
             <button
               onClick={handleLogout}
               title={collapsed ? '退出登录' : undefined}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-md)] transition-colors ${collapsed ? 'justify-center' : ''}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-colors ${collapsed ? 'justify-center' : ''}`}
             >
               <LogOut className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
               {!collapsed && <span className="text-sm font-medium">退出登录</span>}
@@ -324,7 +324,7 @@ export default function Navigation() {
       >
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/15 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-[var(--radius-md)] border border-[var(--color-primary-border)] bg-[var(--color-primary-subtle)] flex items-center justify-center">
               <TrendingUp className="h-[18px] w-[18px] text-[var(--color-primary)]" strokeWidth={2} />
             </div>
             <div className="leading-tight">
@@ -356,7 +356,7 @@ export default function Navigation() {
 
       {/* ── 移动端底部导航栏：SNUtils touch adaptation ── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[0_-10px_24px_rgba(15,23,42,0.08)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-float)]"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -395,7 +395,7 @@ export default function Navigation() {
           <div className="flex items-center justify-center">
                 <button
                   onClick={() => { triggerHaptic('medium'); setShowFabMenu(v => !v); }}
-              className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] border font-semibold shadow-[0_6px_14px_rgba(16,185,129,0.28)] transition-colors active:opacity-80 ${
+              className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] border font-semibold shadow-[0_6px_14px_var(--color-primary-border)] transition-colors active:opacity-80 ${
                     showFabMenu
                   ? 'border-[var(--color-primary-hover)] bg-[var(--color-primary-hover)] text-white'
                   : 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
@@ -461,14 +461,14 @@ export default function Navigation() {
               {
                 href: '/coupons/add',
                 label: '新增优惠券',
-                iconBg: 'bg-[rgba(245,158,11,0.12)]',
+                iconBg: 'bg-[var(--color-warning-subtle)]',
                 iconColor: 'text-[var(--color-warning)]',
                 icon: <Ticket className="h-4 w-4" strokeWidth={2} />,
               },
               {
                 href: '/supplies/add',
                 label: '新增耗材',
-                iconBg: 'bg-[rgba(59,130,246,0.12)]',
+                iconBg: 'bg-[var(--color-info-subtle)]',
                 iconColor: 'text-[var(--color-info)]',
                 icon: <Package className="h-4 w-4" strokeWidth={2} />,
               },
@@ -491,7 +491,7 @@ export default function Navigation() {
               onClick={() => { triggerHaptic('light'); setShowFabMenu(false); setShowScanArrival(true); }}
               className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-subtle)] border-t border-[var(--color-border)]"
             >
-              <div className="w-8 h-8 bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 bg-[var(--color-warning-subtle)] text-[var(--color-warning)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
                 <ScanBarcode className="h-4 w-4" strokeWidth={2} />
               </div>
               <span className="text-sm font-semibold text-[var(--color-text)]">扫码到货</span>
@@ -566,7 +566,7 @@ export default function Navigation() {
               {mounted && (
                 <button
                   onClick={handleLogout}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-md)] transition-colors"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-colors"
                 >
                   <LogOut className="h-4 w-4" strokeWidth={2} />
                   退出登录

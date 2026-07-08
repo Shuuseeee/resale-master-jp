@@ -135,7 +135,7 @@ export default function AddSupplyPage() {
           </section>
 
           {errors.submit && (
-            <div className="rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-4 text-sm text-[var(--color-danger)]">
+            <div className="rounded-[var(--radius-lg)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] p-4 text-sm text-[var(--color-danger)]">
               {errors.submit}
             </div>
           )}

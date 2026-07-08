@@ -74,7 +74,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[380px]">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] to-[#059669] shadow-[var(--shadow-md)]">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] shadow-[var(--shadow-md)]">
             <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
@@ -117,7 +117,7 @@ export default function RegisterPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-[var(--radius-md)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[var(--color-danger)]">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] px-4 py-3 text-sm text-[var(--color-danger)]">
                 {error}
               </div>
             )}
@@ -158,7 +158,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[#059669] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_rgba(16,185,129,0.35)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? '注册中...' : '注册'}
             </button>

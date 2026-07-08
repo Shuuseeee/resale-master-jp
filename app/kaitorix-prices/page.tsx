@@ -343,7 +343,7 @@ function KaitorixPricesContent() {
         </div>
 
         {!kaitorixEnabled && (
-          <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 px-4 py-2 text-sm text-[var(--color-warning)]">
+          <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-warning-border)] bg-[var(--color-warning-subtle)] px-4 py-2 text-sm text-[var(--color-warning)]">
             买取价格检查已禁用，仅展示已有缓存，数据不会自动更新。可在设置中开启。
           </div>
         )}
@@ -355,7 +355,7 @@ function KaitorixPricesContent() {
         )}
 
         {message && (
-          <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary-light)] px-4 py-2 text-sm text-[var(--color-primary)]">
+          <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] px-4 py-2 text-sm text-[var(--color-primary)]">
             {message}
           </div>
         )}

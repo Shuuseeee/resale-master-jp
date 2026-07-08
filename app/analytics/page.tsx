@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
                     onClick={() => setTimeRange(range)}
                     className={`rounded-[var(--radius-md)] px-4 py-2 text-sm font-semibold transition-colors ${
                       timeRange === range
-                        ? 'bg-[var(--color-primary)] text-white shadow-[0_4px_8px_rgba(16,185,129,0.22)]'
+                        ? 'bg-[var(--color-primary)] text-white shadow-[0_4px_8px_var(--color-primary-border)]'
                         : 'border border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text)] hover:bg-[var(--color-bg-elevated)] active:opacity-70'
                     }`}
                   >

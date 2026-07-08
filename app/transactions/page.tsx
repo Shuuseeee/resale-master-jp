@@ -864,7 +864,7 @@ function TransactionsContent() {
                 title={isGrouped ? '平铺显示' : '分组显示'}
                 className={`inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                   isGrouped
-                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary-border)]'
                     : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                 }`}
               >
@@ -907,9 +907,9 @@ function TransactionsContent() {
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
                   className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
                     kaitorixLoading
-                      ? 'bg-[rgba(245,158,11,0.1)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]'
+                      ? 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]'
                       : buybackPrices.size > 0
-                        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary)]/30'
+                        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary-border)]'
                         : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
                   }`}
                 >
@@ -1942,7 +1942,7 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
           </button>
         </div>
         </div>
-        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[#34d399]" />
+        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
       </div>
 
       {/* List */}

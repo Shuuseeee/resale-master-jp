@@ -467,7 +467,7 @@ export default function TaxReportPage() {
 
         {summary && (
           <>
-            <div className="mb-8 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-4 text-sm text-[var(--color-text)]">
+            <div className="mb-8 rounded-[var(--radius-lg)] border border-[var(--color-warning-border)] bg-[var(--color-warning-subtle)] p-4 text-sm text-[var(--color-text)]">
               <div className="mb-2 font-semibold text-[var(--color-warning)]">日本报税说明</div>
               <p className="leading-relaxed text-[var(--color-text-muted)]">
                 导出资料定位为申告输入、记账保存和税理士核对用的补助资料，不等同于默认需要把全部交易明细提交给国税厅。积分相当额、売上原価、期末棚卸资产和消耗品费的处理会影响申告口径，请按实际申告方针或税理士意见确认。
@@ -530,7 +530,7 @@ export default function TaxReportPage() {
                   收入
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className={card.stat + ' border-[rgba(16,185,129,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-primary-border)]'}>
                     <div className={statLabelClass}>
                       销售额（现金）
                     </div>
@@ -538,7 +538,7 @@ export default function TaxReportPage() {
                       {formatCurrency(summary.totalRevenue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-[rgba(245,158,11,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-warning-border)]'}>
                     <div className={statLabelClass}>
                       积分相当额
                     </div>
@@ -546,7 +546,7 @@ export default function TaxReportPage() {
                       {formatCurrency(summary.totalPointsValue)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-[rgba(59,130,246,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-info-border)]'}>
                     <div className={statLabelClass}>
                       收入合计
                     </div>
@@ -595,7 +595,7 @@ export default function TaxReportPage() {
                       {formatCurrency(summary.suppliesCosts)}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-[rgba(239,68,68,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-danger-border)]'}>
                     <div className={statLabelClass}>
                       经费合计
                     </div>
@@ -612,7 +612,7 @@ export default function TaxReportPage() {
                   所得金额
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div className={card.stat + ' border-[rgba(59,130,246,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-info-border)]'}>
                     <div className={statLabelClass}>
                       杂项所得估算（收入 - 经费）
                     </div>
@@ -644,7 +644,7 @@ export default function TaxReportPage() {
                       {summary.endingInventoryQuantity}
                     </div>
                   </div>
-                  <div className={card.stat + ' border-[rgba(245,158,11,0.3)]'}>
+                  <div className={card.stat + ' border-[var(--color-warning-border)]'}>
                     <div className={statLabelClass}>
                       期末棚卸金额（参考）
                     </div>

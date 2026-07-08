@@ -91,9 +91,9 @@ export default function DashboardPage() {
   };
 
   const urgencyColors: Record<string, string> = {
-    urgent: 'bg-[rgba(239,68,68,0.08)] border-[rgba(239,68,68,0.3)] text-[var(--color-danger)]',
-    warning: 'bg-[rgba(245,158,11,0.08)] border-[rgba(245,158,11,0.3)] text-[var(--color-warning)]',
-    normal: 'bg-[var(--color-primary-light)] border-[var(--color-primary)]/20 text-[var(--color-text)]',
+    urgent: 'bg-[var(--color-danger-subtle)] border-[var(--color-danger-border)] text-[var(--color-danger)]',
+    warning: 'bg-[var(--color-warning-subtle)] border-[var(--color-warning-border)] text-[var(--color-warning)]',
+    normal: 'bg-[var(--color-primary-light)] border-[var(--color-primary-border)] text-[var(--color-text)]',
     expired: 'bg-[var(--color-bg-subtle)] border-[var(--color-border)] text-[var(--color-text-muted)]',
   };
 
@@ -127,7 +127,7 @@ export default function DashboardPage() {
               onClick={() => setIncludePoints(!includePoints)}
               className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-colors ${
                 includePoints
-                  ? 'bg-[rgba(245,158,11,0.08)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]'
+                  ? 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]'
                   : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)]'
               }`}
             >
@@ -200,7 +200,8 @@ export default function DashboardPage() {
                 <div>没有即将过期的优惠券</div>
               </div>
             ) : (
-              <div className="max-h-96 space-y-3 overflow-y-auto">
+              // 桌面端多列铺开，填满全宽卡片；移动端保持单列
+              <div className="grid max-h-96 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
                 {expiringCoupons.map((coupon) => {
                   const days = daysUntil(coupon.expiry_date);
                   const urgency = getUrgencyLevel(coupon.expiry_date);

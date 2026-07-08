@@ -236,7 +236,7 @@ export default function SuppliesPage() {
                           </Link>
                           <button
                             onClick={() => handleDelete(supply.id)}
-                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-md)] transition-all"
+                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-all"
                             title="删除"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

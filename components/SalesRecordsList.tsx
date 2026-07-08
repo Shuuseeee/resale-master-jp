@@ -141,7 +141,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
               </h3>
 
               {!record.sale_date && (
-                <div className="bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] rounded-[var(--radius-md)] p-3">
+                <div className="bg-[var(--color-warning-subtle)] border border-[var(--color-warning-border)] rounded-[var(--radius-md)] p-3">
                   <p className="text-sm text-[var(--color-warning)]">
                     此销售记录缺少销售日期，请补充以确保税务申报准确。
                   </p>

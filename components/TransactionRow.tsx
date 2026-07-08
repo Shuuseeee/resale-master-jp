@@ -84,15 +84,15 @@ const TransactionRow = memo(function TransactionRow({
   const getStatusBadge = () => {
     switch (transaction.status) {
       case 'pending':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.12)] rounded whitespace-nowrap">未到货</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">未到货</span>;
       case 'in_stock':
         return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-subtle)] rounded whitespace-nowrap">库存{remainingQty}</span>;
       case 'awaiting_payment':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[rgba(245,158,11,0.12)] rounded whitespace-nowrap">待入账</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">待入账</span>;
       case 'sold':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[rgba(16,185,129,0.12)] rounded whitespace-nowrap">已完成</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[var(--color-primary-subtle)] rounded whitespace-nowrap">已完成</span>;
       case 'returned':
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-danger)] bg-[rgba(239,68,68,0.12)] rounded whitespace-nowrap">已退货</span>;
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-danger)] bg-[var(--color-danger-subtle)] rounded whitespace-nowrap">已退货</span>;
       default:
         return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">-</span>;
     }
@@ -319,7 +319,7 @@ const TransactionRow = memo(function TransactionRow({
             <button
               onClick={(e) => { e.stopPropagation(); onQuickReturn?.(transaction.id); }}
               disabled={transaction.quantity_in_stock <= 0}
-              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-warning)] hover:bg-[rgba(245,158,11,0.12)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-warning)] hover:bg-[var(--color-warning-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
             >
               退货
             </button>
@@ -328,7 +328,7 @@ const TransactionRow = memo(function TransactionRow({
                 e.stopPropagation();
                 onDelete(transaction.id);
               }}
-              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.12)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+              className="flex-1 px-1 py-0.5 text-xs text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
             >
               删除
             </button>
@@ -343,7 +343,7 @@ const TransactionRow = memo(function TransactionRow({
     <tr
       onClick={handleRowClick}
       className={`border-b border-[var(--color-border)] text-sm transition-colors hover:bg-[var(--color-bg-subtle)] ${
-        isGroupChild ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-bg-subtle)]/70' : ''
+        isGroupChild ? 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-bg-subtle)]' : ''
       } ${
         compareMode
           ? isSelected

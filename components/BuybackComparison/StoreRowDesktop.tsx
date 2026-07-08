@@ -16,7 +16,7 @@ export default function StoreRowDesktop({ row }: { row: StoreRow }) {
             {row.storeName}
           </span>
           {row.missingCount > 0 && (
-            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-1.5 py-0.5 text-[10px] text-[var(--color-warning)]" title={`${row.missingCount}种 / ${row.missingQty}个商品无价格数据`}>
+            <span className="rounded-full bg-[var(--color-warning-subtle)] px-1.5 py-0.5 text-[10px] text-[var(--color-warning)]" title={`${row.missingCount}种 / ${row.missingQty}个商品无价格数据`}>
               {row.missingQty}个无报价
             </span>
           )}

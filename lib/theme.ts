@@ -50,7 +50,7 @@ export const badge = {
   error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-danger-subtle)] text-[var(--color-danger)]',
   info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-info-subtle)] text-[var(--color-info)]',
   neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]',
-  awaiting: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-600 dark:text-purple-400',
+  awaiting: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-accent-subtle)] text-[var(--color-accent)]',
 };
 
 /**

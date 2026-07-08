@@ -45,7 +45,7 @@ function formatRelativeTime(dateStr: string): string {
 
 const typeIconConfig: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
   coupon_alert: {
-    bg: 'bg-[rgba(59,130,246,0.12)]',
+    bg: 'bg-[var(--color-info-subtle)]',
     color: 'text-[var(--color-info)]',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,8 +63,8 @@ const typeIconConfig: Record<string, { bg: string; color: string; icon: React.Re
     ),
   },
   monthly_report: {
-    bg: 'bg-purple-500/15',
-    color: 'text-purple-600',
+    bg: 'bg-[var(--color-accent-subtle)]',
+    color: 'text-[var(--color-accent)]',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -230,7 +230,8 @@ export default function NotificationsPage() {
   return (
     <PullToRefresh onRefresh={loadNotifications}>
     <div className={layout.page}>
-      <div className={layout.container}>
+      {/* 通知为单列阅读流：桌面限宽，避免通知行拉满全屏 */}
+      <div className="mx-auto max-w-3xl px-4 py-6 lg:px-6">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className={heading.h1}>通知</h1>
@@ -252,12 +253,12 @@ export default function NotificationsPage() {
 
         {/* Dev-only: test push panel */}
         {process.env.NODE_ENV === 'development' && subscribed && (
-          <div className="mb-4 rounded-[var(--radius-lg)] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3">
+          <div className="mb-4 rounded-[var(--radius-lg)] border border-[var(--color-warning-border)] bg-[var(--color-warning-subtle)] p-3">
             <div className="mb-2 flex items-center gap-2">
               <span className="text-xs font-bold text-[var(--color-warning)]">调试模式</span>
               <button
                 onClick={sendTestPush}
-                className="rounded-[var(--radius-md)] bg-[var(--color-warning)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-amber-600"
+                className="rounded-[var(--radius-md)] bg-[var(--color-warning)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-[var(--color-warning-hover)]"
               >
                 发送测试推送
               </button>
@@ -321,8 +322,8 @@ export default function NotificationsPage() {
                             onClick={() => { if (!n.read) markReadOptimistic(n.id); }}
                             className={`flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] transition-colors border ${
                               n.read
-                                ? 'border-[var(--color-border)] hover:border-[var(--color-primary)]/30'
-                                : 'border-l-4 border-l-[var(--color-primary)] border-[var(--color-border)] hover:border-[var(--color-primary)]/30'
+                                ? 'border-[var(--color-border)] hover:border-[var(--color-primary-border)]'
+                                : 'border-l-4 border-l-[var(--color-primary)] border-[var(--color-border)] hover:border-[var(--color-primary-border)]'
                             }`}
                           >
                             {/* Type icon */}
@@ -347,7 +348,7 @@ export default function NotificationsPage() {
                           {/* Delete button */}
                           <button
                             onClick={(e) => deleteNotification(n.id, e)}
-                            className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-text-muted)] opacity-60 transition-colors hover:bg-[rgba(239,68,68,0.1)] hover:text-[var(--color-danger)] hover:opacity-100 active:text-[var(--color-danger)]"
+                            className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-text-muted)] opacity-60 transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger)] hover:opacity-100 active:text-[var(--color-danger)]"
                             aria-label="删除"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +390,7 @@ export default function NotificationsPage() {
                   permission === 'denied'
                     ? 'cursor-not-allowed border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]'
                     : subscribed
-                    ? 'border-[var(--color-primary)]/30 bg-[var(--color-primary-light)] text-[var(--color-primary)]'
+                    ? 'border-[var(--color-primary-border)] bg-[var(--color-primary-light)] text-[var(--color-primary)]'
                     : 'border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]'
                 }`}
               >

@@ -213,7 +213,7 @@ function AddTransactionPageContent() {
 
           {/* Submit error */}
           {form.errors.submit && (
-            <div className="p-4 rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)]">
+            <div className="p-4 rounded-[var(--radius-lg)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)]">
               <p className="text-sm text-[var(--color-danger)]">{form.errors.submit}</p>
             </div>
           )}

@@ -169,14 +169,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary)]/20 bg-[var(--color-primary-light)] p-4">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] p-4">
         <p className="text-sm text-[var(--color-primary)]">
           当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
         </p>
       </div>
 
       {successCount > 0 && (
-        <div className="rounded-[var(--radius-lg)] border border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.08)] p-4">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-subtle)] p-4">
           <p className="text-sm text-[var(--color-primary)]">
             已保存 {successCount} 条销售记录。销售平台、单价、费用保留了上次的输入。
           </p>
@@ -184,7 +184,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       )}
 
       {error && (
-        <div className="rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-4">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] p-4">
           <p className="text-sm text-[var(--color-danger)]">{error}</p>
         </div>
       )}

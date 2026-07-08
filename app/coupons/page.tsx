@@ -303,10 +303,10 @@ export default function CouponsPage() {
                       coupon.is_used
                         ? "bg-[var(--color-bg-subtle)] border-[var(--color-border)] opacity-60"
                         : isExpired
-                          ? "bg-[rgba(239,68,68,0.08)] border-[rgba(239,68,68,0.3)]"
+                          ? "bg-[var(--color-danger-subtle)] border-[var(--color-danger-border)]"
                           : isExpiringSoon
-                            ? "bg-[rgba(245,158,11,0.08)] border-[rgba(245,158,11,0.3)]"
-                            : "bg-[var(--color-primary-light)] border-[var(--color-primary)]/30"
+                            ? "bg-[var(--color-warning-subtle)] border-[var(--color-warning-border)]"
+                            : "bg-[var(--color-primary-light)] border-[var(--color-primary-border)]"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">

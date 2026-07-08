@@ -109,7 +109,7 @@ export default function Modal({
           bg-[var(--color-bg-elevated)]
           border border-[var(--color-border)]
           rounded-t-[20px] md:rounded-[16px]
-          shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)]
+          shadow-[var(--shadow-modal)]
           overflow-hidden
           animate-slide-up md:animate-fade-in
         `}

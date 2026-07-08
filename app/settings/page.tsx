@@ -120,7 +120,8 @@ export default function SettingsPage() {
 
   return (
     <div className={layout.page}>
-      <div className={layout.container}>
+      {/* 设置内容天然偏窄：限宽 + 桌面双栏，避免全宽卡片大量留白 */}
+      <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className={heading.h1}>设置</h1>
@@ -134,7 +135,7 @@ export default function SettingsPage() {
           </Link>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
           <section className={card.primary + ' p-6'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -239,7 +240,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className={card.primary + ' p-6'}>
+          <section className={card.primary + ' p-6 lg:col-span-2'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
               <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
               CSV 导入
@@ -274,8 +275,8 @@ export default function SettingsPage() {
               {importResult && (
                 <div className={`rounded-[var(--radius-md)] border p-4 ${
                   importResult.errors.length > 0
-                    ? 'bg-[rgba(245,158,11,0.08)] border-[rgba(245,158,11,0.3)]'
-                    : 'bg-[var(--color-primary-light)] border-[var(--color-primary)]/30'
+                    ? 'bg-[var(--color-warning-subtle)] border-[var(--color-warning-border)]'
+                    : 'bg-[var(--color-primary-light)] border-[var(--color-primary-border)]'
                 }`}>
                   <div className="mb-2 flex flex-wrap items-center gap-4">
                     <span className="text-sm font-semibold text-[var(--color-success)]">成功: {importResult.success} 件</span>

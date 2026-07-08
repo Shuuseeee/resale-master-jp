@@ -131,15 +131,15 @@ const TransactionCard = memo(function TransactionCard({
   const getStatusBadge = () => {
     switch (transaction.status) {
       case 'pending':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)]">未到货</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">未到货</span>;
       case 'in_stock':
         return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-subtle)] text-[var(--color-primary)]">库存{remainingQty}</span>;
       case 'awaiting_payment':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)]">待入账</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">待入账</span>;
       case 'sold':
         return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-subtle)] text-[var(--color-success)]">已完成</span>;
       case 'returned':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]">已退货</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-danger-subtle)] text-[var(--color-danger)]">已退货</span>;
       default:
         return null;
     }
@@ -346,7 +346,7 @@ const TransactionCard = memo(function TransactionCard({
             <button
               onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickReturn?.(transaction.id); }}
               disabled={hasSoldOut}
-              className="px-2 py-1 text-xs font-semibold text-[var(--color-warning)] hover:bg-[rgba(245,158,11,0.12)] rounded-[var(--radius-sm)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              className="px-2 py-1 text-xs font-semibold text-[var(--color-warning)] hover:bg-[var(--color-warning-subtle)] rounded-[var(--radius-sm)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
               退货
             </button>
@@ -363,7 +363,7 @@ const TransactionCard = memo(function TransactionCard({
               triggerHaptic('medium');
               onDelete(transaction.id);
             }}
-            className="px-2 py-1 text-xs font-semibold text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.1)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
+            className="px-2 py-1 text-xs font-semibold text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
           >
             删除
           </button>

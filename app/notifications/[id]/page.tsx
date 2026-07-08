@@ -162,7 +162,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
             </div>
           </div>
           {d.total_count != null && (
-            <div className="mt-3 inline-flex items-center gap-1.5 bg-[var(--color-primary-light)] text-[var(--color-primary)] text-sm font-medium px-3 py-1.5 rounded-[var(--radius-md)] border border-[rgba(16,185,129,0.25)]">
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-[var(--color-primary-light)] text-[var(--color-primary)] text-sm font-medium px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-primary-border)]">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
               </svg>
@@ -184,7 +184,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
                 </div>
                 <div className="flex gap-2 mt-2">
                   <span className="text-xs bg-[var(--color-info)] text-white px-2 py-0.5 rounded-full">{d.weather.precip}</span>
-                  <span className="text-xs bg-[rgba(59,130,246,0.1)] text-[var(--color-info)] px-2 py-0.5 rounded-full">{d.weather.wind}</span>
+                  <span className="text-xs bg-[var(--color-info-subtle)] text-[var(--color-info)] px-2 py-0.5 rounded-full">{d.weather.wind}</span>
                 </div>
               </div>
               <div className="text-right">
@@ -223,7 +223,7 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
               <h2 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wide">明日生效</h2>
             </div>
             <div className="space-y-3">
-              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-l-[rgba(16,185,129,0.3)]" labelClass="bg-[var(--color-primary)] text-white" labelText="明日开始" />)}
+              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-l-[var(--color-primary-border)]" labelClass="bg-[var(--color-primary)] text-white" labelText="明日开始" />)}
             </div>
           </section>
         )}

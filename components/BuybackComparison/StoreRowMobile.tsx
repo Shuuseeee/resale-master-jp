@@ -9,7 +9,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
   const isBest = row.rank === 1;
   return (
     <div className={`${card.primary} p-4 ${isBest
-      ? 'border-[var(--color-primary)]/20 bg-[var(--color-primary-light)]'
+      ? 'border-[var(--color-primary-border)] bg-[var(--color-primary-light)]'
       : ''
     }`}>
       <div className="flex items-center justify-between mb-3">
@@ -17,7 +17,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
           <RankBadge rank={row.rank} />
           <span className="font-semibold text-[var(--color-text)]">{row.storeName}</span>
           {row.missingCount > 0 && (
-            <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-1.5 py-0.5 text-xs text-[var(--color-warning)]">
+            <span className="rounded-full bg-[var(--color-warning-subtle)] px-1.5 py-0.5 text-xs text-[var(--color-warning)]">
               {row.missingQty}个无报价
             </span>
           )}
@@ -60,7 +60,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
       </div>
 
       {row.extraIfBest > 0 && (
-        <div className="mt-3 rounded-[var(--radius-md)] bg-[rgba(245,158,11,0.1)] px-3 py-2 text-xs text-[var(--color-warning)]">
+        <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-warning-subtle)] px-3 py-2 text-xs text-[var(--color-warning)]">
           单品最高分开卖可多得 +{formatCurrency(row.extraIfBest)}
         </div>
       )}

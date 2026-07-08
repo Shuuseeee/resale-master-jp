@@ -201,7 +201,7 @@ export default function MultiItemSaleForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* 错误提示 */}
       {error && (
-        <div className="rounded-[var(--radius-lg)] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-4">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] p-4">
           <p className="text-sm text-[var(--color-danger)]">{error}</p>
         </div>
       )}
@@ -398,7 +398,7 @@ export default function MultiItemSaleForm({
       </div>
 
       {/* ── 订单合计 ── */}
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary)]/20 bg-[var(--color-primary-light)] p-4">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] p-4">
         <p className="mb-2 text-xs font-semibold text-[var(--color-primary)] uppercase tracking-wider">订单合计</p>
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
