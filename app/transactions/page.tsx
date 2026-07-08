@@ -11,9 +11,11 @@ import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
-import TransactionRow from '@/components/TransactionRow';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
-import TransactionGroupRow from '@/components/TransactionGroupRow';
+import { DataTable, SELECT_COLUMN_ID } from '@/components/DataTable';
+import { buildTransactionColumns, type TxRowItem } from '@/components/transactions/tableColumns';
+import { columnPrefsToTableState } from '@/lib/table/columnPrefs';
+import type { Row } from '@tanstack/react-table';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
@@ -29,7 +31,7 @@ import CopyableJan from '@/components/CopyableJan';
 import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
 import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
 import { getColumnPreferences, saveColumnPreferences } from '@/lib/api/user-preferences';
-import { DEFAULT_COLUMNS, effectiveColumns, visibleColumnKeys, COLUMN_LABELS } from '@/lib/transactions/columns';
+import { DEFAULT_COLUMNS } from '@/lib/transactions/columns';
 import type { ColumnConfig } from '@/lib/transactions/columns';
 import TransactionColumnPicker from '@/components/TransactionColumnPicker';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
@@ -203,8 +205,6 @@ function TransactionsContent() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions.length, kaitorixEnabled]);
-
-  const visibleColumns = useMemo(() => visibleColumnKeys(columns), [columns]);
 
   const handleSaveColumns = useCallback(async () => {
     setColumns(pickerDraft);
@@ -644,14 +644,14 @@ function TransactionsContent() {
     });
   }, []);
 
-  const toggleSort = (field: SortField) => {
+  const toggleSort = useCallback((field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortOrder('desc');
     }
-  };
+  }, [sortField]);
 
   const deleteTransaction = useCallback((id: string) => {
     setDeleteModalId(id);
@@ -832,6 +832,83 @@ function TransactionsContent() {
       setToastMsg('入账已确认');
     }
   }, [queryClient]);
+
+  // ===== 桌面 DataTable 派生状态 =====
+  const onToggleDateSortMode = useCallback(
+    () => setDateSortMode(m => (m === 'purchase' ? 'sale' : 'purchase')), []);
+  const onToggleProfitSortMode = useCallback(
+    () => setProfitSortMode(m => (m === 'actual' ? 'expected' : 'actual')), []);
+
+  // displayItems（移动端沿用）→ 树形行模型（桌面 DataTable 用）
+  const rowItems = useMemo((): TxRowItem[] => displayItems.map(item =>
+    item.type === 'group'
+      ? {
+          kind: 'group' as const,
+          group: item.data,
+          children: item.data.transactions.map(tx => ({ kind: 'tx' as const, tx })),
+        }
+      : { kind: 'tx' as const, tx: item.data }
+  ), [displayItems]);
+
+  const tableColumns = useMemo(() => buildTransactionColumns({
+    compareMode,
+    dateSortMode,
+    profitSortMode,
+    sortField,
+    sortOrder,
+    selectedIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    buybackPrices,
+    purchasePlatforms,
+    getJanThumbnail,
+    toggleSort,
+    onToggleDateSortMode,
+    onToggleProfitSortMode,
+    toggleSelectAllVisible,
+    onSelectGroup: selectGroup,
+    onDelete: deleteTransaction,
+    onMarkArrived: handleMarkArrived,
+    onConfirmPayment: handleConfirmPayment,
+    onQuickSale: openQuickSale,
+    onQuickReturn: openQuickReturn,
+    onQuickEdit: openQuickEdit,
+    onQuickCopy: openQuickCopy,
+  }), [compareMode, dateSortMode, profitSortMode, sortField, sortOrder, selectedIds, allVisibleSelected, someVisibleSelected, buybackPrices, purchasePlatforms, getJanThumbnail, toggleSort, onToggleDateSortMode, onToggleProfitSortMode, toggleSelectAllVisible, selectGroup, deleteTransaction, handleMarkArrived, handleConfirmPayment, openQuickSale, openQuickReturn, openQuickEdit, openQuickCopy]);
+
+  // 列定制（ColumnConfig[]，Supabase 持久化格式不变）→ TanStack 列状态
+  const tableColumnState = useMemo(() => {
+    const s = columnPrefsToTableState(columns);
+    return {
+      columnVisibility: s.columnVisibility,
+      columnOrder: compareMode ? [SELECT_COLUMN_ID, ...s.columnOrder] : s.columnOrder,
+    };
+  }, [columns, compareMode]);
+
+  // expandedGroups(Set<janCode>) → TanStack ExpandedState（rowId = g:janCode）
+  const expandedRowState = useMemo(() => {
+    const rec: Record<string, boolean> = {};
+    expandedGroups.forEach(jan => { rec[`g:${jan}`] = true; });
+    return rec;
+  }, [expandedGroups]);
+
+  const handleDesktopRowClick = useCallback((row: Row<TxRowItem>) => {
+    if (row.original.kind === 'group') {
+      toggleGroupExpand(row.original.group.janCode);
+    } else if (compareMode) {
+      toggleSelect(row.original.tx.id);
+    }
+  }, [toggleGroupExpand, compareMode, toggleSelect]);
+
+  const desktopRowClass = useCallback((row: Row<TxRowItem>) => {
+    if (row.original.kind === 'group') {
+      return 'bg-[var(--color-primary-light)] hover:!bg-[var(--color-primary-subtle)] cursor-pointer';
+    }
+    if (!compareMode) return '';
+    return selectedIds.has(row.original.tx.id)
+      ? 'bg-[var(--color-primary-light)] cursor-pointer'
+      : 'cursor-pointer';
+  }, [compareMode, selectedIds]);
 
   if (loading) {
     return (
@@ -1321,145 +1398,21 @@ function TransactionsContent() {
               )}
             </div>
 
-            {/* 桌面端：表格 */}
+            {/* 桌面端：表格（共用 DataTable；排序/多选状态仍由 page 管理，见 tableColumns 工厂） */}
             <div className="hidden md:block">
-              <div className={card.primary + ' overflow-hidden'}>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-xs text-[var(--color-text-muted)] uppercase tracking-[0.04em]">
-                        {/* 多选模式：独立选择列，与列定制解耦 */}
-                        {compareMode && (
-                          <th key="select" className="w-10 pl-4 pr-1 py-3">
-                            <button
-                              type="button"
-                              onClick={toggleSelectAllVisible}
-                              aria-label="全选当前显示的记录"
-                              title="全选当前显示的记录"
-                              className="flex items-center"
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                allVisibleSelected
-                                  ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
-                                  : someVisibleSelected
-                                    ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
-                                    : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
-                              }`}>
-                                {allVisibleSelected && (
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                )}
-                                {someVisibleSelected && (
-                                  <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
-                                )}
-                              </div>
-                            </button>
-                          </th>
-                        )}
-                        {visibleColumns.map(key => {
-                          if (key === 'date') return (
-                            <th key="date" className="px-4 py-3 text-left font-semibold">
-                              <div className="flex items-center gap-1">
-                                <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
-                                  {dateSortMode === 'purchase' ? '进货日期' : '销售日期'}
-                                  {sortField === 'date' && (
-                                    <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </button>
-                                <button onClick={() => setDateSortMode(dateSortMode === 'purchase' ? 'sale' : 'purchase')} className="ml-2 px-1.5 py-0.5 text-[11px] bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors" title={dateSortMode === 'purchase' ? '切换为按售出日期' : '切换为按进货日期'}>{dateSortMode === 'purchase' ? '售出' : '进货'}</button>
-                              </div>
-                            </th>
-                          );
-                          if (key === 'price') return (
-                            <th key="price" className="px-4 py-3 text-left font-semibold">
-                              <div>进货单价</div>
-                              <div className="text-[10px] text-[var(--color-text-muted)] font-normal normal-case">(不含返点)</div>
-                            </th>
-                          );
-                          if (key === 'arrived') return <th key="arrived" className="px-2 py-3 text-center"></th>;
-                          if (key === 'profit') return (
-                            <th key="profit" className="px-4 py-3 text-right font-semibold">
-                              <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                                <button onClick={() => toggleSort('total_profit')} className="flex items-center gap-1 hover:text-[var(--color-text)] transition-colors">
-                                  {profitSortMode === 'actual' ? '利润' : '预估利润'}
-                                  {sortField === 'total_profit' && (
-                                    <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </button>
-                                <button onClick={() => setProfitSortMode(profitSortMode === 'actual' ? 'expected' : 'actual')} className="px-1 py-0.5 text-[10px] bg-[var(--color-bg-elevated)] rounded hover:text-[var(--color-primary)] transition-colors" title="切换利润类型">⇄</button>
-                              </div>
-                            </th>
-                          );
-                          if (key === 'buyback') return (
-                            <th key="buyback" className="px-4 py-3 text-right cursor-pointer hover:text-[var(--color-text)] transition-colors font-semibold" onClick={() => toggleSort('buyback_price')}>
-                              <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                                {COLUMN_LABELS.buyback}
-                                {sortField === 'buyback_price' && (
-                                  <svg className={`w-3.5 h-3.5 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                )}
-                              </div>
-                            </th>
-                          );
-                          if (key === 'actions') return <th key="actions" className="px-2 py-3 text-center font-semibold">{COLUMN_LABELS.actions}</th>;
-                          return <th key={key} className="px-4 py-3 text-left font-semibold">{COLUMN_LABELS[key]}</th>;
-                        })}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--color-border)]">
-                      {displayItems.map((item) =>
-                        item.type === 'group' ? (
-                          <TransactionGroupRow
-                            key={item.data.janCode}
-                            group={item.data}
-                            isExpanded={expandedGroups.has(item.data.janCode)}
-                            onToggle={() => toggleGroupExpand(item.data.janCode)}
-                            dateSortMode={dateSortMode}
-                            onDelete={deleteTransaction}
-                            onMarkArrived={handleMarkArrived}
-                            onConfirmPayment={handleConfirmPayment}
-                            onQuickSale={openQuickSale}
-                            onQuickReturn={openQuickReturn}
-                            onQuickEdit={openQuickEdit}
-                            onQuickCopy={openQuickCopy}
-                            buybackPrices={buybackPrices}
-                            purchasePlatforms={purchasePlatforms}
-                            compareMode={compareMode}
-                            selectedIds={selectedIds}
-                            onToggleSelect={toggleSelect}
-                            onSelectGroup={selectGroup}
-                            visibleColumns={visibleColumns}
-                          />
-                        ) : (
-                          <TransactionRow
-                            key={item.data.id}
-                            transaction={item.data}
-                            dateSortMode={dateSortMode}
-                            onDelete={deleteTransaction}
-                            onMarkArrived={handleMarkArrived}
-                            onConfirmPayment={handleConfirmPayment}
-                            onQuickSale={openQuickSale}
-                            onQuickReturn={openQuickReturn}
-                            onQuickEdit={openQuickEdit}
-                            onQuickCopy={openQuickCopy}
-                            buybackInfo={buybackPrices.get(item.data.id)}
-                            purchasePlatforms={purchasePlatforms}
-                            compareMode={compareMode}
-                            isSelected={selectedIds.has(item.data.id)}
-                            onToggleSelect={toggleSelect}
-                            visibleColumns={visibleColumns}
-                            thumbnailUrl={getJanThumbnail(item.data.jan_code)}
-                          />
-                        )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <DataTable<TxRowItem>
+                data={rowItems}
+                columns={tableColumns}
+                getRowId={r => (r.kind === 'group' ? `g:${r.group.janCode}` : r.tx.id)}
+                manualSorting
+                columnVisibility={tableColumnState.columnVisibility}
+                columnOrder={tableColumnState.columnOrder}
+                getSubRows={r => (r.kind === 'group' ? r.children : undefined)}
+                expanded={expandedRowState}
+                onRowClick={handleDesktopRowClick}
+                rowClassName={desktopRowClass}
+                mobile="none"
+              />
             </div>
           </>
         ))}
