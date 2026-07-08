@@ -1,13 +1,16 @@
 // app/supplies/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Pencil, Trash2 } from 'lucide-react';
 import { getSuppliesCosts, deleteSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import { layout, heading, card, button, badge } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
+import { DataTable } from '@/components/DataTable';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -16,6 +19,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   '标签打印': '标签打印',
   '其他': '其他',
 };
+
+const columnHelper = createColumnHelper<SuppliesCost>();
 
 export default function SuppliesPage() {
   const [supplies, setSupplies] = useState<SuppliesCost[]>([]);
@@ -44,18 +49,74 @@ export default function SuppliesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('确定要删除这条耗材记录吗？')) {
       return;
     }
 
     const success = await deleteSuppliesCost(id);
     if (success) {
-      setSupplies(supplies.filter(s => s.id !== id));
+      setSupplies(prev => prev.filter(s => s.id !== id));
     } else {
       alert('删除失败，请重试');
     }
-  };
+  }, []);
+
+  const columns = useMemo(() => [
+    columnHelper.accessor('purchase_date', {
+      header: '日期',
+      cell: info => parseDateFromLocal(info.getValue())?.toLocaleDateString('zh-CN') ?? info.getValue(),
+      meta: { tdClassName: 'whitespace-nowrap', card: { slot: 'field', label: '日期' } },
+    }),
+    columnHelper.accessor('category', {
+      header: '分类',
+      enableSorting: false,
+      cell: info => (
+        <span className={badge.info}>
+          {CATEGORY_LABELS[info.getValue()] || info.getValue()}
+        </span>
+      ),
+      meta: { card: { slot: 'badge' } },
+    }),
+    columnHelper.accessor('description', {
+      header: '描述',
+      enableSorting: false,
+      cell: info => info.getValue() || '-',
+      meta: { card: { slot: 'title' } },
+    }),
+    columnHelper.accessor('amount', {
+      header: '金额',
+      cell: info => formatCurrency(info.getValue()),
+      meta: {
+        align: 'right',
+        tdClassName: 'font-mono font-semibold whitespace-nowrap',
+        card: { slot: 'field', label: '金额' },
+      },
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: '操作',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          <Link
+            href={`/supplies/${row.original.id}/edit`}
+            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-[var(--radius-md)] transition-all"
+            title="编辑"
+          >
+            <Pencil className="w-5 h-5" />
+          </Link>
+          <button
+            onClick={() => handleDelete(row.original.id)}
+            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-all"
+            title="删除"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      ),
+      meta: { align: 'right', card: { slot: 'actions' } },
+    }),
+  ], [handleDelete]);
 
   const filteredSupplies = filter === 'all'
     ? supplies
@@ -170,88 +231,27 @@ export default function SuppliesPage() {
         </div>
 
         {/* 耗材列表 */}
-        <div className={card.primary + ' overflow-hidden'}>
-          {filteredSupplies.length === 0 ? (
-            <div className="p-12 text-center">
-              <svg className="w-16 h-16 text-[var(--color-text-muted)] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <p className="text-[var(--color-text-muted)] text-lg">暂无耗材记录</p>
-              <Link
-                href="/supplies/add"
-                className={button.primary + ' inline-block mt-4'}
-              >
-                添加第一条记录
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                      日期
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                      分类
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                      描述
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                      金额
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {filteredSupplies.map((supply) => (
-                    <tr key={supply.id} className="active:opacity-80 transition-colors">
-                      <td className="px-6 py-4 text-[var(--color-text)] whitespace-nowrap">
-                        {parseDateFromLocal(supply.purchase_date)?.toLocaleDateString('zh-CN') ?? supply.purchase_date}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={badge.info}>
-                          {CATEGORY_LABELS[supply.category] || supply.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-[var(--color-text)]">
-                        {supply.description || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-right text-[var(--color-text)] font-mono font-semibold">
-                        {formatCurrency(supply.amount)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/supplies/${supply.id}/edit`}
-                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-[var(--radius-md)] transition-all"
-                            title="编辑"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(supply.id)}
-                            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-all"
-                            title="删除"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {filteredSupplies.length === 0 ? (
+          <div className={card.primary + ' overflow-hidden p-12 text-center'}>
+            <svg className="w-16 h-16 text-[var(--color-text-muted)] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <p className="text-[var(--color-text-muted)] text-lg">暂无耗材记录</p>
+            <Link
+              href="/supplies/add"
+              className={button.primary + ' inline-block mt-4'}
+            >
+              添加第一条记录
+            </Link>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredSupplies}
+            columns={columns}
+            getRowId={s => s.id}
+            mobile="cards"
+          />
+        )}
 
         {/* 月度统计 */}
         {Object.keys(monthlyStats).length > 0 && (

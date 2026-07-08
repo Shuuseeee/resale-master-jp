@@ -110,6 +110,24 @@ export const empty = {
 };
 
 /**
+ * 表格样式 — 供 components/DataTable 使用的统一片段
+ * 对齐类（text-left 等）由 DataTable 按列 meta.align 动态附加，此处不写死
+ */
+export const table = {
+  wrapper: 'overflow-x-auto',
+  table: 'w-full border-collapse text-sm',
+  theadTr: 'border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]',
+  th: 'px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider whitespace-nowrap',
+  sortBtn: 'inline-flex items-center gap-1 hover:text-[var(--color-text)] transition-colors uppercase tracking-wider',
+  tbody: 'divide-y divide-[var(--color-border)]',
+  tr: 'transition-colors hover:bg-[var(--color-bg-subtle)]',
+  trSelected: 'bg-[var(--color-primary-light)]',
+  trSelectable: 'cursor-pointer',
+  trChild: 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-bg-subtle)]',
+  td: 'px-4 py-3 text-[var(--color-text)]',
+};
+
+/**
  * 提示消息样式 — 无 border，淡底色
  */
 export const alert = {
