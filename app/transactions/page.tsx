@@ -79,6 +79,10 @@ interface PaymentMethodBasic {
   name: string;
 }
 
+// 桌面 DataTable 的稳定函数 props（模块级，配合 DataTable 的 memo）
+const txRowId = (r: TxRowItem) => (r.kind === 'group' ? `g:${r.group.janCode}` : r.tx.id);
+const txSubRows = (r: TxRowItem) => (r.kind === 'group' ? r.children : undefined);
+
 function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1403,11 +1407,11 @@ function TransactionsContent() {
               <DataTable<TxRowItem>
                 data={rowItems}
                 columns={tableColumns}
-                getRowId={r => (r.kind === 'group' ? `g:${r.group.janCode}` : r.tx.id)}
+                getRowId={txRowId}
                 manualSorting
                 columnVisibility={tableColumnState.columnVisibility}
                 columnOrder={tableColumnState.columnOrder}
-                getSubRows={r => (r.kind === 'group' ? r.children : undefined)}
+                getSubRows={txSubRows}
                 expanded={expandedRowState}
                 onRowClick={handleDesktopRowClick}
                 rowClassName={desktopRowClass}

@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useMemo, type MouseEvent } from 'react';
+import { memo, useMemo, type MouseEvent } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -24,7 +24,7 @@ import {
   type DataTableProps,
 } from './types';
 
-export function DataTable<TData>({
+function DataTableImpl<TData>({
   data,
   columns,
   getRowId,
@@ -177,3 +177,7 @@ export function DataTable<TData>({
 
   return desktopTable;
 }
+
+// memo 并保留泛型签名：props 未变的页面重渲染（如搜索输入 debounce 生效前）跳过整表渲染，
+// 替代迁移前 TransactionRow 的行级 memo。调用方需保证 getRowId/getSubRows 等函数 props 引用稳定
+export const DataTable = memo(DataTableImpl) as typeof DataTableImpl;
