@@ -9,9 +9,13 @@ const walk = (d) =>
     const p = path.join(d, e.name);
     if (e.isDirectory()) {
       if (!['node_modules', '.next', 'sw'].includes(e.name)) walk(p);
-    } else if (/\.(tsx|ts)$/.test(e.name) && !/\.d\.ts$/.test(e.name)) files.push(p);
+    } else if (
+      (/\.(tsx|ts)$/.test(e.name) && !/\.d\.ts$/.test(e.name)) ||
+      // CSS 也纳入扫描；globals.css 是 token 定义源，允许 hex/rgba
+      (/\.css$/.test(e.name) && e.name !== 'globals.css')
+    ) files.push(p);
   });
-['app', 'components', 'lib'].forEach(walk);
+['app', 'components', 'lib', 'assets'].forEach(walk);
 
 // 所有 Tailwind 调色板色名（palette 类一律禁止，色值应走 var(--color-*) token）
 const HUES =
@@ -21,6 +25,18 @@ const rows = files
   .map((f) => {
     const s = fs.readFileSync(f, 'utf8');
     const count = (re) => (s.match(re) || []).length;
+    // CSS 文件：直接检测裸 hex / rgb(a)，颜色应一律引用 var(--color-*)
+    if (f.endsWith('.css')) {
+      return {
+        f,
+        nu: count(/var\(--(color|radius|shadow)/g),
+        ap: 0, gr: 0, dk: 0,
+        hx: count(/#[0-9a-fA-F]{3,8}\b/g),
+        rg: count(/rgba?\(/g),
+        am: 0,
+        th: ' ',
+      };
+    }
     return {
       f,
       nu: count(/var\(--(color|radius|shadow)/g), // snutils token

@@ -1,4 +1,4 @@
-/* React DatePicker カスタムスタイル */
+/* React DatePicker カスタムスタイル — 颜色一律走 snutils token，自动适配深浅色 */
 
 /* ラッパーとコンテナ */
 .react-datepicker-wrapper,
@@ -10,9 +10,11 @@
 /* カレンダー本体 */
 .react-datepicker {
   font-family: inherit;
-  border: 1px solid rgb(209 213 219);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* 三角形を非表示 */
@@ -22,10 +24,17 @@
 
 /* ヘッダー部分 */
 .react-datepicker__header {
-  background-color: #fff;
-  border-bottom: 1px solid #fff;
+  background-color: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-bg-elevated);
   border-radius: 0.75rem 0.75rem 0 0;
   padding-top: 8px;
+}
+
+/* 月タイトル・時刻ヘッダー */
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: var(--color-text);
 }
 
 /* ナビゲーション */
@@ -35,19 +44,19 @@
 
 /* 曜日 */
 .react-datepicker__day-name {
-  color: rgba(0, 0, 0, 0.54);
+  color: var(--color-text-muted);
 }
 
 /* 日付 */
 .react-datepicker__day {
   border-radius: 0.5rem;
-  color: rgb(55 65 81);
+  color: var(--color-text);
 }
 
 /* 日付ホバー時 */
 .react-datepicker__day:hover {
-  background: #2d8b8b !important;
-  color: #fafafa !important;
+  background: var(--color-primary) !important;
+  color: var(--color-text-inverted) !important;
   border-radius: 0.5rem;
 }
 
@@ -57,8 +66,8 @@
 .react-datepicker__quarter-text--keyboard-selected,
 .react-datepicker__year-text--keyboard-selected {
   border-radius: 0.5rem;
-  background-color: #fff !important;
-  color: rgb(55 65 81) !important;
+  background-color: var(--color-bg-elevated) !important;
+  color: var(--color-text) !important;
 }
 
 /* 選択された日付 */
@@ -73,9 +82,9 @@
   .react-datepicker__time-box
   ul.react-datepicker__time-list
   li.react-datepicker__time-list-item--selected {
-  background: #2d8b8b !important;
+  background: var(--color-primary) !important;
   font-weight: normal;
-  color: #fafafa !important;
+  color: var(--color-text-inverted) !important;
   border-radius: 0.5rem;
 }
 
@@ -104,37 +113,37 @@
     .react-datepicker__quarter-text--in-range,
     .react-datepicker__year-text--in-range
   ) {
-  background-color: #a8dadc !important;
+  background-color: var(--color-primary-light) !important;
   border-radius: 0.5rem;
 }
 
 /* 今日の日付にボーダー */
 .react-datepicker__day--today {
   font-weight: bold;
-  border: 1px solid #2d8b8b;
+  border: 1px solid var(--color-primary);
 }
 
 /* 無効な日付 */
 .react-datepicker__day--disabled {
-  color: rgb(156 163 175) !important;
+  color: var(--color-text-muted) !important;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* ドロップダウン */
 .react-datepicker__month-dropdown,
 .react-datepicker__year-dropdown {
-  background-color: white;
-  border: 1px solid rgb(209 213 219);
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 0.5rem;
 }
 
 .react-datepicker__month-option,
 .react-datepicker__year-option {
-  color: rgb(55 65 81);
+  color: var(--color-text);
 }
 
 .react-datepicker__month-option:hover,
 .react-datepicker__year-option:hover {
-  background-color: #a8dadc;
+  background-color: var(--color-primary-light);
 }
-
