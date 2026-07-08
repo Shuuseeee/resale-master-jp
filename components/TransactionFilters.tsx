@@ -382,6 +382,10 @@ export default function TransactionFilters({
             清除
           </button>
         )}
+        {/* 最高报价店使用频率最高，固定在 chip 栏最前 */}
+        {hasBuybackData && (
+          <Chip label={filters.buybackStore || '最高报价店'} active={!!filters.buybackStore} onClick={() => setOpenSheet('buyback')} />
+        )}
         <Chip label={dateChipLabel} active={!!(filters.dateFrom || filters.dateTo)} onClick={() => setOpenSheet('date')} />
         <Chip label={statusChipLabel} active={filters.status.length > 0} onClick={() => setOpenSheet('status')} />
         {(purchasePlatforms || []).length > 0 && (
@@ -397,9 +401,6 @@ export default function TransactionFilters({
             active={!!filters.janCode || filters.excludeJanCodes.length > 0}
             onClick={() => { setJanSearch(''); setOpenSheet('jan'); }}
           />
-        )}
-        {hasBuybackData && (
-          <Chip label={filters.buybackStore || '最高报价店'} active={!!filters.buybackStore} onClick={() => setOpenSheet('buyback')} />
         )}
       </div>
 
