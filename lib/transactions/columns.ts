@@ -1,5 +1,5 @@
-// lib/transactions/columns.ts — 桌面表格列定义的唯一真相源
-// TransactionRow、TransactionGroupRow、thead 都依赖此处的顺序和 key
+// lib/transactions/columns.ts — 桌面表格列定制的唯一真相源（user_preferences 持久化格式）
+// components/transactions/tableColumns.tsx（列工厂）与 TransactionColumnPicker 都依赖此处的顺序和 key
 
 export type TransactionColumnKey =
   | 'date'
