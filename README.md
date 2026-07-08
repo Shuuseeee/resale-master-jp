@@ -186,7 +186,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 ## 设计系统
 
 - 所有颜色一律走 CSS 变量 token：基础值定义在 `app/globals.css`（含 `color-mix()` 派生色阶和图表色 `--chart-1..8`），配色主题覆盖块在 `app/themes.css`。
-- 主题为两个正交轴：深浅色（`data-theme`）+ 配色主题（`data-palette`，当前有翡翠绿 / Horizon 蓝）。配色在设置页切换，即点即生效，localStorage 秒开 + `user_preferences` 跨设备同步。
+- 主题为两个正交轴：深浅色（`data-theme`）+ 配色主题（`data-palette`，当前有翡翠绿 / Horizon 蓝 / Fluent 蓝）。配色在设置页切换，即点即生效，localStorage 秒开 + `user_preferences` 跨设备同步。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 `lucide-react`，避免新增手写 SVG。
 - 顶部桌面 banner、深浅色切换按钮、侧边栏和移动底部导航由 `components/Navigation.tsx` 统一控制。

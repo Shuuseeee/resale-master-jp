@@ -4,7 +4,7 @@
 // ⚠️ app/layout.tsx 的 theme-init 内联脚本中有一份 headerColor 精简副本
 //    （该脚本必须零依赖、先于 paint 执行），新增主题时需同步两处。
 
-export type PaletteId = 'emerald' | 'horizon';
+export type PaletteId = 'emerald' | 'horizon' | 'fluent';
 
 export const PALETTE_STORAGE_KEY = 'snutils-palette';
 export const DEFAULT_PALETTE: PaletteId = 'emerald';
@@ -33,6 +33,13 @@ export const PALETTES: PaletteMeta[] = [
     description: 'SAP Horizon 风格',
     headerColor: '#354a5f',
     preview: ['#0070f2', '#354a5f', '#f5f6f7'],
+  },
+  {
+    id: 'fluent',
+    label: 'Fluent 蓝',
+    description: 'Microsoft Fluent 风格',
+    headerColor: '#1b1a19',
+    preview: ['#0078d4', '#1b1a19', '#faf9f8'],
   },
 ];
 

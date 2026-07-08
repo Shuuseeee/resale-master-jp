@@ -96,3 +96,90 @@
   --color-border-light: rgba(255, 255, 255, 0.08);
   --color-primary-light: rgba(0, 112, 242, 0.15);
 }
+
+/* ============ Fluent 蓝 — Microsoft Fluent Design ============ */
+
+:root[data-palette='fluent'] {
+  /* Brand / Primary — Fluent communication blue */
+  --color-primary: #0078d4;
+  --color-primary-hover: #106ebe;
+  --color-primary-light: #eff6fc;
+  --color-primary-bright: #2b88d8;
+
+  --color-header: #1b1a19;
+
+  /* Backgrounds — Fluent neutral ramp */
+  --color-bg: #faf9f8;
+  --color-bg-subtle: #f3f2f1;
+
+  --color-text: #323130;
+  --color-text-muted: #605e5c;
+
+  --color-border: #edebe9;
+  --color-border-light: #f3f2f1;
+
+  /* Semantic — Fluent shared colors */
+  --color-success: #107c10;
+  --color-warning: #ffb900;
+  --color-warning-hover: #d29200;
+  --color-danger: #d13438;
+  --color-danger-hover: #a4262c;
+  --color-info: #0078d4;
+
+  --color-accent: #8764b8;
+
+  /* Fluent 圆角比基础值更锐利 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* 图表分类色 — Fluent shared colors 序列 */
+  --chart-1: #0078d4;
+  --chart-2: #107c10;
+  --chart-3: #ffb900;
+  --chart-4: #d13438;
+  --chart-5: #8764b8;
+  --chart-6: #038387;
+  --chart-7: #ca5010;
+  --chart-8: #c239b3;
+
+  /* Typography — 全系统字体，无需打包 */
+  --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans JP', 'Noto Sans CJK SC', Arial, sans-serif;
+  --font-mono: 'Cascadia Code', 'SF Mono', Monaco, Inconsolata, 'Fira Code', monospace;
+}
+
+/* Fluent dark — 系统深色（未显式选择深浅色时）
+ * 注意：Fluent 在 dark 下 primary 本身变亮，派生 token 自动跟随 */
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='fluent']:not([data-theme]) {
+    --color-bg: #1b1a19;
+    --color-bg-elevated: #292827;
+    --color-bg-subtle: #292827;
+    --color-bg-input: #201f1e;
+    --color-text: #f3f2f1;
+    --color-text-muted: #c8c6c4;
+    --color-accent: #b4a0ff;
+    --color-border: rgba(255, 255, 255, 0.15);
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-primary: #2b88d8;
+    --color-primary-hover: #3aa0f3;
+    --color-primary-light: rgba(0, 120, 212, 0.15);
+  }
+}
+
+/* Fluent dark — 显式深色 */
+:root[data-palette='fluent'][data-theme='dark'],
+:root[data-palette='fluent'].dark {
+  --color-bg: #1b1a19;
+  --color-bg-elevated: #292827;
+  --color-bg-subtle: #292827;
+  --color-bg-input: #201f1e;
+  --color-text: #f3f2f1;
+  --color-text-muted: #c8c6c4;
+  --color-accent: #b4a0ff;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-primary: #2b88d8;
+  --color-primary-hover: #3aa0f3;
+  --color-primary-light: rgba(0, 120, 212, 0.15);
+}

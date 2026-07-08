@@ -65,7 +65,7 @@ export default function RootLayout({
               if (palette && palette !== 'emerald') {
                 document.documentElement.setAttribute('data-palette', palette);
               }
-              var headerColors = { horizon: '#354a5f' };
+              var headerColors = { horizon: '#354a5f', fluent: '#1b1a19' };
               var meta = document.querySelector('meta[name="theme-color"]');
               if (meta) {
                 meta.setAttribute('content', headerColors[palette] || '#1b1b26');
