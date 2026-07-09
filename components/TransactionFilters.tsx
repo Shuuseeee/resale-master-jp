@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
+import Select from '@/components/Select';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 export interface FilterValues {
@@ -560,23 +561,14 @@ export default function TransactionFilters({
 
         {/* 最高报价店：与其他筛选器平级，加入同一行自动换行（买取数据加载后出现） */}
         {hasBuybackData && (
-          <div className="relative w-full sm:w-auto">
-            <select
-              value={filters.buybackStore}
-              onChange={(e) => updateFilter('buybackStore', e.target.value)}
-              className={inputClass + ' w-full sm:w-[160px]' + (filters.buybackStore ? ' pr-8' : '')}
-            >
-              <option value="">最高报价店</option>
-              {buybackStores.map(store => (
-                <option key={store} value={store}>{store}</option>
-              ))}
-            </select>
-            {filters.buybackStore && (
-              <button onClick={() => updateFilter('buybackStore', '')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" type="button">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            )}
-          </div>
+          <Select
+            value={filters.buybackStore}
+            onChange={(v) => updateFilter('buybackStore', v)}
+            options={buybackStores.map(store => ({ value: store, label: store }))}
+            placeholder="最高报价店"
+            clearable
+            className={inputClass + ' w-full sm:w-[160px]'}
+          />
         )}
 
       </div>
