@@ -35,7 +35,8 @@ export default function DatePicker({
   dateFormat = 'yyyy-MM-dd',
   showYearDropdown = true,
   showMonthDropdown = true,
-  dropdownMode = 'select',
+  // scroll 模式渲染主题化的自定义下拉（select 模式是无样式的原生 select）
+  dropdownMode = 'scroll',
   useNativeOnMobile = true, // 默认启用
 }: DatePickerProps) {
   const [isMobile, setIsMobile] = useState(false);
@@ -111,6 +112,8 @@ export default function DatePicker({
       showYearDropdown={showYearDropdown}
       showMonthDropdown={showMonthDropdown}
       dropdownMode={dropdownMode}
+      scrollableYearDropdown
+      yearDropdownItemNumber={15}
       className={className || input.base}
       wrapperClassName="w-full"
       calendarClassName="custom-datepicker"

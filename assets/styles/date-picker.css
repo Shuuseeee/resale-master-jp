@@ -130,20 +130,55 @@
   cursor: not-allowed;
 }
 
-/* ドロップダウン */
+/* ドロップダウン（scroll モード：テーマ化されたカスタムリスト） */
 .react-datepicker__month-dropdown,
 .react-datepicker__year-dropdown {
   background-color: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.react-datepicker__year-dropdown--scrollable {
+  height: 200px;
+  overflow-y: auto;
 }
 
 .react-datepicker__month-option,
 .react-datepicker__year-option {
   color: var(--color-text);
+  padding: 5px 0;
 }
 
 .react-datepicker__month-option:hover,
 .react-datepicker__year-option:hover {
   background-color: var(--color-primary-light);
+}
+
+/* 選択中の年月 */
+.react-datepicker__month-option--selected_month,
+.react-datepicker__year-option--selected_year {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.react-datepicker__month-option--selected,
+.react-datepicker__year-option--selected {
+  color: var(--color-primary);
+}
+
+/* ヘッダーの年月 read-view（クリックでドロップダウン展開） */
+.react-datepicker__month-read-view,
+.react-datepicker__year-read-view {
+  color: var(--color-text);
+}
+
+.react-datepicker__month-read-view--down-arrow,
+.react-datepicker__year-read-view--down-arrow {
+  border-color: var(--color-text-muted);
+  border-width: 2px 2px 0 0;
+  height: 7px;
+  width: 7px;
+  top: 3px;
 }
