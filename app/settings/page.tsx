@@ -285,7 +285,7 @@ export default function SettingsPage() {
                           </svg>
                         )}
                       </span>
-                      <span className="text-sm font-semibold">{store.name}</span>
+                      <span className={`text-sm ${isChecked ? 'font-medium' : 'font-normal'}`}>{store.name}</span>
                     </button>
                   );
                 })}
