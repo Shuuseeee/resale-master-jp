@@ -102,7 +102,7 @@ export function PurchaseInfoSection({
             <Select
               value={purchasePlatformId}
               onChange={(v) => onInputChange({ target: { name: 'purchase_platform_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
-              options={purchasePlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : ' （自定义）'}` }))}
+              options={purchasePlatforms.map((p) => ({ value: p.id, label: p.name }))}
               placeholder="请选择"
               clearable
               className="flex-1 sn-form-input"

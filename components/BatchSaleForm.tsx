@@ -277,7 +277,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
           <Select
             value={formData.selling_platform_id || ''}
             onChange={(v) => setFormData({ ...formData, selling_platform_id: v })}
-            options={sellingPlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : '（自定义）'}` }))}
+            options={sellingPlatforms.map((p) => ({ value: p.id, label: p.name }))}
             placeholder="请选择"
             clearable
             className={input.base + ' w-full'}

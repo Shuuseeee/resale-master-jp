@@ -247,7 +247,7 @@ export default function MultiItemSaleForm({
           <Select
             value={sellingPlatformId}
             onChange={setSellingPlatformId}
-            options={sellingPlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : '（自定义）'}` }))}
+            options={sellingPlatforms.map((p) => ({ value: p.id, label: p.name }))}
             placeholder="请选择"
             clearable
             className={input.base + ' w-full'}
