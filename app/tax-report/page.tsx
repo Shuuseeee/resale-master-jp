@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/tax-report';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { layout, heading, card, button, input } from '@/lib/theme';
+import Select from '@/components/Select';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -449,18 +450,13 @@ export default function TaxReportPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <select
-                value={selectedYear}
-                onChange={e => setSelectedYear(Number(e.target.value))}
+              <Select
+                value={String(selectedYear)}
+                onChange={v => setSelectedYear(Number(v))}
+                options={availableYears.map(year => ({ value: String(year), label: `${year}年` }))}
                 className={input.base + ' w-full sm:w-32'}
                 disabled={loading}
-              >
-                {availableYears.map(year => (
-                  <option key={year} value={year}>
-                    {year}年
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
         </div>

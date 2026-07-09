@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentMethod } from '@/types/database.types';
 import { badge, button, card, heading, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -151,15 +152,13 @@ export default function PaymentMethodsPage() {
                   </div>
                   <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3">
                     <div className="text-xs text-[var(--color-text-muted)]">还款周期</div>
-                    <select
+                    <Select
                       value={method.payment_same_month ? 'same' : 'next'}
-                      onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
+                      onChange={(v) => updatePaymentSameMonth(method.id, v === 'same')}
+                      options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
                       disabled={saving === method.id || !method.closing_day || !method.payment_day}
                       className={`${selectClass} mt-1 w-full py-1.5 text-xs`}
-                    >
-                      <option value="next">次月还款</option>
-                      <option value="same">当月还款</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
@@ -192,15 +191,13 @@ export default function PaymentMethodsPage() {
                       <td className="px-5 py-4 text-center text-sm text-[var(--color-text)]">{method.closing_day ? `${method.closing_day} 日` : '-'}</td>
                       <td className="px-5 py-4 text-center text-sm text-[var(--color-text)]">{method.payment_day ? `${method.payment_day} 日` : '-'}</td>
                       <td className="px-5 py-4 text-center">
-                        <select
+                        <Select
                           value={method.payment_same_month ? 'same' : 'next'}
-                          onChange={(e) => updatePaymentSameMonth(method.id, e.target.value === 'same')}
+                          onChange={(v) => updatePaymentSameMonth(method.id, v === 'same')}
+                          options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
                           disabled={saving === method.id || !method.closing_day || !method.payment_day}
-                          className={selectClass}
-                        >
-                          <option value="next">次月还款</option>
-                          <option value="same">当月还款</option>
-                        </select>
+                          className={`${selectClass} mx-auto w-[128px]`}
+                        />
                         {saving === method.id && <div className="mt-1 text-xs text-[var(--color-primary)]">保存中...</div>}
                       </td>
                       <td className="px-5 py-4 text-center text-sm font-semibold text-[var(--color-primary)]">

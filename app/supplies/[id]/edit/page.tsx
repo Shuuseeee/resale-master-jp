@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { SuppliesCostFormData } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -149,9 +150,12 @@ export default function EditSupplyPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="sn-form-label">耗材分类 <span className="text-[var(--color-danger)]">*</span></label>
-                <select name="category" value={formData.category} onChange={handleInputChange} className={field}>
-                  {CATEGORY_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
+                <Select
+                  value={formData.category}
+                  onChange={v => handleInputChange({ target: { name: 'category', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
+                  options={CATEGORY_OPTIONS}
+                  className={field}
+                />
                 {errors.category && <p className="sn-form-error">{errors.category}</p>}
               </div>
 

@@ -7,6 +7,7 @@ import { CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 import type { Transaction } from '@/types/database.types';
 import { isKaitorixPriceStale } from '@/lib/kaitorix-config';
 import {
@@ -367,20 +368,30 @@ function KaitorixPricesContent() {
             placeholder="搜索商品名或 JAN"
             className={input.base}
           />
-          <select value={filterMode} onChange={e => setFilterMode(e.target.value as FilterMode)} className={input.base}>
-            <option value="all">全部库存 JAN</option>
-            <option value="missing">未获取价格</option>
-            <option value="stale">缓存过旧</option>
-            <option value="profitable">有利润</option>
-            <option value="loss">亏损</option>
-          </select>
-          <select value={sortMode} onChange={e => setSortMode(e.target.value as SortMode)} className={input.base}>
-            <option value="stale">缓存最旧优先</option>
-            <option value="expected_profit">预估利润最高</option>
-            <option value="stock_value">库存金额最高</option>
-            <option value="buyback_price">最高买取价</option>
-            <option value="name">商品名</option>
-          </select>
+          <Select
+            value={filterMode}
+            onChange={v => setFilterMode(v as FilterMode)}
+            options={[
+              { value: 'all', label: '全部库存 JAN' },
+              { value: 'missing', label: '未获取价格' },
+              { value: 'stale', label: '缓存过旧' },
+              { value: 'profitable', label: '有利润' },
+              { value: 'loss', label: '亏损' },
+            ]}
+            className={input.base + ' lg:min-w-[150px]'}
+          />
+          <Select
+            value={sortMode}
+            onChange={v => setSortMode(v as SortMode)}
+            options={[
+              { value: 'stale', label: '缓存最旧优先' },
+              { value: 'expected_profit', label: '预估利润最高' },
+              { value: 'stock_value', label: '库存金额最高' },
+              { value: 'buyback_price', label: '最高买取价' },
+              { value: 'name', label: '商品名' },
+            ]}
+            className={input.base + ' lg:min-w-[160px]'}
+          />
         </div>
 
         <div className={card.primary + ' overflow-hidden'}>

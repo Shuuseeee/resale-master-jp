@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Select from '@/components/Select';
 import type { PointsPlatform, PaymentMethod } from '@/types/database.types';
 
 interface ExpectedPointsSectionProps {
@@ -40,6 +41,10 @@ export function ExpectedPointsSection({
   getCardPointRateLabel,
 }: ExpectedPointsSectionProps) {
   const rateLabel = getCardPointRateLabel();
+  const platformOptions = pointsPlatforms.map((platform) => ({ value: platform.id, label: platform.display_name }));
+  // Select 的 onChange 只回传 value，适配父级按 name/value 处理的 onInputChange
+  const selectChange = (name: string) => (value: string) =>
+    onInputChange({ target: { name, value } } as unknown as React.ChangeEvent<HTMLSelectElement>);
 
   return (
     <div className="sn-form-card">
@@ -68,18 +73,14 @@ export function ExpectedPointsSection({
           </div>
           <div>
             <label className="sn-form-label">积分平台</label>
-            <select
-              name="platform_points_platform_id"
+            <Select
               value={platformPointsPlatformId}
-              onChange={onInputChange}
+              onChange={selectChange('platform_points_platform_id')}
+              options={platformOptions}
+              placeholder="选择平台"
               disabled={expectedPlatformPoints === 0}
-              className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">选择平台</option>
-              {pointsPlatforms.map((platform) => (
-                <option key={platform.id} value={platform.id}>{platform.display_name}</option>
-              ))}
-            </select>
+              className="w-full sn-form-input"
+            />
             {errors.platform_points_platform_id && (
               <p className="sn-form-error">{errors.platform_points_platform_id}</p>
             )}
@@ -108,18 +109,14 @@ export function ExpectedPointsSection({
           </div>
           <div>
             <label className="sn-form-label">额外积分平台</label>
-            <select
-              name="extra_platform_points_platform_id"
+            <Select
               value={extraPlatformPointsPlatformId}
-              onChange={onInputChange}
+              onChange={selectChange('extra_platform_points_platform_id')}
+              options={platformOptions}
+              placeholder="选择平台"
               disabled={!extraPlatformPoints || extraPlatformPoints === 0}
-              className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">选择平台</option>
-              {pointsPlatforms.map((platform) => (
-                <option key={platform.id} value={platform.id}>{platform.display_name}</option>
-              ))}
-            </select>
+              className="w-full sn-form-input"
+            />
             {errors.extra_platform_points_platform_id && (
               <p className="sn-form-error">{errors.extra_platform_points_platform_id}</p>
             )}
@@ -151,18 +148,14 @@ export function ExpectedPointsSection({
           </div>
           <div>
             <label className="sn-form-label">信用卡积分平台</label>
-            <select
-              name="card_points_platform_id"
+            <Select
               value={cardPointsPlatformId}
-              onChange={onInputChange}
+              onChange={selectChange('card_points_platform_id')}
+              options={platformOptions}
+              placeholder="选择平台"
               disabled={expectedCardPoints === 0 || !cardId}
-              className="w-full sn-form-input disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">选择平台</option>
-              {pointsPlatforms.map((platform) => (
-                <option key={platform.id} value={platform.id}>{platform.display_name}</option>
-              ))}
-            </select>
+              className="w-full sn-form-input"
+            />
             {errors.card_points_platform_id && (
               <p className="sn-form-error">{errors.card_points_platform_id}</p>
             )}

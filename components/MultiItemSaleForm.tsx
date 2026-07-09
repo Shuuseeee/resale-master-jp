@@ -8,6 +8,7 @@ import type { Transaction, SellingPlatform } from '@/types/database.types';
 import { createSaleOrder } from '@/lib/api/sale-orders';
 import { computeSaleProfit } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
+import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
@@ -243,18 +244,14 @@ export default function MultiItemSaleForm({
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             销售平台
           </label>
-          <select
+          <Select
             value={sellingPlatformId}
-            onChange={(e) => setSellingPlatformId(e.target.value)}
+            onChange={setSellingPlatformId}
+            options={sellingPlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : '（自定义）'}` }))}
+            placeholder="请选择"
+            clearable
             className={input.base + ' w-full'}
-          >
-            <option value="">请选择</option>
-            {sellingPlatforms.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}{p.is_builtin ? '' : '（自定义）'}
-              </option>
-            ))}
-          </select>
+          />
           <div className="flex gap-2 mt-2">
             <input
               type="text"

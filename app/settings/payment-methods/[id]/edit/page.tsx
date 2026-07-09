@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { PointsPlatform } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 
 export default function EditPaymentMethodPage() {
   const router = useRouter();
@@ -126,10 +127,12 @@ export default function EditPaymentMethodPage() {
 
               <div>
                 <label className="sn-form-label">还款周期</label>
-                <select value={formData.payment_same_month ? 'same' : 'next'} onChange={e => setFormData({ ...formData, payment_same_month: e.target.value === 'same' })} className={field}>
-                  <option value="next">次月还款</option>
-                  <option value="same">当月还款</option>
-                </select>
+                <Select
+                  value={formData.payment_same_month ? 'same' : 'next'}
+                  onChange={v => setFormData({ ...formData, payment_same_month: v === 'same' })}
+                  options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
+                  className={field}
+                />
               </div>
 
               <div>
@@ -139,10 +142,14 @@ export default function EditPaymentMethodPage() {
 
               <div>
                 <label className="sn-form-label">信用卡积分平台</label>
-                <select value={formData.card_points_platform_id} onChange={e => setFormData({ ...formData, card_points_platform_id: e.target.value })} className={field}>
-                  <option value="">未设置</option>
-                  {pointsPlatforms.map(p => <option key={p.id} value={p.id}>{p.display_name}</option>)}
-                </select>
+                <Select
+                  value={formData.card_points_platform_id}
+                  onChange={v => setFormData({ ...formData, card_points_platform_id: v })}
+                  options={pointsPlatforms.map(p => ({ value: p.id, label: p.display_name }))}
+                  placeholder="未设置"
+                  clearable
+                  className={field}
+                />
                 <p className="sn-form-muted">新建交易时自动关联此积分平台。</p>
               </div>
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { PointsPlatform } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 
 export default function AddPaymentMethodPage() {
   const router = useRouter();
@@ -95,10 +96,12 @@ export default function AddPaymentMethodPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">还款周期</label>
-                <select value={formData.payment_same_month ? 'same' : 'next'} onChange={e => setFormData({ ...formData, payment_same_month: e.target.value === 'same' })} className={field}>
-                  <option value="next">次月还款</option>
-                  <option value="same">当月还款</option>
-                </select>
+                <Select
+                  value={formData.payment_same_month ? 'same' : 'next'}
+                  onChange={v => setFormData({ ...formData, payment_same_month: v === 'same' })}
+                  options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
+                  className={field}
+                />
                 <p className="mt-1 text-xs text-[var(--color-text-muted)]">次月还款是大部分信用卡模式，当月还款适用于部分特殊卡种。</p>
               </div>
 
@@ -110,12 +113,14 @@ export default function AddPaymentMethodPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">信用卡积分平台</label>
-                <select value={formData.card_points_platform_id} onChange={e => setFormData({ ...formData, card_points_platform_id: e.target.value })} className={field}>
-                  <option value="">未设置</option>
-                  {pointsPlatforms.map(p => (
-                    <option key={p.id} value={p.id}>{p.display_name}</option>
-                  ))}
-                </select>
+                <Select
+                  value={formData.card_points_platform_id}
+                  onChange={v => setFormData({ ...formData, card_points_platform_id: v })}
+                  options={pointsPlatforms.map(p => ({ value: p.id, label: p.display_name }))}
+                  placeholder="未设置"
+                  clearable
+                  className={field}
+                />
                 <p className="mt-1 text-xs text-[var(--color-text-muted)]">新建交易时会自动关联该积分平台。</p>
               </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Select from '@/components/Select';
 import type { PaymentMethod } from '@/types/database.types';
 
 interface PurchaseCostsSectionProps {
@@ -80,20 +81,17 @@ export function PurchaseCostsSection({
               </div>
               <div className="min-w-0">
                 <label className="sn-form-label">支付卡片</label>
-                <select
-                  name="card_id"
+                <Select
                   value={cardId}
-                  onChange={onInputChange}
+                  onChange={(v) => onInputChange({ target: { name: 'card_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
+                  options={paymentMethods
+                    .filter((pm) => pm.type === 'card')
+                    .map((pm) => ({ value: pm.id, label: pm.name }))}
+                  placeholder="选择卡片"
+                  clearable
                   className="w-full sn-form-input"
                   disabled={cardPaid === 0}
-                >
-                  <option value="">选择卡片</option>
-                  {paymentMethods
-                    .filter((pm) => pm.type === 'card')
-                    .map((pm) => (
-                      <option key={pm.id} value={pm.id}>{pm.name}</option>
-                    ))}
-                </select>
+                />
               </div>
             </div>
             {errors.card_id && (

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Transaction, SalesRecordFormData, SellingPlatform } from '@/types/database.types';
 import { createSalesRecord } from '@/lib/api/sales-records';
 import { button, input } from '@/lib/theme';
+import Select from '@/components/Select';
 import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
@@ -273,18 +274,14 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
             销售平台
           </label>
-          <select
+          <Select
             value={formData.selling_platform_id || ''}
-            onChange={(e) => setFormData({ ...formData, selling_platform_id: e.target.value })}
+            onChange={(v) => setFormData({ ...formData, selling_platform_id: v })}
+            options={sellingPlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : '（自定义）'}` }))}
+            placeholder="请选择"
+            clearable
             className={input.base + ' w-full'}
-          >
-            <option value="">请选择</option>
-            {sellingPlatforms.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}{p.is_builtin ? '' : '（自定义）'}
-              </option>
-            ))}
-          </select>
+          />
           <div className="flex gap-2 mt-2">
             <input
               type="text"

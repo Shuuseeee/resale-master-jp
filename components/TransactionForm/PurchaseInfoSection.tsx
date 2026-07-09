@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Select from '@/components/Select';
 import type { PurchasePlatform } from '@/types/database.types';
 import { JanField } from './JanField';
 
@@ -98,19 +99,14 @@ export function PurchaseInfoSection({
         <div>
           <label className="sn-form-label">采购平台</label>
           <div className="flex gap-2">
-            <select
-              name="purchase_platform_id"
+            <Select
               value={purchasePlatformId}
-              onChange={onInputChange}
+              onChange={(v) => onInputChange({ target: { name: 'purchase_platform_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
+              options={purchasePlatforms.map((p) => ({ value: p.id, label: `${p.name}${p.is_builtin ? '' : ' （自定义）'}` }))}
+              placeholder="请选择"
+              clearable
               className="flex-1 sn-form-input"
-            >
-              <option value="">请选择</option>
-              {purchasePlatforms.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}{p.is_builtin ? '' : ' （自定义）'}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div className="flex gap-2 mt-2">
             <input

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { DiscountType } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { isValidImageFile, processImageForUpload } from '@/lib/image-utils';
@@ -198,12 +199,17 @@ export default function AddCouponPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">折扣类型 <span className="text-[var(--color-danger)]">*</span></label>
-                  <select name="discount_type" value={formData.discount_type} onChange={handleInputChange} className={field}>
-                    <option value="percentage">折扣率 (%)</option>
-                    <option value="fixed_amount">固定金额 (¥)</option>
-                    <option value="point_multiply">积分倍率</option>
-                    <option value="free_item">免费兑换</option>
-                  </select>
+                  <Select
+                    value={formData.discount_type}
+                    onChange={v => handleInputChange({ target: { name: 'discount_type', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
+                    options={[
+                      { value: 'percentage', label: '折扣率 (%)' },
+                      { value: 'fixed_amount', label: '固定金额 (¥)' },
+                      { value: 'point_multiply', label: '积分倍率' },
+                      { value: 'free_item', label: '免费兑换' },
+                    ]}
+                    className={field}
+                  />
                 </div>
 
                 {formData.discount_type !== 'free_item' && (

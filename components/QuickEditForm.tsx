@@ -10,6 +10,7 @@ import type { Transaction, TransactionStatus, PaymentMethod, PurchasePlatform } 
 import { quickUpdateTransaction, type QuickEditPayload } from '@/lib/api/transactions';
 import { parseNumberInput } from '@/lib/number-utils';
 import { button, input } from '@/lib/theme';
+import Select from '@/components/Select';
 import { UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 
 interface QuickEditFormProps {
@@ -123,16 +124,13 @@ export default function QuickEditForm({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">状态</label>
-          <select
+          <Select
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as TransactionStatus })}
+            onChange={(v) => setFormData({ ...formData, status: v as TransactionStatus })}
+            options={STATUS_OPTIONS}
             disabled={!canEditStatus}
-            className={input.base + ' w-full disabled:cursor-not-allowed disabled:opacity-50'}
-          >
-            {STATUS_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            className={input.base + ' w-full'}
+          />
           {!canEditStatus && (
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">已有销售记录或当前状态不允许直接修改</p>
           )}
@@ -181,30 +179,26 @@ export default function QuickEditForm({
 
         <div>
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">账号</label>
-          <select
+          <Select
             value={formData.card_id}
-            onChange={(e) => setFormData({ ...formData, card_id: e.target.value })}
+            onChange={(v) => setFormData({ ...formData, card_id: v })}
+            options={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
+            placeholder="未选择"
+            clearable
             className={input.base + ' w-full'}
-          >
-            <option value="">未选择</option>
-            {paymentMethods.map(pm => (
-              <option key={pm.id} value={pm.id}>{pm.name}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div>
           <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">渠道</label>
-          <select
+          <Select
             value={formData.purchase_platform_id}
-            onChange={(e) => setFormData({ ...formData, purchase_platform_id: e.target.value })}
+            onChange={(v) => setFormData({ ...formData, purchase_platform_id: v })}
+            options={purchasePlatforms.map(p => ({ value: p.id, label: p.name }))}
+            placeholder="未选择"
+            clearable
             className={input.base + ' w-full'}
-          >
-            <option value="">未选择</option>
-            {purchasePlatforms.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 
