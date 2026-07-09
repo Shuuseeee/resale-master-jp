@@ -41,6 +41,19 @@ export interface StoreRow {
   missingQty: number;
 }
 
+export interface ProductSummary {
+  transactionId: string;
+  productName: string;
+  janCode: string | null;
+  maxQty: number;        // 库存
+  qty: number;           // 当前比较数量（随步进器变化）
+  unitCost: number;
+  bestPrice: number;     // 无数据时为 0
+  bestStore: string;
+  bestProfit: number;
+  hasData: boolean;
+}
+
 export type QuantityMap = Record<string, number>;
 
 function buildInitialQuantities(transactions: TransactionForCompare[]): QuantityMap {
@@ -51,14 +64,11 @@ export function buildStoreRows(
   transactions: TransactionForCompare[],
   buybackMap: Map<string, BuybackInfo>,
   quantities: QuantityMap
-): { rows: StoreRow[]; bestPossibleRevenue: number; bestPossibleProfit: number; totalSelectedQty: number } {
+): { rows: StoreRow[]; products: ProductSummary[]; bestPossibleRevenue: number; bestPossibleProfit: number; totalSelectedQty: number } {
   const storeSet = new Set<string>();
   transactions.forEach(t => {
     buybackMap.get(t.id)?.allPrices?.forEach(p => storeSet.add(p.store));
   });
-
-  const stores = Array.from(storeSet);
-  if (stores.length === 0) return { rows: [], bestPossibleRevenue: 0, bestPossibleProfit: 0, totalSelectedQty: 0 };
 
   // Pre-compute per-transaction values once (not S×T times)
   const maxQtys = new Map(transactions.map(t => [t.id, getAvailableQty(t)]));
@@ -66,6 +76,30 @@ export function buildStoreRows(
   const bestEntries = new Map(transactions.map(t =>
     [t.id, getBestEntry(buybackMap.get(t.id)?.allPrices)] as const
   ));
+
+  // 逐商品摘要：最高买取店与按当前比较数量计算的利润
+  const products: ProductSummary[] = transactions.map(t => {
+    const maxQty = maxQtys.get(t.id)!;
+    const qty = Math.max(0, quantities[t.id] ?? maxQty);
+    const unitCost = unitCosts.get(t.id)!;
+    const bestEntry = bestEntries.get(t.id);
+    const bestPrice = bestEntry?.price ?? 0;
+    return {
+      transactionId: t.id,
+      productName: t.product_name,
+      janCode: t.jan_code,
+      maxQty,
+      qty,
+      unitCost,
+      bestPrice,
+      bestStore: bestEntry?.store ?? '',
+      bestProfit: bestPrice > 0 ? (bestPrice - unitCost) * qty : 0,
+      hasData: bestPrice > 0,
+    };
+  });
+
+  const stores = Array.from(storeSet);
+  if (stores.length === 0) return { rows: [], products, bestPossibleRevenue: 0, bestPossibleProfit: 0, totalSelectedQty: 0 };
 
   let totalSelectedQty = 0;
 
@@ -144,7 +178,7 @@ export function buildStoreRows(
   const bestPossibleRevenue = rows[0]?.bestPossibleRevenue ?? 0;
   const bestPossibleProfit = rows[0]?.bestPossibleProfit ?? 0;
 
-  return { rows, bestPossibleRevenue, bestPossibleProfit, totalSelectedQty };
+  return { rows, products, bestPossibleRevenue, bestPossibleProfit, totalSelectedQty };
 }
 
 export function useBuybackComparison({
@@ -167,7 +201,7 @@ export function useBuybackComparison({
     if (isOpen) setQuantities(buildInitialQuantities(selectedTransactions));
   }, [isOpen, selectedTransactions]);
 
-  const { rows, bestPossibleRevenue, bestPossibleProfit, totalSelectedQty } = useMemo(
+  const { rows, products, bestPossibleRevenue, bestPossibleProfit, totalSelectedQty } = useMemo(
     () => buildStoreRows(selectedTransactions, buybackMap, quantities),
     [selectedTransactions, buybackMap, quantities]
   );
@@ -181,6 +215,7 @@ export function useBuybackComparison({
 
   return {
     rows,
+    products,
     bestPossibleRevenue,
     bestPossibleProfit,
     totalSelectedQty,

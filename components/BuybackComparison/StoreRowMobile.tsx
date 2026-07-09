@@ -34,10 +34,10 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="divide-y divide-[var(--color-border)]">
         {row.items.map(item => (
-          <div key={item.transactionId} className="flex items-start justify-between text-sm">
-            <div className="flex-1 min-w-0 mr-3">
+          <div key={item.transactionId} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0 text-sm">
+            <div className="flex-1 min-w-0">
               <span className="block truncate text-[var(--color-text)]" title={item.productName}>
                 {item.productName}
               </span>
@@ -49,7 +49,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
                   {formatCurrency(item.storePrice)}/件
                 </div>
                 <div className={`text-xs font-mono ${item.profit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
-                  {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
+                  利润 {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
                 </div>
               </div>
             ) : (

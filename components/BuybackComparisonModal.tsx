@@ -1,12 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
 import Modal from '@/components/Modal';
-import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
+import { formatCurrency, getAvailableQty } from '@/lib/financial/calculator';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { TransactionForCompare } from '@/hooks/useBuybackComparison';
 import { useBuybackComparison } from '@/hooks/useBuybackComparison';
+import ProductCompareCard from '@/components/BuybackComparison/ProductCompareCard';
 import StoreRowDesktop from '@/components/BuybackComparison/StoreRowDesktop';
 import StoreRowMobile from '@/components/BuybackComparison/StoreRowMobile';
 
@@ -19,7 +18,7 @@ interface Props {
 
 export default function BuybackComparisonModal({ isOpen, onClose, selectedTransactions, buybackMap }: Props) {
   const {
-    rows, bestPossibleRevenue, bestPossibleProfit,
+    rows, products, bestPossibleRevenue, bestPossibleProfit,
     totalSelectedQty, quantities, updateQty
   } = useBuybackComparison({ selectedTransactions, buybackMap, isOpen });
 
@@ -50,66 +49,13 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                 <div className="text-xs text-[var(--color-text-muted)]">可临时调整，不会修改库存</div>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
-                {selectedTransactions.map(t => {
-                  const maxQty = getAvailableQty(t);
-                  const qty = quantities[t.id] ?? maxQty;
-                  return (
-                    // 移动端：商品名独占一行，库存/成本与步进器同行；桌面端：单行紧凑布局
-                    <div key={t.id} className="rounded-[var(--radius-md)] bg-[var(--color-bg-elevated)] px-3 py-2.5 md:flex md:items-center md:gap-2 md:py-2">
-                      <div className="min-w-0 md:flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <div className="truncate text-sm font-medium text-[var(--color-text)]" title={t.product_name}>
-                            {t.product_name}
-                          </div>
-                          {t.jan_code && (
-                            <Link
-                              href={`/kaitorix-prices?jan=${encodeURIComponent(t.jan_code)}`}
-                              className="-m-2 flex-shrink-0 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
-                              title="在比价中心查看"
-                              aria-label="在比价中心查看"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
-                          )}
-                        </div>
-                        <div className="hidden text-xs text-[var(--color-text-muted)] md:block">
-                          库存 {maxQty} · 成本 {formatCurrency(getUnitCost(t))}/件
-                        </div>
-                      </div>
-                      <div className="mt-1.5 flex items-center justify-between gap-2 md:mt-0 md:block">
-                        <div className="text-xs text-[var(--color-text-muted)] md:hidden">
-                          库存 {maxQty} · 成本 {formatCurrency(getUnitCost(t))}/件
-                        </div>
-                        <div className="flex h-11 items-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] md:h-8">
-                          <button
-                            type="button"
-                            onClick={() => updateQty(t.id, qty - 1)}
-                            className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] md:h-8 md:w-8 md:text-sm"
-                            aria-label="减少数量"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            value={qty}
-                            onChange={(e) => updateQty(t.id, parseInt(e.target.value, 10))}
-                            className="h-11 w-14 border-x border-[var(--color-border)] bg-transparent text-center text-sm font-semibold text-[var(--color-text)] outline-none md:h-8 md:w-12"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => updateQty(t.id, qty + 1)}
-                            className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] md:h-8 md:w-8 md:text-sm"
-                            aria-label="增加数量"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {products.map(p => (
+                  <ProductCompareCard
+                    key={p.transactionId}
+                    product={p}
+                    onQtyChange={(v) => updateQty(p.transactionId, v)}
+                  />
+                ))}
               </div>
             </div>
 
@@ -168,24 +114,6 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
               </table>
             </div>
 
-            <div className="border-t border-[var(--color-border)] pt-3">
-              <div className="mb-2 text-xs text-[var(--color-text-muted)]">单件成本参考</div>
-              <div className="flex flex-wrap gap-3">
-                {selectedTransactions.map(t => {
-                  const unitCost = getUnitCost(t);
-                  const qty = quantities[t.id] ?? getAvailableQty(t);
-                  return (
-                    <div key={t.id} className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-xs">
-                      <span className="inline-block max-w-[80px] truncate align-bottom text-[var(--color-text-muted)]">
-                        {t.product_name.length > 10 ? t.product_name.slice(0, 10) + '…' : t.product_name}
-                      </span>
-                      <span className="ml-2 font-mono font-medium text-[var(--color-text)]">{formatCurrency(unitCost)}</span>
-                      <span className="ml-1 text-[var(--color-text-muted)]">×{qty}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </>
         )}
       </div>
