@@ -14,7 +14,7 @@ export interface FilterValues {
   dateFrom: string;
   dateTo: string;
   productName: string;
-  janCode: string;
+  includeJanCodes: string[];
   janFilterMode: 'include' | 'exclude';
   excludeJanCodes: string[];
   status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
@@ -40,7 +40,7 @@ export const emptyFilters: FilterValues = {
   dateFrom: '',
   dateTo: '',
   productName: '',
-  janCode: '',
+  includeJanCodes: [],
   janFilterMode: 'include',
   excludeJanCodes: [],
   status: [],
@@ -67,10 +67,12 @@ interface MultiSelectProps {
   onChange: (values: string[]) => void;
   placeholder: string;
   minWidth?: string;
+  searchable?: boolean;
 }
 
-function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140px' }: MultiSelectProps) {
+function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140px', searchable = false }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,7 +91,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
     <div className="relative w-full sm:w-auto" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => { setOpen(v => !v); setSearch(''); }}
         style={{ minWidth }}
         className={`${inputClass} flex w-full items-center gap-1 text-left`}
       >
@@ -122,7 +124,20 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
 
       {open && (
         <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] overflow-hidden">
-          {options.map(opt => {
+          {searchable && (
+            <div className="p-1.5 border-b border-[var(--color-border)]">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="搜索..."
+                className="w-full px-2 py-1 text-sm bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="max-h-[240px] overflow-y-auto">
+          {(searchable && search ? options.filter(o => o.label.includes(search)) : options).map(opt => {
             const isChecked = selected.includes(opt.value);
             return (
               <label
@@ -145,6 +160,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
               </label>
             );
           })}
+          </div>
           {selected.length > 0 && (
             <div className="border-t border-[var(--color-border)] px-3 py-1.5">
               <button
@@ -290,9 +306,7 @@ export default function TransactionFilters({
 }: TransactionFiltersProps) {
   const [filters, setFilters] = useState<FilterValues>(initialValues || { ...emptyFilters });
   const isFirstRender = useRef(true);
-  const [janDropdownOpen, setJanDropdownOpen] = useState(false);
   const [janSearch, setJanSearch] = useState('');
-  const janRef = useRef<HTMLDivElement>(null);
 
   // 移动端：当前打开的筛选弹层
   const [openSheet, setOpenSheet] = useState<SheetKey | null>(null);
@@ -301,7 +315,7 @@ export default function TransactionFilters({
   const activeCount = [
     !!(filters.dateFrom || filters.dateTo),
     !!filters.productName,
-    !!(filters.janCode || filters.excludeJanCodes.length > 0),
+    !!(filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0),
     filters.status.length > 0,
     filters.paymentMethodIds.length > 0,
     filters.purchasePlatformIds.length > 0,
@@ -311,21 +325,13 @@ export default function TransactionFilters({
 
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    const hasAny = filters.dateFrom || filters.dateTo || filters.productName || filters.janCode
-      || filters.excludeJanCodes.length > 0
+    const hasAny = filters.dateFrom || filters.dateTo || filters.productName
+      || filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0
       || filters.status.length > 0 || filters.paymentMethodIds.length > 0
       || filters.purchasePlatformIds.length > 0 || filters.sellingPlatformIds.length > 0
       || filters.buybackStore;
     if (hasAny) { onApply(filters); } else { onClear(); }
   }, [filters]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (janRef.current && !janRef.current.contains(e.target as Node)) setJanDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const updateFilter = <K extends keyof FilterValues>(key: K, value: FilterValues[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -338,7 +344,7 @@ export default function TransactionFilters({
       ...prev,
       janFilterMode: mode,
       // clear the other mode's selection when switching
-      janCode: mode === 'exclude' ? '' : prev.janCode,
+      includeJanCodes: mode === 'exclude' ? [] : prev.includeJanCodes,
       excludeJanCodes: mode === 'include' ? [] : prev.excludeJanCodes,
     }));
   };
@@ -354,8 +360,10 @@ export default function TransactionFilters({
   const purchaseChipLabel = multiChipLabel('采购平台', filters.purchasePlatformIds, id => (purchasePlatforms || []).find(p => p.id === id)?.name ?? id);
   const sellingChipLabel = multiChipLabel('售出平台', filters.sellingPlatformIds, id => (sellingPlatforms || []).find(p => p.id === id)?.name ?? id);
   const paymentChipLabel = multiChipLabel('账号', filters.paymentMethodIds, id => paymentMethods.find(p => p.id === id)?.name ?? id);
-  const janChipLabel = filters.janCode
-    ? filters.janCode
+  const janChipLabel = filters.includeJanCodes.length > 0
+    ? (filters.includeJanCodes.length === 1
+        ? filters.includeJanCodes[0]
+        : `${filters.includeJanCodes[0]} +${filters.includeJanCodes.length - 1}`)
     : filters.excludeJanCodes.length > 0 ? `排除 ${filters.excludeJanCodes.length} 个JAN` : 'JAN';
 
   const applyDatePreset = (kind: '7d' | '30d' | 'month') => {
@@ -399,7 +407,7 @@ export default function TransactionFilters({
         {janCodes.length > 0 && (
           <Chip
             label={janChipLabel}
-            active={!!filters.janCode || filters.excludeJanCodes.length > 0}
+            active={filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0}
             onClick={() => { setJanSearch(''); setOpenSheet('jan'); }}
           />
         )}
@@ -490,47 +498,19 @@ export default function TransactionFilters({
             </button>
           </div>
 
-          {/* include モード: 単一選択 */}
+          {/* include モード: 多選（含搜索） */}
           {filters.janFilterMode === 'include' && (
-            <div className="relative min-w-0" ref={janRef}>
-              <button
-                type="button"
-                onClick={() => setJanDropdownOpen(!janDropdownOpen)}
-                className={inputClass + ' flex w-full items-center gap-1 text-left lg:min-w-[120px]'}
-              >
-                <span className={filters.janCode ? 'text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}>
-                  {filters.janCode || 'JAN'}
-                </span>
-                <svg className="w-4 h-4 text-[var(--color-text-muted)] ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {filters.janCode && (
-                <button onClick={(e) => { e.stopPropagation(); updateFilter('janCode', ''); setJanSearch(''); }} className="absolute right-7 top-1/2 -translate-y-1/2 p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" type="button">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              )}
-              {janDropdownOpen && (
-                <div className="absolute z-50 top-full left-0 mt-1 w-full min-w-[220px] max-h-[280px] bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] overflow-hidden">
-                  <div className="p-1.5 border-b border-[var(--color-border)]">
-                    <input type="text" value={janSearch} onChange={(e) => setJanSearch(e.target.value)} placeholder="搜索 JAN..." className="w-full px-2 py-1 text-sm bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none" autoFocus />
-                  </div>
-                  <div className="overflow-y-auto max-h-[220px]">
-                    {filteredJanCodes.length === 0
-                      ? <div className="px-3 py-2 text-sm text-[var(--color-text-muted)]">无匹配</div>
-                      : filteredJanCodes.map(jan => (
-                        <button key={jan} type="button" onClick={() => { updateFilter('janCode', jan); setJanDropdownOpen(false); setJanSearch(''); }} className={`w-full text-left px-3 py-1.5 text-sm font-mono transition-colors hover:bg-[var(--color-bg-subtle)] ${filters.janCode === jan ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
-                          {jan}
-                        </button>
-                      ))
-                    }
-                  </div>
-                </div>
-              )}
-            </div>
+            <MultiSelect
+              options={janCodes.map(j => ({ value: j, label: j }))}
+              selected={filters.includeJanCodes}
+              onChange={(vals) => updateFilter('includeJanCodes', vals)}
+              placeholder="JAN"
+              minWidth="160px"
+              searchable
+            />
           )}
 
-          {/* exclude モード: 多選 */}
+          {/* exclude モード: 多選（含搜索） */}
           {filters.janFilterMode === 'exclude' && (
             <MultiSelect
               options={janCodes.map(j => ({ value: j, label: j }))}
@@ -538,6 +518,7 @@ export default function TransactionFilters({
               onChange={(vals) => updateFilter('excludeJanCodes', vals)}
               placeholder="排除 JAN"
               minWidth="160px"
+              searchable
             />
           )}
         </div>
@@ -680,8 +661,8 @@ export default function TransactionFilters({
         <FilterSheet
           title="JAN 筛选"
           onClose={() => setOpenSheet(null)}
-          showReset={!!filters.janCode || filters.excludeJanCodes.length > 0}
-          onReset={() => setFilters(prev => ({ ...prev, janCode: '', excludeJanCodes: [] }))}
+          showReset={filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0}
+          onReset={() => setFilters(prev => ({ ...prev, includeJanCodes: [], excludeJanCodes: [] }))}
         >
           <div className="px-2 pt-1">
             <div className="mb-2 flex overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] text-xs">
@@ -712,32 +693,17 @@ export default function TransactionFilters({
               placeholder="搜索 JAN..."
               className={inputClass + ' mb-1 w-full'}
             />
-            {filters.janFilterMode === 'include' ? (
-              filteredJanCodes.length === 0 ? (
-                <div className="px-3 py-4 text-center text-sm text-[var(--color-text-muted)]">无匹配</div>
-              ) : (
-                filteredJanCodes.map(jan => (
-                  <button
-                    key={jan}
-                    type="button"
-                    onClick={() => { updateFilter('janCode', filters.janCode === jan ? '' : jan); setOpenSheet(null); }}
-                    className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left font-mono text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${
-                      filters.janCode === jan ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
-                    }`}
-                  >
-                    {jan}
-                    {filters.janCode === jan && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
-                  </button>
-                ))
-              )
-            ) : (
-              <SheetCheckList
-                options={filteredJanCodes.map(j => ({ value: j, label: j }))}
-                selected={filters.excludeJanCodes}
-                onToggle={(v) => updateFilter('excludeJanCodes', toggleIn(filters.excludeJanCodes, v))}
-                mono
-              />
-            )}
+            {(() => {
+              const janKey = filters.janFilterMode === 'include' ? 'includeJanCodes' as const : 'excludeJanCodes' as const;
+              return (
+                <SheetCheckList
+                  options={filteredJanCodes.map(j => ({ value: j, label: j }))}
+                  selected={filters[janKey]}
+                  onToggle={(v) => updateFilter(janKey, toggleIn(filters[janKey], v))}
+                  mono
+                />
+              );
+            })()}
           </div>
         </FilterSheet>
       )}

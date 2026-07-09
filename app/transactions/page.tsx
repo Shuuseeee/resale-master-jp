@@ -112,7 +112,8 @@ function TransactionsContent() {
     const dateFrom = searchParams.get('df') || '';
     const dateTo = searchParams.get('dt') || '';
     const productName = searchParams.get('pn') || '';
-    const janCode = searchParams.get('jan') || '';
+    // 兼容旧单值深链（如 kaitorix-prices 的 ?jan=xxx），逗号分隔即多选
+    const includeJanCodes = (searchParams.get('jan') || '').split(',').filter(Boolean);
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
@@ -120,8 +121,8 @@ function TransactionsContent() {
     const sellingPlatformIds = (searchParams.get('sp') || '').split(',').filter(Boolean);
     const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
     const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
-    if (dateFrom || dateTo || productName || janCode || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
-      return { dateFrom, dateTo, productName, janCode, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
+    if (dateFrom || dateTo || productName || includeJanCodes.length > 0 || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
+      return { dateFrom, dateTo, productName, includeJanCodes, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -229,7 +230,7 @@ function TransactionsContent() {
       if (activeFilters.dateFrom) params.set('df', activeFilters.dateFrom);
       if (activeFilters.dateTo) params.set('dt', activeFilters.dateTo);
       if (activeFilters.productName) params.set('pn', activeFilters.productName);
-      if (activeFilters.janCode) params.set('jan', activeFilters.janCode);
+      if (activeFilters.includeJanCodes.length > 0) params.set('jan', activeFilters.includeJanCodes.join(','));
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
       if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
@@ -398,13 +399,13 @@ function TransactionsContent() {
           if (!matchesProductSearch) return false;
         }
 
-        // JAN码筛选（含む: 精确匹配 / 除外: 多选排除）
+        // JAN码筛选（含む: 多选匹配 / 除外: 多选排除）
         if (activeFilters.janFilterMode === 'exclude') {
           if (activeFilters.excludeJanCodes.length > 0 && activeFilters.excludeJanCodes.includes(t.jan_code || '')) {
             return false;
           }
         } else {
-          if (activeFilters.janCode && t.jan_code !== activeFilters.janCode) {
+          if (activeFilters.includeJanCodes.length > 0 && !activeFilters.includeJanCodes.includes(t.jan_code || '')) {
             return false;
           }
         }
