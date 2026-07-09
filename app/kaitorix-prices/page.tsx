@@ -571,7 +571,7 @@ function KaitorixPricesContent() {
                     const unitCost = getUnitCost(tx);
                     const profit = selectedSummary.maxPrice > 0 ? (selectedSummary.maxPrice - unitCost) * stock : 0;
                     return (
-                      <Link key={tx.id} href={`/transactions/${tx.id}`} className="grid gap-2 px-4 py-3 text-sm hover:bg-[var(--color-bg-subtle)] md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+                      <Link key={tx.id} href={`/transactions/${tx.id}`} className="grid grid-cols-1 gap-2 px-4 py-3 text-sm hover:bg-[var(--color-bg-subtle)] md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                         <div>
                           <div className="font-medium text-[var(--color-text)]">{new Date(tx.date).toLocaleDateString('ja-JP')}</div>
                           <div className="text-xs text-[var(--color-text-muted)]">{tx.purchase_platform?.name || '采购渠道未设置'}</div>

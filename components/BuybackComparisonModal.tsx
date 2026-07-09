@@ -48,7 +48,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                 <div className="text-xs font-semibold text-[var(--color-text)]">比较数量</div>
                 <div className="text-xs text-[var(--color-text-muted)]">可临时调整，不会修改库存</div>
               </div>
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {products.map(p => (
                   <ProductCompareCard
                     key={p.transactionId}
@@ -59,7 +59,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3">
                 <div className="text-xs text-[var(--color-text-muted)]">整批最高店</div>
                 <div className="mt-1 text-sm font-semibold text-[var(--color-text)]">
