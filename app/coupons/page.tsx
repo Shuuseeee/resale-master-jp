@@ -299,7 +299,7 @@ export default function CouponsPage() {
                 return (
                   <div
                     key={coupon.id}
-                    className={`rounded-[var(--radius-lg)] p-5 border transition-all ${
+                    className={`flex flex-col h-full rounded-[var(--radius-lg)] p-5 border transition-all ${
                       coupon.is_used
                         ? "bg-[var(--color-bg-subtle)] border-[var(--color-border)] opacity-60"
                         : isExpired
@@ -377,7 +377,7 @@ export default function CouponsPage() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-auto">
                       {!coupon.is_used && !isExpired && (
                         <button
                           onClick={() => markAsUsed(coupon.id)}
