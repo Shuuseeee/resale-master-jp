@@ -213,7 +213,7 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="mt-6 grid grid-cols-2 gap-3">
               {pointRows.map(row => (
                 <div key={row.key} className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -244,7 +244,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className={card.primary + ' p-6'}>
+          <section className={card.primary + ' p-6 lg:col-span-2'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
