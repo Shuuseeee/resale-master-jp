@@ -1426,10 +1426,10 @@ function TransactionsContent() {
       {/* 多选模式浮动操作栏 */}
       {compareMode && (
         <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 inset-x-0 flex justify-center px-3 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto bg-[var(--color-header)] text-white rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-3 py-3 flex items-center gap-2 max-w-lg w-full border border-white/10">
+          <div className="pointer-events-auto bg-[var(--color-header)] text-[var(--color-header-text)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-3 py-3 flex items-center gap-2 max-w-lg w-full border border-[var(--color-header-chip-hover)]">
             <div className="flex-1 text-sm min-w-0">
               {selectedIds.size === 0
-                ? <span className="text-white/60 text-xs">请选择</span>
+                ? <span className="text-[var(--color-header-text-muted)] text-xs">请选择</span>
                 : <span>已选 <span className="font-bold text-[var(--color-primary)]">{selectedIds.size}</span> 件</span>
               }
             </div>
@@ -1477,7 +1477,7 @@ function TransactionsContent() {
                 className={`px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold transition-all whitespace-nowrap ${
                   selectedIds.size >= 2
                     ? 'bg-[var(--color-primary)] active:opacity-80 text-white'
-                    : 'bg-white/10 text-white/40 cursor-not-allowed'
+                    : 'bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)] cursor-not-allowed'
                 }`}
               >
                 比较
@@ -1486,14 +1486,14 @@ function TransactionsContent() {
             {selectedIds.size > 0 && (
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-xs text-white/60 hover:text-white transition-colors px-1"
+                className="text-xs text-[var(--color-header-text-muted)] hover:text-[var(--color-header-text)] transition-colors px-1"
               >
                 清空
               </button>
             )}
             <button
               onClick={exitCompareMode}
-              className="p-1.5 text-white/60 hover:text-white transition-colors flex-shrink-0"
+              className="p-1.5 text-[var(--color-header-text-muted)] hover:text-[var(--color-header-text)] transition-colors flex-shrink-0"
               aria-label="退出多选模式"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1867,11 +1867,11 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
   return (
     <div className="fixed inset-0 z-[10020] flex flex-col bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="bg-[var(--color-header)] text-white">
+      <div className="bg-[var(--color-header)] text-[var(--color-header-text)]">
         <div className="flex items-center justify-between px-4 pt-12 pb-3">
         <div>
           <h2 className="text-lg font-bold">JAN 买取列表</h2>
-          <p className="text-xs text-white/65">
+          <p className="text-xs text-[var(--color-header-text-muted)]">
             {items.length} 个商品
             {bestStore ? (
               <span className="ml-1.5 text-[var(--color-primary)] font-semibold">
@@ -1886,14 +1886,14 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
         <div className="flex items-center gap-2">
           <button
             onClick={copyAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-white/10 text-white active:opacity-70"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-header-chip)] text-[var(--color-header-text)] active:opacity-70"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             {copied ? '已复制' : '复制 JAN'}
           </button>
-          <button onClick={onClose} className="p-1.5 text-white/65 hover:text-white" aria-label="关闭">
+          <button onClick={onClose} className="p-1.5 text-[var(--color-header-text-muted)] hover:text-[var(--color-header-text)]" aria-label="关闭">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
