@@ -18,7 +18,7 @@ interface BasicInfoSectionProps {
 
   onDateChange: (date: Date | null) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onNumberChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onQuantityChange: (value: string) => void;
   onScanBarcode: () => void;
   onTogglePending: () => void;
 
@@ -38,7 +38,7 @@ export function BasicInfoSection({
   showJanField,
   onDateChange,
   onInputChange,
-  onNumberChange,
+  onQuantityChange,
   onScanBarcode,
   onTogglePending,
   quantityDisabled,
@@ -104,7 +104,7 @@ export function BasicInfoSection({
               inputMode="numeric"
               name="quantity"
               value={quantity ?? ''}
-              onChange={onNumberChange}
+              onChange={(e) => onQuantityChange(e.target.value)}
               placeholder="1"
               className="w-full sn-form-input"
               required

@@ -271,6 +271,33 @@ export function useTransactionForm({
     });
   }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
 
+  const handleQuantityChange = useCallback((value: string) => {
+    const qty = parseNumberInput(value, 0);
+    setFormData(prev => {
+      const unitPrice = prev.unit_price ?? 0;
+      // 仅当有单价可乘时才重算总价；
+      // unit_price 为 0（直接手填总价的模式）时只更新数量，保留手填总价，避免被清零。
+      if (unitPrice > 0) {
+        const newTotal = Math.round(unitPrice * qty * 100) / 100;
+        const balancePaid = calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid);
+
+        // Amazon auto-calc (create mode only)
+        const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && newTotal > 0)
+          ? computeAmazonPointUpdates(newTotal, prev.point_paid, amazonConfig, pointsPlatforms)
+          : {};
+
+        return {
+          ...prev,
+          quantity: qty,
+          purchase_price_total: newTotal,
+          balance_paid: balancePaid,
+          ...amazonUpdates,
+        };
+      }
+      return { ...prev, quantity: qty };
+    });
+  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+
   const handleTotalPriceChange = useCallback((value: string) => {
     const total = parseNumberInput(value, 0);
     setFormData(prev => {
@@ -443,6 +470,7 @@ export function useTransactionForm({
     handlePaymentChange,
     handleDateChange,
     handleUnitPriceChange,
+    handleQuantityChange,
     handleTotalPriceChange,
     handleImageSelect,
     clearImage,

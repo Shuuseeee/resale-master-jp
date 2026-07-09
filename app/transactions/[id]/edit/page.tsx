@@ -175,7 +175,7 @@ export default function EditTransactionPage() {
                 showJanField={false}
                 onDateChange={form.handleDateChange}
                 onInputChange={form.handleInputChange}
-                onNumberChange={form.handleNumberChange}
+                onQuantityChange={form.handleQuantityChange}
                 onScanBarcode={() => form.setShowScanner(true)}
                 onTogglePending={() => form.setIsPending(!form.isPending)}
                 quantityDisabled={form.quantityLocked}

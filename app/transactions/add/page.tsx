@@ -154,7 +154,7 @@ function AddTransactionPageContent() {
                 showJanField={true}
                 onDateChange={form.handleDateChange}
                 onInputChange={form.handleInputChange}
-                onNumberChange={form.handleNumberChange}
+                onQuantityChange={form.handleQuantityChange}
                 onScanBarcode={() => form.setShowScanner(true)}
                 onTogglePending={() => form.setIsPending(!form.isPending)}
               />
