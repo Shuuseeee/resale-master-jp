@@ -91,11 +91,11 @@ export default function NotificationDetailPage() {
 
 // ─── Coupon Alert Detail ─────────────────────────────────────────────────────
 
-const urgencyStyle: Record<number, { border: string; label: string; labelColor: string }> = {
-  0: { border: 'border-l-[var(--color-danger)]', label: '今日到期', labelColor: 'bg-[var(--color-danger)] text-white' },
-  1: { border: 'border-l-[var(--color-warning)]', label: '明日到期', labelColor: 'bg-[var(--color-warning)] text-white' },
-  3: { border: 'border-l-[var(--color-warning)]', label: '还剩3天', labelColor: 'bg-[var(--color-warning)] text-white' },
-  7: { border: 'border-l-[var(--color-info)]', label: '还剩7天', labelColor: 'bg-[var(--color-info)] text-white' },
+const urgencyStyle: Record<number, { label: string; labelColor: string }> = {
+  0: { label: '今日到期', labelColor: 'bg-[var(--color-danger)] text-white' },
+  1: { label: '明日到期', labelColor: 'bg-[var(--color-warning)] text-white' },
+  3: { label: '还剩3天', labelColor: 'bg-[var(--color-warning)] text-white' },
+  7: { label: '还剩7天', labelColor: 'bg-[var(--color-info)] text-white' },
 };
 
 function CouponAlertDetail({ notification, onBack }: { notification: Notification; onBack: () => void }) {
@@ -218,29 +218,25 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
         {/* Starting today */}
         {d.starting && d.starting.length > 0 && (
           <section className="mb-4">
-            <div className="flex items-center gap-2 mb-2 px-1">
-              <div className="w-1 h-5 bg-[var(--color-primary)] rounded-full" />
+            <div className="flex items-center mb-2 px-1">
               <h2 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wide">明日生效</h2>
             </div>
             <div className="space-y-3">
-              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} borderClass="border-l-[var(--color-primary-border)]" labelClass="bg-[var(--color-primary)] text-white" labelText="明日开始" />)}
+              {d.starting.map((c, i) => <CouponCard key={i} coupon={c} labelClass="bg-[var(--color-primary)] text-white" labelText="明日开始" />)}
             </div>
           </section>
         )}
 
         {/* Expiring */}
         {expiringEntries.map(([days, coupons]) => {
-          const style = urgencyStyle[Number(days)] || { border: 'border-l-[var(--color-border)]', label: `还剩${days}天`, labelColor: 'bg-[var(--color-text-muted)] text-white' };
+          const style = urgencyStyle[Number(days)] || { label: `还剩${days}天`, labelColor: 'bg-[var(--color-text-muted)] text-white' };
           return (
             <section key={days} className="mb-4">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <div className={`w-1 h-5 rounded-full ${
-                  Number(days) === 0 ? 'bg-[var(--color-danger)]' : Number(days) === 1 ? 'bg-[var(--color-warning)]' : Number(days) <= 3 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-info)]'
-                }`} />
+              <div className="flex items-center mb-2 px-1">
                 <h2 className="text-sm font-bold text-[var(--color-text)] uppercase tracking-wide">{style.label}</h2>
               </div>
               <div className="space-y-3">
-                {(coupons as CouponItem[]).map((c, i) => <CouponCard key={i} coupon={c} borderClass={style.border} labelClass={style.labelColor} labelText={style.label} />)}
+                {(coupons as CouponItem[]).map((c, i) => <CouponCard key={i} coupon={c} labelClass={style.labelColor} labelText={style.label} />)}
               </div>
             </section>
           );
@@ -265,14 +261,13 @@ function CouponAlertDetail({ notification, onBack }: { notification: Notificatio
   );
 }
 
-function CouponCard({ coupon, borderClass, labelClass, labelText }: {
+function CouponCard({ coupon, labelClass, labelText }: {
   coupon: CouponItem;
-  borderClass: string;
   labelClass: string;
   labelText: string;
 }) {
   return (
-    <div className={`rounded-[var(--radius-lg)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] border-l-4 ${borderClass} border border-[var(--color-border)]`}>
+    <div className="rounded-[var(--radius-lg)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] border border-[var(--color-border)]">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">

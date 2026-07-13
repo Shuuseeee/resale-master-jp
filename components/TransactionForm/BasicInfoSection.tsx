@@ -48,7 +48,6 @@ export function BasicInfoSection({
     <div className="sn-form-card">
       <div className="space-y-5">
         <h2 className="sn-form-title">
-          <div className="sn-form-title-bar"></div>
           基本信息
         </h2>
 

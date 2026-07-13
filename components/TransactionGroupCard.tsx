@@ -186,7 +186,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
       >
         <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
           {group.transactions.map(tx => (
-            <div key={tx.id} className="pl-3 border-l-4 border-[var(--color-primary-border)] bg-[var(--color-bg)]">
+            <div key={tx.id} className="bg-[var(--color-bg)]">
               <TransactionCard
                 transaction={tx as TransactionWithPayment}
                 dateSortMode={dateSortMode}

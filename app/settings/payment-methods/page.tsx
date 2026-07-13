@@ -123,7 +123,6 @@ export default function PaymentMethodsPage() {
 
         <section className="mb-6">
           <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-[var(--color-text)]">
-            <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
             信用卡配置
           </h2>
 

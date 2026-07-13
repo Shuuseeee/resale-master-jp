@@ -123,7 +123,7 @@ export const table = {
   tr: 'transition-colors hover:bg-[var(--color-bg-subtle)]',
   trSelected: 'bg-[var(--color-primary-light)]',
   trSelectable: 'cursor-pointer',
-  trChild: 'border-l-4 border-l-[var(--color-primary)] bg-[var(--color-bg-subtle)]',
+  trChild: 'bg-[var(--color-bg-subtle)]',
   td: 'px-4 py-3 text-[var(--color-text)]',
 };
 

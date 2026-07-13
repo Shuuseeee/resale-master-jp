@@ -184,7 +184,6 @@ export default function DashboardPage() {
           <div className={card.primary + ' p-6'}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-                <span className="h-6 w-1 rounded-full bg-[var(--color-warning)]" />
                 即将过期的优惠券
               </h2>
               <Link href="/coupons" className="text-sm font-medium text-[var(--color-primary)] active:opacity-70">

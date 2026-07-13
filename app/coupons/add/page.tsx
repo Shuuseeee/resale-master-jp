@@ -180,7 +180,6 @@ export default function AddCouponPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className={card.primary + ' p-6'}>
             <h2 className={heading.h3 + ' mb-5 flex items-center gap-2'}>
-              <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
               基本信息
             </h2>
 

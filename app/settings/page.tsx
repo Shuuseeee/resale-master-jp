@@ -148,7 +148,6 @@ export default function SettingsPage() {
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
           <section className={card.primary + ' p-6'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-              <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
               外观主题
             </h2>
             <p className="mt-2 text-sm text-[var(--color-text-muted)]">配色主题即点即生效，登录设备间自动同步；深浅色模式在导航栏切换。</p>
@@ -200,7 +199,6 @@ export default function SettingsPage() {
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-                  <span className="h-6 w-1 rounded-full bg-[var(--color-warning)]" />
                   Amazon 积分返还自动计算
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算积分返还率。</p>
@@ -248,7 +246,6 @@ export default function SettingsPage() {
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-                  <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
                   买取价格检查
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-muted)]">从 KaitoriX 获取买取价格，在交易列表中显示预期利润。</p>
@@ -302,7 +299,6 @@ export default function SettingsPage() {
 
           <section className={card.primary + ' p-6 lg:col-span-2'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-              <span className="h-6 w-1 rounded-full bg-[var(--color-primary)]" />
               CSV 导入
             </h2>
             <p className="mt-2 text-sm text-[var(--color-text-muted)]">从 purchases.csv 格式文件批量导入交易数据。</p>

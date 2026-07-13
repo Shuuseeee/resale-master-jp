@@ -320,11 +320,7 @@ export default function NotificationsPage() {
                           <Link
                             href={`/notifications/${n.id}`}
                             onClick={() => { if (!n.read) markReadOptimistic(n.id); }}
-                            className={`flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] transition-colors border ${
-                              n.read
-                                ? 'border-[var(--color-border)] hover:border-[var(--color-primary-border)]'
-                                : 'border-l-4 border-l-[var(--color-primary)] border-[var(--color-border)] hover:border-[var(--color-primary-border)]'
-                            }`}
+                            className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 shadow-[var(--shadow-sm)] transition-colors hover:border-[var(--color-primary-border)]"
                           >
                             {/* Type icon */}
                             <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] ${iconCfg.bg} ${iconCfg.color}`}>

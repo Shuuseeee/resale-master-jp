@@ -11,10 +11,6 @@
     @apply flex items-center gap-2 text-[17px] font-semibold text-[var(--color-text)];
   }
 
-  .sn-form-title-bar {
-    @apply h-6 w-1 rounded-full bg-[var(--color-primary)];
-  }
-
   .sn-form-label {
     @apply mb-2 block text-sm font-medium text-[var(--color-text)];
   }

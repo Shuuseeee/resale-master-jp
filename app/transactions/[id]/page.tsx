@@ -478,7 +478,6 @@ export default function TransactionDetailPage() {
             {/* 成本信息 */}
             <div className="sn-detail-card">
               <h2 className="sn-detail-title-lg">
-                <div className="sn-form-title-bar"></div>
                 采购成本
               </h2>
               <div className="space-y-4">
@@ -507,7 +506,6 @@ export default function TransactionDetailPage() {
             {(transaction.jan_code || transaction.purchase_platform || transaction.order_number || transaction.unit_price) && (
               <div className="sn-detail-card">
                 <h2 className="sn-detail-title-lg">
-                  <div className="sn-form-title-bar"></div>
                   采购信息
                 </h2>
                 <div className="space-y-3">
@@ -583,53 +581,10 @@ export default function TransactionDetailPage() {
               </div>
             )}
 
-            {/* 复购链接 */}
-            <div className="sn-detail-card">
-              <h2 className="sn-detail-title-lg">
-                <div className="sn-form-title-bar"></div>
-                复购
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {(() => {
-                  const searchQuery = transaction.jan_code || transaction.product_name;
-                  const encodedQuery = encodeURIComponent(searchQuery);
-                  const links = [
-                    { name: 'Amazon', url: `https://www.amazon.co.jp/s?k=${encodedQuery}`, color: 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]' },
-                    { name: '乐天', url: `https://search.rakuten.co.jp/search/mall/${encodedQuery}/`, color: 'bg-[var(--color-danger-subtle)] text-[var(--color-danger)] border-[var(--color-danger-border)]' },
-                    { name: 'Yahoo!', url: `https://shopping.yahoo.co.jp/search?p=${encodedQuery}`, color: 'bg-[var(--color-info-subtle)] text-[var(--color-info)] border-[var(--color-info-border)]' },
-                    { name: 'Mercari', url: `https://jp.mercari.com/search?keyword=${encodedQuery}`, color: 'bg-[var(--color-danger-subtle)] text-[var(--color-danger)] border-[var(--color-danger-border)]' },
-                    { name: '雅虎拍卖', url: `https://auctions.yahoo.co.jp/search/search?p=${encodedQuery}`, color: 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]' },
-                  ];
-                  return links.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all hover:opacity-80 ${link.color}`}
-                    >
-                      {link.name}
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  ));
-                })()}
-              </div>
-              {transaction.jan_code && (
-                <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                  JAN 码 ({transaction.jan_code}) 搜索
-                </p>
-              )}
-            </div>
-
-            
-
             {/* 备注 */}
             {transaction.notes && (
               <div className="sn-detail-card">
                 <h2 className="sn-detail-title-lg">
-                  <div className="sn-form-title-bar"></div>
                   备注
                 </h2>
                 <p className="text-[var(--color-text)] whitespace-pre-wrap">{transaction.notes}</p>
@@ -706,7 +661,6 @@ export default function TransactionDetailPage() {
 {/* 预期积分 */}
             <div className="sn-detail-card">
               <h2 className="sn-detail-title-lg">
-                <div className="sn-form-title-bar"></div>
                 预期积分
               </h2>
               <div className="space-y-3">
