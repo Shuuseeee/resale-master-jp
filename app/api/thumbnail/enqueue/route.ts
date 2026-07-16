@@ -1,5 +1,5 @@
 // app/api/thumbnail/enqueue/route.ts
-// 按 JAN 入队，由独立 scraper 后台抓取 1-chome 主图（全站同 JAN 共享一张缓存）
+// 按 JAN 入队，由独立 scraper 后台调 Kaitorix search API 取图并转存 Storage（全站同 JAN 共享一张缓存）
 // add/edit 页 onPersist 成功后 fire-and-forget 调用
 
 import { NextRequest, NextResponse } from 'next/server';

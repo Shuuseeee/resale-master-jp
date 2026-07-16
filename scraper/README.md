@@ -13,6 +13,16 @@ Supabase の `kaitorix_scrape_queue` を監視し、JAN コードごとに kaito
 
 PWA の JAN 商品名補完は、最初に API 直接検索を試し、取得できない場合はキュー投入後もフロント側で一定時間リトライする。
 
+## thumbnail-fetcher（商品サムネイル）
+
+`src/thumbnail-fetcher.ts` は `jan_thumbnail_queue` を監視する別 worker（pm2 の `thumbnail-fetcher`、または `npm run thumbnail`）。
+
+1. Kaitorix の search API（`/api/search?q={jan}&limit=1`、`KAITORIX_API_TOKENS` 必須）から `image_url`（Amazon CDN）を取得する。JAN 完全一致のみ採用。
+2. 画像をダウンロードし sharp で 800×800 WebP（≤100KB）に圧縮する。
+3. Storage の `product-images/{jan}.webp` へアップロードし、`jan_thumbnail_cache` を upsert する（ホットリンクはしない）。
+
+Playwright は使わない（価格 scraper のみが使用）。全量リセットは `npx tsx src/reset-thumbnails.ts`（Storage・キャッシュ・キューを空にして `batch_enqueue_jan_thumbnails()` で再投入）。
+
 ## 初期セットアップ
 
 ### 1. 依存関係のインストール
@@ -20,7 +30,7 @@ PWA の JAN 商品名補完は、最初に API 直接検索を試し、取得で
 ```bash
 cd scraper
 npm install
-npx playwright install chromium
+npx playwright install chromium   # 価格 scraper のみ使用（thumbnail-fetcher には不要）
 ```
 
 ### 2. 環境変数の設定
@@ -34,9 +44,10 @@ cp .env.example .env
 ```env
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+KAITORIX_API_TOKENS=your-kaitorix-token
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` はキュー取得とキャッシュ更新に必要。ブラウザ向けの anon key は使わない。
+`SUPABASE_SERVICE_ROLE_KEY` はキュー取得とキャッシュ更新に必要。ブラウザ向けの anon key は使わない。`KAITORIX_API_TOKENS` は thumbnail-fetcher が search API を叩くのに必要（PWA 側 `.env.local` と同じ値、カンマ区切りの場合は先頭のみ使用）。
 
 ### 3. PM2 のインストール
 

@@ -194,7 +194,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 
 ## Scraper
 
-`scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建。它监听 Supabase 的 Kaitorix 抓取队列，用 Playwright 获取价格并写回 `kaitorix_price_cache`。详细启动方式见 `scraper/README.md`。
+`scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建。它监听 Supabase 的 Kaitorix 抓取队列，用 Playwright 获取价格并写回 `kaitorix_price_cache`；另有 thumbnail-fetcher worker 调 Kaitorix search API 获取商品缩略图并转存 Storage（写 `jan_thumbnail_cache`，不用 Playwright）。详细启动方式见 `scraper/README.md`。
 
 ## 部署
 
