@@ -3,12 +3,13 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import Select from '@/components/Select';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
+import { parseJanInput, mergeJanCodes } from '@/lib/utils/janInput';
 
 export interface FilterValues {
   dateFrom: string;
@@ -62,15 +63,17 @@ const inputClass = 'min-h-[40px] px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevat
 
 // ── 多选下拉组件 ──────────────────────────────────────────
 interface MultiSelectProps {
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; hint?: string }[];
   selected: string[];
   onChange: (values: string[]) => void;
   placeholder: string;
   minWidth?: string;
   searchable?: boolean;
+  onBulkAdd?: (raw: string) => void;  // 传入后搜索框支持粘贴/回车批量添加
+  bulkHint?: string;                  // 搜索框下方的静态说明文案
 }
 
-function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140px', searchable = false }: MultiSelectProps) {
+function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140px', searchable = false, onBulkAdd, bulkHint }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -86,6 +89,8 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
   const toggle = (value: string) => {
     onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]);
   };
+
+  const visibleOptions = searchable && search ? options.filter(o => o.label.includes(search)) : options;
 
   return (
     <div className="relative w-full sm:w-auto" ref={ref}>
@@ -130,14 +135,40 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onPaste={(e) => {
+                  if (!onBulkAdd) return;
+                  const text = e.clipboardData.getData('text/plain');
+                  if (!text) return;
+                  // 单行 input 会吞掉换行，必须拦截原生粘贴才能拿到 Excel 的行结构
+                  e.preventDefault();
+                  onBulkAdd(text);
+                  setSearch('');
+                }}
+                onKeyDown={(e) => {
+                  if (!onBulkAdd || e.key !== 'Enter') return;
+                  e.preventDefault();
+                  if (search.trim()) { onBulkAdd(search); setSearch(''); }
+                }}
                 placeholder="搜索..."
                 className="w-full px-2 py-1 text-sm bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none"
                 autoFocus
               />
+              {onBulkAdd && bulkHint && (
+                <p className="mt-1 px-0.5 text-[11px] text-[var(--color-text-muted)]">{bulkHint}</p>
+              )}
             </div>
           )}
           <div className="max-h-[240px] overflow-y-auto">
-          {(searchable && search ? options.filter(o => o.label.includes(search)) : options).map(opt => {
+          {onBulkAdd && search && visibleOptions.length === 0 && (
+            <button
+              type="button"
+              onClick={() => { onBulkAdd(search); setSearch(''); }}
+              className="flex w-full items-center px-3 py-2 text-left text-sm text-[var(--color-primary)] hover:bg-[var(--color-bg-subtle)] transition-colors"
+            >
+              未匹配 · 点击或回车添加「{search}」
+            </button>
+          )}
+          {visibleOptions.map(opt => {
             const isChecked = selected.includes(opt.value);
             return (
               <label
@@ -157,6 +188,9 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                 <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-[var(--color-primary)] font-semibold' : 'text-[var(--color-text)]'}`}>
                   {opt.label}
                 </span>
+                {opt.hint && (
+                  <span className="ml-auto flex-shrink-0 pl-2 text-xs text-[var(--color-text-muted)]">{opt.hint}</span>
+                )}
               </label>
             );
           })}
@@ -260,7 +294,7 @@ function SheetCheckList({
   onToggle,
   mono = false,
 }: {
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; hint?: string }[];
   selected: string[];
   onToggle: (value: string) => void;
   mono?: boolean;
@@ -282,7 +316,10 @@ function SheetCheckList({
             }`}
           >
             <span className="truncate">{opt.label}</span>
-            {checked && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
+            <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-2">
+              {opt.hint && <span className="text-xs font-normal text-[var(--color-text-muted)]">{opt.hint}</span>}
+              {checked && <Check className="h-4 w-4 text-[var(--color-primary)]" />}
+            </span>
           </button>
         );
       })}
@@ -307,6 +344,12 @@ export default function TransactionFilters({
   const [filters, setFilters] = useState<FilterValues>(initialValues || { ...emptyFilters });
   const isFirstRender = useRef(true);
   const [janSearch, setJanSearch] = useState('');
+  const [janFeedback, setJanFeedback] = useState<string | null>(null);
+  const janFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (janFeedbackTimer.current) clearTimeout(janFeedbackTimer.current);
+  }, []);
 
   // 移动端：当前打开的筛选弹层
   const [openSheet, setOpenSheet] = useState<SheetKey | null>(null);
@@ -337,9 +380,48 @@ export default function TransactionFilters({
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const filteredJanCodes = janCodes.filter(j => !janSearch || j.includes(janSearch));
+  const activeJanKey = filters.janFilterMode === 'include'
+    ? ('includeJanCodes' as const)
+    : ('excludeJanCodes' as const);
+
+  const knownJanSet = useMemo(() => new Set(janCodes), [janCodes]);
+
+  // 已选但不在交易数据里的码（批量粘贴而来）追加到末尾，保证可见、可取消
+  const janOptions = useMemo(() => {
+    const extras = filters[activeJanKey].filter(c => !knownJanSet.has(c));
+    return [...janCodes, ...extras].map(j => ({
+      value: j,
+      label: j,
+      hint: knownJanSet.has(j) ? undefined : '无匹配',
+    }));
+  }, [janCodes, knownJanSet, filters, activeJanKey]);
+
+  const filteredJanOptions = janOptions.filter(o => !janSearch || o.value.includes(janSearch));
+
+  // 批量输入（Excel 列粘贴 / 逗号列表）：追加合并到当前模式的已选集合
+  const handleJanBulkInput = (raw: string) => {
+    const { codes, scientific, ignored } = parseJanInput(raw);
+    const before = filters[activeJanKey];
+    const merged = mergeJanCodes(before, codes);
+    const added = merged.length - before.length;
+    const unmatched = codes.filter(c => !knownJanSet.has(c)).length;
+
+    const parts: string[] = [];
+    if (added > 0) parts.push(`已添加 ${added} 个`);
+    if (codes.length - added > 0) parts.push(`${codes.length - added} 个重复已跳过`);
+    if (unmatched > 0) parts.push(`${unmatched} 个当前无匹配`);
+    if (scientific.length > 0) parts.push(`${scientific.length} 个是科学计数法，请把 Excel 列设为文本格式后重新复制`);
+    if (ignored.length > 0) parts.push(`已忽略 ${ignored.length} 个非数字项`);
+
+    if (codes.length > 0) setFilters(prev => ({ ...prev, [activeJanKey]: merged }));
+    setJanFeedback(parts.length > 0 ? parts.join(' · ') : '未识别到 JAN');
+
+    if (janFeedbackTimer.current) clearTimeout(janFeedbackTimer.current);
+    janFeedbackTimer.current = setTimeout(() => setJanFeedback(null), 8000);
+  };
 
   const switchJanMode = (mode: 'include' | 'exclude') => {
+    setJanFeedback(null);
     setFilters(prev => ({
       ...prev,
       janFilterMode: mode,
@@ -498,28 +580,36 @@ export default function TransactionFilters({
             </button>
           </div>
 
-          {/* include モード: 多選（含搜索） */}
+          {/* include モード: 多選（含搜索 + 批量粘贴） */}
           {filters.janFilterMode === 'include' && (
             <MultiSelect
-              options={janCodes.map(j => ({ value: j, label: j }))}
+              options={janOptions}
               selected={filters.includeJanCodes}
               onChange={(vals) => updateFilter('includeJanCodes', vals)}
               placeholder="JAN"
               minWidth="160px"
               searchable
+              onBulkAdd={handleJanBulkInput}
+              bulkHint="可从 Excel 列直接粘贴（换行 / Tab / 逗号分隔）"
             />
           )}
 
-          {/* exclude モード: 多選（含搜索） */}
+          {/* exclude モード: 多選（含搜索 + 批量粘贴） */}
           {filters.janFilterMode === 'exclude' && (
             <MultiSelect
-              options={janCodes.map(j => ({ value: j, label: j }))}
+              options={janOptions}
               selected={filters.excludeJanCodes}
               onChange={(vals) => updateFilter('excludeJanCodes', vals)}
               placeholder="排除 JAN"
               minWidth="160px"
               searchable
+              onBulkAdd={handleJanBulkInput}
+              bulkHint="可从 Excel 列直接粘贴（换行 / Tab / 逗号分隔）"
             />
+          )}
+
+          {janFeedback && (
+            <p className="col-span-2 text-[11px] text-[var(--color-text-muted)]">{janFeedback}</p>
           )}
         </div>
 
@@ -685,25 +775,46 @@ export default function TransactionFilters({
                 排除
               </button>
             </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={janSearch}
-              onChange={(e) => setJanSearch(e.target.value)}
-              placeholder="搜索 JAN..."
-              className={inputClass + ' mb-1 w-full'}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={janSearch}
+                onChange={(e) => setJanSearch(e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData('text/plain');
+                  if (!text) return;
+                  // 单行 input 会吞掉换行，必须拦截原生粘贴才能拿到 Excel 的行结构
+                  e.preventDefault();
+                  handleJanBulkInput(text);
+                  setJanSearch('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  if (janSearch.trim()) { handleJanBulkInput(janSearch); setJanSearch(''); }
+                }}
+                placeholder="搜索或粘贴 JAN..."
+                className={inputClass + ' min-w-0 flex-1'}
+              />
+              <button
+                type="button"
+                disabled={parseJanInput(janSearch).codes.length === 0}
+                onClick={() => { handleJanBulkInput(janSearch); setJanSearch(''); }}
+                className="min-h-[40px] flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+              >
+                添加
+              </button>
+            </div>
+            <p className="mb-1 mt-1 px-0.5 text-[11px] text-[var(--color-text-muted)]">
+              {janFeedback || '可从 Excel 列直接粘贴（换行 / Tab / 逗号分隔）'}
+            </p>
+            <SheetCheckList
+              options={filteredJanOptions}
+              selected={filters[activeJanKey]}
+              onToggle={(v) => updateFilter(activeJanKey, toggleIn(filters[activeJanKey], v))}
+              mono
             />
-            {(() => {
-              const janKey = filters.janFilterMode === 'include' ? 'includeJanCodes' as const : 'excludeJanCodes' as const;
-              return (
-                <SheetCheckList
-                  options={filteredJanCodes.map(j => ({ value: j, label: j }))}
-                  selected={filters[janKey]}
-                  onToggle={(v) => updateFilter(janKey, toggleIn(filters[janKey], v))}
-                  mono
-                />
-              );
-            })()}
           </div>
         </FilterSheet>
       )}
