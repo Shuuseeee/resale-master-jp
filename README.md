@@ -1,6 +1,6 @@
 # Resale Master JP - 日本转卖业务财务管理系统
 
-一个面向日本二手转卖业务的私用财务管理 PWA。系统覆盖采购、库存、销售、退货、积分、优惠券、耗材、买取价对比和税务报表，适合在桌面浏览器和 iPhone 主屏幕 PWA 中使用。
+一个面向日本二手转卖业务的私用财务管理 PWA。系统覆盖采购、库存、销售、退货、积分、耗材、买取价对比和税务报表，适合在桌面浏览器和 iPhone 主屏幕 PWA 中使用。
 
 ## 核心功能
 
@@ -17,7 +17,6 @@
 ### 财务与运营
 - **支付方式管理**：管理信用卡、银行账户和电子钱包，支持还款日与积分平台配置。
 - **积分平台系统**：维护积分平台汇率，并纳入 ROI / 总利润计算。
-- **优惠券管理**：支持优惠券有效期、使用状态和 OCR 识别。
 - **耗材成本**：记录包装材料、运输用品等成本，并纳入经营分析。
 
 ### 数据分析与税务
@@ -37,7 +36,6 @@
 - **数据请求缓存**：`@tanstack/react-query`
 - **Service Worker**：Workbox（`InjectManifest`，源码 `lib/sw/sw-source.ts`）
 - **图片处理**：heic2any
-- **OCR**：Anthropic SDK，用于优惠券图片识别
 - **买取价**：Kaitorix API + 独立 scraper 队列抓取
 
 ## 快速开始
@@ -71,7 +69,6 @@ KAITORIX_API_TOKENS=your_token1,your_token2
 NEXT_PUBLIC_KAITORIX_RATE_LIMIT_MODE=ultra-safe
 KAITORIX_OPEN_API_KEY=your_open_api_key
 KAITORIX_OPEN_API_DAILY_LIMIT=30
-ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### 3. 初始化数据库
@@ -103,11 +100,9 @@ resale-master-jp/
 │   │   ├── jan-product/[jan]/        # JAN 商品名查询与补全
 │   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量
 │   │   ├── thumbnail/enqueue/        # 商品缩略图抓取入队
-│   │   └── ocr/                      # 优惠券 OCR 与测试接口
 │   ├── auth/                         # 登录、注册、OAuth 回调
 │   ├── dashboard/                    # 仪表盘
 │   ├── transactions/                 # 交易列表、新增、详情、编辑
-│   ├── coupons/                      # 优惠券管理
 │   ├── supplies/                     # 耗材成本管理
 │   ├── analytics/                    # 数据分析
 │   ├── tax-report/                   # 税务申报
@@ -143,7 +138,7 @@ resale-master-jp/
 - `sales_records`：单笔或分批销售记录。
 - `return_records`：退货记录。
 - `payment_methods`：支付方式管理。
-- `coupons` / `coupon_usage_history`：优惠券与使用历史。
+- `coupons` / `coupon_usage_history`：优惠券与使用历史（web 端已移除优惠券功能，表保留供原生 App、LIFF / 小程序使用）。
 - `supplies_costs` / `fixed_costs`：耗材与固定成本。
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
 - `transaction_history`：交易字段变更历史。
@@ -157,7 +152,7 @@ resale-master-jp/
 ### 视图与触发器
 
 - `upcoming_payments`：30 天内待付款。
-- `active_coupons`：当前可用优惠券。
+- `active_coupons`：当前可用优惠券（web 端已不使用）。
 - `sale_order_summary`：销售订单汇总。
 - `jan_thumbnail_queue_status`：缩略图队列状态监控。
 - `set_user_id()`：插入时自动写入当前用户。
@@ -182,7 +177,7 @@ npm run type-check   # TypeScript 类型检查
 node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 ```
 
-项目当前没有 Jest / Vitest / Playwright 测试框架（`e2e/specs/` 是空目录占位）。手动测试入口是 `/api/ocr/test`。
+项目当前没有 Jest / Vitest / Playwright 测试框架（`e2e/specs/` 是空目录占位）。目前没有内置的手动测试入口。
 
 ## 设计系统
 

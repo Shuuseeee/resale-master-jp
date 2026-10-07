@@ -3,14 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import { getDashboardStats } from '@/lib/api/financial';
-import {
-  daysUntil,
-  formatCurrency,
-  formatCurrencyCompact,
-  getUrgencyLevel,
-} from '@/lib/financial/calculator';
+import { formatCurrencyCompact } from '@/lib/financial/calculator';
 import { card, heading, layout } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
 
@@ -52,7 +46,6 @@ export default function DashboardPage() {
   const [inStockCount, setInStockCount] = useState(0);
   const [monthlyProfit, setMonthlyProfit] = useState(0);
   const [monthlySalesCount, setMonthlySalesCount] = useState(0);
-  const [expiringCoupons, setExpiringCoupons] = useState<any[]>([]);
   const [totalInvestment, setTotalInvestment] = useState(0);
   const [totalRecovered, setTotalRecovered] = useState(0);
   const [confirmedProfit, setConfirmedProfit] = useState(0);
@@ -77,7 +70,6 @@ export default function DashboardPage() {
       setInStockCount(data.inStockCount);
       setMonthlyProfit(data.monthlyProfit);
       setMonthlySalesCount(data.monthlySalesCount);
-      setExpiringCoupons(data.expiringCoupons);
       setTotalInvestment(data.totalInvestment);
       setTotalRecovered(data.totalRecovered);
       setConfirmedProfit(data.confirmedProfit);
@@ -90,12 +82,6 @@ export default function DashboardPage() {
     }
   };
 
-  const urgencyColors: Record<string, string> = {
-    urgent: 'bg-[var(--color-danger-subtle)] border-[var(--color-danger-border)] text-[var(--color-danger)]',
-    warning: 'bg-[var(--color-warning-subtle)] border-[var(--color-warning-border)] text-[var(--color-warning)]',
-    normal: 'bg-[var(--color-primary-light)] border-[var(--color-primary-border)] text-[var(--color-text)]',
-    expired: 'bg-[var(--color-bg-subtle)] border-[var(--color-border)] text-[var(--color-text-muted)]',
-  };
 
   if (loading) {
     return (
@@ -121,7 +107,7 @@ export default function DashboardPage() {
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className={heading.h1}>仪表盘</h1>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润、优惠券与积分概览</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润与积分概览</p>
             </div>
             <button
               onClick={() => setIncludePoints(!includePoints)}
@@ -179,52 +165,6 @@ export default function DashboardPage() {
               tone={includePoints ? 'warning' : monthlyTone}
               icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">{includePoints ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />}</svg>}
             />
-          </div>
-
-          <div className={card.primary + ' p-6'}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-                即将过期的优惠券
-              </h2>
-              <Link href="/coupons" className="text-sm font-medium text-[var(--color-primary)] active:opacity-70">
-                查看全部 →
-              </Link>
-            </div>
-
-            {expiringCoupons.length === 0 ? (
-              <div className="py-8 text-center text-[var(--color-text-muted)]">
-                <svg className="mx-auto mb-2 h-12 w-12 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>没有即将过期的优惠券</div>
-              </div>
-            ) : (
-              // 桌面端多列铺开，填满全宽卡片；移动端保持单列
-              <div className="grid max-h-96 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
-                {expiringCoupons.map((coupon) => {
-                  const days = daysUntil(coupon.expiry_date);
-                  const urgency = getUrgencyLevel(coupon.expiry_date);
-
-                  return (
-                    <div key={coupon.id} className={`rounded-[var(--radius-md)] border p-4 ${urgencyColors[urgency]}`}>
-                      <div className="mb-1 flex items-start justify-between">
-                        <div className="font-semibold">{coupon.name}</div>
-                        <div className="text-xs opacity-75">
-                          {days > 0 ? `还有 ${days} 天` : days === 0 ? '今天到期' : '已过期'}
-                        </div>
-                      </div>
-                      <div className="text-sm opacity-75">
-                        {coupon.discount_type === 'percentage' && `${coupon.discount_value}% 折扣`}
-                        {coupon.discount_type === 'fixed_amount' && `${formatCurrency(coupon.discount_value)} 优惠`}
-                        {coupon.discount_type === 'free_shipping' && '免运费'}
-                        {coupon.platform && ` · ${coupon.platform}`}
-                      </div>
-                      <div className="mt-1 text-xs opacity-60">有效期: {coupon.expiry_date}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       </div>

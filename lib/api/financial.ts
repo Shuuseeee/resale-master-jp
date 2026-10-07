@@ -2,7 +2,6 @@
 // 财务数据 API 函数
 
 import { supabase } from '@/lib/supabase/client';
-import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
 
 export interface PendingArrivalTransaction {
   id: string;
@@ -29,30 +28,6 @@ export async function getTransactionsByJanCode(janCode: string): Promise<Pending
     return [];
   }
   return (data ?? []) as unknown as PendingArrivalTransaction[];
-}
-
-/**
- * 获取即将过期的优惠券
- * @param days 未来天数(默认3天)
- */
-export async function getExpiringCoupons(days: number = 3) {
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + days);
-
-  const { data, error } = await supabase
-    .from('coupons')
-    .select('*')
-    .eq('is_used', false)
-    .gte('expiry_date', getTodayString())
-    .lte('expiry_date', formatDateToLocal(targetDate))
-    .order('expiry_date', { ascending: true });
-
-  if (error) {
-    console.error('获取即将过期的优惠券失败:', error);
-    return [];
-  }
-
-  return data || [];
 }
 
 /**
@@ -180,7 +155,6 @@ export async function getDashboardStats(): Promise<{
   inStockCount: number;
   monthlyProfit: number;
   monthlySalesCount: number;
-  expiringCoupons: any[];
   totalInvestment: number;
   totalRecovered: number;
   confirmedProfit: number;
@@ -191,13 +165,11 @@ export async function getDashboardStats(): Promise<{
     inStockCount,
     monthlyProfit,
     monthlySalesCount,
-    expiringCoupons,
     kpiData,
   ] = await Promise.all([
     getInStockCount(),
     getMonthlyProfit(),
     getMonthlySalesCount(),
-    getExpiringCoupons(3),
     getDashboardKPI(),
   ]);
 
@@ -205,7 +177,6 @@ export async function getDashboardStats(): Promise<{
     inStockCount,
     monthlyProfit,
     monthlySalesCount,
-    expiringCoupons,
     ...kpiData,
   };
 }

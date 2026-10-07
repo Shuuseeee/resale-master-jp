@@ -16,7 +16,6 @@ import {
   Plus,
   ScanBarcode,
   Settings,
-  Ticket,
   TrendingUp,
   User,
   X,
@@ -89,11 +88,6 @@ export default function Navigation() {
       highlight: true,
     },
     {
-      name: '优惠券',
-      href: '/coupons',
-      icon: <Ticket className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
       name: '买取价格',
       href: '/kaitorix-prices',
       icon: <ScanBarcode className="h-5 w-5" strokeWidth={2} />,
@@ -136,11 +130,6 @@ export default function Navigation() {
       name: '数据分析',
       href: '/analytics',
       icon: <BarChart3 className="h-6 w-6" strokeWidth={2} />,
-    },
-    {
-      name: '买取价格',
-      href: '/kaitorix-prices',
-      icon: <ScanBarcode className="h-6 w-6" strokeWidth={2} />,
     },
     {
       name: '税务申报',
@@ -346,18 +335,18 @@ export default function Navigation() {
               </div>
 
               <Link
-                href="/coupons"
+                href="/kaitorix-prices"
                 onClick={() => triggerHaptic('light')}
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
-              isActive('/coupons')
+              isActive('/kaitorix-prices')
                 ? 'text-[var(--color-primary)]'
                 : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
             }`}
               >
-            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/coupons') ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              <Ticket className="h-5 w-5" strokeWidth={1.5} />
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/kaitorix-prices') ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              <ScanBarcode className="h-5 w-5" strokeWidth={1.5} />
             </span>
-            <span>优惠券</span>
+            <span>买取价</span>
               </Link>
 
               <button
@@ -396,13 +385,6 @@ export default function Navigation() {
                 iconBg: 'bg-[var(--color-primary-light)]',
                 iconColor: 'text-[var(--color-primary)]',
                 icon: <ClipboardList className="h-4 w-4" strokeWidth={2} />,
-              },
-              {
-                href: '/coupons/add',
-                label: '新增优惠券',
-                iconBg: 'bg-[var(--color-warning-subtle)]',
-                iconColor: 'text-[var(--color-warning)]',
-                icon: <Ticket className="h-4 w-4" strokeWidth={2} />,
               },
               {
                 href: '/supplies/add',
