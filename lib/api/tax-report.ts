@@ -118,7 +118,8 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
     return data || [];
   } catch (error) {
     console.error('年度販売記録の取得に失敗:', error);
-    return [];
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }
 
@@ -163,7 +164,8 @@ async function getYearlySuppliesCosts(year: number): Promise<number> {
     return (data || []).reduce((sum, item) => sum + item.amount, 0);
   } catch (error) {
     console.error('年度消耗品費の取得に失敗:', error);
-    return 0;
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }
 
@@ -231,7 +233,8 @@ export async function generateTaxReportDetails(year: number): Promise<TaxReportD
     return details;
   } catch (error) {
     console.error('税務レポート明細の生成に失敗:', error);
-    return [];
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }
 
@@ -326,7 +329,8 @@ export async function generateTaxInventoryItems(year: number): Promise<TaxInvent
       .filter(item => item.endingQuantity > 0);
   } catch (error) {
     console.error('棚卸参考データの生成に失敗:', error);
-    return [];
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }
 
@@ -373,23 +377,8 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
     };
   } catch (error) {
     console.error('税務レポート集計の生成に失敗:', error);
-    return {
-      year,
-      totalRevenue: 0,
-      totalPointsValue: 0,
-      totalIncome: 0,
-      totalExpenses: 0,
-      purchaseCosts: 0,
-      platformFees: 0,
-      shippingFees: 0,
-      suppliesCosts: 0,
-      netIncome: 0,
-      cashIncome: 0,
-      transactionCount: 0,
-      endingInventoryValue: 0,
-      endingInventoryQuantity: 0,
-      inventoryItemCount: 0,
-    };
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }
 
@@ -429,6 +418,7 @@ export async function getAvailableYears(): Promise<number[]> {
     return years;
   } catch (error) {
     console.error('利用可能な年度リストの取得に失敗:', error);
-    return [new Date().getFullYear()];
+    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
+    throw error;
   }
 }

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   generateTaxReportDetails,
   generateTaxInventoryItems,
@@ -19,6 +20,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { loadJapaneseFont } from '@/lib/pdf-font-loader';
 import CopyableJan from '@/components/CopyableJan';
+import OfflineNoCache from '@/components/OfflineNoCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 const reportCardClass = 'sn-detail-card';
 const statLabelClass = 'text-sm text-[var(--color-text-muted)] mb-1';
@@ -26,53 +29,54 @@ const statValueClass = 'font-bold text-[var(--color-text)]';
 const tableHeadClass = 'px-4 py-3 text-xs font-semibold uppercase text-[var(--color-text-muted)]';
 const tableCellClass = 'px-4 py-3 text-sm text-[var(--color-text)]';
 
+const NO_YEARS: number[] = [];
+const NO_DETAILS: TaxReportDetail[] = [];
+const NO_INVENTORY: TaxInventoryItem[] = [];
+
 export default function TaxReportPage() {
-  const [loading, setLoading] = useState(false);
+  const online = useOnlineStatus();
   const [exporting, setExporting] = useState(false);
-  const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [summary, setSummary] = useState<TaxReportSummary | null>(null);
-  const [details, setDetails] = useState<TaxReportDetail[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<TaxInventoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // 年度列表与各年度报表都走 useQuery：切年份回来、切页回来先用缓存，离线可看上次联网时的报表。
+  // 写入后的失效由 QueryInvalidationBridge 统一处理（交易 / 销售 / 退货 / 耗材等 → 'tax-report'）
+  const { data: yearsData } = useQuery({
+    queryKey: ['tax-report', 'years'],
+    queryFn: getAvailableYears,
+  });
+  const availableYears = yearsData ?? NO_YEARS;
+
+  // 当前年份没有数据时切到最近有数据的年份（与原行为一致）
   useEffect(() => {
-    loadAvailableYears();
-  }, []);
-
-  useEffect(() => {
-    if (selectedYear) {
-      loadTaxReport();
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
     }
-  }, [selectedYear]);
+  }, [availableYears, selectedYear]);
 
-  const loadAvailableYears = async () => {
-    const years = await getAvailableYears();
-    setAvailableYears(years);
-    if (years.length > 0 && !years.includes(selectedYear)) {
-      setSelectedYear(years[0]);
-    }
-  };
-
-  const loadTaxReport = async () => {
-    setLoading(true);
-    try {
-      const [summaryData, detailsData] = await Promise.all([
+  const { data: report, isPending, isFetching, fetchStatus, refetch } = useQuery({
+    queryKey: ['tax-report', 'report', selectedYear],
+    queryFn: async () => {
+      const [summary, details] = await Promise.all([
         generateTaxReportSummary(selectedYear),
         generateTaxReportDetails(selectedYear),
       ]);
-      const inventoryData = await generateTaxInventoryItems(selectedYear);
-      setSummary(summaryData);
-      setDetails(detailsData);
-      setInventoryItems(inventoryData);
-      setCurrentPage(1);
-    } catch (error) {
-      console.error('加载税务报表失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const inventoryItems = await generateTaxInventoryItems(selectedYear);
+      return { summary, details, inventoryItems };
+    },
+    // 切换年份时保留上一份报表可见（与原行为一致：只有首次加载才整页转圈）
+    placeholderData: keepPreviousData,
+  });
+  const summary = report?.summary ?? null;
+  const details = report?.details ?? NO_DETAILS;
+  const inventoryItems = report?.inventoryItems ?? NO_INVENTORY;
+  const loading = isFetching;
+
+  // 换年份后回到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedYear]);
 
   const exportToExcel = () => {
     if (!summary || details.length === 0) {
@@ -407,7 +411,25 @@ export default function TaxReportPage() {
     currentPage * itemsPerPage
   );
 
-  if (loading && !summary) {
+  // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  if (isPending && !report && fetchStatus === 'paused' && !online) return <OfflineNoCache what="税务报表" />;
+
+  // 加载失败且没有任何数据：给出重试入口，而不是显示一份全 0 的报表（报税数据尤其不能静默出错）
+  if (!isPending && !report) {
+    return (
+      <div className={layout.page + ' flex items-center justify-center'}>
+        <div className="max-w-sm px-6 text-center">
+          <p className="text-lg font-semibold text-[var(--color-text)]">税务报表加载失败</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">请检查网络后重试。</p>
+          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-subtle)]">
+            重试
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPending && !summary) {
     return (
       <div className={layout.page + ' flex items-center justify-center'}>
         <div className="flex items-center gap-3 text-[var(--color-text)]">
@@ -453,7 +475,8 @@ export default function TaxReportPage() {
               <Select
                 value={String(selectedYear)}
                 onChange={v => setSelectedYear(Number(v))}
-                options={availableYears.map(year => ({ value: String(year), label: `${year}年` }))}
+                // 年度列表尚未加载（或加载失败）时至少保证当前选中的年份可选
+                options={(availableYears.length > 0 ? availableYears : [selectedYear]).map(year => ({ value: String(year), label: `${year}年` }))}
                 className={input.base + ' w-full sm:w-32'}
                 disabled={loading}
               />
