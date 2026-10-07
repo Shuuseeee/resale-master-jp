@@ -192,9 +192,34 @@ async function readUpstreamError(response: Response): Promise<string> {
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const json = await response.json().catch(() => null);
-    return json?.error || json?.message || '';
+    return json?.error || json?.message || json?.detail || '';
   }
   return response.text().catch(() => '');
+}
+
+/**
+ * 每秒 1 次的限速 429 与「当日额度用完」的 429 必须区分。
+ * 实测限速的 429 响应头 X-RateLimit-Remaining 也是 0（并不代表额度用完），
+ * 但带有 Retry-After 头，正文是「リクエスト頻度の制限超過: 1リクエスト/秒（TPS=1）」。
+ */
+function isTpsLimited(response: Response, body: string): boolean {
+  return response.headers.has('retry-after') || /TPS|頻度|1リクエスト\/秒/.test(body);
+}
+
+/** 正文明确说是「日次上限」才认定当日额度用完；认不出来的 429 一律不记录用量 */
+function isDailyQuotaExhausted(body: string): boolean {
+  return /日次|1日|上限|daily|quota/i.test(body);
+}
+
+// 同一实例内串行化官方请求：相邻两次的发起时间至少间隔 1.1 秒（官方限速 TPS=1），
+// 避免多个页面 / 标签页同时进来时互相撞上限速
+const OFFICIAL_MIN_INTERVAL_MS = 1100;
+let nextOfficialSlot = 0;
+async function acquireOfficialSlot() {
+  const now = Date.now();
+  const start = Math.max(now, nextOfficialSlot);
+  nextOfficialSlot = start + OFFICIAL_MIN_INTERVAL_MS;
+  if (start > now) await new Promise(resolve => setTimeout(resolve, start - now));
 }
 
 /** 查不到 / 无价格的 JAN 记一条空缓存行（仅在没有任何行时），避免每次进页面都重复消耗额度 */
@@ -241,18 +266,33 @@ export async function refreshFromOfficial(
   }
 
   let response: Response;
+  let tpsBody = '';
   try {
-    response = await fetch(buildProductUrl(jan), {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    // 文档同时允许 ?key=：个别代理路径对 Authorization 头处理不同，鉴权失败时用查询参数重试一次
-    if (response.status === 401 || response.status === 403) {
-      response = await fetch(buildProductUrl(jan, apiKey), {
-        headers: { Accept: 'application/json' },
+    for (let attempt = 0; ; attempt++) {
+      await acquireOfficialSlot();
+      response = await fetch(buildProductUrl(jan), {
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
         signal: AbortSignal.timeout(10000),
       });
+
+      // 文档同时允许 ?key=：个别代理路径对 Authorization 头处理不同，鉴权失败时用查询参数重试一次
+      if (response.status === 401 || response.status === 403) {
+        await acquireOfficialSlot();
+        response = await fetch(buildProductUrl(jan, apiKey), {
+          headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(10000),
+        });
+      }
+
+      // 撞上每秒限速：稍等后重试（最多 2 次），仍失败再交给调用方
+      if (response.status === 429 && attempt < 2) {
+        const body = await readUpstreamError(response.clone());
+        if (isTpsLimited(response, body)) {
+          tpsBody = body;
+          continue;
+        }
+      }
+      break;
     }
   } catch {
     return { ok: false, status: 502, error: '无法连接 Kaitorix 官方 API，请检查本地/部署环境网络' };
@@ -261,12 +301,16 @@ export async function refreshFromOfficial(
   const rateLimit = parseRateLimitHeaders(response.headers);
 
   if (response.status === 429) {
-    // 日额度用完时响应头 remaining 为 0；否则视为每秒 1 次的限速，不能把当天记成「已用完」
-    if (rateLimit.remaining === 0) {
-      await recordUsage(usageDate, response.status, rateLimit, 'rate limited');
-      return { ok: false, status: 429, error: 'Kaitorix 官方 API 今日配额已用完', rateLimit };
+    const body = tpsBody || await readUpstreamError(response);
+    if (isTpsLimited(response, body)) {
+      // 限速的 429 即使响应头 remaining 为 0 也不是额度用完：不记录用量
+      return { ok: false, status: 429, error: 'Kaitorix 官方 API 请求过于频繁，请稍后重试', tpsLimited: true };
     }
-    return { ok: false, status: 429, error: 'Kaitorix 官方 API 请求过于频繁，请稍后重试', tpsLimited: true };
+    if (!isDailyQuotaExhausted(body)) {
+      return { ok: false, status: 429, error: 'Kaitorix 官方 API 拒绝了请求（429），请稍后重试', tpsLimited: true };
+    }
+    await recordUsage(usageDate, response.status, { ...rateLimit, remaining: 0 }, 'rate limited');
+    return { ok: false, status: 429, error: 'Kaitorix 官方 API 今日配额已用完', rateLimit: { ...rateLimit, remaining: 0 } };
   }
 
   if (response.status === 404) {
