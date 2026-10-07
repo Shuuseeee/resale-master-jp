@@ -14,10 +14,8 @@ export async function getSuppliesCosts(): Promise<SuppliesCost[]> {
     .select('*')
     .order('purchase_date', { ascending: false });
 
-  if (error) {
-    console.error('获取耗材成本失败:', error);
-    return [];
-  }
+  // 失败即抛错：耗材列表已入离线缓存，返回 [] 会被当成成功的空列表并持久化（唯一调用方是耗材页）
+  if (error) throw error;
 
   return data || [];
 }

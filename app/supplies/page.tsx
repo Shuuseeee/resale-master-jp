@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
 import { Pencil, Trash2 } from 'lucide-react';
 import { getSuppliesCosts, deleteSuppliesCost } from '@/lib/api/supplies';
@@ -10,6 +11,8 @@ import { formatCurrency } from '@/lib/financial/calculator';
 import Link from 'next/link';
 import { layout, heading, card, button, badge } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
+import OfflineNoCache from '@/components/OfflineNoCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { DataTable } from '@/components/DataTable';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -21,33 +24,25 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const columnHelper = createColumnHelper<SuppliesCost>();
+const NO_SUPPLIES: SuppliesCost[] = [];
 
 export default function SuppliesPage() {
-  const [supplies, setSupplies] = useState<SuppliesCost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const online = useOnlineStatus();
   const [filter, setFilter] = useState<string>('all');
 
-  useEffect(() => {
-    loadSupplies();
-  }, []);
+  // 读取走 useQuery：切页回来先用缓存，离线可看；新增 / 编辑 / 删除后的失效由
+  // QueryInvalidationBridge 统一处理（supplies_costs → ['supplies']，见 lib/queryInvalidation.ts）
+  const { data: supplies = NO_SUPPLIES, isPending: loading, fetchStatus, refetch } = useQuery({
+    queryKey: ['supplies'],
+    queryFn: getSuppliesCosts,
+  });
 
   useEffect(() => {
-    const handler = () => loadSupplies();
+    const handler = () => queryClient.invalidateQueries({ queryKey: ['supplies'] });
     window.addEventListener('bfcache-restore', handler);
     return () => window.removeEventListener('bfcache-restore', handler);
-  }, []);
-
-  const loadSupplies = async () => {
-    setLoading(true);
-    try {
-      const data = await getSuppliesCosts();
-      setSupplies(data);
-    } catch (error) {
-      console.error('加载耗材记录失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [queryClient]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm('确定要删除这条耗材记录吗？')) {
@@ -56,11 +51,12 @@ export default function SuppliesPage() {
 
     const success = await deleteSuppliesCost(id);
     if (success) {
-      setSupplies(prev => prev.filter(s => s.id !== id));
+      // 精准打补丁（同时清除写入事件留下的过期标记），不必为删一条重拉整张列表
+      queryClient.setQueryData<SuppliesCost[]>(['supplies'], old => old?.filter(s => s.id !== id) ?? []);
     } else {
       alert('删除失败，请重试');
     }
-  }, []);
+  }, [queryClient]);
 
   const columns = useMemo(() => [
     columnHelper.accessor('purchase_date', {
@@ -134,6 +130,9 @@ export default function SuppliesPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="耗材记录" />;
+
   if (loading) {
     return (
       <div className={layout.page + ' flex items-center justify-center'}>
@@ -149,7 +148,7 @@ export default function SuppliesPage() {
   }
 
   return (
-    <PullToRefresh onRefresh={loadSupplies}>
+    <PullToRefresh onRefresh={async () => { await refetch(); }}>
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
