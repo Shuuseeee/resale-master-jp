@@ -304,10 +304,7 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
   try {
     const { data, error } = await buildQuery(filters);
 
-    if (error) {
-      console.error('获取趋势数据失败:', error);
-      return [];
-    }
+    if (error) throw error;
 
     // 按销售日期分组
     const groupedData = (data || []).reduce((acc: any, record: any) => {
@@ -360,7 +357,8 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
     return trendData.sort((a, b) => a.date.localeCompare(b.date));
   } catch (error) {
     console.error('获取趋势数据失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -430,26 +428,8 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
     };
   } catch (error) {
     console.error('获取对比指标失败:', error);
-    const emptyMetrics: CoreMetrics = {
-      totalSales: 0,
-      totalProfit: 0,
-      totalCost: 0,
-      avgROI: 0,
-      transactionCount: 0,
-      avgProfitPerTransaction: 0,
-      totalPlatformFees: 0,
-      totalShippingFees: 0,
-      totalSuppliesCosts: 0,
-      totalPointsValue: 0,
-    };
-    return {
-      current: emptyMetrics,
-      previous: emptyMetrics,
-      salesChange: 0,
-      profitChange: 0,
-      roiChange: 0,
-      transactionChange: 0,
-    };
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -512,7 +492,8 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
     return analysis.sort((a, b) => b.totalSales - a.totalSales);
   } catch (error) {
     console.error('获取支付方式分析失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -647,7 +628,8 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
     return analysis.sort((a, b) => b.totalPointsValue - a.totalPointsValue);
   } catch (error) {
     console.error('获取平台分析失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -688,13 +670,8 @@ export async function getCostStructure(filters: AnalyticsFilters): Promise<CostS
     };
   } catch (error) {
     console.error('获取成本结构失败:', error);
-    return {
-      purchaseCost: 0,
-      platformFees: 0,
-      shippingFees: 0,
-      suppliesCosts: 0,
-      totalCost: 0,
-    };
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -714,7 +691,8 @@ export async function getAllPaymentMethods(): Promise<PaymentMethodFilter[]> {
     return data || [];
   } catch (error) {
     console.error('获取支付方式列表失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -799,7 +777,8 @@ export async function getPurchasePlatformAnalysis(filters: AnalyticsFilters): Pr
     return analysis.sort((a, b) => b.totalCost - a.totalCost);
   } catch (error) {
     console.error('获取购入平台分析失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }
 
@@ -873,6 +852,7 @@ export async function getSellingPlatformAnalysis(filters: AnalyticsFilters): Pro
     return analysis.sort((a, b) => b.totalSales - a.totalSales);
   } catch (error) {
     console.error('获取出手平台分析失败:', error);
-    return [];
+    // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
+    throw error;
   }
 }

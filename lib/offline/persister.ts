@@ -20,10 +20,20 @@ export const OFFLINE_CACHE_BUSTER = 'v1';
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 /** 需要离线可用的查询（取 queryKey 第一段）。新增离线页面时在此登记 */
-export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies']);
+export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies', 'analytics', 'payment-methods']);
 
 export function shouldPersistQuery(query: Query): boolean {
-  return query.state.status === 'success' && PERSISTED_QUERY_KEYS.has(String(query.queryKey[0]));
+  if (query.state.status !== 'success') return false;
+  const root = String(query.queryKey[0]);
+  if (!PERSISTED_QUERY_KEYS.has(root)) return false;
+
+  // 分析页按筛选条件分键（['analytics', 'report', filters]）：只持久化「预设时间范围 + 不限支付方式」，
+  // 自定义区间 / 组合筛选会产生无限多个键，全存会让缓存无限膨胀
+  if (root === 'analytics') {
+    const filters = query.queryKey[2] as { timeRange?: string; paymentMethods?: unknown[] } | undefined;
+    return !!filters && filters.timeRange !== 'custom' && !filters.paymentMethods?.length;
+  }
+  return true;
 }
 
 const LAST_USER_KEY = 'resale-offline:last-user';
