@@ -11,18 +11,12 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#1b1b26',
     theme_color: '#1b1b26',
     orientation: 'portrait',
+    // any：保留透明圆角；maskable：满铺 + 内容缩进，安卓自适应图标裁成圆形 / 圆角方形也不会切到文字
     icons: [
-      {
-        src: '/icons/icon-192.png',
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-      {
-        src: '/icons/icon-512.png',
-        sizes: '512x512',
-        type: 'image/png',
-      },
+      { src: '/icons/app-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/app-icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/app-icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   };
 }

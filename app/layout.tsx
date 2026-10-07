@@ -13,15 +13,17 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: '账务管理',
-    startupImage: '/icons/icon-512.png',
+    startupImage: '/icons/app-icon-512.png',
   },
+  // 图标由 scripts/generate-icons.py 从 assets/branding/app-icon.png 生成
   icons: {
     icon: [
-      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/app-icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/app-icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: '/icons/icon-192.png',
-    apple: '/icons/icon-192.png',
+    shortcut: '/favicon.ico',
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 }
 
