@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { KAITORIX_STALE_MS } from '@/lib/kaitorix-config';
+import {
+  AUTO_REFRESH_RESERVE,
+  getAuthedUser,
+  refreshFromOfficial,
+  serviceSupabase as supabase,
+} from '@/lib/server/kaitorix-official';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-// Service role client for server-side operations (bypasses RLS)
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-
+// 按 JAN 查买取价：缓存新鲜（24 小时内）直接返回；过期或没有时，已登录用户触发一次官方 API 刷新。
+// 官方刷新失败 / 额度保留线 / 限速时退回旧缓存（stale）或 pending，由前端稍后重试。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ jan: string }> }
@@ -20,48 +19,53 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid JAN code' }, { status: 400 });
   }
 
-  // Check cache
   const { data: cached } = await supabase
     .from('kaitorix_price_cache')
     .select('*')
     .eq('jan', jan)
     .single();
 
-  const now = new Date();
-  const isFresh = cached?.fetched_at &&
-    (now.getTime() - new Date(cached.fetched_at).getTime()) < CACHE_TTL_MS;
-
-  if (cached && isFresh) {
-    return NextResponse.json({
-      jan: cached.jan,
-      name: cached.product_name || '',
-      max_price: cached.max_price,
-      max_store: cached.max_store || '',
-      prices: cached.prices || [],
-      _source: 'cache',
-    });
-  }
-
-  // Enqueue scrape request (service_role bypasses RLS)
-  await supabase.rpc('enqueue_kaitorix_scrape', {
-    p_jan: jan,
-    p_user_id: '00000000-0000-0000-0000-000000000000',
+  const fromCache = (source: 'cache' | 'stale') => ({
+    jan: cached!.jan,
+    name: cached!.product_name || '',
+    max_price: cached!.max_price,
+    max_store: cached!.max_store || '',
+    prices: cached!.prices || [],
+    _source: source,
+    _fetched_at: cached!.fetched_at,
   });
 
-  // Return stale cache if available
-  if (cached) {
+  const isFresh = cached?.fetched_at &&
+    (Date.now() - new Date(cached.fetched_at).getTime()) < KAITORIX_STALE_MS;
+
+  if (cached && isFresh) {
+    return NextResponse.json(fromCache('cache'));
+  }
+
+  // 官方额度是用户付费资源：未登录请求只读缓存，不触发官方调用
+  const user = await getAuthedUser();
+  const result = user ? await refreshFromOfficial(jan, { reserve: AUTO_REFRESH_RESERVE }) : null;
+
+  if (result?.ok) {
+    const { product } = result;
     return NextResponse.json({
-      jan: cached.jan,
-      name: cached.product_name || '',
-      max_price: cached.max_price,
-      max_store: cached.max_store || '',
-      prices: cached.prices || [],
-      _source: 'stale',
-      _fetched_at: cached.fetched_at,
+      jan: product.jan,
+      name: product.name,
+      max_price: product.max_price,
+      max_store: product.max_store,
+      prices: product.prices,
+      _source: 'official',
+      _fetched_at: product.fetchedAt,
     });
   }
 
-  // No cache at all
+  // 每秒 1 次限速：告诉前端稍后重试
+  const retry = result && !result.ok && result.tpsLimited ? { _retry_after_ms: 1500 } : {};
+
+  if (cached) {
+    return NextResponse.json({ ...fromCache('stale'), ...retry });
+  }
+
   return NextResponse.json({
     jan,
     name: '',
@@ -69,5 +73,6 @@ export async function GET(
     max_store: '',
     prices: [],
     _source: 'pending',
+    ...retry,
   });
 }

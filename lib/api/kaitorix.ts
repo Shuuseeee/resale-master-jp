@@ -18,7 +18,8 @@ export interface KaitorixResponse {
   max_store: string;
   prices: KaitorixPrice[];
   _source?: string;
-  _fetched_at?: string; // ISO string — actual time data was scraped (only present for stale)
+  _fetched_at?: string; // ISO string — 价格实际取得时间（服务端始终返回，缓存 / 官方刷新均有）
+  _retry_after_ms?: number; // 服务端遇到官方每秒 1 次限速时提示稍后重试
   rateLimit?: KaitorixRateLimit;
 }
 
@@ -106,7 +107,7 @@ export async function fetchBuybackPrice(
       }
 
       // Only cache fresh server-side results; stale/pending must always hit server
-      // so the server can re-enqueue a scrape on every request
+      // so the server can retry the official refresh on the next request
       if (data.prices.length === 0 || data._source === 'pending' || data._source === 'stale') {
         return data;
       }
@@ -174,6 +175,11 @@ export interface FetchProgress {
   stopped: boolean; // circuit breaker triggered
 }
 
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+// 官方 Open API 限速：每秒 1 次请求。会触发官方调用的请求之间至少间隔该时长。
+const OFFICIAL_MIN_INTERVAL_MS = 1100;
+
 export async function fetchBuybackPrices(
   janCodes: string[],
   onProgress?: (progress: FetchProgress) => void,
@@ -184,29 +190,36 @@ export async function fetchBuybackPrices(
 
   if (uniqueJans.length === 0) return resultMap;
 
-  // Requests hit our own API route (Supabase cache read + queue insert only).
-  // The scraper worker controls its own pace against kaitorix.app — parallel here is safe.
+  // 服务端对过期 / 缺失的 JAN 会调官方 API（每秒最多 1 次），所以这里串行请求；
+  // 命中新鲜缓存的 JAN 不触发官方调用，不需要等待。
   let completed = 0;
   let failed = 0;
 
-  await Promise.all(
-    uniqueJans.map(async (jan) => {
-      if (abortSignal?.aborted) return;
+  for (const jan of uniqueJans) {
+    if (abortSignal?.aborted) break;
 
-      const result = await fetchBuybackPrice(jan);
-      resultMap.set(jan, result);
+    // 间隔以最后一次实际发出的请求为基准（含限速重试）
+    let startedAt = Date.now();
+    let result = await fetchBuybackPrice(jan);
 
-      if (!result) failed++;
-      completed++;
+    // 服务端遇到官方限速：稍等后重试一次
+    if (result?._retry_after_ms && !abortSignal?.aborted) {
+      await sleep(result._retry_after_ms);
+      startedAt = Date.now();
+      result = await fetchBuybackPrice(jan);
+    }
 
-      onProgress?.({
-        completed,
-        total: uniqueJans.length,
-        failed,
-        stopped: false,
-      });
-    })
-  );
+    resultMap.set(jan, result);
+    if (!result) failed++;
+    completed++;
+
+    onProgress?.({ completed, total: uniqueJans.length, failed, stopped: false });
+
+    if (result?._source === 'official' && completed < uniqueJans.length) {
+      const wait = OFFICIAL_MIN_INTERVAL_MS - (Date.now() - startedAt);
+      if (wait > 0) await sleep(wait);
+    }
+  }
 
   return resultMap;
 }

@@ -53,7 +53,7 @@ const CACHE_KEY = 'kaitorix_buyback_cache';
 const CACHE_VERSION = 2;
 const STORAGE_TTL = 30 * 60 * 1000; // 30 minutes — match server cache TTL
 
-// 服务端 /api/kaitorix/[jan] 的缓存节奏：超过该时长的 JAN 走 API 以触发补抓入队
+// 行内「取得时刻」标注阈值：超过该时长的价格标为 stale（与是否需要刷新的 24 小时阈值无关）
 const SERVER_CACHE_TTL = 30 * 60 * 1000;
 
 function loadCacheFromStorage(): Map<string, JanPriceData> {
@@ -105,8 +105,8 @@ function janDataFromResponse(jan: string, r: KaitorixResponse | null): JanPriceD
   if (!r) {
     return { jan, productName: '', prices: [], fetchedAt: null, source: 'pending' };
   }
-  // 服务端仅对 stale 返回 _fetched_at；fresh cache 用当前时间近似（误差 < 30 分钟）
-  const fetchedAt = r._source === 'stale' && r._fetched_at
+  // 服务端始终返回 _fetched_at（缓存 / 官方刷新均有）；缺失时按当前时间近似
+  const fetchedAt = r._fetched_at
     ? new Date(r._fetched_at).getTime()
     : r.prices?.length ? Date.now() : null;
   return {
@@ -185,7 +185,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   }, [janPriceMap, transactions, config]);
 
   // 共享刷新流程：① bulk 一次性读 DB 缓存（始终可用，含禁用功能时的只读展示）
-  // ② 仅对缺失或超过服务端缓存节奏（30 分钟）的 JAN 走 /api/kaitorix/[jan]，保留补抓入队副作用
+  // ② 仅对缺失或抓取超过 24 小时的 JAN 走 /api/kaitorix/[jan]（服务端调官方 API，串行限速）
   const doRefresh = useCallback(async (jans: string[]) => {
     if (jans.length === 0 || isLoadingRef.current) return;
 
@@ -206,7 +206,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       const needy = enabled
         ? jans.filter(jan => {
             const data = merged.get(jan);
-            return !data || data.fetchedAt == null || Date.now() - data.fetchedAt > SERVER_CACHE_TTL;
+            return !data || isKaitorixPriceStale(data.fetchedAt ?? undefined);
           })
         : [];
 

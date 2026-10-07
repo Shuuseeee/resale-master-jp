@@ -1,41 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const DEFAULT_DAILY_LIMIT = Number(process.env.KAITORIX_OPEN_API_DAILY_LIMIT || 30);
-
-function getJstDateKey(date = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const partMap = Object.fromEntries(parts.map(part => [part.type, part.value]));
-  return `${partMap.year}-${partMap.month}-${partMap.day}`;
-}
-
-async function getUserClient() {
-  const cookieStore = await cookies();
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    cookies: {
-      getAll: () => cookieStore.getAll(),
-      setAll: (toSet) => toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
-    },
-  });
-}
-
-const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+import {
+  DEFAULT_DAILY_LIMIT,
+  getAuthedUser,
+  getJstDateKey,
+  serviceSupabase,
+} from '@/lib/server/kaitorix-official';
 
 export async function GET() {
-  const supabase = await getUserClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthedUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const usageDate = getJstDateKey();
