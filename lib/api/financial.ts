@@ -32,65 +32,6 @@ export async function getTransactionsByJanCode(janCode: string): Promise<Pending
 }
 
 /**
- * 获取当前在库数量（所有 in_stock 交易的 quantity_in_stock 之和）
- */
-export async function getInStockCount(): Promise<number> {
-  // 求和类查询必须取全：超过单次行数上限被截断会让合计直接偏小且不报错（失败则抛错，见 fetchAllRows）
-  const rows = await fetchAllRows<{ quantity_in_stock: number | null }>((from, to, opts) =>
-    supabase
-      .from('transactions')
-      .select('quantity_in_stock', opts)
-      .eq('status', 'in_stock')
-      .order('id')
-      .range(from, to),
-  );
-
-  return rows.reduce((sum, row) => sum + (row.quantity_in_stock || 0), 0);
-}
-
-/**
- * 获取本月利润（本月 sales_records 的 total_profit 之和）
- */
-export async function getMonthlyProfit(): Promise<number> {
-  const now = new Date();
-  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
-
-  const rows = await fetchAllRows<{ total_profit: number | null }>((from, to, opts) =>
-    supabase
-      .from('sales_records')
-      .select('total_profit', opts)
-      .gte('sale_date', startOfMonth)
-      .lte('sale_date', endOfMonthStr)
-      .order('id')
-      .range(from, to),
-  );
-
-  return rows.reduce((sum, row) => sum + (row.total_profit || 0), 0);
-}
-
-/**
- * 获取本月销售件数（本月 sales_records 的数量）
- */
-export async function getMonthlySalesCount(): Promise<number> {
-  const now = new Date();
-  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
-
-  const { count, error } = await supabase
-    .from('sales_records')
-    .select('*', { count: 'exact', head: true })
-    .gte('sale_date', startOfMonth)
-    .lte('sale_date', endOfMonthStr);
-
-  if (error) throw error;
-
-  return count ?? 0;
-}
-
-/**
  * 标记交易为已到着（pending → in_stock）
  */
 export async function markTransactionArrived(id: string): Promise<boolean> {
@@ -147,6 +88,12 @@ export async function confirmBatchPaymentReceived(ids: string[]): Promise<{ conf
 
 /**
  * 获取仪表盘统计数据
+ *
+ * 只取两次（全部交易 + 全部销售记录，并行、各自分页取全），所有数字在内存里一次算出：
+ * 原先是 5 组查询——在库数量、本月利润、本月销售件数各查一遍，KPI 再把交易和销售全表查一遍，
+ * 而这三项本月 / 在库数字完全可以从 KPI 已经取回的行里算出来。
+ * 求和类查询必须取全：超过单次行数上限被截断会让合计直接偏小且不报错（见 fetchAllRows）；
+ * 任何一次读取失败都会抛错（仪表盘已入离线缓存，不能把失败当成 0 持久化）。
  */
 export async function getDashboardStats(): Promise<{
   inStockCount: number;
@@ -158,37 +105,6 @@ export async function getDashboardStats(): Promise<{
   unrealizedStockCost: number;
   expectedPoints: number;
 }> {
-  const [
-    inStockCount,
-    monthlyProfit,
-    monthlySalesCount,
-    kpiData,
-  ] = await Promise.all([
-    getInStockCount(),
-    getMonthlyProfit(),
-    getMonthlySalesCount(),
-    getDashboardKPI(),
-  ]);
-
-  return {
-    inStockCount,
-    monthlyProfit,
-    monthlySalesCount,
-    ...kpiData,
-  };
-}
-
-/**
- * 获取 KPI 数据：总投资、回收、确定利益、未回收在库、期待ポイント
- */
-async function getDashboardKPI(): Promise<{
-  totalInvestment: number;
-  totalRecovered: number;
-  confirmedProfit: number;
-  unrealizedStockCost: number;
-  expectedPoints: number;
-}> {
-  // 全部交易 / 销售记录的合计：必须分页取全，否则超过单次行数上限后总投资、回收、确认利润都会偏小
   const [transactions, sales] = await Promise.all([
     fetchAllRows<{
       purchase_price_total: number | null;
@@ -205,15 +121,30 @@ async function getDashboardKPI(): Promise<{
         .order('id')
         .range(from, to),
     ),
-    fetchAllRows<{ total_selling_price: number | null; total_profit: number | null }>((from, to, opts) =>
+    fetchAllRows<{ total_selling_price: number | null; total_profit: number | null; sale_date: string | null }>((from, to, opts) =>
       supabase
         .from('sales_records')
-        .select('total_selling_price, total_profit', opts)
+        .select('total_selling_price, total_profit, sale_date', opts)
         .order('id')
         .range(from, to),
     ),
   ]);
 
+  // 当前在库数量（所有 in_stock 交易的 quantity_in_stock 之和）
+  const inStockCount = transactions
+    .filter(t => t.status === 'in_stock')
+    .reduce((sum, t) => sum + (t.quantity_in_stock || 0), 0);
+
+  // 本月利润 / 本月销售件数（sale_date 为 yyyy-MM-dd，字符串比较即日期比较）
+  const now = new Date();
+  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+  const monthlySales = sales.filter(s => s.sale_date !== null && s.sale_date >= startOfMonth && s.sale_date <= endOfMonthStr);
+  const monthlyProfit = monthlySales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
+  const monthlySalesCount = monthlySales.length;
+
+  // KPI：总投资、回收、确定利益、未回收在库、期待ポイント
   const totalInvestment = transactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
   const totalRecovered = sales.reduce((sum, s) => sum + (s.total_selling_price || 0), 0);
   const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
@@ -233,5 +164,14 @@ async function getDashboardKPI(): Promise<{
     .filter(t => t.status === 'in_stock' || t.status === 'pending' || t.status === 'awaiting_payment')
     .reduce((sum, t) => sum + (t.expected_platform_points || 0) + (t.expected_card_points || 0) + (t.extra_platform_points || 0), 0);
 
-  return { totalInvestment, totalRecovered, confirmedProfit, unrealizedStockCost, expectedPoints };
+  return {
+    inStockCount,
+    monthlyProfit,
+    monthlySalesCount,
+    totalInvestment,
+    totalRecovered,
+    confirmedProfit,
+    unrealizedStockCost,
+    expectedPoints,
+  };
 }
