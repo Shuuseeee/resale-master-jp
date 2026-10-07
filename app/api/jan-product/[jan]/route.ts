@@ -33,7 +33,9 @@ async function fetchProductNameFromApi(jan: string): Promise<string> {
   }
 }
 
-// GET: lookup product_name by JAN — cache first, then Kaitorix search API
+// GET: lookup product_name by JAN。
+// ① kaitorix_catalog（每日同步的买取X 全量商品目录，主键查询）→ ② kaitorix_price_cache →
+// ③ 兜底：Kaitorix search API（目录没收录的冷门 / 停售商品）。都查不到返回空，由用户手填。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ jan: string }> },
@@ -44,34 +46,30 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid JAN code' }, { status: 400 });
   }
 
-  // キャッシュに商品名があればそのまま返す
-  const { data } = await supabase
-    .from('kaitorix_price_cache')
-    .select('product_name')
-    .eq('jan', jan)
-    .single();
+  const [catalog, cache] = await Promise.all([
+    supabase.from('kaitorix_catalog').select('name').eq('jan', jan).maybeSingle(),
+    supabase.from('kaitorix_price_cache').select('product_name').eq('jan', jan).maybeSingle(),
+  ]);
 
-  if (data?.product_name) {
-    return NextResponse.json({ product_name: data.product_name });
+  const knownName = catalog.data?.name || cache.data?.product_name;
+  if (knownName) {
+    return NextResponse.json({ product_name: knownName });
   }
 
-  // キャッシュミス or 商品名なし → search API で直接取得
   const productName = await fetchProductNameFromApi(jan);
-
   if (productName) {
-    // キャッシュに保存（価格データがあれば上書きしない、商品名だけ更新）
+    // 只存商品名，不写 fetched_at：这行还没有价格，进入买取价页时要触发官方刷新，
+    // 不能被当成「24 小时内刚抓过」
     await supabase
       .from('kaitorix_price_cache')
-      .upsert({ jan, product_name: productName }, { onConflict: 'jan' });
+      .upsert({ jan, product_name: productName, fetched_at: null }, { onConflict: 'jan', ignoreDuplicates: true });
     return NextResponse.json({ product_name: productName });
   }
 
-  // API でも取得できなかった場合はスクレイパーキューに入れてフォールバック
-  await supabase.rpc('enqueue_kaitorix_scrape', { p_jan: jan, p_user_id: null });
   return NextResponse.json({ product_name: '' });
 }
 
-// POST: seed product_name into cache (ON CONFLICT DO NOTHING to protect scraper data)
+// POST: 新增交易后把用户填的 JAN → 商品名存进缓存（已有行不覆盖）
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ jan: string }> },
@@ -88,20 +86,17 @@ export async function POST(
     return NextResponse.json({ error: 'product_name required' }, { status: 400 });
   }
 
-  // Insert only if row doesn't exist yet — scraper data takes priority
+  // 只在没有这一行时插入；fetched_at 留空，价格由进入买取价页时的官方刷新补上
   const { error } = await supabase
     .from('kaitorix_price_cache')
     .upsert(
-      { jan, product_name: productName },
+      { jan, product_name: productName, fetched_at: null },
       { onConflict: 'jan', ignoreDuplicates: true },
     );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  // 首次创建後すぐにキューに入れて価格データを補完
-  await supabase.rpc('enqueue_kaitorix_scrape', { p_jan: jan, p_user_id: null });
 
   return NextResponse.json({ ok: true });
 }

@@ -4,7 +4,8 @@ const JAN_PATTERN = /^\d{8,13}$/;
 const INITIAL_DELAY_MS = 500;
 const RETRY_BASE_DELAY_MS = 1200;
 const RETRY_MAX_DELAY_MS = 10000;
-const MAX_RETRIES = 30;
+// 服务端是确定性查询（目录 / 缓存 / search API），查不到后续也不会变化；少量重试只用于网络抖动
+const MAX_RETRIES = 3;
 
 interface UseJanProductAutoFillOptions {
   janCode: string;
