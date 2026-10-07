@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   const result = await refreshFromOfficial(jan);
   if (!result.ok) {
-    return jsonError(result.error, result.status, { rateLimit: result.rateLimit });
+    return jsonError(result.error, result.status, { rateLimit: result.rateLimit, tpsLimited: result.tpsLimited });
   }
 
   const { product, rateLimit } = result;

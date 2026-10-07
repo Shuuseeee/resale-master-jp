@@ -33,6 +33,10 @@ interface TransactionWithPlatform extends Transaction {
   purchase_platform?: { id: string; name: string } | null;
 }
 
+// 批量强刷：官方限速每秒 1 次
+const BATCH_MIN_INTERVAL_MS = 1100;
+const BATCH_RETRY_DELAY_MS = 1500;
+
 interface UsageInfo {
   usageDate: string;
   used: number;
@@ -295,11 +299,22 @@ function KaitorixPricesContent() {
 
     setBatchRefreshing(true);
     let success = 0;
+    let lastStartedAt = 0;
     for (const jan of jans) {
-      const result = await forceRefresh(jan);
+      // 官方限速每秒 1 次：请求之间至少间隔 1.1 秒；撞上限速时稍等后重试一次
+      const wait = BATCH_MIN_INTERVAL_MS - (Date.now() - lastStartedAt);
+      if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+      lastStartedAt = Date.now();
+      let result = await forceRefresh(jan);
+      if (!result.ok && result.tpsLimited) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_RETRY_DELAY_MS));
+        lastStartedAt = Date.now();
+        result = await forceRefresh(jan);
+      }
       if (!result.ok) {
         alert(result.error || `刷新 ${jan} 失败`);
-        if (result.status === 429) break;
+        // 当日额度用完才中止；限速 / 单个失败继续后面的 JAN
+        if (result.status === 429 && !result.tpsLimited) break;
       } else {
         success++;
       }

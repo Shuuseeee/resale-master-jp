@@ -39,6 +39,8 @@ export interface ForceRefreshResult {
   rateLimit?: KaitorixRateLimit;
   error?: string;
   status?: number;
+  /** 触发的是官方每秒 1 次的限速（不是额度用完）：稍后重试即可 */
+  tpsLimited?: boolean;
 }
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -142,6 +144,7 @@ export async function forceRefreshBuybackPrice(jan: string): Promise<ForceRefres
         error: payload?.error || 'Kaitorix 官方强刷失败',
         rateLimit: payload?.rateLimit,
         status: response.status,
+        tpsLimited: payload?.tpsLimited === true,
       };
     }
 

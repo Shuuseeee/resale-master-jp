@@ -43,7 +43,7 @@ export interface KaitorixState {
   rateLimit: KaitorixRateLimit | null;
   refresh: (transactionsToFetch?: Transaction[]) => void;
   refreshMissing: () => void;
-  forceRefresh: (jan: string) => Promise<{ ok: boolean; error?: string; rateLimit?: KaitorixRateLimit; status?: number }>;
+  forceRefresh: (jan: string) => Promise<{ ok: boolean; error?: string; rateLimit?: KaitorixRateLimit; status?: number; tpsLimited?: boolean }>;
   stop: () => void;
 }
 
@@ -271,7 +271,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       if (result.rateLimit) setRateLimit(result.rateLimit);
 
       if (!result.data) {
-        return { ok: false, error: result.error || '官方强刷失败', rateLimit: result.rateLimit, status: result.status };
+        return { ok: false, error: result.error || '官方强刷失败', rateLimit: result.rateLimit, status: result.status, tpsLimited: result.tpsLimited };
       }
 
       const newMap = new Map(janPriceMapRef.current);
