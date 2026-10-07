@@ -74,6 +74,34 @@ type SortOrder = 'asc' | 'desc';
 type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
 type ProfitSortMode = 'actual' | 'expected'; // 利润排序模式
 
+// 状态标签：active = 未售出（未到货 + 库存中），其余与 transactions.status 一一对应
+type StatusFilterKey = 'active' | 'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned';
+const STATUS_FILTER_KEYS: StatusFilterKey[] = ['active', 'all', 'pending', 'in_stock', 'awaiting_payment', 'sold', 'returned'];
+const DEFAULT_STATUS_FILTER: StatusFilterKey = 'active';
+const STATUS_FILTER_STORAGE_KEY = 'transactionListStatusFilter';
+
+function isStatusFilterKey(v: unknown): v is StatusFilterKey {
+  return typeof v === 'string' && (STATUS_FILTER_KEYS as string[]).includes(v);
+}
+
+// 记住用户上次选的状态标签（仅本机；隐私模式/禁用存储时静默回落默认值）
+function readStoredStatusFilter(): StatusFilterKey | null {
+  try {
+    const v = window.localStorage.getItem(STATUS_FILTER_STORAGE_KEY);
+    return isStatusFilterKey(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeStatusFilter(key: StatusFilterKey) {
+  try {
+    window.localStorage.setItem(STATUS_FILTER_STORAGE_KEY, key);
+  } catch {
+    // 存储不可用时忽略，仅失去「记住选择」
+  }
+}
+
 interface PaymentMethodBasic {
   id: string;
   name: string;
@@ -95,9 +123,19 @@ function TransactionsContent() {
   const [janThumbnails, setJanThumbnails] = useState<JanThumbnailMap>(new Map());
   const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned'>(
-    () => (searchParams.get('tab') as any) || 'all'
-  );
+  // 优先级：URL ?tab=（深链/返回）> 本机记忆的上次选择 > 默认「未售出」
+  // 首屏渲染走 loading 骨架，不依赖该值，所以惰性读 localStorage 不会引起 hydration 不一致
+  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>(() => {
+    const fromUrl = searchParams.get('tab');
+    if (isStatusFilterKey(fromUrl)) return fromUrl;
+    if (typeof window !== 'undefined') return readStoredStatusFilter() ?? DEFAULT_STATUS_FILTER;
+    return DEFAULT_STATUS_FILTER;
+  });
+  // 用户主动点选标签时才写入记忆（深链、清空筛选等派生切换不覆盖用户偏好）
+  const selectStatusFilter = useCallback((key: StatusFilterKey) => {
+    setStatusFilter(key);
+    storeStatusFilter(key);
+  }, []);
   const [sortField, setSortField] = useState<SortField>(() => (searchParams.get('sort') as SortField) || 'date');
   const [sortOrder, setSortOrder] = useState<SortOrder>(() => (searchParams.get('order') as SortOrder) || 'desc');
   const [dateSortMode, setDateSortMode] = useState<DateSortMode>(() => {
@@ -222,7 +260,7 @@ function TransactionsContent() {
   const syncFiltersToURL = useCallback(() => {
     const params = new URLSearchParams();
     if (searchTerm) params.set('q', searchTerm);
-    if (statusFilter !== 'all') params.set('tab', statusFilter);
+    params.set('tab', statusFilter);
     if (sortField !== 'date') params.set('sort', sortField);
     if (sortOrder !== 'desc') params.set('order', sortOrder);
     if (dateSortMode !== 'purchase') params.set('dsm', dateSortMode);
@@ -290,6 +328,7 @@ function TransactionsContent() {
     });
     return {
       total: transactions.length,
+      active: pending + inStock,
       pending, inStock, awaitingPayment, sold, returned,
       totalCost, totalProfit,
       avgROI: totalActualCashSpent > 0 ? (totalProfit / totalActualCashSpent) * 100 : 0,
@@ -374,7 +413,9 @@ function TransactionsContent() {
       }
 
       // 状态标签栏快速切换
-      const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' ? t.status === 'pending' || t.status === 'in_stock' : t.status === statusFilter);
       if (!matchesStatus) return false;
 
       // 高级筛选
@@ -1108,6 +1149,7 @@ function TransactionsContent() {
         {/* 状态标签栏 */}
         <div className="mb-5 flex min-h-[42px] items-end gap-1 overflow-x-auto border-b border-[var(--color-border)]">
           {([
+            { key: 'active', label: '未售出', count: stats.active, color: 'amber' },
             { key: 'all', label: '全部', count: stats.total },
             { key: 'in_stock', label: '库存中', count: stats.inStock, color: 'amber' },
             { key: 'pending', label: '未到货', count: stats.pending, color: 'blue' },
@@ -1117,7 +1159,7 @@ function TransactionsContent() {
           ] as const).map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setStatusFilter(tab.key)}
+              onClick={() => selectStatusFilter(tab.key)}
               className={`flex h-[42px] flex-shrink-0 items-center whitespace-nowrap border-b-2 px-4 text-sm font-semibold transition-colors ${
                 statusFilter === tab.key
                   ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
@@ -1315,10 +1357,20 @@ function TransactionsContent() {
               <svg className="w-16 h-16 text-[var(--color-text-muted)] opacity-40 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <p className="text-[var(--color-text-muted)] text-lg">没有匹配此条件的记录</p>
+              <p className="text-[var(--color-text-muted)] text-lg">
+                {statusFilter === 'active' ? '未售出中没有匹配此条件的记录' : '没有匹配此条件的记录'}
+              </p>
+              {statusFilter === 'active' && (
+                <button
+                  onClick={() => selectStatusFilter('all')}
+                  className={button.primary + ' inline-block mt-4 mr-2'}
+                >
+                  在全部交易中查找
+                </button>
+              )}
               <button
                 onClick={() => { handleClearFilters(); setSearchTerm(''); setStatusFilter('all'); }}
-                className={button.primary + ' inline-block mt-4'}
+                className={(statusFilter === 'active' ? button.secondary : button.primary) + ' inline-block mt-4'}
               >
                 清空筛选
               </button>
