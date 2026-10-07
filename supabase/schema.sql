@@ -167,6 +167,17 @@ CREATE TABLE public.kaitorix_price_cache (
   last_fetch_source text DEFAULT 'scraper'::text
 );
 
+-- 买取价历史：每日 CSV 同步时，某家店对某个 JAN 的报价与上一次不同才追加一行（只记变动）。
+-- price 为 NULL 表示该店不再报价（下架 / 停止买取）。observed_at 取 CSV 里该店报价的取得时间，
+-- 没有则为同步当天（JST）0 点；主键包含 observed_at，重跑同一天的同步不会产生重复行。
+-- 写入走 service_role（/api/kaitorix/catalog-sync），登录用户只读。
+CREATE TABLE public.kaitorix_price_history (
+  jan text NOT NULL,
+  store text NOT NULL,
+  observed_at timestamp with time zone NOT NULL,
+  price integer
+);
+
 CREATE TABLE public.kaitorix_scrape_queue (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   jan text NOT NULL,
@@ -384,6 +395,7 @@ ALTER TABLE public.jan_thumbnail_queue ADD CONSTRAINT jan_thumbnail_queue_pkey P
 ALTER TABLE public.kaitorix_catalog ADD CONSTRAINT kaitorix_catalog_pkey PRIMARY KEY (jan);
 ALTER TABLE public.kaitorix_open_api_usage ADD CONSTRAINT kaitorix_open_api_usage_pkey PRIMARY KEY (id);
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_pkey PRIMARY KEY (id);
+ALTER TABLE public.kaitorix_price_history ADD CONSTRAINT kaitorix_price_history_pkey PRIMARY KEY (jan, store, observed_at);
 ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_pkey PRIMARY KEY (id);
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_pkey PRIMARY KEY (id);
@@ -1067,6 +1079,7 @@ ALTER TABLE public.jan_thumbnail_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_open_api_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_price_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kaitorix_price_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_scrape_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
@@ -1100,12 +1113,13 @@ CREATE POLICY "Users can insert their own fixed costs" ON public.fixed_costs FOR
 CREATE POLICY "Users can update their own fixed costs" ON public.fixed_costs FOR UPDATE USING ((auth.uid() = user_id));
 CREATE POLICY "Users can view their own fixed costs" ON public.fixed_costs FOR SELECT USING ((auth.uid() = user_id));
 
--- 缩略图 / 买取价缓存 / 买取商品目录：全站共享，登录用户只读（写入走 service_role）
+-- 缩略图 / 买取价缓存 / 买取商品目录 / 买取价历史：全站共享，登录用户只读（写入走 service_role）
 CREATE POLICY jan_thumbnail_cache_select ON public.jan_thumbnail_cache FOR SELECT TO authenticated USING (true);
 CREATE POLICY jan_thumbnail_queue_select ON public.jan_thumbnail_queue FOR SELECT TO authenticated USING (true);
 CREATE POLICY kaitorix_catalog_select ON public.kaitorix_catalog FOR SELECT TO authenticated USING (true);
 CREATE POLICY kaitorix_open_api_usage_select_admin ON public.kaitorix_open_api_usage FOR SELECT TO authenticated USING (is_admin());
 CREATE POLICY kaitorix_price_cache_select ON public.kaitorix_price_cache FOR SELECT TO authenticated USING (true);
+CREATE POLICY kaitorix_price_history_select ON public.kaitorix_price_history FOR SELECT TO authenticated USING (true);
 CREATE POLICY kaitorix_scrape_queue_insert ON public.kaitorix_scrape_queue FOR INSERT TO authenticated WITH CHECK ((auth.uid() = user_id));
 CREATE POLICY kaitorix_scrape_queue_select ON public.kaitorix_scrape_queue FOR SELECT TO authenticated USING ((auth.uid() = user_id));
 

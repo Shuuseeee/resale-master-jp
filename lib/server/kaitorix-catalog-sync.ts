@@ -6,10 +6,13 @@
 
 import { gunzipSync } from 'node:zlib';
 import { createClient } from '@supabase/supabase-js';
-import { parseCatalogCsv, type CatalogRow } from '@/lib/kaitorix-catalog-csv';
+import { fetchAllRows } from '@/lib/api/fetchAll';
+import { parseCatalogCsv, type CatalogPrice, type CatalogRow } from '@/lib/kaitorix-catalog-csv';
+import { diffPriceHistory, jstDayStartIso, type PriceHistoryRow } from '@/lib/kaitorix-price-history';
 
 const BASE_URL = 'https://kaitorix.app';
 const UPSERT_CHUNK = 1000;
+const HISTORY_CHUNK = 2000;
 /** 解析出的行数低于该值时不清理旧行：避免一次异常的小文件把整张目录表清空 */
 const MIN_ROWS_FOR_CLEANUP = 1000;
 const MAX_DOWNLOAD_RETRIES = 2;
@@ -31,6 +34,8 @@ export interface CatalogSyncResult {
   storeCount: number;
   upserted: number;
   removed: number | null;
+  /** 本次追加的价格历史行数（只含变动；首次同步为全部报价的基线） */
+  historyRows: number;
   durationMs: number;
 }
 
@@ -107,21 +112,51 @@ export async function syncKaitorixCatalog(): Promise<CatalogSyncResult> {
     { auth: { persistSession: false } },
   );
 
+  // 同步前的目录快照：与新价格对比，只把变动追加进 kaitorix_price_history
+  let existing: Array<{ jan: string; prices: CatalogPrice[] | null }>;
+  try {
+    existing = await fetchAllRows((from, to, opts) =>
+      supabase.from('kaitorix_catalog').select('jan, prices', opts).order('jan').range(from, to),
+    );
+  } catch (error) {
+    throw new CatalogSyncError(`读取现有目录失败：${(error as { message?: string })?.message ?? error}`, 500);
+  }
+  const oldByJan = new Map(existing.map(r => [r.jan, r.prices ?? []]));
+  const dayStart = jstDayStartIso();
+
+  // 主键含 observed_at：重跑同一天的同步时，已写入的历史行被忽略，不会重复
+  let historyRows = 0;
+  const insertHistory = async (rows: PriceHistoryRow[]) => {
+    for (let i = 0; i < rows.length; i += HISTORY_CHUNK) {
+      const { error } = await supabase
+        .from('kaitorix_price_history')
+        .upsert(rows.slice(i, i + HISTORY_CHUNK), { onConflict: 'jan,store,observed_at', ignoreDuplicates: true });
+      if (error) throw new CatalogSyncError(`写入 kaitorix_price_history 失败（本次已追加 ${historyRows} 行）：${error.message}`, 500);
+      historyRows += Math.min(HISTORY_CHUNK, rows.length - i);
+    }
+  };
+
   // 本次同步的统一时间戳：之后用它清理「这次没出现」的旧行
   const syncedAt = new Date().toISOString();
   let upserted = 0;
   for (let i = 0; i < parsed.rows.length; i += UPSERT_CHUNK) {
-    const chunk: Array<CatalogRow & { synced_at: string }> = parsed.rows
-      .slice(i, i + UPSERT_CHUNK)
-      .map(row => ({ ...row, synced_at: syncedAt }));
+    const slice = parsed.rows.slice(i, i + UPSERT_CHUNK);
+    // 先写历史再更新目录：中途失败重跑时，历史靠主键去重，不会漏记变动
+    await insertHistory(slice.flatMap(row => diffPriceHistory(row.jan, oldByJan.get(row.jan), row.prices, dayStart)));
+    const chunk: Array<CatalogRow & { synced_at: string }> = slice.map(row => ({ ...row, synced_at: syncedAt }));
     const { error } = await supabase.from('kaitorix_catalog').upsert(chunk, { onConflict: 'jan' });
     if (error) throw new CatalogSyncError(`写入 kaitorix_catalog 失败（已写入 ${upserted} 行）：${error.message}`, 500);
     upserted += chunk.length;
   }
 
-  // 全部写入成功后，才清理本次文件里已不存在的商品（当天没有任何店报价了）
+  // 全部写入成功后，才清理本次文件里已不存在的商品（当天没有任何店报价了），
+  // 清理前给它们的每家店记一条「不再报价」，价格曲线才能断开
   let removed: number | null = null;
   if (parsed.rows.length >= MIN_ROWS_FOR_CLEANUP) {
+    const present = new Set(parsed.rows.map(r => r.jan));
+    await insertHistory(
+      existing.filter(r => !present.has(r.jan)).flatMap(r => diffPriceHistory(r.jan, r.prices ?? [], [], dayStart)),
+    );
     const { error, count } = await supabase
       .from('kaitorix_catalog')
       .delete({ count: 'exact' })
@@ -138,6 +173,7 @@ export async function syncKaitorixCatalog(): Promise<CatalogSyncResult> {
     storeCount: parsed.stores.length,
     upserted,
     removed,
+    historyRows,
     durationMs: Date.now() - startedAt,
   };
 }
