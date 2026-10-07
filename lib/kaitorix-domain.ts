@@ -3,13 +3,17 @@
 // 纯函数模块，比价中心页面与交易页比价链路共用，避免逻辑分叉。
 
 import { getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
+import { KAITORIX_REFERENCE_MAX_AGE_MS } from '@/lib/kaitorix-config';
 
 /** 单条店铺报价。统一 KaitorixPrice / KaitorixCachedPrice / allPrices 项的结构 */
 export interface KaitorixPriceEntry {
   store: string;
   price: number;
   url: string;
+  /** 店铺报价的相对更新时间文本（"8分前" / "3時間前" / "2日前"），相对于抓取时刻 */
   updated?: string;
+  /** 精确更新时间（ISO 字符串）；有则优先于 updated */
+  updated_at?: string;
 }
 
 /** 价格数据来源：official/scraper/cache 来自 DB 缓存表，stale/pending 来自 API 路由语义 */
@@ -38,6 +42,60 @@ export interface TransactionBuybackFields {
   expected_platform_points?: number | null;
   expected_card_points?: number | null;
   extra_platform_points?: number | null;
+}
+
+const RELATIVE_AGE_UNIT_MS: Array<[string, number]> = [
+  ['分', 60_000],
+  ['時間', 3_600_000],
+  ['日', 86_400_000],
+  ['週間', 7 * 86_400_000],
+  ['ヶ月', 30 * 86_400_000],
+  ['か月', 30 * 86_400_000],
+  ['カ月', 30 * 86_400_000],
+];
+
+/** "8分前" / "3時間前" / "2日前" → 毫秒；无法解析返回 null */
+export function parseRelativeAgeMs(text: string | null | undefined): number | null {
+  if (!text) return null;
+  const m = text.match(/(\d+)\s*(分|時間|日|週間|ヶ月|か月|カ月)\s*前/);
+  if (!m) return null;
+  const unit = RELATIVE_AGE_UNIT_MS.find(([u]) => u === m[2]);
+  return unit ? Number(m[1]) * unit[1] : null;
+}
+
+/** 一条报价的更新时刻（unix ms）：updated_at 优先，其次「抓取时刻 − 相对时间」；无法确定返回 null */
+export function getPriceUpdatedAt(
+  entry: { updated?: string; updated_at?: string },
+  fetchedAt: number | null | undefined,
+  now: number = Date.now()
+): number | null {
+  if (entry.updated_at) {
+    const t = Date.parse(entry.updated_at);
+    if (!Number.isNaN(t)) return t;
+  }
+  const age = parseRelativeAgeMs(entry.updated);
+  if (age == null) return null;
+  return (fetchedAt ?? now) - age;
+}
+
+/** 该报价是否仍可作为参考：更新时间未超过 7 天；时间无法确定时按可参考处理 */
+export function isPriceReferenceable(
+  entry: { updated?: string; updated_at?: string },
+  fetchedAt: number | null | undefined,
+  now: number = Date.now()
+): boolean {
+  const updatedAt = getPriceUpdatedAt(entry, fetchedAt, now);
+  return updatedAt == null || now - updatedAt <= KAITORIX_REFERENCE_MAX_AGE_MS;
+}
+
+/** 剔除更新时间超过 7 天的店铺报价；最高价 / 利润等一律基于它的结果重新计算 */
+export function getReferencePrices<T extends { updated?: string; updated_at?: string }>(
+  prices: T[] | null | undefined,
+  fetchedAt: number | null | undefined,
+  now: number = Date.now()
+): T[] {
+  if (!prices?.length) return [];
+  return prices.filter(p => isPriceReferenceable(p, fetchedAt, now));
 }
 
 /**

@@ -11,11 +11,12 @@ import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/ca
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Select from '@/components/Select';
 import type { Transaction } from '@/types/database.types';
-import { isKaitorixPriceStale } from '@/lib/kaitorix-config';
 import {
   expectedProfitForTx,
   filterPricesByStores,
   getBestEntry,
+  getReferencePrices,
+  isPriceReferenceable,
   groupTransactionsByJan,
   type JanPriceData,
   type KaitorixPriceEntry,
@@ -93,8 +94,9 @@ function buildSummaries(
   return Array.from(janMap.entries()).map(([jan, txs]) => {
     const data = janPriceMap.get(jan) || null;
     const prices = data?.prices || [];
-    // 最高价/利润口径与交易页一致：只看启用店铺；明细仍展示全部店铺
-    const best = getBestEntry(filterPricesByStores(prices, enabledStores));
+    // 最高价/利润口径与交易页一致：只看启用店铺且更新未超过 7 天；明细仍展示全部店铺
+    const referencePrices = getReferencePrices(prices, data?.fetchedAt);
+    const best = getBestEntry(filterPricesByStores(referencePrices, enabledStores));
 
     const totalStock = txs.reduce((sum, tx) => sum + getAvailableQty(tx), 0);
     const totalCostForStock = txs.reduce((sum, tx) => sum + getUnitCost(tx) * getAvailableQty(tx), 0);
@@ -103,7 +105,8 @@ function buildSummaries(
       ? txs.reduce((sum, tx) => sum + expectedProfitForTx(maxPrice, tx), 0)
       : 0;
 
-    const isStale = isKaitorixPriceStale(data?.fetchedAt ?? undefined);
+    // 有价格数据但所有店铺的报价都已超过 7 天
+    const isStale = prices.length > 0 && referencePrices.length === 0;
 
     return {
       jan,
@@ -480,7 +483,7 @@ function KaitorixPricesContent() {
                     <div className={`font-mono text-sm lg:text-right ${item.isStale ? 'opacity-40' : ''}`}>
                       <span className="block font-sans text-xs text-[var(--color-text-muted)] lg:hidden">最高价</span>
                       {item.maxPrice > 0 ? formatCurrency(item.maxPrice) : '-'}
-                      {item.isStale && item.maxPrice > 0 && <span className="ml-1 text-[10px] text-[var(--color-warning)]">过期</span>}
+                      {item.isStale && <span className="ml-1 text-[10px] text-[var(--color-warning)]">过期</span>}
                       {!item.isStale && item.maxStore && <div className="text-xs text-[var(--color-primary)]">{item.maxStore}</div>}
                     </div>
                     <div className={`font-mono text-sm lg:text-right ${item.isStale ? 'opacity-40' : item.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
@@ -557,8 +560,9 @@ function KaitorixPricesContent() {
                       .map((price, index) => {
                         const isEnabled = enabledStoreSet.has(price.store);
                         const diff = selectedSummary.maxPrice - price.price;
+                        const isExpired = !isPriceReferenceable(price, selectedSummary.lastFetchedAt);
                         return (
-                          <div key={`${price.store}-${index}`} className={`grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center ${isEnabled ? '' : 'opacity-50'}`}>
+                          <div key={`${price.store}-${index}`} className={`grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center ${isEnabled && !isExpired ? '' : 'opacity-50'}`}>
                             <div className="min-w-0">
                               {price.url ? (
                                 <a href={price.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--color-primary)] hover:underline">{price.store}</a>
@@ -568,8 +572,8 @@ function KaitorixPricesContent() {
                               <div className="text-xs text-[var(--color-text-muted)]">{price.updated || '更新时间不明'}</div>
                             </div>
                             <div className="font-mono font-semibold text-[var(--color-text)]">{formatCurrency(price.price)}</div>
-                            <div className={!isEnabled ? 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1' : diff === 0 ? 'col-span-2 text-xs text-[var(--color-success)] sm:col-span-1' : 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1'}>
-                              {!isEnabled ? '未启用' : diff === 0 ? '最高' : `-${formatCurrency(diff)}`}
+                            <div className={!isEnabled || isExpired ? 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1' : diff === 0 ? 'col-span-2 text-xs text-[var(--color-success)] sm:col-span-1' : 'col-span-2 text-xs text-[var(--color-text-muted)] sm:col-span-1'}>
+                              {!isEnabled ? '未启用' : isExpired ? '超7天' : diff === 0 ? '最高' : `-${formatCurrency(diff)}`}
                             </div>
                           </div>
                         );

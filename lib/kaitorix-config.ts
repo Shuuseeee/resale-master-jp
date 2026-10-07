@@ -1,6 +1,6 @@
 // KaitoriX 買取価格チェック設定
 
-/** 买取价格数据超过此时长视为过期，不纳入展示与计算 */
+/** 抓取时间超过此时长的 JAN 在进入页面 / 手动刷新时需要重新请求（只决定「要不要刷新」，不再据此归零价格） */
 export const KAITORIX_STALE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** fetchedAt 为 undefined 或超过 24 小时时返回 true */
@@ -8,6 +8,9 @@ export function isKaitorixPriceStale(fetchedAt: number | undefined): boolean {
   if (fetchedAt == null) return true;
   return Date.now() - fetchedAt > KAITORIX_STALE_MS;
 }
+
+/** 店铺自己的报价更新时间超过此时长，该条报价不再作为参考（不参与最高价 / 利润计算） */
+export const KAITORIX_REFERENCE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export interface KaitorixStore {
   key: string;

@@ -12,6 +12,7 @@ import {
   expectedProfitForTx,
   filterPricesByStores,
   getBestEntry,
+  getReferencePrices,
   groupTransactionsByJan,
   type JanPriceData,
   type TransactionBuybackFields,
@@ -137,7 +138,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   const enabled = config.enabled && config.enabledStores.length > 0;
 
   // 派生 buybackMap：基于原始 JAN 数据 + 当前交易 + 店铺配置即时计算。
-  // 过期归零、店铺过滤、利润都在这里发生，保证所有消费方口径一致。
+  // 7 天参考过滤、店铺过滤、利润都在这里发生，保证所有消费方口径一致。
   const buybackMap = useMemo(() => {
     const map = new Map<string, BuybackInfo>();
     if (janPriceMap.size === 0) return map;
@@ -146,14 +147,12 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       const data = janPriceMap.get(jan);
       if (!data) return;
 
-      // 24h 过期：价格归零，展示组件自动隐藏
-      const stale24h = isKaitorixPriceStale(data.fetchedAt ?? undefined);
-      const filtered = stale24h ? [] : filterPricesByStores(data.prices, config.enabledStores);
+      // 店铺自己的报价更新超过 7 天的不作为参考；全部过期则价格归零，展示组件自动隐藏
+      const filtered = filterPricesByStores(getReferencePrices(data.prices, data.fetchedAt), config.enabledStores);
       const best = getBestEntry(filtered);
       const fetchedAt = data.fetchedAt ?? undefined;
-      // 'stale'（>30 分钟）驱动行内的取得时刻标注；与 24h 归零是两个阈值
-      const ageSource: BuybackInfo['source'] = stale24h ? 'stale'
-        : data.prices.length === 0 ? 'pending'
+      // 'stale'（>30 分钟）驱动行内的取得时刻标注
+      const ageSource: BuybackInfo['source'] = data.prices.length === 0 ? 'pending'
         : data.fetchedAt != null && Date.now() - data.fetchedAt <= SERVER_CACHE_TTL ? 'cache'
         : 'stale';
 
@@ -251,7 +250,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
         const data = janPriceMapRef.current.get(jan);
         if (!data) return true;
         if (isKaitorixPriceStale(data.fetchedAt ?? undefined)) return true;
-        return !getBestEntry(filterPricesByStores(data.prices, config.enabledStores));
+        return !getBestEntry(filterPricesByStores(getReferencePrices(data.prices, data.fetchedAt), config.enabledStores));
       })
       .sort();
     void doRefresh(jans);
