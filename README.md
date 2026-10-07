@@ -1,6 +1,6 @@
 # Resale Master JP - 日本转卖业务财务管理系统
 
-一个面向日本二手转卖业务的私用财务管理 PWA。系统覆盖采购、库存、销售、退货、积分、优惠券、耗材、买取价对比、通知和税务报表，适合在桌面浏览器和 iPhone 主屏幕 PWA 中使用。
+一个面向日本二手转卖业务的私用财务管理 PWA。系统覆盖采购、库存、销售、退货、积分、优惠券、耗材、买取价对比和税务报表，适合在桌面浏览器和 iPhone 主屏幕 PWA 中使用。
 
 ## 核心功能
 
@@ -14,9 +14,8 @@
 ### 财务与运营
 - **支付方式管理**：管理信用卡、银行账户和电子钱包，支持还款日与积分平台配置。
 - **积分平台系统**：维护积分平台汇率，并纳入 ROI / 总利润计算。
-- **优惠券管理**：支持优惠券有效期、使用状态、OCR 识别和通知提醒。
+- **优惠券管理**：支持优惠券有效期、使用状态和 OCR 识别。
 - **耗材成本**：记录包装材料、运输用品等成本，并纳入经营分析。
-- **通知中心**：基于 Supabase Realtime、Web Push 和站内通知展示未读提醒。
 
 ### 数据分析与税务
 - **仪表盘**：展示库存数、总投资额、已回收、确认利润、未回收库存、预期积分 / 本月利润等核心经营指标。
@@ -28,8 +27,8 @@
 - **框架**：Next.js 15 App Router + React 19 + TypeScript
 - **样式**：Tailwind CSS + `app/globals.css` 里的 SNUtils 风格 CSS 变量
 - **图标**：lucide-react
-- **数据库与认证**：Supabase Auth + PostgreSQL + Storage + Realtime
-- **PWA / 推送**：Manifest + Workbox Service Worker + Web Push (`web-push`)
+- **数据库与认证**：Supabase Auth + PostgreSQL + Storage
+- **PWA**：Manifest + Workbox Service Worker
 - **图表与导出**：Recharts、jsPDF、jspdf-autotable、XLSX
 - **表格**：`@tanstack/react-table`（headless）+ `@tanstack/react-virtual`
 - **数据请求缓存**：`@tanstack/react-query`
@@ -70,10 +69,6 @@ NEXT_PUBLIC_KAITORIX_RATE_LIMIT_MODE=ultra-safe
 KAITORIX_OPEN_API_KEY=your_open_api_key
 KAITORIX_OPEN_API_DAILY_LIMIT=30
 ANTHROPIC_API_KEY=sk-ant-...
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
-VAPID_PRIVATE_KEY=your_vapid_private_key
-LINE_REMINDER_URL=https://...
-CRON_SECRET=your_cron_secret
 ```
 
 ### 3. 初始化数据库
@@ -105,8 +100,7 @@ resale-master-jp/
 │   │   ├── jan-product/[jan]/        # JAN 商品名查询与补全
 │   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量
 │   │   ├── thumbnail/enqueue/        # 商品缩略图抓取入队
-│   │   ├── ocr/                      # 优惠券 OCR 与测试接口
-│   │   └── push/                     # Web Push 订阅、测试、每日提醒
+│   │   └── ocr/                      # 优惠券 OCR 与测试接口
 │   ├── auth/                         # 登录、注册、OAuth 回调
 │   ├── dashboard/                    # 仪表盘
 │   ├── transactions/                 # 交易列表、新增、详情、编辑
@@ -114,7 +108,6 @@ resale-master-jp/
 │   ├── supplies/                     # 耗材成本管理
 │   ├── analytics/                    # 数据分析
 │   ├── tax-report/                   # 税务申报
-│   ├── notifications/                # 通知中心
 │   └── settings/                     # 设置与支付方式管理
 ├── components/                       # 共用 React 组件
 ├── contexts/                         # AuthContext、PlatformsContext
@@ -151,10 +144,10 @@ resale-master-jp/
 - `supplies_costs` / `fixed_costs`：耗材与固定成本。
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
 - `transaction_history`：交易字段变更历史。
-- `notifications` / `push_subscriptions`：站内通知与 Web Push 订阅。
+- `notifications` / `push_subscriptions`：通知与推送订阅（web 端已移除通知功能，表保留供原生 App 使用）。
 - `user_preferences`：用户级 UI 偏好，如交易列表列设置、配色主题。
 - `user_roles`：管理员角色。
-- `user_line_links`：用户与 LINE 账号绑定关系。
+- `user_line_links`：用户与 LINE 账号绑定关系（web 端不使用）。
 - `kaitorix_price_cache` / `kaitorix_scrape_queue` / `kaitorix_open_api_usage`：买取价缓存、抓取队列、Open API 每日用量。
 - `jan_thumbnail_cache` / `jan_thumbnail_queue`：JAN 维度共享的商品缩略图缓存与抓取队列。
 
@@ -170,14 +163,11 @@ resale-master-jp/
 
 所有核心业务表启用 RLS，按 `auth.uid()` 隔离用户数据。管理员读取权限通过 `user_roles` 与 `is_admin()` 放宽。
 
-## 认证、PWA 与通知
+## 认证与 PWA
 
 - Supabase Auth 支持邮箱密码、Google OAuth 和邀请用户注册。
 - `middleware.ts` 保护业务页面，`/auth/*` 和 `/api/*` 为公开路径。
 - PWA 使用 `app/manifest.ts` 和 `public/sw.js`，支持 iOS 添加到主屏幕。
-- 通知中心使用 Supabase Realtime 更新未读数。
-- Web Push 需要 `NEXT_PUBLIC_VAPID_PUBLIC_KEY` 和 `VAPID_PRIVATE_KEY`。
-- `/api/push/daily` 用于每日优惠券提醒，可由 Vercel Cron 触发；`LINE_REMINDER_URL` 为可选的 LINE fallback 集成。
 
 ## 开发命令
 
@@ -189,7 +179,7 @@ npm run type-check   # TypeScript 类型检查
 node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 ```
 
-项目当前没有 Jest / Vitest / Playwright 测试框架（`e2e/specs/` 是空目录占位）。手动测试入口包括 `/api/ocr/test` 和开发环境下通知页的测试推送面板。
+项目当前没有 Jest / Vitest / Playwright 测试框架（`e2e/specs/` 是空目录占位）。手动测试入口是 `/api/ocr/test`。
 
 ## 设计系统
 
@@ -209,5 +199,4 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - 推荐部署到 Vercel。
 - 数据库和 Storage 使用 Supabase。
 - 生产环境需要配置 `.env.local.example` 中列出的服务端和客户端变量。
-- 如果启用 Web Push，每日提醒由 `vercel.json` 的 Cron 调用 `/api/push/daily`（`0 23 * * *` UTC，即日本时间 08:00），需在环境变量中设置 `CRON_SECRET`。
 - `scraper/` 不在 Vercel 上运行，需单独托管（pm2，见 `scraper/README.md`）。

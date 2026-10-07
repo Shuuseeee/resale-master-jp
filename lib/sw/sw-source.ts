@@ -1,4 +1,4 @@
-// Service Worker — Workbox precaching + runtime strategies + Web Push
+// Service Worker — Workbox precaching + runtime strategies
 //
 // This is the SOURCE file compiled by workbox-webpack-plugin (InjectManifest).
 // The generated output is written to public/sw.js and served as the SW entry point.
@@ -6,8 +6,7 @@
 // Architecture:
 //   1. Precache all webpack-generated assets (self.__WB_MANIFEST)
 //   2. Runtime caching routes with differentiated strategies per resource type
-//   3. Web Push event handlers (preserved from the original hand-written SW)
-//   4. Update lifecycle: skipWaiting + clientsClaim + client notification
+//   3. Update lifecycle: skipWaiting + clientsClaim + client notification
 
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
@@ -141,82 +140,4 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
-})
-
-// ---------------------------------------------------------------------------
-// 4. Web Push handlers (preserved from original public/sw.js)
-// ---------------------------------------------------------------------------
-
-// 4a. Push event — show notification with action buttons
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push event received:', event)
-  if (!event.data) {
-    console.warn('[SW] Push event has no data')
-    return
-  }
-
-  let payload: {
-    title?: string
-    body?: string
-    notificationId?: string | null
-    type?: string
-    [key: string]: unknown
-  }
-
-  try {
-    payload = event.data.json()
-    console.log('[SW] Push payload:', JSON.stringify(payload))
-  } catch {
-    payload = {
-      title: '転売管理',
-      body: event.data.text(),
-      notificationId: null,
-    }
-    console.log('[SW] Push payload (text fallback):', payload)
-  }
-
-  const { title, body, notificationId, type } = payload
-  const options: NotificationOptions = {
-    body: body || '',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    tag: notificationId || type || 'default',
-    renotify: true,
-    data: {
-      notificationId,
-      url: notificationId ? `/notifications/${notificationId}` : '/notifications',
-    },
-    actions: [
-      { action: 'open', title: '查看详情' },
-      { action: 'dismiss', title: '忽略' },
-    ],
-  }
-
-  console.log('[SW] Showing notification:', title, options)
-  event.waitUntil(
-    self.registration
-      .showNotification(title || '転売管理', options)
-      .then(() => console.log('[SW] Notification shown successfully'))
-      .catch((e) => console.error('[SW] showNotification failed:', e))
-  )
-})
-
-// 4b. Notification click — open detail page or focus existing window
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  if (event.action === 'dismiss') return
-
-  const targetUrl: string = event.notification.data?.url || '/notifications'
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(targetUrl)
-          return client.focus()
-        }
-      }
-      return self.clients.openWindow(targetUrl)
-    })
-  )
 })

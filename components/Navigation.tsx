@@ -4,11 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getUnreadCount } from '@/lib/api/notifications';
-import { supabase } from '@/lib/supabase/client';
 import {
   BarChart3,
-  Bell,
   ChevronLeft,
   ClipboardList,
   FileText,
@@ -37,34 +34,10 @@ export default function Navigation() {
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // 初始加载未读数 + Realtime 订阅维护角标（已静态 import，无 import-race 泄漏风险）
-  useEffect(() => {
-    if (!user) return;
-
-    // 首屏取一次精确 count
-    getUnreadCount().then(setUnreadCount);
-
-    // Realtime：任意通知变更时重查 count（兜底：即使 Realtime publication 已开启）
-    const refresh = () => getUnreadCount().then(setUnreadCount);
-    const channel = supabase
-      .channel('nav-notifications-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, refresh)
-      .subscribe();
-
-    // 本人操作（标记已读/删除）触发的即时刷新事件
-    window.addEventListener('notifications-changed', refresh);
-
-    return () => {
-      supabase.removeChannel(channel);
-      window.removeEventListener('notifications-changed', refresh);
-    };
-  }, [user]);
 
   // 路由变化时关闭抽屉和 FAB 菜单
   useEffect(() => {
@@ -133,20 +106,6 @@ export default function Navigation() {
       icon: <BarChart3 className="h-5 w-5" strokeWidth={2} />,
     },
     {
-      name: '通知',
-      href: '/notifications',
-      icon: (
-        <div className="relative">
-          <Bell className="h-5 w-5" strokeWidth={2} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
       name: '税务申报',
       href: '/tax-report',
       icon: <FileText className="h-5 w-5" strokeWidth={2} />,
@@ -197,19 +156,6 @@ export default function Navigation() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-header-chip-hover)] hover:text-[var(--color-header-text)]"
-            title="通知"
-          >
-            <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 min-w-4 h-4 px-1 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Link>
-
           <ThemeToggleButton />
 
           <div className="hidden xl:flex items-center h-9 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)]">
@@ -331,21 +277,6 @@ export default function Navigation() {
               <div className="text-sm font-bold text-[var(--color-header-text)]">Resale Master</div>
               <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>
             </div>
-          </Link>
-
-          {/* 通知铃铛 */}
-          <Link
-            href="/notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)] active:bg-[var(--color-header-chip-hover)]"
-            onClick={() => triggerHaptic('light')}
-            aria-label="通知"
-          >
-            <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[var(--color-danger)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
           </Link>
         </div>
         <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
