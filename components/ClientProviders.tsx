@@ -9,6 +9,7 @@ import { SWUpdatePrompt } from '@/components/SWUpdatePrompt';
 import { ThemePaletteSync } from '@/components/ThemePaletteSync';
 import OfflineCacheProvider from '@/components/OfflineCacheProvider';
 import OfflineBanner from '@/components/OfflineBanner';
+import QueryInvalidationBridge from '@/components/QueryInvalidationBridge';
 import { OFFLINE_CACHE_MAX_AGE } from '@/lib/offline/persister';
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               <ThemePaletteSync />
               <SWUpdatePrompt />
               <OfflineBanner />
+              <QueryInvalidationBridge />
               {children}
             </PlatformsProvider>
           </OfflineCacheProvider>

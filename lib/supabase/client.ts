@@ -2,6 +2,7 @@
 // Supabase Client Configuration
 
 import { createBrowserClient } from '@supabase/ssr';
+import { notifyMutation, tableFromRestUrl } from './mutationEvents';
 
 // 环境变量验证
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,15 +15,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // 离线时写操作（POST/PATCH/PUT/DELETE）立即失败并给出明确提示，而不是等浏览器的
 // "Failed to fetch / Load failed"。离线模式是只读的：数据来自本机缓存，写入必须联网。
 // 只拦截数据 / 存储请求；认证请求（/auth/v1/）保持原有行为，以免干扰 token 刷新的重试判断。
-const offlineAwareFetch: typeof fetch = (input, init) => {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
-    if (method !== 'GET' && method !== 'HEAD' && !url.includes('/auth/v1/')) {
-      return Promise.reject(new Error('离线中，无法修改数据，请联网后重试'));
-    }
+//
+// 同时在这里统一发出「写入成功」事件：QueryInvalidationBridge 据此让相关查询缓存失效，
+// 写入点不需要各自处理（见 lib/queryInvalidation.ts）。
+const offlineAwareFetch: typeof fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+  const isWrite = method !== 'GET' && method !== 'HEAD';
+
+  if (isWrite && typeof navigator !== 'undefined' && navigator.onLine === false && !url.includes('/auth/v1/')) {
+    throw new Error('离线中，无法修改数据，请联网后重试');
   }
-  return fetch(input, init);
+
+  const response = await fetch(input, init);
+
+  if (isWrite && response.ok) {
+    const table = tableFromRestUrl(url);
+    if (table) notifyMutation(table);
+  }
+  return response;
 };
 
 // 创建 Supabase 浏览器客户端实例
