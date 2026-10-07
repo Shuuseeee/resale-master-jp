@@ -2,6 +2,7 @@
 // 耗材成本管理API
 
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllRows } from '@/lib/api/fetchAll';
 import type { SuppliesCost, SuppliesCostFormData } from '@/types/database.types';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -9,15 +10,16 @@ import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
  * 获取所有耗材成本记录
  */
 export async function getSuppliesCosts(): Promise<SuppliesCost[]> {
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .select('*')
-    .order('purchase_date', { ascending: false });
-
-  // 失败即抛错：耗材列表已入离线缓存，返回 [] 会被当成成功的空列表并持久化（唯一调用方是耗材页）
-  if (error) throw error;
-
-  return data || [];
+  // 失败即抛错：耗材列表已入离线缓存，返回 [] 会被当成成功的空列表并持久化（唯一调用方是耗材页）。
+  // 分页取全：超过单次行数上限（默认 1000）会静默截断。
+  return fetchAllRows<SuppliesCost>((from, to, opts) =>
+    supabase
+      .from('supplies_costs')
+      .select('*', opts)
+      .order('purchase_date', { ascending: false })
+      .order('id')
+      .range(from, to),
+  );
 }
 
 /**

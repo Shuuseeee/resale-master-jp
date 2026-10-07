@@ -2,6 +2,7 @@
 // 確定申告レポート API
 
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllRows } from '@/lib/api/fetchAll';
 import type { Transaction } from '@/types/database.types';
 import { parseDateFromLocal } from '@/lib/utils/dateUtils';
 
@@ -82,7 +83,10 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
-    const { data, error } = await supabase
+    // 分页取全：PostgREST 单次响应有行数上限（默认 1000），一年的销售记录超过它就会静默截断，
+    // 报税的收入 / 经费都会偏小且不报错。排序带 id 兜底，保证分页没有重复 / 遗漏。
+    const data = await fetchAllRows<any>((from, to, opts) =>
+      supabase
       .from('sales_records')
       .select(`
         *,
@@ -107,15 +111,16 @@ async function getSalesRecordsByYear(year: number): Promise<any[]> {
           purchase_platform:purchase_platform_id(name),
           notes
         )
-      `)
+      `, opts)
       .not('sale_date', 'is', null)
       .gte('sale_date', startDate)
       .lte('sale_date', endDate)
-      .order('sale_date', { ascending: true });
+      .order('sale_date', { ascending: true })
+      .order('id')
+      .range(from, to),
+    );
 
-    if (error) throw error;
-
-    return data || [];
+    return data;
   } catch (error) {
     console.error('年度販売記録の取得に失敗:', error);
     // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
@@ -153,15 +158,18 @@ async function getYearlySuppliesCosts(year: number): Promise<number> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
-    const { data, error } = await supabase
-      .from('supplies_costs')
-      .select('amount')
-      .gte('purchase_date', startDate)
-      .lte('purchase_date', endDate);
+    // 求和：必须取全（见 getSalesRecordsByYear 的说明）
+    const data = await fetchAllRows<{ amount: number }>((from, to, opts) =>
+      supabase
+        .from('supplies_costs')
+        .select('amount', opts)
+        .gte('purchase_date', startDate)
+        .lte('purchase_date', endDate)
+        .order('id')
+        .range(from, to),
+    );
 
-    if (error) throw error;
-
-    return (data || []).reduce((sum, item) => sum + item.amount, 0);
+    return data.reduce((sum, item) => sum + item.amount, 0);
   } catch (error) {
     console.error('年度消耗品費の取得に失敗:', error);
     // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
@@ -245,9 +253,11 @@ export async function generateTaxInventoryItems(year: number): Promise<TaxInvent
   try {
     const endDate = `${year}-12-31`;
 
-    const { data: transactions, error: txError } = await supabase
-      .from('transactions')
-      .select(`
+    // 全部分页取全（超过单次行数上限会静默截断，棚卸数量 / 金额会偏小）。
+    const transactions = await fetchAllRows<any>((from, to, opts) =>
+      supabase
+        .from('transactions')
+        .select(`
         id,
         date,
         product_name,
@@ -258,30 +268,34 @@ export async function generateTaxInventoryItems(year: number): Promise<TaxInvent
         order_number,
         notes,
         purchase_platform:purchase_platform_id(name)
-      `)
-      .lte('date', endDate)
-      .order('date', { ascending: true });
+      `, opts)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .order('id')
+        .range(from, to),
+    );
+    if (transactions.length === 0) return [];
 
-    if (txError) throw txError;
-    if (!transactions || transactions.length === 0) return [];
+    // 销售 / 退货不再用 .in('transaction_id', 全部交易ID) 过滤：565 个 UUID 拼出的请求地址约 20KB，
+    // 会随交易增多触及网关上限而失败。RLS 已限定为本人的行；多出来的行（理论上只有
+    // 销售日早于采购日的异常数据）下面按交易 id 汇总、只取交易列表里有的，不会被计入。
+    const salesRecords = await fetchAllRows<{ transaction_id: string; quantity_sold: number | null; sale_date: string }>((from, to, opts) =>
+      supabase
+        .from('sales_records')
+        .select('transaction_id, quantity_sold, sale_date', opts)
+        .lte('sale_date', endDate)
+        .order('id')
+        .range(from, to),
+    );
 
-    const transactionIds = transactions.map(t => t.id);
-
-    const { data: salesRecords, error: salesError } = await supabase
-      .from('sales_records')
-      .select('transaction_id, quantity_sold, sale_date')
-      .in('transaction_id', transactionIds)
-      .lte('sale_date', endDate);
-
-    if (salesError) throw salesError;
-
-    const { data: returnRecords, error: returnError } = await supabase
-      .from('return_records')
-      .select('transaction_id, quantity_returned, return_date')
-      .in('transaction_id', transactionIds)
-      .lte('return_date', endDate);
-
-    if (returnError) throw returnError;
+    const returnRecords = await fetchAllRows<{ transaction_id: string; quantity_returned: number | null; return_date: string }>((from, to, opts) =>
+      supabase
+        .from('return_records')
+        .select('transaction_id, quantity_returned, return_date', opts)
+        .lte('return_date', endDate)
+        .order('id')
+        .range(from, to),
+    );
 
     const soldByTransaction = new Map<string, number>();
     for (const record of salesRecords || []) {
@@ -387,28 +401,33 @@ export async function generateTaxReportSummary(year: number): Promise<TaxReportS
  */
 export async function getAvailableYears(): Promise<number[]> {
   try {
-    const { data: transactionDates, error: txError } = await supabase
-      .from('transactions')
-      .select('date')
-      .order('date', { ascending: false });
+    // 分页取全：只取日期列，数据量小；否则超过单次行数上限后最早的年份会静默消失
+    const transactionDates = await fetchAllRows<{ date: string }>((from, to, opts) =>
+      supabase
+        .from('transactions')
+        .select('date', opts)
+        .order('date', { ascending: false })
+        .order('id')
+        .range(from, to),
+    );
 
-    if (txError) throw txError;
+    const saleDates = await fetchAllRows<{ sale_date: string | null }>((from, to, opts) =>
+      supabase
+        .from('sales_records')
+        .select('sale_date', opts)
+        .not('sale_date', 'is', null)
+        .order('sale_date', { ascending: false })
+        .order('id')
+        .range(from, to),
+    );
 
-    const { data: saleDates, error: saleError } = await supabase
-      .from('sales_records')
-      .select('sale_date')
-      .not('sale_date', 'is', null)
-      .order('sale_date', { ascending: false });
-
-    if (saleError) throw saleError;
-
-    if ((!transactionDates || transactionDates.length === 0) && (!saleDates || saleDates.length === 0)) {
+    if (transactionDates.length === 0 && saleDates.length === 0) {
       return [new Date().getFullYear()];
     }
 
     const years = [
-      ...(transactionDates || []).map(t => t.date),
-      ...(saleDates || []).map(s => s.sale_date),
+      ...transactionDates.map(t => t.date),
+      ...saleDates.map(s => s.sale_date),
     ]
       .filter((date): date is string => !!date)
       .map(date => (parseDateFromLocal(date) ?? new Date()).getFullYear())

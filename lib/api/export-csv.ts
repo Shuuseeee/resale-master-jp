@@ -2,6 +2,7 @@
 // 在库管理データをCSV形式でエクスポート
 
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 
 /**
  * CSV列ヘッダー（purchases.csv形式に合わせる）
@@ -56,39 +57,63 @@ function formatJAN(jan: string | null | undefined): string {
  */
 export async function exportTransactionsToCSV(transactionIds?: string[]): Promise<string> {
   // 1. トランザクション + 関連データを取得
-  let query = supabase
-    .from('transactions')
-    .select(`
+  // 分页取全：PostgREST 单次响应有行数上限（默认 1000），超过的行会被静默截断——导出的 CSV 会悄悄少行。
+  // 指定了 ID 时分块查询（.in() 会拼进请求地址，几百个 UUID 就超过网关上限）。
+  const txSelect = `
       *,
       payment_method:payment_methods(name),
       purchase_platform:purchase_platforms(name)
-    `)
-    .order('date', { ascending: true });
-
-  if (transactionIds && transactionIds.length > 0) {
-    query = query.in('id', transactionIds);
+    `;
+  let transactions: any[];
+  try {
+    transactions =
+      transactionIds && transactionIds.length > 0
+        ? await fetchAllByIds<any>(transactionIds, (chunk, from, to, opts) =>
+            supabase
+              .from('transactions')
+              .select(txSelect, opts)
+              .in('id', chunk)
+              .order('date', { ascending: true })
+              .order('id')
+              .range(from, to),
+          )
+        : await fetchAllRows<any>((from, to, opts) =>
+            supabase
+              .from('transactions')
+              .select(txSelect, opts)
+              .order('date', { ascending: true })
+              .order('id')
+              .range(from, to),
+          );
+  } catch (txError: any) {
+    throw new Error(`取引データの取得に失敗: ${txError?.message ?? txError}`);
   }
-
-  const { data: transactions, error: txError } = await query;
-
-  if (txError) throw new Error(`取引データの取得に失敗: ${txError.message}`);
-  if (!transactions || transactions.length === 0) throw new Error('エクスポートするデータがありません');
+  if (transactions.length === 0) throw new Error('エクスポートするデータがありません');
+  // 分块读取后各块各自有序，合并后按「仕入日 → id」整体重排，保持与原先一致的输出顺序
+  transactions.sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.id).localeCompare(String(b.id)));
 
   // 2. 全販売記録を一括取得（N+1回避）
   const txIds = transactions.map(t => t.id);
-  const { data: allSalesRecords, error: srError } = await supabase
-    .from('sales_records')
-    .select(`
+  let allSalesRecords: any[];
+  try {
+    allSalesRecords = await fetchAllByIds<any>(txIds, (chunk, from, to, opts) =>
+      supabase
+        .from('sales_records')
+        .select(`
       *,
       selling_platform:selling_platforms(name)
-    `)
-    .in('transaction_id', txIds)
-    .order('sale_date', { ascending: true });
-
-  if (srError) throw new Error(`販売記録の取得に失敗: ${srError.message}`);
+    `, opts)
+        .in('transaction_id', chunk)
+        .order('sale_date', { ascending: true })
+        .order('id')
+        .range(from, to),
+    );
+  } catch (srError: any) {
+    throw new Error(`販売記録の取得に失敗: ${srError?.message ?? srError}`);
+  }
 
   // 販売記録をtransaction_idでグループ化
-  const salesByTxId = new Map<string, typeof allSalesRecords>();
+  const salesByTxId = new Map<string, any[]>();
   for (const sr of allSalesRecords || []) {
     const list = salesByTxId.get(sr.transaction_id) || [];
     list.push(sr);

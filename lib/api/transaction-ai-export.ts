@@ -3,6 +3,7 @@
 // 序列化结构见 lib/utils/transactionAIExport.ts。
 
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllRows } from '@/lib/api/fetchAll';
 import type { Transaction, SalesRecord, ReturnRecord } from '@/types/database.types';
 import {
   buildBatchAIExport,
@@ -39,17 +40,20 @@ async function fetchByTransactionIds<T extends { transaction_id: string }>(
 ): Promise<Map<string, T[]>> {
   const map = new Map<string, T[]>();
   const results = await Promise.all(
-    chunk(ids, ID_CHUNK).map(async part => {
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .in('transaction_id', part)
-        // 与原生一致：新 → 旧
-        .order(orderColumn, { ascending: false })
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as T[];
-    }),
+    chunk(ids, ID_CHUNK).map(part =>
+      // 每块各自分页取全（一块 100 笔交易的销售 / 退货理论上可能超过单次行数上限）
+      fetchAllRows<T>((from, to, opts) =>
+        supabase
+          .from(table)
+          .select('*', opts)
+          .in('transaction_id', part)
+          // 与原生一致：新 → 旧
+          .order(orderColumn, { ascending: false })
+          .order('created_at', { ascending: false })
+          .order('id')
+          .range(from, to) as unknown as PromiseLike<{ data: T[] | null; error: null; count: number | null }>,
+      ),
+    ),
   );
   for (const row of results.flat()) {
     const list = map.get(row.transaction_id);

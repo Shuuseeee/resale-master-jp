@@ -2,6 +2,7 @@
 // 数据分析 API 函数
 
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllRows, type SelectOpts } from '@/lib/api/fetchAll';
 import { formatDateToLocal } from '@/lib/utils/dateUtils';
 
 /**
@@ -185,7 +186,7 @@ function getPreviousDateRange(start: Date, end: Date): { start: Date; end: Date 
 /**
  * 构建查询条件（基于销售记录的销售日期）
  */
-function buildQuery(filters: AnalyticsFilters) {
+function buildQuery(filters: AnalyticsFilters, selectOpts: SelectOpts = {}) {
   const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
 
   let query = supabase
@@ -214,7 +215,7 @@ function buildQuery(filters: AnalyticsFilters) {
         extra_platform_points_platform_id,
         payment_method:payment_methods(id, name)
       )
-    `)
+    `, selectOpts)
     .not('sale_date', 'is', null)
     .gte('sale_date', formatDateToLocal(start))
     .lte('sale_date', formatDateToLocal(end));
@@ -223,6 +224,17 @@ function buildQuery(filters: AnalyticsFilters) {
   // Supabase不支持深层次筛选，所以我们在获取数据后再筛选
 
   return query;
+}
+
+/**
+ * 取回筛选范围内的全部销售记录。
+ * 分页读取：PostgREST 单次响应有行数上限（默认 1000），超过会静默截断，销售额 / 利润 / ROI 都会偏小。
+ * 排序带 id 兜底，保证分页没有重复 / 遗漏。
+ */
+function fetchSalesRows(filters: AnalyticsFilters): Promise<any[]> {
+  return fetchAllRows<any>((from, to, opts) =>
+    buildQuery(filters, opts).order('sale_date', { ascending: true }).order('id').range(from, to),
+  );
 }
 
 /**
@@ -302,9 +314,7 @@ async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<stri
  */
 export async function getTrendData(filters: AnalyticsFilters): Promise<TrendDataPoint[]> {
   try {
-    const { data, error } = await buildQuery(filters);
-
-    if (error) throw error;
+    const data = await fetchSalesRows(filters);
 
     // 按销售日期分组
     const groupedData = (data || []).reduce((acc: any, record: any) => {
@@ -368,8 +378,7 @@ export async function getTrendData(filters: AnalyticsFilters): Promise<TrendData
 export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<ComparisonMetrics> {
   try {
     // 当前周期
-    const { data: currentData, error: currentError } = await buildQuery(filters);
-    if (currentError) throw currentError;
+    const currentData = await fetchSalesRows(filters);
 
     // 上一个周期
     const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
@@ -382,8 +391,7 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
       endDate: formatDateToLocal(prevEnd),
     };
 
-    const { data: prevData, error: prevError } = await buildQuery(prevFilters);
-    if (prevError) throw prevError;
+    const prevData = await fetchSalesRows(prevFilters);
 
     // 获取积分平台转换率
     const { data: platforms } = await supabase
@@ -438,8 +446,7 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
  */
 export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promise<PaymentMethodAnalysis[]> {
   try {
-    const { data, error } = await buildQuery(filters);
-    if (error) throw error;
+    const data = await fetchSalesRows(filters);
 
     const totalSales = (data || []).reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
 
@@ -502,8 +509,7 @@ export async function getPaymentMethodAnalysis(filters: AnalyticsFilters): Promi
  */
 export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<PlatformAnalysis[]> {
   try {
-    const { data, error } = await buildQuery(filters);
-    if (error) throw error;
+    const data = await fetchSalesRows(filters);
 
     // 获取积分平台显示名称和转换率
     const { data: platforms } = await supabase
@@ -638,8 +644,7 @@ export async function getPlatformAnalysis(filters: AnalyticsFilters): Promise<Pl
  */
 export async function getCostStructure(filters: AnalyticsFilters): Promise<CostStructure> {
   try {
-    const { data, error } = await buildQuery(filters);
-    if (error) throw error;
+    const data = await fetchSalesRows(filters);
 
     // 应用支付方式筛选
     const filteredRecords = (data || []).filter((r: any) => {
@@ -703,9 +708,10 @@ export async function getPurchasePlatformAnalysis(filters: AnalyticsFilters): Pr
   try {
     const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
 
-    const { data, error } = await supabase
-      .from('sales_records')
-      .select(`
+    const data = await fetchAllRows<any>((from, to, opts) =>
+      supabase
+        .from('sales_records')
+        .select(`
         quantity_sold,
         total_profit,
         actual_cash_spent,
@@ -716,12 +722,13 @@ export async function getPurchasePlatformAnalysis(filters: AnalyticsFilters): Pr
           purchase_platform_id,
           purchase_platform:purchase_platform_id(id, name)
         )
-      `)
-      .not('sale_date', 'is', null)
-      .gte('sale_date', start.toISOString().split('T')[0])
-      .lte('sale_date', end.toISOString().split('T')[0]);
-
-    if (error) throw error;
+      `, opts)
+        .not('sale_date', 'is', null)
+        .gte('sale_date', start.toISOString().split('T')[0])
+        .lte('sale_date', end.toISOString().split('T')[0])
+        .order('id')
+        .range(from, to),
+    );
 
     // 按购入平台分组
     const groupedData: Record<string, {
@@ -789,20 +796,22 @@ export async function getSellingPlatformAnalysis(filters: AnalyticsFilters): Pro
   try {
     const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
 
-    const { data, error } = await supabase
-      .from('sales_records')
-      .select(`
+    const data = await fetchAllRows<any>((from, to, opts) =>
+      supabase
+        .from('sales_records')
+        .select(`
         selling_platform_id,
         total_selling_price,
         total_profit,
         actual_cash_spent,
         selling_platform:selling_platform_id(id, name)
-      `)
-      .not('sale_date', 'is', null)
-      .gte('sale_date', start.toISOString().split('T')[0])
-      .lte('sale_date', end.toISOString().split('T')[0]);
-
-    if (error) throw error;
+      `, opts)
+        .not('sale_date', 'is', null)
+        .gte('sale_date', start.toISOString().split('T')[0])
+        .lte('sale_date', end.toISOString().split('T')[0])
+        .order('id')
+        .range(from, to),
+    );
 
     // 按出手平台分组
     const groupedData: Record<string, {

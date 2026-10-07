@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { CheckSquare, Square } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllRows } from '@/lib/api/fetchAll';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Select from '@/components/Select';
@@ -134,12 +135,15 @@ function KaitorixPricesContent() {
   const { data: txData, isPending: loading, fetchStatus } = useQuery({
     queryKey: ['kaitorix-prices', 'transactions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, purchase_platform:purchase_platforms(id, name)')
-        .order('date', { ascending: false });
-      if (error) throw error;
-      return (data || []) as TransactionWithPlatform[];
+      // 分页取全：超过单次行数上限（默认 1000）的交易会被静默截断，买取价汇总就会少算库存
+      return fetchAllRows<TransactionWithPlatform>((from, to, opts) =>
+        supabase
+          .from('transactions')
+          .select('*, purchase_platform:purchase_platforms(id, name)', opts)
+          .order('date', { ascending: false })
+          .order('id')
+          .range(from, to),
+      );
     },
   });
   const transactions = txData ?? NO_TRANSACTIONS;
