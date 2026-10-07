@@ -8,12 +8,17 @@
 -- 生成方式：2026-10-07 从线上库（Supabase 项目 yfwhrknrhdzkricoxvfh，public + storage 相关对象）
 --           只读导出后整理。不含任何用户数据，也不含管理员种子数据。
 --
--- 与线上库的有意差异（线上库存在漂移，这里按迁移意图修正）：
---   1) user_line_links 启用 RLS（迁移 10 的意图；线上库未开）
---   2) notifications 加入 supabase_realtime publication（迁移 16 的意图；线上库未加入）
---   3) sale_order_summary / jan_thumbnail_queue_status 视图加 security_invoker，
---      避免绕过 RLS 让任何登录用户读到全站数据
---   4) 不含 watch_dashboard()：它只存在于线上库，仓库代码没有调用
+-- 与线上库的差异：
+--   已对齐（2026-10-07 线上库已按本文件补齐）：
+--     · user_line_links 启用 RLS + 显式拒绝策略
+--     · sale_order_summary / jan_thumbnail_queue_status 视图加 security_invoker，并对 anon 撤权
+--       （否则视图以属主身份绕过 RLS，未登录用户也能读到全站数据）
+--   仍有差异：
+--     · notifications 加入 supabase_realtime publication（迁移 16 的意图；线上库未加入。
+--       web 端已移除通知，仅原生 App 订阅它）
+--     · 不含 watch_dashboard()：线上库有，是原生 Apple Watch 复合功能依赖的 RPC，
+--       SQL 留档在原生仓库 supabase/migrations/20260730_watch_dashboard.sql。
+--       需要 Watch 功能的新库，请另行执行该文件
 --
 -- 管理员：新装后，注册第一个用户，再在 SQL Editor 里手动执行：
 --   INSERT INTO public.user_roles (user_id, role)
@@ -1029,6 +1034,10 @@ CREATE VIEW public.jan_thumbnail_queue_status WITH (security_invoker = true) AS
    FROM public.jan_thumbnail_queue
   GROUP BY status
   ORDER BY status;
+
+-- 视图不对未登录（anon）开放
+REVOKE ALL ON public.sale_order_summary FROM anon;
+REVOKE ALL ON public.jan_thumbnail_queue_status FROM anon;
 
 
 -- ============================================================
