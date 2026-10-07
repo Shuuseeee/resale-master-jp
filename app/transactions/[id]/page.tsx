@@ -17,6 +17,10 @@ import ReturnForm from '@/components/ReturnForm';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import Toast from '@/components/Toast';
+import { Brain } from 'lucide-react';
+import { usePlatforms } from '@/contexts/PlatformsContext';
+import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
+import { copyTextAsync } from '@/lib/utils/clipboard';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -87,12 +91,35 @@ export default function TransactionDetailPage() {
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
   const [showToast, setShowToast] = useState(false);
+  const [toastText, setToastText] = useState('已复制到剪贴板');
+  const [aiCopying, setAiCopying] = useState(false);
+  const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
+      setToastText('已复制到剪贴板');
       setShowToast(true);
     });
+  };
+
+  // 复制本笔交易的 AI 分析数据（JSON，含销售 / 退货 / 买取价；结构与原生 App 一致）
+  const copyAIExport = async () => {
+    if (!transaction || aiCopying) return;
+    setAiCopying(true);
+    try {
+      // copyTextAsync 必须在点击的同步调用栈内发起（Safari 的剪贴板手势限制）
+      await copyTextAsync(() =>
+        buildAIExportJSON([transaction], { purchasePlatforms, sellingPlatforms, single: true }),
+      );
+      setToastText('已复制 AI 分析数据');
+    } catch (error) {
+      console.error('复制 AI 分析数据失败:', error);
+      setToastText('复制失败，请重试');
+    } finally {
+      setAiCopying(false);
+      setShowToast(true);
+    }
   };
 
   const closeReturn = useCallback(() => setShowReturnForm(false), []);
@@ -393,6 +420,15 @@ export default function TransactionDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </Link>
+              <button
+                onClick={copyAIExport}
+                disabled={aiCopying}
+                className="sn-icon-button disabled:opacity-50"
+                title="复制 AI 分析数据"
+                aria-label="复制 AI 分析数据"
+              >
+                <Brain className="w-5 h-5" strokeWidth={2} />
+              </button>
               <Link
                 href={`/transactions/add?copy=${id}`}
                 className="sn-icon-button"
@@ -805,7 +841,7 @@ export default function TransactionDetailPage() {
           </div>
         </div>
       </div>
-      {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
+      {showToast && <Toast message={toastText} onClose={() => setShowToast(false)} />}
     </div>
   );
 }

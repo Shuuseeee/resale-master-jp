@@ -37,6 +37,8 @@ import TransactionColumnPicker from '@/components/TransactionColumnPicker';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import { getMaxEntries } from '@/lib/kaitorix-domain';
 import { usePlatforms } from '@/contexts/PlatformsContext';
+import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
+import { copyTextAsync } from '@/lib/utils/clipboard';
 import PullToRefresh from '@/components/PullToRefresh';
 import {
   type TransactionWithProfit,
@@ -820,6 +822,24 @@ function TransactionsContent() {
     }
   }, [selectedIds, exitCompareMode]);
 
+  // 复制所选交易的 AI 分析数据（JSON，含销售 / 退货 / 买取价；结构与原生 App 一致）
+  const [aiCopying, setAiCopying] = useState(false);
+  const handleCopyAIExport = useCallback(async () => {
+    if (selectedTransactions.length === 0 || aiCopying) return;
+    const count = selectedTransactions.length;
+    setAiCopying(true);
+    try {
+      // copyTextAsync 必须在点击的同步调用栈内发起（Safari 的剪贴板手势限制）
+      await copyTextAsync(() => buildAIExportJSON(selectedTransactions, { purchasePlatforms, sellingPlatforms }));
+      setToastMsg(`已复制 ${count} 笔交易的 AI 分析数据`);
+    } catch (error) {
+      console.error('复制 AI 分析数据失败:', error);
+      setToastMsg('复制失败，请重试');
+    } finally {
+      setAiCopying(false);
+    }
+  }, [selectedTransactions, aiCopying, purchasePlatforms, sellingPlatforms]);
+
   // 共享：将指定 ID 列表的交易本地状态标记为 sold
   const markTransactionsAsSold = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
@@ -1510,6 +1530,17 @@ function TransactionsContent() {
                 className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-primary)] active:opacity-80 text-white transition-all whitespace-nowrap"
               >
                 批量入账
+              </button>
+            )}
+            {/* 复制 AI 分析数据 */}
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleCopyAIExport}
+                disabled={aiCopying}
+                title="复制 AI 分析数据（JSON）"
+                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-header-chip)] text-[var(--color-header-text)] active:opacity-80 disabled:opacity-50 transition-all whitespace-nowrap"
+              >
+                {aiCopying ? '复制中…' : 'AI 分析'}
               </button>
             )}
             {/* 批量删除 */}
