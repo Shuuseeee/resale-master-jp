@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CheckSquare, Square } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
@@ -20,6 +21,8 @@ import {
 } from '@/lib/kaitorix-domain';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import CopyableJan from '@/components/CopyableJan';
+import OfflineNoCache from '@/components/OfflineNoCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
 type SortMode = 'stale' | 'expected_profit' | 'stock_value' | 'buyback_price' | 'name';
@@ -119,11 +122,39 @@ function buildSummaries(
   });
 }
 
+const NO_TRANSACTIONS: TransactionWithPlatform[] = [];
+
 function KaitorixPricesContent() {
   const searchParams = useSearchParams();
-  const [transactions, setTransactions] = useState<TransactionWithPlatform[]>([]);
-  const [usage, setUsage] = useState<UsageInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const online = useOnlineStatus();
+
+  // 页面自己的交易列表走 useQuery：切页回来 30 秒内不再重拉全部交易；写入后的失效见
+  // lib/queryInvalidation.ts（'kaitorix-prices'）。价格数据仍由 useKaitorixPrices 管理，
+  // 它自带 localStorage 缓存（loadCacheFromStorage），所以交易列表进了离线缓存后整页离线也有意义。
+  const { data: txData, isPending: loading, fetchStatus } = useQuery({
+    queryKey: ['kaitorix-prices', 'transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, purchase_platform:purchase_platforms(id, name)')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      return (data || []) as TransactionWithPlatform[];
+    },
+  });
+  const transactions = txData ?? NO_TRANSACTIONS;
+
+  // 官方配额：非关键信息，失败静默（不重试、不报错）；强刷后显式刷新
+  const { data: usageData, refetch: refetchUsage } = useQuery({
+    queryKey: ['kaitorix-prices', 'usage'],
+    queryFn: async () => {
+      const res = await fetch('/api/kaitorix/open-usage');
+      if (!res.ok) throw new Error('usage unavailable');
+      return (await res.json()) as UsageInfo;
+    },
+    retry: false,
+  });
+  const usage = usageData ?? null;
   // 支持 ?jan= 深链：从交易页比价弹窗跳转时直接打开对应 JAN 详情
   const [selectedJan, setSelectedJan] = useState<string | null>(() => searchParams.get('jan'));
   const [selectedJans, setSelectedJans] = useState<Set<string>>(new Set());
@@ -156,36 +187,13 @@ function KaitorixPricesContent() {
   };
 
   const loadUsage = useCallback(async () => {
-    try {
-      const usageRes = await fetch('/api/kaitorix/open-usage');
-      if (usageRes.ok) setUsage(await usageRes.json());
-    } catch {
-      // 配额信息非关键，失败时静默
-    }
-  }, []);
+    await refetchUsage();
+  }, [refetchUsage]);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select('*, purchase_platform:purchase_platforms(id, name)')
-        .order('date', { ascending: false });
-
-      if (txError) throw txError;
-      setTransactions((txData || []) as TransactionWithPlatform[]);
-      await loadUsage();
-    } catch (error) {
-      console.error('加载买取价格数据失败:', error);
-      setMessage('加载买取价格数据失败');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadUsage]);
-
+  // 加载失败且没有任何交易数据可显示时，用 message 提示（沿用原提示文案）
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!loading && !txData) setMessage('加载买取价格数据失败');
+  }, [loading, txData]);
 
   // 交易加载后同步价格：bulk 读缓存 + 自动把缺失/过期 JAN 入队补抓（与交易页一致）
   useEffect(() => {
@@ -304,6 +312,9 @@ function KaitorixPricesContent() {
   };
 
   const allVisibleSelected = filteredSummaries.length > 0 && filteredSummaries.every(item => selectedJans.has(item.jan));
+
+  // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="买取价格数据" />;
 
   if (loading) {
     return (

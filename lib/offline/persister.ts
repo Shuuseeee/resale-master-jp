@@ -20,7 +20,7 @@ export const OFFLINE_CACHE_BUSTER = 'v1';
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 /** 需要离线可用的查询（取 queryKey 第一段）。新增离线页面时在此登记 */
-export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies', 'analytics', 'payment-methods', 'tax-report']);
+export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies', 'analytics', 'payment-methods', 'tax-report', 'kaitorix-prices']);
 
 export function shouldPersistQuery(query: Query): boolean {
   if (query.state.status !== 'success') return false;
@@ -33,6 +33,8 @@ export function shouldPersistQuery(query: Query): boolean {
     const filters = query.queryKey[2] as { timeRange?: string; paymentMethods?: unknown[] } | undefined;
     return !!filters && filters.timeRange !== 'custom' && !filters.paymentMethods?.length;
   }
+  // 买取价格页：只持久化它的交易列表；官方配额（['kaitorix-prices','usage']）过期后离线显示会误导，不存
+  if (root === 'kaitorix-prices') return query.queryKey[1] === 'transactions';
   return true;
 }
 
