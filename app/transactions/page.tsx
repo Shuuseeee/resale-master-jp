@@ -117,7 +117,9 @@ function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { data: transactions = [], isLoading: loading } = useQuery({
+  // 用 isPending 而不是 isLoading：离线缓存恢复期间查询被暂停（isLoading 为 false 但还没有数据），
+  // 用 isLoading 会在这几十毫秒里闪出「暂无交易记录」；离线且无缓存时 fetchStatus 为 paused
+  const { data: transactions = [], isPending: loading, fetchStatus } = useQuery({
     queryKey: ['transactions'],
     queryFn: fetchTransactionsWithProfit,
   });
@@ -245,7 +247,8 @@ function TransactionsContent() {
 
   // 交易加载完成后自动补查缺失的买取价格（有缓存的跳过，不增加爬虫压力）
   useEffect(() => {
-    if (transactions.length > 0 && kaitorixEnabled) {
+    // 离线时不去补查买取价（请求必然失败，还会白白消耗重试）
+    if (transactions.length > 0 && kaitorixEnabled && navigator.onLine) {
       refreshMissingKaitorix();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -975,6 +978,20 @@ function TransactionsContent() {
       ? 'bg-[var(--color-primary-light)] cursor-pointer'
       : 'cursor-pointer';
   }, [compareMode, selectedIds]);
+
+  if (loading && fetchStatus === 'paused') {
+    // 查询被暂停 = 离线，且本机没有可用的缓存（从未联网加载过、已登出清理过或缓存已过期）
+    return (
+      <div className={layout.page + ' flex items-center justify-center'}>
+        <div className="max-w-sm px-6 text-center">
+          <p className="text-lg font-semibold text-[var(--color-text)]">离线中，暂无可显示的缓存数据</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            交易数据需要先联网加载一次，之后才能离线查看。恢复联网后会自动加载。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

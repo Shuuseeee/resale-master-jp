@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { clearOfflineCache } from '@/lib/offline/persister';
 
 interface AuthContextType {
   user: User | null;
@@ -22,6 +24,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // 登出 / 会话被撤销：财务数据不能留在设备上。先清内存缓存，再清 IndexedDB
+  // （顺序有意：先 queryClient.clear 让后续缓存事件序列化出空数据，避免旧数据被重新写入）
+  const clearLocalData = async () => {
+    queryClient.clear();
+    await clearOfflineCache();
+  };
 
   useEffect(() => {
     // 检查当前会话
@@ -34,7 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 监听认证状态变化
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // 仅 SIGNED_OUT 才是「确定登出」；INITIAL_SESSION 为 null 在离线且 token 过期时也会出现，不能据此清缓存
+      if (event === 'SIGNED_OUT') void clearLocalData();
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -123,6 +135,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // 先清本地数据再登出：登出后会整页跳转，异步清库可能被中断
+      await clearLocalData();
       await supabase.auth.signOut();
       setSession(null);
       setUser(null);

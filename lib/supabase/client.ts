@@ -11,9 +11,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// 离线时写操作（POST/PATCH/PUT/DELETE）立即失败并给出明确提示，而不是等浏览器的
+// "Failed to fetch / Load failed"。离线模式是只读的：数据来自本机缓存，写入必须联网。
+// 只拦截数据 / 存储请求；认证请求（/auth/v1/）保持原有行为，以免干扰 token 刷新的重试判断。
+const offlineAwareFetch: typeof fetch = (input, init) => {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD' && !url.includes('/auth/v1/')) {
+      return Promise.reject(new Error('离线中，无法修改数据，请联网后重试'));
+    }
+  }
+  return fetch(input, init);
+};
+
 // 创建 Supabase 浏览器客户端实例
 // 使用 @supabase/ssr 确保 cookies 正确同步
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: offlineAwareFetch },
+});
 
 // Storage bucket 名称常量
 export const STORAGE_BUCKETS = {

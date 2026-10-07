@@ -7,12 +7,16 @@ import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { SWUpdatePrompt } from '@/components/SWUpdatePrompt';
 import { ThemePaletteSync } from '@/components/ThemePaletteSync';
+import OfflineCacheProvider from '@/components/OfflineCacheProvider';
+import OfflineBanner from '@/components/OfflineBanner';
+import { OFFLINE_CACHE_MAX_AGE } from '@/lib/offline/persister';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      // 必须 ≥ 离线缓存的最长保留时间：恢复出来的查询没有观察者，gcTime 太短会在恢复后立刻被回收
+      gcTime: OFFLINE_CACHE_MAX_AGE,
       refetchOnWindowFocus: true,
     },
   },
@@ -39,12 +43,15 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <AuthProvider>
-          <PlatformsProvider>
-            <BfcacheRefreshListener />
-            <ThemePaletteSync />
-            <SWUpdatePrompt />
-            {children}
-          </PlatformsProvider>
+          <OfflineCacheProvider>
+            <PlatformsProvider>
+              <BfcacheRefreshListener />
+              <ThemePaletteSync />
+              <SWUpdatePrompt />
+              <OfflineBanner />
+              {children}
+            </PlatformsProvider>
+          </OfflineCacheProvider>
         </AuthProvider>
       </ErrorBoundary>
     </QueryClientProvider>
