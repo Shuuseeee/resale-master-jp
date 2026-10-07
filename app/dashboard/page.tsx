@@ -2,11 +2,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { getDashboardStats } from '@/lib/api/financial';
 import { formatCurrencyCompact } from '@/lib/financial/calculator';
 import { card, heading, layout } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
+import OfflineNoCache from '@/components/OfflineNoCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 function MetricCard({
   label,
@@ -42,48 +45,28 @@ function MetricCard({
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [inStockCount, setInStockCount] = useState(0);
-  const [monthlyProfit, setMonthlyProfit] = useState(0);
-  const [monthlySalesCount, setMonthlySalesCount] = useState(0);
-  const [totalInvestment, setTotalInvestment] = useState(0);
-  const [totalRecovered, setTotalRecovered] = useState(0);
-  const [confirmedProfit, setConfirmedProfit] = useState(0);
-  const [unrealizedStockCost, setUnrealizedStockCost] = useState(0);
-  const [expectedPoints, setExpectedPoints] = useState(0);
   const [includePoints, setIncludePoints] = useState(true);
+  const queryClient = useQueryClient();
+  const online = useOnlineStatus();
+
+  // 读取走 useQuery：切页回来先用缓存（30 秒内不重拉），离线可看上次的数据；
+  // 写入后的失效由 QueryInvalidationBridge 统一处理（见 lib/queryInvalidation.ts）
+  const { data, isPending, fetchStatus, refetch } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: getDashboardStats,
+  });
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    const handler = () => loadData();
+    const handler = () => queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     window.addEventListener('bfcache-restore', handler);
     return () => window.removeEventListener('bfcache-restore', handler);
-  }, []);
+  }, [queryClient]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await getDashboardStats();
-      setInStockCount(data.inStockCount);
-      setMonthlyProfit(data.monthlyProfit);
-      setMonthlySalesCount(data.monthlySalesCount);
-      setTotalInvestment(data.totalInvestment);
-      setTotalRecovered(data.totalRecovered);
-      setConfirmedProfit(data.confirmedProfit);
-      setUnrealizedStockCost(data.unrealizedStockCost);
-      setExpectedPoints(data.expectedPoints);
-    } catch (error) {
-      console.error('加载数据失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // isPending 而非 isLoading：离线缓存恢复期间查询被暂停，isLoading 为 false 但还没有数据
+  // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  if (isPending && fetchStatus === 'paused' && !online) return <OfflineNoCache what="仪表盘数据" />;
 
-
-  if (loading) {
+  if (isPending) {
     return (
       <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
         <div className="flex items-center gap-3 text-[var(--color-text)]">
@@ -97,11 +80,38 @@ export default function DashboardPage() {
     );
   }
 
+  // 加载失败且没有任何数据可显示：给出重试入口，而不是显示一屏 0。
+  // 注意不能用 isError 判断：后台刷新失败时 Query 会保留旧数据且 isError 为真，那时应继续显示旧数据
+  if (!data) {
+    return (
+      <div className={layout.page + ' flex items-center justify-center'}>
+        <div className="max-w-sm px-6 text-center">
+          <p className="text-lg font-semibold text-[var(--color-text)]">仪表盘数据加载失败</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">请检查网络后重试。</p>
+          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-subtle)]">
+            重试
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    monthlyProfit,
+    monthlySalesCount,
+    totalInvestment,
+    totalRecovered,
+    confirmedProfit,
+    unrealizedStockCost,
+    expectedPoints,
+    inStockCount,
+  } = data;
+
   const profitTone = confirmedProfit >= 0 ? 'success' : 'danger';
   const monthlyTone = monthlyProfit >= 0 ? 'success' : 'danger';
 
   return (
-    <PullToRefresh onRefresh={loadData}>
+    <PullToRefresh onRefresh={async () => { await refetch(); }}>
       <div className={layout.page}>
         <div className={layout.container}>
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

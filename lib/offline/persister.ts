@@ -20,7 +20,7 @@ export const OFFLINE_CACHE_BUSTER = 'v1';
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 /** 需要离线可用的查询（取 queryKey 第一段）。新增离线页面时在此登记 */
-export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms']);
+export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard']);
 
 export function shouldPersistQuery(query: Query): boolean {
   return query.state.status === 'success' && PERSISTED_QUERY_KEYS.has(String(query.queryKey[0]));

@@ -39,10 +39,8 @@ export async function getInStockCount(): Promise<number> {
     .select('quantity_in_stock')
     .eq('status', 'in_stock');
 
-  if (error) {
-    console.error('获取在库数量失败:', error);
-    return 0;
-  }
+  // 失败即抛错：仪表盘已入离线缓存，返回 0 会被当成成功结果持久化
+  if (error) throw error;
 
   return (data || []).reduce((sum, row) => sum + (row.quantity_in_stock || 0), 0);
 }
@@ -62,10 +60,7 @@ export async function getMonthlyProfit(): Promise<number> {
     .gte('sale_date', startOfMonth)
     .lte('sale_date', endOfMonthStr);
 
-  if (error) {
-    console.error('获取本月利润失败:', error);
-    return 0;
-  }
+  if (error) throw error;
 
   return (data || []).reduce((sum, row) => sum + (row.total_profit || 0), 0);
 }
@@ -85,10 +80,7 @@ export async function getMonthlySalesCount(): Promise<number> {
     .gte('sale_date', startOfMonth)
     .lte('sale_date', endOfMonthStr);
 
-  if (error) {
-    console.error('获取本月销售件数失败:', error);
-    return 0;
-  }
+  if (error) throw error;
 
   return count ?? 0;
 }
@@ -200,6 +192,8 @@ async function getDashboardKPI(): Promise<{
       .select('total_selling_price, total_profit'),
   ]);
 
+  if (transactionsRes.error) throw transactionsRes.error;
+  if (salesRes.error) throw salesRes.error;
   const transactions = transactionsRes.data || [];
   const sales = salesRes.data || [];
 

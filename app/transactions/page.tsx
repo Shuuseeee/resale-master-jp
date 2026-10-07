@@ -39,6 +39,8 @@ import { getMaxEntries } from '@/lib/kaitorix-domain';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
+import OfflineNoCache from '@/components/OfflineNoCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import PullToRefresh from '@/components/PullToRefresh';
 import {
   type TransactionWithProfit,
@@ -117,6 +119,7 @@ function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const online = useOnlineStatus();
   // 用 isPending 而不是 isLoading：离线缓存恢复期间查询被暂停（isLoading 为 false 但还没有数据），
   // 用 isLoading 会在这几十毫秒里闪出「暂无交易记录」；离线且无缓存时 fetchStatus 为 paused
   const { data: transactions = [], isPending: loading, fetchStatus } = useQuery({
@@ -979,19 +982,8 @@ function TransactionsContent() {
       : 'cursor-pointer';
   }, [compareMode, selectedIds]);
 
-  if (loading && fetchStatus === 'paused') {
-    // 查询被暂停 = 离线，且本机没有可用的缓存（从未联网加载过、已登出清理过或缓存已过期）
-    return (
-      <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="max-w-sm px-6 text-center">
-          <p className="text-lg font-semibold text-[var(--color-text)]">离线中，暂无可显示的缓存数据</p>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            交易数据需要先联网加载一次，之后才能离线查看。恢复联网后会自动加载。
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="交易数据" />;
 
   if (loading) {
     return (
