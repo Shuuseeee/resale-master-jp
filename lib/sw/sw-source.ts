@@ -9,7 +9,7 @@
 //   3. Update lifecycle: skipWaiting + clientsClaim + client notification
 
 import { precacheAndRoute } from 'workbox-precaching'
-import { registerRoute } from 'workbox-routing'
+import { registerRoute, setCatchHandler } from 'workbox-routing'
 import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
@@ -97,20 +97,61 @@ registerRoute(
   })
 )
 
-// 2g. HTML navigation requests — NetworkFirst so users get fresh pages,
-//     with offline fallback. 1 hour max age, 50 entries.
+// 2g. HTML navigation requests — NetworkFirst so users get fresh pages when online;
+//     offline (or network slower than the timeout) falls back to the last visited copy,
+//     which is what makes the cached transactions list openable offline.
+//     30 days (was 1 hour: any longer offline period made every page unopenable).
+//     Pages cache only what the user has visited while online; it is cleared on each new
+//     SW version (see activate) so a stale HTML never pairs with chunks from another build.
+const PAGES_CACHE = 'pages-cache'
 registerRoute(
   ({ request }) => request.mode === 'navigate',
   new NetworkFirst({
-    cacheName: 'pages-cache',
+    cacheName: PAGES_CACHE,
+    // Poor-signal case: don't make the user wait out the browser's long default timeout
+    networkTimeoutSeconds: 5,
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        maxAgeSeconds: 60 * 60, // 1 hour
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
     ],
   })
 )
+
+// 2h. Offline navigation fallback (runs only when the route handler above threw, i.e. network
+//     failed AND there is no cached copy of that page).
+//     - '/' is a server redirect (never cached) and is the PWA start_url: send offline launches to
+//       the transactions list, the page that works offline.
+//     - anything else: a small explanatory page instead of the browser's offline error.
+//     No colors are hardcoded on purpose: system colors follow light/dark automatically.
+const OFFLINE_FALLBACK_HTML = `<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>离线中</title>
+<style>
+:root{color-scheme:light dark}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","PingFang SC",sans-serif;background:Canvas;color:CanvasText}
+main{max-width:22rem;padding:2rem 1.5rem;text-align:center}
+h1{font-size:1.25rem;margin:0 0 .5rem}
+p{margin:0 0 1.25rem;opacity:.7;font-size:.9rem}
+a,button{display:inline-block;margin:.25rem;padding:.6rem 1.1rem;border-radius:.6rem;border:1px solid currentColor;background:transparent;color:inherit;font:inherit;font-size:.9rem;text-decoration:none;cursor:pointer}
+</style></head><body><main>
+<h1>当前处于离线状态</h1>
+<p>这个页面还没有缓存。联网访问过的页面才能离线查看。</p>
+<a href="/transactions">查看交易列表</a><button onclick="location.reload()">重试</button>
+</main></body></html>`
+
+setCatchHandler(async ({ request, url }) => {
+  if (request.mode === 'navigate') {
+    if (url.pathname === '/') return Response.redirect('/transactions', 302)
+    return new Response(OFFLINE_FALLBACK_HTML, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
+  return Response.error()
+})
 
 // ---------------------------------------------------------------------------
 // 3. Update lifecycle
@@ -125,7 +166,9 @@ self.addEventListener('install', () => {
 // then notify each client so the UI can prompt the user to refresh.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    self.clients.claim().then(() =>
+    // Drop cached HTML from the previous build: offline, an old page would load chunk URLs that
+    // no longer match this build's precache. It refills as the user browses online.
+    caches.delete(PAGES_CACHE).then(() => self.clients.claim()).then(() =>
       self.clients.matchAll({ type: 'window' }).then((clientList) => {
         for (const client of clientList) {
           client.postMessage({ type: 'SW_UPDATED' })

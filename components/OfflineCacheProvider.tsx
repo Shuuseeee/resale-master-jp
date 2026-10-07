@@ -9,9 +9,9 @@ import {
   OFFLINE_CACHE_MAX_AGE,
   createIdbPersister,
   flushOfflineCache,
-  readLastUserId,
+  readLastUser,
   shouldPersistQuery,
-  writeLastUserId,
+  writeLastUser,
 } from '@/lib/offline/persister';
 
 // 恢复阶段的兜底超时：IndexedDB 偶发卡住时不能让整个应用永远停在骨架屏
@@ -36,7 +36,7 @@ export default function OfflineCacheProvider({ children }: { children: React.Rea
 
     // 缓存归属：在线用当前登录用户；离线且 token 已过期（getSession 返回 null）时，
     // 回落到「最近一次登录的用户」，这样离线冷启动仍能读到上次的数据
-    const id = user?.id ?? (navigator.onLine === false ? readLastUserId() : null);
+    const id = user?.id ?? (navigator.onLine === false ? (readLastUser()?.id ?? null) : null);
 
     // 同一用户已在持久化中：不要重复恢复（否则离线 → 恢复联网、token 刷新时会让所有查询再暂停一次）
     if (id === (activeRef.current?.id ?? null)) {
@@ -51,7 +51,7 @@ export default function OfflineCacheProvider({ children }: { children: React.Rea
       setRestoring(false);
       return;
     }
-    if (user?.id) writeLastUserId(user.id);
+    if (user?.id) writeLastUser({ id: user.id, email: user.email ?? null });
 
     setRestoring(true);
     const [unsubscribe, restored] = persistQueryClient({

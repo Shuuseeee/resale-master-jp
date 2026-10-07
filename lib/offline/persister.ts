@@ -20,27 +20,39 @@ export const OFFLINE_CACHE_BUSTER = 'v1';
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 /** 需要离线可用的查询（取 queryKey 第一段）。新增离线页面时在此登记 */
-export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions']);
+export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms']);
 
 export function shouldPersistQuery(query: Query): boolean {
   return query.state.status === 'success' && PERSISTED_QUERY_KEYS.has(String(query.queryKey[0]));
 }
 
-const LAST_USER_KEY = 'resale-offline:last-user-id';
+const LAST_USER_KEY = 'resale-offline:last-user';
 const WRITE_THROTTLE_MS = 1000;
 
-/** 最近一次成功登录的用户 id。离线且 token 已过期时，据此找回该用户的缓存 */
-export function readLastUserId(): string | null {
+export interface LastUser {
+  id: string;
+  email: string | null;
+}
+
+/**
+ * 最近一次成功登录的用户。离线且 token 已过期（getSession 返回 null）时，
+ * 据此找回该用户的缓存，并在导航栏显示邮箱而不是「未登录」。
+ * 只存 id 与邮箱，不存任何凭证；登出时随缓存一并清除。
+ */
+export function readLastUser(): LastUser | null {
   try {
-    return window.localStorage.getItem(LAST_USER_KEY);
+    const raw = window.localStorage.getItem(LAST_USER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<LastUser>;
+    return typeof parsed.id === 'string' ? { id: parsed.id, email: parsed.email ?? null } : null;
   } catch {
     return null;
   }
 }
 
-export function writeLastUserId(userId: string) {
+export function writeLastUser(user: LastUser) {
   try {
-    window.localStorage.setItem(LAST_USER_KEY, userId);
+    window.localStorage.setItem(LAST_USER_KEY, JSON.stringify(user));
   } catch {
     // 存储不可用时忽略，仅失去「离线 + token 过期」时的缓存找回
   }

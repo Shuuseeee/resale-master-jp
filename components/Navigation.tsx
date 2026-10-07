@@ -25,6 +25,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import ScanArrivalModal from '@/components/ScanArrivalModal';
 import { triggerHaptic } from '@/lib/haptic';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
+import { readLastUser } from '@/lib/offline/persister';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -34,6 +36,7 @@ export default function Navigation() {
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
+  const online = useOnlineStatus();
 
   useEffect(() => {
     setMounted(true);
@@ -48,6 +51,11 @@ export default function Navigation() {
 
   const isAuthPage = pathname?.startsWith('/auth');
   if (isAuthPage) return null;
+
+  // 离线且 token 已过期时 user 为 null，但这不代表被登出：显示最近一次登录的邮箱，而不是「未登录」
+  const displayEmail = mounted
+    ? user?.email || (!online ? readLastUser()?.email : null) || '未登录'
+    : '加载中...';
 
   const isActive = (href: string) => {
     if (href === '/transactions' && pathname?.startsWith('/transactions/')) {
@@ -162,7 +170,7 @@ export default function Navigation() {
             <div className="flex h-full items-center gap-2 px-3 transition-colors hover:bg-[var(--color-header-chip)]">
               <User className="h-4 w-4 flex-shrink-0 opacity-70" strokeWidth={2} />
               <span className="max-w-[240px] truncate text-[13px] font-medium">
-                {mounted ? (user?.email || '未登录') : '加载中...'}
+                {displayEmail}
               </span>
             </div>
             {mounted && (
@@ -243,7 +251,7 @@ export default function Navigation() {
             <div className="px-3 py-2 bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)]">
               <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
               <div className="text-sm text-[var(--color-text)] font-medium truncate">
-                {mounted ? (user?.email || '未登录') : '加载中...'}
+                {displayEmail}
               </div>
             </div>
           )}
@@ -490,7 +498,7 @@ export default function Navigation() {
                 <div className="min-w-0">
                   <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
                   <div className="text-sm text-[var(--color-text)] font-semibold truncate">
-                    {mounted ? (user?.email || '未登录') : '加载中...'}
+                    {displayEmail}
                   </div>
                 </div>
               </div>
