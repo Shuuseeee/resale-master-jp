@@ -231,10 +231,23 @@ function buildQuery(filters: AnalyticsFilters, selectOpts: SelectOpts = {}) {
  * 分页读取：PostgREST 单次响应有行数上限（默认 1000），超过会静默截断，销售额 / 利润 / ROI 都会偏小。
  * 排序带 id 兜底，保证分页没有重复 / 遗漏。
  */
+// 同一次报表加载里，趋势 / 对比 / 支付方式 / 平台 / 成本结构五个函数用的是**完全相同**的筛选条件，
+// 原先各自把同一批销售记录读一遍。这里把「同时在途的相同请求」合并成一次：只在飞行期间共享，
+// 完成后立即移除，不是缓存（页面级缓存由 TanStack Query 负责）。
+// 前提：调用方只读取返回的行、不原地修改（7 个调用点均为 reduce / forEach / filter）。
+const inFlightSalesRows = new Map<string, Promise<any[]>>();
+
 function fetchSalesRows(filters: AnalyticsFilters): Promise<any[]> {
-  return fetchAllRows<any>((from, to, opts) =>
+  // 键只取查询真正依赖的条件；支付方式是取回后才在内存里筛的，不属于查询条件
+  const key = `${filters.timeRange}|${filters.startDate ?? ''}|${filters.endDate ?? ''}`;
+  const pending = inFlightSalesRows.get(key);
+  if (pending) return pending;
+
+  const request = fetchAllRows<any>((from, to, opts) =>
     buildQuery(filters, opts).order('sale_date', { ascending: true }).order('id').range(from, to),
-  );
+  ).finally(() => inFlightSalesRows.delete(key));
+  inFlightSalesRows.set(key, request);
+  return request;
 }
 
 /**
