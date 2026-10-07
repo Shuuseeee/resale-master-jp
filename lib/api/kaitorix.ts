@@ -1,6 +1,6 @@
 // KaitoriX API client with caching and batch fetching
 
-import { discoverStores } from '@/lib/kaitorix-config';
+import { discoverStores, normalizePriceStores } from '@/lib/kaitorix-config';
 import type { JanPriceData, KaitorixSource } from '@/lib/kaitorix-domain';
 import { supabase } from '@/lib/supabase/client';
 
@@ -248,7 +248,7 @@ export async function fetchCachedPricesBulk(jans: string[]): Promise<Map<string,
     }
 
     (data || []).forEach(row => {
-      const prices = (row.prices || []) as KaitorixPrice[];
+      const prices = normalizePriceStores((row.prices || []) as KaitorixPrice[]);
       if (prices.length > 0) {
         discoverStores(prices.map(p => p.store));
       }

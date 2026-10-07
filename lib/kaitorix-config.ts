@@ -25,9 +25,28 @@ const LEGACY_KEY_TO_NAME: Record<string, string> = {
   'rudeya': '買取ルデヤ',
   'mobile_ichiban': 'モバイル一番',
   'homura': '買取ホムラ',
-  'top_offers': '買取Top Offers',
+  'top_offers': '買取Top Offer',
   'rakuen': '買取楽園',
 };
+
+// 店名别名 → 规范名。官方 API / CSV 的店名是「買取Top Offer」，旧爬虫写入的缓存和旧版配置是「買取Top Offers」，
+// 实际是同一家店；读取缓存与配置时统一成官方写法，否则会被当成两家店（比价重复、店铺筛选漏掉一边）。
+const STORE_NAME_ALIASES: Record<string, string> = {
+  '買取Top Offers': '買取Top Offer',
+};
+
+export function normalizeStoreName(name: string): string {
+  return STORE_NAME_ALIASES[name] ?? name;
+}
+
+/** 把报价列表里的店名统一成规范名（其余字段原样保留） */
+export function normalizePriceStores<T extends { store: string }>(prices: T[] | null | undefined): T[] {
+  if (!prices?.length) return [];
+  return prices.map(p => {
+    const store = normalizeStoreName(p.store);
+    return store === p.store ? p : { ...p, store };
+  });
+}
 
 // 基础店铺（始终保留，即使尚未从 API 获取到数据）
 // key 直接使用店铺名（新规）
@@ -38,7 +57,7 @@ const BASE_STORES: KaitorixStore[] = [
   { key: '買取ルデヤ', name: '買取ルデヤ' },
   { key: 'モバイル一番', name: 'モバイル一番' },
   { key: '買取ホムラ', name: '買取ホムラ' },
-  { key: '買取Top Offers', name: '買取Top Offers' },
+  { key: '買取Top Offer', name: '買取Top Offer' },
   { key: '買取楽園', name: '買取楽園' },
 ];
 
@@ -66,7 +85,7 @@ export function getKnownStores(): KaitorixStore[] {
     const stored = localStorage.getItem(DISCOVERED_STORES_KEY);
     if (stored) {
       const names: string[] = JSON.parse(stored);
-      names.forEach(name => {
+      names.map(normalizeStoreName).forEach(name => {
         if (!baseNames.has(name)) {
           result.push({ key: name, name });
           baseNames.add(name);
@@ -82,6 +101,7 @@ export function getKnownStores(): KaitorixStore[] {
 export function discoverStores(storeNames: string[]): void {
   if (typeof window === 'undefined') return;
 
+  storeNames = storeNames.map(normalizeStoreName);
   const known = getKnownStores();
   const knownNames = new Set(known.map(s => s.name));
   const hasNew = storeNames.some(n => !knownNames.has(n));
@@ -115,7 +135,7 @@ export function loadKaitorixConfig(): KaitorixConfig {
       : getKnownStores().map(s => s.key);
 
     // 旧版迁移：将旧 key 格式（ichoume 等）转为店铺名
-    const migrated = enabledStores.map(k => LEGACY_KEY_TO_NAME[k] ?? k);
+    const migrated = Array.from(new Set(enabledStores.map(k => normalizeStoreName(LEGACY_KEY_TO_NAME[k] ?? k))));
 
     return {
       enabled: parsed.enabled ?? true,

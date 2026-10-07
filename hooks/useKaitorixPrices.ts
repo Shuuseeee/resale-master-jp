@@ -7,7 +7,7 @@ import {
   type KaitorixRateLimit,
   type KaitorixResponse,
 } from '@/lib/api/kaitorix';
-import { loadKaitorixConfig, isKaitorixPriceStale } from '@/lib/kaitorix-config';
+import { loadKaitorixConfig, isKaitorixPriceStale, normalizePriceStores } from '@/lib/kaitorix-config';
 import {
   expectedProfitForTx,
   filterPricesByStores,
@@ -71,7 +71,7 @@ function loadCacheFromStorage(): Map<string, JanPriceData> {
         map.set(jan, {
           jan,
           productName: entry.productName || '',
-          prices: entry.prices || [],
+          prices: normalizePriceStores(entry.prices),
           fetchedAt: entry.fetchedAt ?? null,
           source: entry.source || 'cache',
         });
@@ -112,7 +112,7 @@ function janDataFromResponse(jan: string, r: KaitorixResponse | null): JanPriceD
   return {
     jan,
     productName: r.name || '',
-    prices: r.prices || [],
+    prices: normalizePriceStores(r.prices),
     fetchedAt,
     source: (r._source as JanPriceData['source']) || 'cache',
   };
@@ -278,7 +278,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       newMap.set(jan, {
         jan,
         productName: result.data.name || '',
-        prices: result.data.prices || [],
+        prices: normalizePriceStores(result.data.prices),
         fetchedAt: result.data._fetched_at ? new Date(result.data._fetched_at).getTime() : Date.now(),
         source: 'official',
       });
