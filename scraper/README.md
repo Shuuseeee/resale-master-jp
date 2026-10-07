@@ -4,14 +4,18 @@ Supabase の `kaitorix_scrape_queue` を監視し、JAN コードごとに kaito
 
 このディレクトリは Next.js PWA とは別プロジェクトであり、PWA の `npm run build` には含まれない。
 
-## 仕組み
+## 仕組み（価格 scraper：ネイティブアプリ向けに残している）
 
-1. PWA 側の `/api/kaitorix/[jan]` または `/api/jan-product/[jan]` がキャッシュミス時に Supabase のキューへ JAN を追加する。
+> **Web 版（Next.js）は Kaitorix 公式 Open API に移行済みで、このキューには書き込まない。**
+> 価格更新は `/api/kaitorix/[jan]`（ページ表示時）と `/api/kaitorix/force-refresh`（手動）が
+> 公式 API を直接呼ぶ。このワーカーを残している理由は、ネイティブ（iOS / Mac）アプリの価格自動更新が
+> まだ RPC `enqueue_kaitorix_scrape` でキューに入れ、このワーカーが書き戻すのを待っているため。
+> ネイティブ側が web の API（`/api/kaitorix/[jan]`）に移行するまでは停止しないこと。
+
+1. ネイティブアプリが `enqueue_kaitorix_scrape` でキュー（`kaitorix_scrape_queue`）に JAN を追加する。
 2. scraper がキューをポーリングし、未処理 JAN を原子的に取得する。
 3. Playwright で kaitorix.app を開き、店舗別の買取価格を取得する。
-4. 結果を `kaitorix_price_cache` に保存し、PWA 側は以後キャッシュから価格と商品名を表示する。
-
-PWA の JAN 商品名補完は、最初に API 直接検索を試し、取得できない場合はキュー投入後もフロント側で一定時間リトライする。
+4. 結果を `kaitorix_price_cache`（`last_fetch_source = 'scraper'`）に保存する。
 
 ## thumbnail-fetcher（商品サムネイル）
 

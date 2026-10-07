@@ -7,7 +7,7 @@
 ### 交易与库存
 - **批量库存管理**：一笔采购可记录多个同款商品，支持分批销售、退货和在库统计。
 - **混合支付录入**：支持信用卡、积分、余额拆分，并自动校验支付合计。
-- **JAN 录入体验**：支持条形码扫描、商品名自动补全、Kaitorix 买取价格缓存与对比；商品名为空时会持续重试补全，避免异步抓取时差导致漏填。
+- **JAN 录入体验**：支持条形码扫描、商品名自动补全（查每日同步的买取X 全量目录，查不到再走 search API 兜底，少量重试应对网络抖动）、Kaitorix 买取价格缓存与对比；店铺报价更新超过 7 天不再作为参考。
 - **离线只读**：交易列表的数据会按用户缓存到本机（IndexedDB），断网后仍可查看，顶部显示「离线中 · 更新于…」；离线时不能修改数据；登出会清空本机缓存。联网访问过的页面可离线打开（页面缓存保留 30 天），从主屏幕离线启动会进入交易列表。目前交易列表（含平台名）、仪表盘、耗材、数据分析（预设时间范围）、税务报表和买取价格页支持离线数据，设置页与各表单离线时只能打开外壳。
 - **AI 分析数据导出**：交易详情页 / 列表多选可一键复制 JSON（交易 + 销售 + 退货 + 买取价缓存），结构与原生 App 一致，可直接贴给 AI 或 ResaleAssist 做分析。
 - **图片凭证**：支持收据图片上传和 iPhone HEIC/HEIF 格式处理。
@@ -36,7 +36,7 @@
 - **数据请求缓存**：`@tanstack/react-query`
 - **Service Worker**：Workbox（`InjectManifest`，源码 `lib/sw/sw-source.ts`）
 - **图片处理**：heic2any
-- **买取价**：Kaitorix API + 独立 scraper 队列抓取
+- **买取价**：Kaitorix 官方 Open API（进入页面 / 手动刷新）+ 每日全量 CSV 同步（商品目录与价格历史）
 
 ## 快速开始
 
@@ -68,8 +68,11 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 KAITORIX_API_TOKENS=your_token1,your_token2
 NEXT_PUBLIC_KAITORIX_RATE_LIMIT_MODE=ultra-safe
 KAITORIX_OPEN_API_KEY=your_open_api_key
-KAITORIX_OPEN_API_DAILY_LIMIT=30
+KAITORIX_OPEN_API_DAILY_LIMIT=500   # 仅首次响应前的兜底；之后以官方响应头为准
+CRON_SECRET=your_random_secret      # /api/kaitorix/catalog-sync 的 Cron 鉴权
 ```
+
+买取价与目录同步依赖 Kaitorix 官方 Open API（Premium 每日 500 次，每秒 1 次）；每日 CSV 同步需要「全部买取数据」下载加购。使用范围与出处标注要求见官方文档 https://kaitorix.app/open/docs 。
 
 ### 3. 初始化数据库
 
@@ -97,8 +100,8 @@ resale-master-jp/
 │   ├── globals.css                   # 设计 token 定义源和全局组件样式
 │   ├── themes.css                    # 配色主题（data-palette）token 覆盖块
 │   ├── api/
-│   │   ├── jan-product/[jan]/        # JAN 商品名查询与补全
-│   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量
+│   │   ├── jan-product/[jan]/        # JAN 商品名补全（目录 → 缓存 → search API 兜底）
+│   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量、每日 CSV 同步（catalog-sync）
 │   │   ├── thumbnail/enqueue/        # 商品缩略图抓取入队
 │   ├── auth/                         # 登录、注册、OAuth 回调
 │   ├── dashboard/                    # 仪表盘
@@ -123,7 +126,7 @@ resale-master-jp/
 │   └── fonts/                        # Outfit / Noto Sans 字体
 ├── supabase/schema.sql               # 新装唯一入口（完整库结构）
 ├── supabase/migrations-archive/              # 历史增量记录（新装不需要）
-├── scraper/                          # 独立 Kaitorix 抓取服务
+├── scraper/                          # 独立服务：缩略图 worker；价格 scraper 仅为原生 App 保留
 ├── types/database.types.ts           # Supabase 类型定义
 ├── middleware.ts                     # 路由保护
 └── tailwind.config.ts
@@ -146,7 +149,10 @@ resale-master-jp/
 - `user_preferences`：用户级 UI 偏好，如交易列表列设置、配色主题。
 - `user_roles`：管理员角色。
 - `user_line_links`：用户与 LINE 账号绑定关系（web 端不使用）。
-- `kaitorix_price_cache` / `kaitorix_scrape_queue` / `kaitorix_open_api_usage`：买取价缓存、抓取队列、Open API 每日用量。
+- `kaitorix_price_cache` / `kaitorix_open_api_usage`：单个 JAN 的买取价缓存、Open API 每日用量。
+- `kaitorix_catalog`：每日同步的买取X 全量商品目录（约 2.6 万件，最新快照），用于输入 JAN 时补全商品名。
+- `kaitorix_price_history`：买取价历史，每家店对每个 JAN 的报价**只在变动时**追加一行（`price` 为空表示不再报价）。
+- `kaitorix_scrape_queue`：旧的价格抓取队列，web 已不再使用，仅原生 App 仍通过 `enqueue_kaitorix_scrape` 写入。
 - `jan_thumbnail_cache` / `jan_thumbnail_queue`：JAN 维度共享的商品缩略图缓存与抓取队列。
 
 ### 视图与触发器
@@ -190,7 +196,12 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 
 ## Scraper
 
-`scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建。它监听 Supabase 的 Kaitorix 抓取队列，用 Playwright 获取价格并写回 `kaitorix_price_cache`；另有 thumbnail-fetcher worker 调 Kaitorix search API 获取商品缩略图并转存 Storage（写 `jan_thumbnail_cache`，不用 Playwright）。详细启动方式见 `scraper/README.md`。
+`scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建，包含两个 worker：
+
+- **thumbnail-fetcher**：调 Kaitorix search API 获取商品缩略图并转存 Storage（写 `jan_thumbnail_cache`，不用 Playwright）。web 端在用。
+- **kaitorix-scraper**：监听 `kaitorix_scrape_queue`，用 Playwright 抓价格写回 `kaitorix_price_cache`。**web 端已改走官方 Open API，不再入队**；它只为原生 App 保留（原生的价格自动刷新仍通过 `enqueue_kaitorix_scrape` 入队）。原生端迁到 web 接口之前不要停它。
+
+详细启动方式见 `scraper/README.md`。
 
 ## 部署
 
