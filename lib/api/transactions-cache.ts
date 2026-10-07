@@ -28,28 +28,29 @@ interface SalesRecordRow {
 
 // ------- 查询 + 聚合 -------
 export async function fetchTransactionsWithProfit(): Promise<TransactionWithProfit[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select(`
+  // 交易与销售记录并行拉取（原先是先取交易、再用全部交易 ID 拼 .in() 串行取销售）。
+  // 不再需要 .in('transaction_id', ids)：sales_records 的 RLS 已限定为当前用户本人的行，
+  // 与 transactions 的可见范围一致；去掉后请求 URL 不再随交易数量增长（565 笔时约 20KB）。
+  const [txResult, srResult] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select(`
       *,
       payment_method:payment_methods(id, name)
     `)
-    .order('date', { ascending: false });
-
-  if (error) throw error;
-  const txList = data || [];
-
-  // 一次性批量拉取所有 sales_records，避免 N+1 查询
-  const ids = txList.map(t => t.id);
-  let salesRows: SalesRecordRow[] = [];
-  if (ids.length > 0) {
-    const { data: srData } = await supabase
+      .order('date', { ascending: false }),
+    supabase
       .from('sales_records')
       .select('transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number')
-      .in('transaction_id', ids)
-      .order('sale_date', { ascending: false });
-    salesRows = (srData as SalesRecordRow[] | null) || [];
-  }
+      .order('sale_date', { ascending: false }),
+  ]);
+
+  if (txResult.error) throw txResult.error;
+  const txList = txResult.data || [];
+
+  // 沿用原行为：销售记录查询失败不让整个列表失败，仅记录日志（此时利润等聚合列为空）
+  if (srResult.error) console.error('加载销售记录失败:', srResult.error);
+  const salesRows = (srResult.data as SalesRecordRow[] | null) || [];
 
   // 按 transaction_id 分组
   const salesByTx = new Map<string, SalesRecordRow[]>();
