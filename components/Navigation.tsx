@@ -16,7 +16,6 @@ import {
   Plus,
   ScanBarcode,
   Settings,
-  TrendingUp,
   User,
   X,
 } from 'lucide-react';
@@ -26,6 +25,7 @@ import { triggerHaptic } from '@/lib/haptic';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { readLastUser } from '@/lib/offline/persister';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { BrandIcon } from '@/components/BrandIcon';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -143,9 +143,7 @@ export default function Navigation() {
       {/* 桌面端顶部栏 — SNUtils manage shell */}
       <header className="hidden lg:flex fixed top-0 left-0 right-0 z-[9000] h-[60px] bg-[var(--color-header)] shadow-[var(--shadow-md)] items-center justify-between px-6">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[var(--radius-md)] bg-[var(--color-primary-subtle)] border border-[var(--color-primary-border)] flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
-          </div>
+          <BrandIcon className="h-9 w-9" />
           <div className="leading-tight">
             <div className="text-[var(--color-header-text)] text-base font-bold tracking-[-0.3px]">Resale Master</div>
             <div className="text-[var(--color-primary)] text-xs font-medium uppercase tracking-[0.5px]">财务控制台</div>
@@ -182,9 +180,7 @@ export default function Navigation() {
         <div className="h-14 flex items-center border-b border-[var(--color-border)] px-3 gap-2">
           {!collapsed && (
             <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-9 h-9 bg-[var(--color-primary-light)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
-              </div>
+              <BrandIcon className="h-9 w-9" />
               <div className="min-w-0">
                 <div className="text-[var(--color-text)] font-semibold text-sm truncate">管理系统</div>
                 <div className="text-[var(--color-text-muted)] text-[11px] truncate">内部财务控制台</div>
@@ -193,9 +189,7 @@ export default function Navigation() {
           )}
           {collapsed && (
             <Link href="/dashboard" className="flex-1 flex justify-center">
-              <div className="w-10 h-10 bg-[var(--color-primary-light)] rounded-[var(--radius-lg)] flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
-              </div>
+              <BrandIcon className="h-10 w-10" />
             </Link>
           )}
         </div>
@@ -267,9 +261,7 @@ export default function Navigation() {
       >
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[var(--radius-md)] border border-[var(--color-primary-border)] bg-[var(--color-primary-subtle)] flex items-center justify-center">
-              <TrendingUp className="h-[18px] w-[18px] text-[var(--color-primary)]" strokeWidth={2} />
-            </div>
+            <BrandIcon className="h-8 w-8" />
             <div className="leading-tight">
               <div className="text-sm font-bold text-[var(--color-header-text)]">Resale Master</div>
               <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>

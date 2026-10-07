@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { BrandIcon } from '@/components/BrandIcon';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -74,11 +75,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[380px]">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] shadow-[var(--shadow-md)]">
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
+          <BrandIcon className="mx-auto mb-4 h-14 w-14 shadow-[var(--shadow-md)]" />
           <h1 className="text-[28px] font-bold tracking-tight text-[var(--color-text)]">
             Resale Master JP
           </h1>
