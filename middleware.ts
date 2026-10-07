@@ -86,12 +86,14 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
+     * 以下公开静态资源不经过登录校验（不含任何用户数据）：
+     * - _next/static、_next/image：Next 构建产物
+     * - favicon.ico
+     * - sw.js、manifest.webmanifest：PWA 的 Service Worker 与清单。浏览器注册 / 更新 SW 时
+     *   不带页面上下文，被重定向到登录页会直接注册失败（Chrome 报 "script is behind a redirect"）
+     * - 图片与字体后缀：svg png jpg jpeg gif webp ico、ttf woff woff2。
+     *   登录页自己要用 /fonts/*.ttf，未登录时被重定向会导致登录页字体加载不出来
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico$|sw\\.js$|manifest\\.webmanifest$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|ttf|woff|woff2)$).*)',
   ],
 };
