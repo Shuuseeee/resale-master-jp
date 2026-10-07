@@ -127,6 +127,19 @@ CREATE TABLE public.jan_thumbnail_queue (
   updated_at timestamp with time zone DEFAULT now()
 );
 
+-- 买取X「全部买取数据」CSV 的每日同步结果：当时至少有一家店报价的全部商品（约 2 万件），全站共享。
+-- prices 为 [{store, price, updated_at}]，updated_at 是该店报价的更新时间（ISO）；
+-- 用于输入 JAN 时自动补全商品名等只读查询，写入走 service_role（/api/kaitorix/catalog-sync）。
+CREATE TABLE public.kaitorix_catalog (
+  jan text NOT NULL,
+  name text NOT NULL,
+  category text,
+  msrp integer,
+  prices jsonb DEFAULT '[]'::jsonb NOT NULL,
+  max_price integer DEFAULT 0 NOT NULL,
+  synced_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE public.kaitorix_open_api_usage (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   usage_date date NOT NULL,
@@ -368,6 +381,7 @@ ALTER TABLE public.coupons ADD CONSTRAINT coupons_pkey PRIMARY KEY (id);
 ALTER TABLE public.fixed_costs ADD CONSTRAINT fixed_costs_pkey PRIMARY KEY (id);
 ALTER TABLE public.jan_thumbnail_cache ADD CONSTRAINT jan_thumbnail_cache_pkey PRIMARY KEY (jan);
 ALTER TABLE public.jan_thumbnail_queue ADD CONSTRAINT jan_thumbnail_queue_pkey PRIMARY KEY (id);
+ALTER TABLE public.kaitorix_catalog ADD CONSTRAINT kaitorix_catalog_pkey PRIMARY KEY (jan);
 ALTER TABLE public.kaitorix_open_api_usage ADD CONSTRAINT kaitorix_open_api_usage_pkey PRIMARY KEY (id);
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_pkey PRIMARY KEY (id);
 ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_pkey PRIMARY KEY (id);
@@ -459,6 +473,7 @@ CREATE INDEX idx_coupons_wechat_openid ON public.coupons USING btree (wechat_ope
 CREATE INDEX idx_fixed_costs_user_id ON public.fixed_costs USING btree (user_id);
 CREATE INDEX idx_jan_thumb_queue_jan ON public.jan_thumbnail_queue USING btree (jan);
 CREATE INDEX idx_jan_thumb_queue_status ON public.jan_thumbnail_queue USING btree (status, created_at) WHERE (status = 'pending'::text);
+CREATE INDEX idx_kaitorix_catalog_synced_at ON public.kaitorix_catalog USING btree (synced_at);
 CREATE INDEX idx_kaitorix_open_api_usage_date ON public.kaitorix_open_api_usage USING btree (usage_date);
 CREATE INDEX idx_price_cache_jan ON public.kaitorix_price_cache USING btree (jan);
 CREATE INDEX idx_scrape_queue_jan ON public.kaitorix_scrape_queue USING btree (jan);
@@ -1049,6 +1064,7 @@ ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fixed_costs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jan_thumbnail_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jan_thumbnail_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kaitorix_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_open_api_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_price_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_scrape_queue ENABLE ROW LEVEL SECURITY;
@@ -1084,9 +1100,10 @@ CREATE POLICY "Users can insert their own fixed costs" ON public.fixed_costs FOR
 CREATE POLICY "Users can update their own fixed costs" ON public.fixed_costs FOR UPDATE USING ((auth.uid() = user_id));
 CREATE POLICY "Users can view their own fixed costs" ON public.fixed_costs FOR SELECT USING ((auth.uid() = user_id));
 
--- 缩略图 / 买取价缓存：全站共享，登录用户只读（写入走 service_role）
+-- 缩略图 / 买取价缓存 / 买取商品目录：全站共享，登录用户只读（写入走 service_role）
 CREATE POLICY jan_thumbnail_cache_select ON public.jan_thumbnail_cache FOR SELECT TO authenticated USING (true);
 CREATE POLICY jan_thumbnail_queue_select ON public.jan_thumbnail_queue FOR SELECT TO authenticated USING (true);
+CREATE POLICY kaitorix_catalog_select ON public.kaitorix_catalog FOR SELECT TO authenticated USING (true);
 CREATE POLICY kaitorix_open_api_usage_select_admin ON public.kaitorix_open_api_usage FOR SELECT TO authenticated USING (is_admin());
 CREATE POLICY kaitorix_price_cache_select ON public.kaitorix_price_cache FOR SELECT TO authenticated USING (true);
 CREATE POLICY kaitorix_scrape_queue_insert ON public.kaitorix_scrape_queue FOR INSERT TO authenticated WITH CHECK ((auth.uid() = user_id));
