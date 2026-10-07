@@ -4,9 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
-  generateTaxReportDetails,
-  generateTaxInventoryItems,
-  generateTaxReportSummary,
+  generateTaxReport,
   getAvailableYears,
   type TaxReportDetail,
   type TaxInventoryItem,
@@ -57,14 +55,7 @@ export default function TaxReportPage() {
 
   const { data: report, isPending, isFetching, fetchStatus, refetch } = useQuery({
     queryKey: ['tax-report', 'report', selectedYear],
-    queryFn: async () => {
-      const [summary, details] = await Promise.all([
-        generateTaxReportSummary(selectedYear),
-        generateTaxReportDetails(selectedYear),
-      ]);
-      const inventoryItems = await generateTaxInventoryItems(selectedYear);
-      return { summary, details, inventoryItems };
-    },
+    queryFn: () => generateTaxReport(selectedYear),
     // 切换年份时保留上一份报表可见（与原行为一致：只有首次加载才整页转圈）
     placeholderData: keepPreviousData,
   });

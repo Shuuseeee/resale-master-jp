@@ -349,51 +349,71 @@ export async function generateTaxInventoryItems(year: number): Promise<TaxInvent
 }
 
 /**
- * 税務レポート年度集計を生成（販売記録ベース）
+ * 由明细 / 耗材 / 棚卸计算年度汇总（纯计算，不访问数据库）
  */
-export async function generateTaxReportSummary(year: number): Promise<TaxReportSummary> {
-  try {
-    const details = await generateTaxReportDetails(year);
-    const yearlySuppliesCosts = await getYearlySuppliesCosts(year);
-    const inventoryItems = await generateTaxInventoryItems(year);
+function buildTaxReportSummary(
+  year: number,
+  details: TaxReportDetail[],
+  yearlySuppliesCosts: number,
+  inventoryItems: TaxInventoryItem[],
+): TaxReportSummary {
+  // 各項目を計算（販売記録から集計）
+  const totalRevenue = details.reduce((sum, d) => sum + d.sellingPrice, 0);
+  const totalPointsValue = details.reduce((sum, d) => sum + d.pointsReward, 0);
+  const totalIncome = totalRevenue + totalPointsValue;
 
-    // 各項目を計算（販売記録から集計）
-    const totalRevenue = details.reduce((sum, d) => sum + d.sellingPrice, 0);
-    const totalPointsValue = details.reduce((sum, d) => sum + d.pointsReward, 0);
-    const totalIncome = totalRevenue + totalPointsValue;
+  const purchaseCosts = details.reduce((sum, d) => sum + d.purchasePrice, 0);
+  const platformFees = details.reduce((sum, d) => sum + d.platformFee, 0);
+  const shippingFees = details.reduce((sum, d) => sum + d.shippingFee, 0);
 
-    const purchaseCosts = details.reduce((sum, d) => sum + d.purchasePrice, 0);
-    const platformFees = details.reduce((sum, d) => sum + d.platformFee, 0);
-    const shippingFees = details.reduce((sum, d) => sum + d.shippingFee, 0);
+  const totalExpenses = purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts;
+  const netIncome = totalIncome - totalExpenses;
+  const cashIncome = totalRevenue - (purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts);
+  const endingInventoryValue = inventoryItems.reduce((sum, item) => sum + item.endingInventoryValue, 0);
+  const endingInventoryQuantity = inventoryItems.reduce((sum, item) => sum + item.endingQuantity, 0);
 
-    const totalExpenses = purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts;
-    const netIncome = totalIncome - totalExpenses;
-    const cashIncome = totalRevenue - (purchaseCosts + platformFees + shippingFees + yearlySuppliesCosts);
-    const endingInventoryValue = inventoryItems.reduce((sum, item) => sum + item.endingInventoryValue, 0);
-    const endingInventoryQuantity = inventoryItems.reduce((sum, item) => sum + item.endingQuantity, 0);
+  return {
+    year,
+    totalRevenue,
+    totalPointsValue,
+    totalIncome,
+    totalExpenses,
+    purchaseCosts,
+    platformFees,
+    shippingFees,
+    suppliesCosts: yearlySuppliesCosts,
+    netIncome,
+    cashIncome,
+    transactionCount: details.length, // 販売記録の件数
+    endingInventoryValue,
+    endingInventoryQuantity,
+    inventoryItemCount: inventoryItems.length,
+  };
+}
 
-    return {
-      year,
-      totalRevenue,
-      totalPointsValue,
-      totalIncome,
-      totalExpenses,
-      purchaseCosts,
-      platformFees,
-      shippingFees,
-      suppliesCosts: yearlySuppliesCosts,
-      netIncome,
-      cashIncome,
-      transactionCount: details.length, // 販売記録の件数
-      endingInventoryValue,
-      endingInventoryQuantity,
-      inventoryItemCount: inventoryItems.length,
-    };
-  } catch (error) {
-    console.error('税務レポート集計の生成に失敗:', error);
-    // 失败即抛错：报税数据出错时静默返回 0 / 空会让人导出一份全 0 的报表，且会被离线缓存持久化
-    throw error;
-  }
+/**
+ * 生成指定年度的完整税务报表：汇总 + 明细 + 期末棚卸
+ *
+ * 三者各取数一次、互相并行，汇总由明细 / 耗材 / 棚卸在内存里计算。
+ * 原先页面分别调用 generateTaxReportSummary / Details / InventoryItems，而汇总内部又会再各调一遍
+ * 明细和棚卸，同一年的销售记录、棚卸用的交易 / 销售 / 退货被重复读取两次，明细还被算了两遍。
+ * 任何一次读取失败都会抛错（报税数据不能静默出错）。
+ */
+export async function generateTaxReport(year: number): Promise<{
+  summary: TaxReportSummary;
+  details: TaxReportDetail[];
+  inventoryItems: TaxInventoryItem[];
+}> {
+  const [details, inventoryItems, yearlySuppliesCosts] = await Promise.all([
+    generateTaxReportDetails(year),
+    generateTaxInventoryItems(year),
+    getYearlySuppliesCosts(year),
+  ]);
+  return {
+    summary: buildTaxReportSummary(year, details, yearlySuppliesCosts, inventoryItems),
+    details,
+    inventoryItems,
+  };
 }
 
 /**
