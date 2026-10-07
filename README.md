@@ -19,7 +19,7 @@
 - **通知中心**：基于 Supabase Realtime、Web Push 和站内通知展示未读提醒。
 
 ### 数据分析与税务
-- **仪表盘**：展示资金安全水位、待付款、待确认积分和核心经营指标。
+- **仪表盘**：展示库存数、总投资额、已回收、确认利润、未回收库存、预期积分 / 本月利润等核心经营指标。
 - **数据分析**：按时间、平台、状态等维度查看业务表现。
 - **税务申报**：提供日本报税语境下的交易与利润报表导出能力，支持 Excel/PDF/CSV 相关导出。
 
@@ -29,8 +29,11 @@
 - **样式**：Tailwind CSS + `app/globals.css` 里的 SNUtils 风格 CSS 变量
 - **图标**：lucide-react
 - **数据库与认证**：Supabase Auth + PostgreSQL + Storage + Realtime
-- **PWA / 推送**：Manifest + Service Worker + Web Push (`web-push`)
+- **PWA / 推送**：Manifest + Workbox Service Worker + Web Push (`web-push`)
 - **图表与导出**：Recharts、jsPDF、jspdf-autotable、XLSX
+- **表格**：`@tanstack/react-table`（headless）+ `@tanstack/react-virtual`
+- **数据请求缓存**：`@tanstack/react-query`
+- **Service Worker**：Workbox（`InjectManifest`，源码 `lib/sw/sw-source.ts`）
 - **图片处理**：heic2any
 - **OCR**：Anthropic SDK，用于优惠券图片识别
 - **买取价**：Kaitorix API + 独立 scraper 队列抓取
@@ -64,23 +67,22 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```env
 KAITORIX_API_TOKENS=your_token1,your_token2
 NEXT_PUBLIC_KAITORIX_RATE_LIMIT_MODE=ultra-safe
+KAITORIX_OPEN_API_KEY=your_open_api_key
+KAITORIX_OPEN_API_DAILY_LIMIT=30
 ANTHROPIC_API_KEY=sk-ant-...
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 VAPID_PRIVATE_KEY=your_vapid_private_key
 LINE_REMINDER_URL=https://...
+CRON_SECRET=your_cron_secret
 ```
 
 ### 3. 初始化数据库
 
-在 Supabase Dashboard SQL Editor 或 Supabase CLI 中按顺序执行：
+在一个**全新**的 Supabase 项目里，打开 SQL Editor，执行 `supabase/schema.sql` 即可，一个文件建好所有表、视图、触发器、RLS、Storage bucket 和内置平台数据。
 
-1. `supabase/migrations/00_initial_schema.sql` - 初始表、视图、触发器和基础数据
-2. `supabase/migrations/05_fix_scraper_queue_atomic.sql` - Kaitorix 队列原子出队函数
-3. `supabase/migrations/06_transaction_history.sql` - 交易编辑历史记录
-4. `supabase/migrations/07_admin_role.sql` - 管理员角色系统
-5. `supabase/migrations/08_seed_admin_users.sql` - 管理员用户种子数据
-6. `supabase/migrations/09_user_preferences.sql` - 用户偏好配置，如交易列表列设置
-7. `supabase/migrations/10_rls_user_line_links.sql` - LINE 绑定表 RLS 策略
+`supabase/migrations-archive/` 是历史增量记录，新装不需要执行。
+
+注册第一个用户后，按 `schema.sql` 文件头的说明把它设为管理员。
 
 ### 4. 启动开发服务器
 
@@ -101,7 +103,8 @@ resale-master-jp/
 │   ├── themes.css                    # 配色主题（data-palette）token 覆盖块
 │   ├── api/
 │   │   ├── jan-product/[jan]/        # JAN 商品名查询与补全
-│   │   ├── kaitorix/[jan]/           # 买取价格查询与 scrape 入队
+│   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量
+│   │   ├── thumbnail/enqueue/        # 商品缩略图抓取入队
 │   │   ├── ocr/                      # 优惠券 OCR 与测试接口
 │   │   └── push/                     # Web Push 订阅、测试、每日提醒
 │   ├── auth/                         # 登录、注册、OAuth 回调
@@ -127,7 +130,8 @@ resale-master-jp/
 │   ├── sw.js                         # Service Worker
 │   ├── icons/                        # PWA 图标
 │   └── fonts/                        # Outfit / Noto Sans 字体
-├── supabase/migrations/              # 数据库迁移文件
+├── supabase/schema.sql               # 新装唯一入口（完整库结构）
+├── supabase/migrations-archive/              # 历史增量记录（新装不需要）
 ├── scraper/                          # 独立 Kaitorix 抓取服务
 ├── types/database.types.ts           # Supabase 类型定义
 ├── middleware.ts                     # 路由保护
@@ -139,9 +143,10 @@ resale-master-jp/
 ### 主要表
 
 - `transactions`：采购交易、库存数量、付款拆分、ROI、状态和编辑历史来源。
+- `sale_orders`：销售订单，一个订单可含多件商品。
 - `sales_records`：单笔或分批销售记录。
 - `return_records`：退货记录。
-- `payment_methods` / `bank_accounts`：支付方式与账户管理。
+- `payment_methods`：支付方式管理。
 - `coupons` / `coupon_usage_history`：优惠券与使用历史。
 - `supplies_costs` / `fixed_costs`：耗材与固定成本。
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
@@ -150,12 +155,15 @@ resale-master-jp/
 - `user_preferences`：用户级 UI 偏好，如交易列表列设置、配色主题。
 - `user_roles`：管理员角色。
 - `user_line_links`：用户与 LINE 账号绑定关系。
+- `kaitorix_price_cache` / `kaitorix_scrape_queue` / `kaitorix_open_api_usage`：买取价缓存、抓取队列、Open API 每日用量。
+- `jan_thumbnail_cache` / `jan_thumbnail_queue`：JAN 维度共享的商品缩略图缓存与抓取队列。
 
 ### 视图与触发器
 
-- `financial_water_level`：财务安全水位。
 - `upcoming_payments`：30 天内待付款。
-- `pending_points`：待确认积分。
+- `active_coupons`：当前可用优惠券。
+- `sale_order_summary`：销售订单汇总。
+- `jan_thumbnail_queue_status`：缩略图队列状态监控。
 - `set_user_id()`：插入时自动写入当前用户。
 - `update_transaction_status()`：基于销售和退货记录重算交易状态与 ROI。
 - `record_transaction_change()`：记录交易编辑历史。
@@ -181,7 +189,7 @@ npm run type-check   # TypeScript 类型检查
 node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 ```
 
-项目当前没有 Jest / Vitest / Playwright 测试框架。手动测试入口包括 `/api/ocr/test` 和开发环境下通知页的测试推送面板。
+项目当前没有 Jest / Vitest / Playwright 测试框架（`e2e/specs/` 是空目录占位）。手动测试入口包括 `/api/ocr/test` 和开发环境下通知页的测试推送面板。
 
 ## 设计系统
 
@@ -201,4 +209,5 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - 推荐部署到 Vercel。
 - 数据库和 Storage 使用 Supabase。
 - 生产环境需要配置 `.env.local.example` 中列出的服务端和客户端变量。
-- 如果启用 Web Push，每日提醒可使用 Vercel Cron 调用 `/api/push/daily`。
+- 如果启用 Web Push，每日提醒由 `vercel.json` 的 Cron 调用 `/api/push/daily`（`0 23 * * *` UTC，即日本时间 08:00），需在环境变量中设置 `CRON_SECRET`。
+- `scraper/` 不在 Vercel 上运行，需单独托管（pm2，见 `scraper/README.md`）。
