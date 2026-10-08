@@ -222,21 +222,49 @@ async function acquireOfficialSlot() {
   if (start > now) await new Promise(resolve => setTimeout(resolve, start - now));
 }
 
-/** 查不到 / 无价格的 JAN 记一条空缓存行（仅在没有任何行时），避免每次进页面都重复消耗额度 */
+/**
+ * 官方查不到 / 没有价格的 JAN：记一次「刚检查过」（fetched_at = 现在），之后按 KAITORIX_NO_DATA_RETRY_MS
+ * 才再请求，避免每次进页面都重复消耗额度（官方 404 也扣额度）。
+ * - 没有这一行：插入一条空缓存行
+ * - 已有行（如只存了商品名、抓取时间为空的行，或带旧价格的行）：保留原价格，只更新 fetched_at；
+ *   旧价格里还没有 updated_at 的先按「旧抓取时刻 − 相对时间」固化成 updated_at，
+ *   否则 fetched_at 前移会让 7 天参考规则把旧价格误当成新价格
+ */
 async function recordMissingProduct(jan: string) {
+  const nowMs = Date.now();
+  const { data: row } = await serviceSupabase
+    .from('kaitorix_price_cache')
+    .select('prices, fetched_at')
+    .eq('jan', jan)
+    .maybeSingle();
+
+  if (!row) {
+    await serviceSupabase
+      .from('kaitorix_price_cache')
+      .upsert(
+        {
+          jan,
+          max_price: 0,
+          max_store: '',
+          prices: [],
+          fetched_at: new Date(nowMs).toISOString(),
+          last_fetch_source: 'official',
+        },
+        { onConflict: 'jan', ignoreDuplicates: true },
+      );
+    return;
+  }
+
+  const oldFetchedAtMs = row.fetched_at ? new Date(row.fetched_at).getTime() : null;
+  const prices = (Array.isArray(row.prices) ? row.prices : []).map((p: OfficialPrice) => {
+    if (p.updated_at) return p;
+    const updatedAtMs = getPriceUpdatedAt({ updated: p.updated }, oldFetchedAtMs, nowMs);
+    return updatedAtMs != null ? { ...p, updated_at: new Date(updatedAtMs).toISOString() } : p;
+  });
   await serviceSupabase
     .from('kaitorix_price_cache')
-    .upsert(
-      {
-        jan,
-        max_price: 0,
-        max_store: '',
-        prices: [],
-        fetched_at: new Date().toISOString(),
-        last_fetch_source: 'official',
-      },
-      { onConflict: 'jan', ignoreDuplicates: true },
-    );
+    .update({ prices, fetched_at: new Date(nowMs).toISOString() })
+    .eq('jan', jan);
 }
 
 /**

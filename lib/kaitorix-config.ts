@@ -9,6 +9,9 @@ export function needsKaitorixRefresh(fetchedAt: number | undefined): boolean {
   return Date.now() - fetchedAt > KAITORIX_REFRESH_AFTER_MS;
 }
 
+/** 官方查不到 / 没有任何可参考价格的 JAN，隔这么久才再向官方请求一次（官方即使返回 404 也会扣一次额度） */
+export const KAITORIX_NO_DATA_RETRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 /** 店铺自己的报价更新时间超过此时长，该条报价不再作为参考（不参与最高价 / 利润计算） */
 export const KAITORIX_REFERENCE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 

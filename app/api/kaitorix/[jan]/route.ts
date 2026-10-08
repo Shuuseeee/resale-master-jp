@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { KAITORIX_REFRESH_AFTER_MS } from '@/lib/kaitorix-config';
+import { KAITORIX_NO_DATA_RETRY_MS, KAITORIX_REFRESH_AFTER_MS } from '@/lib/kaitorix-config';
+import { getReferencePrices, type KaitorixPriceEntry } from '@/lib/kaitorix-domain';
 import {
   AUTO_REFRESH_RESERVE,
   getAuthedUser,
@@ -7,7 +8,7 @@ import {
   serviceSupabase as supabase,
 } from '@/lib/server/kaitorix-official';
 
-// 按 JAN 查买取价：缓存新鲜（30 分钟内）直接返回；过期或没有时，已登录用户触发一次官方 API 刷新。
+// 按 JAN 查买取价：缓存新鲜（有可参考价格 30 分钟内 / 无可参考价格 24 小时内）直接返回；过期或没有时，已登录用户触发一次官方 API 刷新。
 // 官方刷新失败 / 额度保留线 / 限速时退回旧缓存（stale）或 pending，由前端稍后重试。
 export async function GET(
   _request: Request,
@@ -35,8 +36,14 @@ export async function GET(
     _fetched_at: cached!.fetched_at,
   });
 
-  const isFresh = cached?.fetched_at &&
-    (Date.now() - new Date(cached.fetched_at).getTime()) < KAITORIX_REFRESH_AFTER_MS;
+  // 有可参考价格（店铺报价更新未超过 7 天）的 JAN 按 30 分钟刷新；
+  // 官方查不到 / 没有任何可参考价格的 JAN 隔 24 小时才再请求（官方 404 也扣额度，每次进页面重试会白白耗光）
+  const fetchedAtMs = cached?.fetched_at ? new Date(cached.fetched_at).getTime() : null;
+  const hasReferencePrice = cached
+    ? getReferencePrices((cached.prices ?? []) as KaitorixPriceEntry[], fetchedAtMs).length > 0
+    : false;
+  const freshWindowMs = hasReferencePrice ? KAITORIX_REFRESH_AFTER_MS : KAITORIX_NO_DATA_RETRY_MS;
+  const isFresh = fetchedAtMs !== null && Date.now() - fetchedAtMs < freshWindowMs;
 
   if (cached && isFresh) {
     return NextResponse.json(fromCache('cache'));
