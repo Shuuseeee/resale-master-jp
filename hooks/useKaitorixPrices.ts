@@ -7,7 +7,7 @@ import {
   type KaitorixRateLimit,
   type KaitorixResponse,
 } from '@/lib/api/kaitorix';
-import { loadKaitorixConfig, isKaitorixPriceStale, normalizePriceStores } from '@/lib/kaitorix-config';
+import { loadKaitorixConfig, needsKaitorixRefresh, normalizePriceStores, KAITORIX_REFRESH_AFTER_MS } from '@/lib/kaitorix-config';
 import {
   expectedProfitForTx,
   filterPricesByStores,
@@ -52,9 +52,6 @@ export interface KaitorixState {
 const CACHE_KEY = 'kaitorix_buyback_cache';
 const CACHE_VERSION = 2;
 const STORAGE_TTL = 30 * 60 * 1000; // 30 minutes — match server cache TTL
-
-// 行内「取得时刻」标注阈值：超过该时长的价格标为 stale（与是否需要刷新的 24 小时阈值无关）
-const SERVER_CACHE_TTL = 30 * 60 * 1000;
 
 function loadCacheFromStorage(): Map<string, JanPriceData> {
   try {
@@ -151,9 +148,9 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       const filtered = filterPricesByStores(getReferencePrices(data.prices, data.fetchedAt), config.enabledStores);
       const best = getBestEntry(filtered);
       const fetchedAt = data.fetchedAt ?? undefined;
-      // 'stale'（>30 分钟）驱动行内的取得时刻标注
+      // 'stale'（超过刷新阈值 30 分钟）驱动行内的取得时刻标注
       const ageSource: BuybackInfo['source'] = data.prices.length === 0 ? 'pending'
-        : data.fetchedAt != null && Date.now() - data.fetchedAt <= SERVER_CACHE_TTL ? 'cache'
+        : data.fetchedAt != null && Date.now() - data.fetchedAt <= KAITORIX_REFRESH_AFTER_MS ? 'cache'
         : 'stale';
 
       txs.forEach(tx => {
@@ -185,7 +182,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   }, [janPriceMap, transactions, config]);
 
   // 共享刷新流程：① bulk 一次性读 DB 缓存（始终可用，含禁用功能时的只读展示）
-  // ② 仅对缺失或抓取超过 24 小时的 JAN 走 /api/kaitorix/[jan]（服务端调官方 API，串行限速）
+  // ② 仅对缺失或抓取超过 30 分钟的 JAN 走 /api/kaitorix/[jan]（服务端调官方 API，串行限速）
   const doRefresh = useCallback(async (jans: string[]) => {
     if (jans.length === 0 || isLoadingRef.current) return;
 
@@ -206,7 +203,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       const needy = enabled
         ? jans.filter(jan => {
             const data = merged.get(jan);
-            return !data || isKaitorixPriceStale(data.fetchedAt ?? undefined);
+            return !data || needsKaitorixRefresh(data.fetchedAt ?? undefined);
           })
         : [];
 
@@ -249,7 +246,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       .filter(jan => {
         const data = janPriceMapRef.current.get(jan);
         if (!data) return true;
-        if (isKaitorixPriceStale(data.fetchedAt ?? undefined)) return true;
+        if (needsKaitorixRefresh(data.fetchedAt ?? undefined)) return true;
         return !getBestEntry(filterPricesByStores(getReferencePrices(data.prices, data.fetchedAt), config.enabledStores));
       })
       .sort();

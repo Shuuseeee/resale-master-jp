@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { KAITORIX_STALE_MS } from '@/lib/kaitorix-config';
+import { KAITORIX_REFRESH_AFTER_MS } from '@/lib/kaitorix-config';
 import {
   AUTO_REFRESH_RESERVE,
   getAuthedUser,
@@ -7,7 +7,7 @@ import {
   serviceSupabase as supabase,
 } from '@/lib/server/kaitorix-official';
 
-// 按 JAN 查买取价：缓存新鲜（24 小时内）直接返回；过期或没有时，已登录用户触发一次官方 API 刷新。
+// 按 JAN 查买取价：缓存新鲜（30 分钟内）直接返回；过期或没有时，已登录用户触发一次官方 API 刷新。
 // 官方刷新失败 / 额度保留线 / 限速时退回旧缓存（stale）或 pending，由前端稍后重试。
 export async function GET(
   _request: Request,
@@ -36,7 +36,7 @@ export async function GET(
   });
 
   const isFresh = cached?.fetched_at &&
-    (Date.now() - new Date(cached.fetched_at).getTime()) < KAITORIX_STALE_MS;
+    (Date.now() - new Date(cached.fetched_at).getTime()) < KAITORIX_REFRESH_AFTER_MS;
 
   if (cached && isFresh) {
     return NextResponse.json(fromCache('cache'));
