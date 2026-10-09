@@ -76,10 +76,11 @@ export function useTransactionForm({
 
   // ──── Data fetching ────
   const fetchPaymentMethods = useCallback(async () => {
+    // 含停用的卡：编辑旧交易时要能显示（并按返点率计算）它当时用的卡；
+    // 新选卡时下拉只列启用中的（见 PurchaseCostsSection）
     const { data, error } = await supabase
       .from('payment_methods')
       .select('*')
-      .eq('is_active', true)
       .order('name');
     if (error) { console.error('获取支付方式失败:', error); return; }
     setPaymentMethods(data || []);

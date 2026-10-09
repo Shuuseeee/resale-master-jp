@@ -48,6 +48,7 @@ import {
   fetchSingleTransaction,
 } from '@/lib/api/transactions-cache';
 import type { QuickEditPayload } from '@/lib/api/transactions';
+import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 // 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
 type TransactionWithPayment = TransactionWithProfit;
@@ -306,14 +307,15 @@ function TransactionsContent() {
   }, [queryClient]);
 
   const loadPaymentMethods = async () => {
+    // 含停用的卡（排在后面、名称带标注）：历史交易仍引用它们，要能按它们筛选
     const { data, error } = await supabase
       .from('payment_methods')
-      .select('id, name')
-      .eq('is_active', true)
+      .select('id, name, is_active')
+      .order('is_active', { ascending: false })
       .order('name');
 
     if (!error && data) {
-      setPaymentMethods(data);
+      setPaymentMethods(data.map(pm => ({ id: pm.id, name: paymentMethodDisplayName(pm) })));
     }
   };
 

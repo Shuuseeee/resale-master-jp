@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
   });
 
   const { data: methodsData } = useQuery({
-    queryKey: ['payment-methods', 'active'],
+    queryKey: ['payment-methods', 'all'],
     queryFn: getAllPaymentMethods,
   });
   const paymentMethods = methodsData ?? NO_METHODS;

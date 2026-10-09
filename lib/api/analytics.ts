@@ -4,6 +4,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows, type SelectOpts } from '@/lib/api/fetchAll';
 import { formatDateToLocal } from '@/lib/utils/dateUtils';
+import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 /**
  * 时间范围类型
@@ -694,19 +695,19 @@ export async function getCostStructure(filters: AnalyticsFilters): Promise<CostS
 }
 
 /**
- * 获取所有支付方式
+ * 获取所有支付方式（含停用的卡：排在后面、名称带标注，历史数据仍可按它们筛选）
  */
 export async function getAllPaymentMethods(): Promise<PaymentMethodFilter[]> {
   try {
     const { data, error } = await supabase
       .from('payment_methods')
-      .select('id, name')
-      .eq('is_active', true)
+      .select('id, name, is_active')
+      .order('is_active', { ascending: false })
       .order('name');
 
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map(pm => ({ id: pm.id, name: paymentMethodDisplayName(pm) }));
   } catch (error) {
     console.error('获取支付方式列表失败:', error);
     // 失败即抛错：分析数据已入离线缓存，返回空数组 / 全 0 会被当成成功结果并持久化（唯一调用方是分析页）
