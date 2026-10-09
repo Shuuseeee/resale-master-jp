@@ -15,7 +15,7 @@
 - **状态标签**：交易列表默认显示「未售出」（未到货 + 库存中），并记住上次的选择；深链 `?tab=` 优先。搜索落空时提供「在全部交易中查找」。
 
 ### 财务与运营
-- **支付方式管理**：管理信用卡等支付方式，配置返点率、积分平台和启用状态（不管理还款周期）。
+- **支付方式管理**（设置页内）：信用卡与其他支付方式（PayPay、楽天ペイ、银行转账等，可一键添加常用项），配置返点率、卡号后 4 位、返点积分平台、默认支付方式和启用状态；**店铺特殊规则**可让同一支付方式在某个采购平台用不同返点率（如 Amazon 卡在 Amazon 返 3%），录入交易时自动套用。不管理还款周期。
 - **积分平台系统**：维护积分平台汇率，并纳入 ROI / 总利润计算。
 - **耗材成本**：记录包装材料、运输用品等成本，并纳入经营分析。
 
@@ -140,7 +140,8 @@ resale-master-jp/
 - `sale_orders`：销售订单，一个订单可含多件商品。
 - `sales_records`：单笔或分批销售记录。
 - `return_records`：退货记录。
-- `payment_methods`：支付方式管理。
+- `payment_methods`：支付方式（类型 card / wallet / bank / other、返点率、可选卡号后 4 位）。
+- `payment_method_store_rates`：支付方式的店铺特殊规则（支付方式 × 采购平台 → 返点率）。
 - `coupons` / `coupon_usage_history`：优惠券与使用历史（web 端已移除优惠券功能，表保留供原生 App、LIFF / 小程序使用）。
 - `supplies_costs` / `fixed_costs`：耗材与固定成本。
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
