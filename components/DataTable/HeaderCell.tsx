@@ -4,9 +4,8 @@
 'use client';
 
 import { flexRender, type Header, type Table } from '@tanstack/react-table';
-import { ArrowDown16Regular } from '@fluentui/react-icons/headless/svg/arrow-down';
-import { ArrowSort16Regular } from '@fluentui/react-icons/headless/svg/arrow-sort';
-import { ArrowUp16Regular } from '@fluentui/react-icons/headless/svg/arrow-up';
+import { ArrowDown12Regular } from '@fluentui/react-icons/headless/svg/arrow-down';
+import { ArrowUp12Regular } from '@fluentui/react-icons/headless/svg/arrow-up';
 import { table as tableStyles } from '@/lib/theme';
 import {
   ALIGN_JUSTIFY_CLASS,
@@ -48,13 +47,12 @@ export function HeaderCell<TData>({ header, table }: HeaderCellProps<TData>) {
             className={tableStyles.sortBtn}
           >
             {content}
+            {/* Fluent 可排序表头：排序后文字右侧 12px 箭头（未排序时不显示），与文字间距 4（10-table.css） */}
             {sorted === 'asc' ? (
-              <ArrowUp16Regular className="w-3.5 h-3.5 shrink-0" />
+              <ArrowUp12Regular className="shrink-0 text-[var(--color-text-secondary)]" />
             ) : sorted === 'desc' ? (
-              <ArrowDown16Regular className="w-3.5 h-3.5 shrink-0" />
-            ) : (
-              <ArrowSort16Regular className="w-3.5 h-3.5 shrink-0 opacity-40" />
-            )}
+              <ArrowDown12Regular className="shrink-0 text-[var(--color-text-secondary)]" />
+            ) : null}
           </button>
         ) : (
           content

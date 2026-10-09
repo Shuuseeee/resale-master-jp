@@ -6,6 +6,8 @@
 'use client';
 
 import { useState } from 'react';
+import { ArrowDown12Regular } from '@fluentui/react-icons/headless/svg/arrow-down';
+import { ArrowUp12Regular } from '@fluentui/react-icons/headless/svg/arrow-up';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -50,13 +52,14 @@ export interface TransactionTableDeps {
   onQuickCopy: (id: string) => void;
 }
 
-/** 表头排序方向箭头（asc 时旋转） */
+/** 表头排序方向：Fluent 可排序表头的 12px 箭头（10-table.css） */
 function SortChevron({ asc }: { asc: boolean }) {
-  return (
-    <svg className={`w-3.5 h-3.5 ${asc ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-    </svg>
-  );
+  return asc ? <ArrowUp12Regular className="shrink-0" /> : <ArrowDown12Regular className="shrink-0" />;
+}
+
+/** 方形复选框的外观（Fluent Checkbox，globals.css .fluent-checkbox）；点击由外层按钮 / 行处理 */
+function CheckMark({ state }: { state: boolean | 'mixed' }) {
+  return <span className="fluent-checkbox" data-checked={state === 'mixed' ? 'mixed' : state ? 'true' : 'false'} aria-hidden="true" />;
 }
 
 /** 点击复制 + Toast 的通用文本（订单号列用；参照 CopyableJan） */
@@ -111,20 +114,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
           title="全选当前显示的记录"
           className="flex items-center"
         >
-          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-            deps.allVisibleSelected
-              ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
-              : deps.someVisibleSelected
-                ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
-                : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
-          }`}>
-            {deps.allVisibleSelected && (
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-            )}
-            {deps.someVisibleSelected && (
-              <div className="w-2 h-0.5 bg-[var(--color-primary-fill)] rounded" />
-            )}
-          </div>
+          <CheckMark state={deps.allVisibleSelected ? true : deps.someVisibleSelected ? 'mixed' : false} />
         </button>
       ),
       cell: ({ row }) => {
@@ -140,30 +130,13 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
               aria-label="全选该组"
               className="flex items-center flex-shrink-0"
             >
-              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                allSelected
-                  ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
-                  : someSelected
-                    ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
-                    : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
-              }`}>
-                {allSelected && (
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                )}
-                {someSelected && (
-                  <div className="w-2 h-0.5 bg-[var(--color-primary-fill)] rounded" />
-                )}
-              </div>
+              <CheckMark state={allSelected ? true : someSelected ? 'mixed' : false} />
             </button>
           );
         }
         const isSelected = deps.selectedIds.has(row.original.tx.id);
         return (
-          <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-            isSelected ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]' : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
-          }`}>
-            {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-          </div>
+          <CheckMark state={isSelected} />
         );
       },
       meta: { thClassName: 'w-10 !pl-4 !pr-1', tdClassName: 'w-10 !pl-4 !pr-1' },

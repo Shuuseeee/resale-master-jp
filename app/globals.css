@@ -4,7 +4,7 @@
 
 @layer components {
   .sn-form-card {
-    @apply bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-6;
+    @apply bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-6;
   }
 
   .sn-form-title {
@@ -47,7 +47,7 @@
   }
 
   .sn-detail-card {
-    @apply rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-[var(--shadow-sm)];
+    @apply rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6;
   }
 
   .sn-detail-title {
@@ -750,12 +750,15 @@
   }
 
   .fluent-checkbox:checked,
-  .fluent-checkbox:indeterminate {
+  .fluent-checkbox:indeterminate,
+  .fluent-checkbox[data-checked="true"],
+  .fluent-checkbox[data-checked="mixed"] {
     border-color: var(--colorCompoundBrandBackground);
     background: var(--colorCompoundBrandBackground);
   }
 
-  .fluent-checkbox:checked::before {
+  .fluent-checkbox:checked::before,
+  .fluent-checkbox[data-checked="true"]::before {
     content: "";
     width: 12px;
     height: 12px;
@@ -764,7 +767,8 @@
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
   }
 
-  .fluent-checkbox:indeterminate::before {
+  .fluent-checkbox:indeterminate::before,
+  .fluent-checkbox[data-checked="mixed"]::before {
     content: "";
     width: 8px;
     height: 2px;
@@ -985,6 +989,110 @@
       backdrop-filter: blur(var(--loop-glass-blur));
       box-shadow: var(--shadow64);
     }
+  }
+
+  /* ── 卡片 / 提示条 / 转圈（B9；design-spec/components/16-card、12-messagebar、15-spinner）── */
+
+  /* 可点卡片悬停：两层 drop-shadow，无过渡（16-card.css 实测，浅色比 Fluent shadow8 更淡） */
+  .fluent-card-interactive:hover {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+  }
+
+  :root[data-theme="dark"] .fluent-card-interactive:hover {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.48));
+  }
+
+  /* 提示条 = Fluent MessageBar（Loop 无实例，用户确认按 Fluent 默认）：最小高 36、padding 0 12px、radius 4、1px 边框、20px 图标；
+     信息色按用户决定用蓝（标签蓝底 + Blue 边框 / 图标） */
+  .fluent-messagebar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--mb-border);
+    border-radius: var(--borderRadiusMedium);
+    background: var(--mb-bg);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--colorNeutralForeground1);
+  }
+
+  .fluent-messagebar__icon {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    color: var(--mb-icon);
+  }
+
+  .fluent-messagebar__body {
+    min-width: 0;
+    padding: 8px 0;
+  }
+
+  .fluent-messagebar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fluent-messagebar--success {
+    --mb-bg: var(--colorStatusSuccessBackground1);
+    --mb-border: var(--colorStatusSuccessBorder1);
+    --mb-icon: var(--colorStatusSuccessForeground1);
+  }
+
+  .fluent-messagebar--error {
+    --mb-bg: var(--colorStatusDangerBackground1);
+    --mb-border: var(--colorStatusDangerBorder1);
+    --mb-icon: var(--colorStatusDangerForeground1);
+  }
+
+  .fluent-messagebar--warning {
+    --mb-bg: var(--colorStatusWarningBackground1);
+    --mb-border: var(--colorStatusWarningBorder1);
+    --mb-icon: var(--colorStatusWarningForeground3);
+  }
+
+  .fluent-messagebar--info {
+    --mb-bg: var(--color-info-subtle);
+    --mb-border: var(--color-info-border);
+    --mb-icon: var(--color-info);
+  }
+
+  /* 转圈 = Fluent Spinner（Loop 无实例，用户确认按钮加载用 tiny）：轨道 BrandStroke2Contrast、弧 BrandStroke1、1.5s 一圈 */
+  .fluent-spinner {
+    display: inline-block;
+    flex: none;
+    width: var(--sp-size);
+    height: var(--sp-size);
+    border: var(--sp-stroke) solid var(--colorBrandStroke2Contrast);
+    border-top-color: var(--colorBrandStroke1);
+    border-radius: 50%;
+    animation: fluent-spinner-rotate 1.5s linear infinite;
+  }
+
+  @keyframes fluent-spinner-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .fluent-spinner--tiny {
+    --sp-size: 20px;
+    --sp-stroke: 2px;
+  }
+
+  .fluent-spinner--small {
+    --sp-size: 28px;
+    --sp-stroke: 2px;
+  }
+
+  .fluent-spinner--medium {
+    --sp-size: 32px;
+    --sp-stroke: 3px;
   }
 
   /* ── 页面级骨架屏（components/Skeleton.tsx；补测-2 #6 Loop 切页骨架屏，颜色与流光 design-spec/components/21-misc.css） ── */
@@ -2129,8 +2237,14 @@
     --color-bg-subtle: var(--colorNeutralBackground3);
     --color-bg-hover: var(--colorSubtleBackgroundHover);
     --color-bg-pressed: var(--colorSubtleBackgroundPressed);
+    /* 选中行 / 切换选中：SubtleBackgroundSelected */
+    --color-bg-selected: var(--colorSubtleBackgroundSelected);
+    /* 统计卡（Loop 卡片的无边框变体）：NeutralBackground2 */
+    --color-bg-stat: var(--colorNeutralBackground2);
     --color-text: var(--colorNeutralForeground1);
     --color-text-muted: var(--colorNeutralForeground3);
+    /* 次要正文（表格正文 / 表头、空状态说明、横向 Tab 未选中）：Fluent Foreground2 */
+    --color-text-secondary: var(--colorNeutralForeground2);
     --color-text-inverted: var(--colorNeutralForegroundOnBrand);
     --color-border: var(--colorNeutralStroke2);
     --color-border-light: var(--colorNeutralStroke3);
@@ -2180,6 +2294,8 @@
     --radius-sm: var(--borderRadiusMedium);
     --radius-md: var(--borderRadiusLarge);
     --radius-lg: var(--borderRadiusXLarge);
+    /* 表格单元格上下内边距：Loop 表格单元格没有上下 padding（行高 = 内容高），用户决定暂时保持原来的 12px，想调行高时只改这里 */
+    --table-cell-py: 12px;
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK SC', Arial, sans-serif;
   }
 

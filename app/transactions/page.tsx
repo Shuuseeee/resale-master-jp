@@ -20,6 +20,7 @@ import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react
 import { Stop20Filled, Stop20Regular } from '@fluentui/react-icons/headless/svg/stop';
 import { TableSettings20Filled, TableSettings20Regular } from '@fluentui/react-icons/headless/svg/table-settings';
 import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
+import TabList from '@/components/fluent/TabList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -69,6 +70,7 @@ import {
 } from '@/lib/api/transactions-cache';
 import type { QuickEditPayload } from '@/lib/api/transactions';
 import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
+import Spinner from '@/components/fluent/Spinner';
 
 // 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
 type TransactionWithPayment = TransactionWithProfit;
@@ -1160,10 +1162,7 @@ function TransactionsContent() {
                 >
                   {kaitorixLoading ? (
                     <>
-                      <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <Spinner />
                       <span className="hidden sm:inline">
                         {kaitorixProgress
                           ? `${kaitorixProgress.completed}/${kaitorixProgress.total}`
@@ -1199,10 +1198,7 @@ function TransactionsContent() {
                 className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
               >
                 {exporting ? (
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Spinner />
                 ) : (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1268,24 +1264,14 @@ function TransactionsContent() {
           </div>
         </div>
 
-        {/* 状态标签栏（手机；桌面在分区抽屉里切换） */}
-        <div className="mb-5 flex min-h-[42px] items-end gap-1 overflow-x-auto border-b border-[var(--color-border)] md:hidden">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => selectStatusFilter(tab.key)}
-              className={`flex h-[42px] flex-shrink-0 items-center whitespace-nowrap border-b-2 px-4 text-sm font-semibold transition-colors ${
-                statusFilter === tab.key
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-              }`}
-            >
-              {tab.label}
-              <span className="ml-1.5 text-xs opacity-75">
-                {stats[tab.count]}
-              </span>
-            </button>
-          ))}
+        {/* 状态标签栏（手机，Fluent 横向 TabList；桌面在分区抽屉里切换） */}
+        <div className="mb-5 md:hidden">
+          <TabList
+            items={STATUS_TABS.map(tab => ({ id: tab.key, label: `${tab.label} ${stats[tab.count]}` }))}
+            selected={statusFilter}
+            onSelect={selectStatusFilter}
+            ariaLabel="交易状态"
+          />
         </div>
 
         {/* 待入账工具栏：按订单切换 + 全部确认（独立一行，移动端可见） */}

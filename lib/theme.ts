@@ -1,21 +1,21 @@
 // lib/theme.ts
-// Apple HIG 风格设计系统
+// 常用 Tailwind 片段；外观以 Microsoft Loop（Fluent 2）为蓝本，颜色只用 --color-* / --label-* 语义 token
 
 /**
- * 卡片样式 — 去掉 border，用极浅阴影区分层级
+ * 卡片样式 — Loop 内容卡片（design-spec/components/16-card.css）：radius 12、1px Stroke2 边框、无阴影
  */
 export const card = {
   // 主要内容卡片
-  primary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]',
+  primary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)]',
 
   // 次要内容卡片
-  secondary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)]',
+  secondary: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)]',
 
-  // 交互卡片（带 active 反馈）
-  interactive: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-primary)] transition-all cursor-pointer',
+  // 可点卡片：悬停两层 drop-shadow、无过渡（globals.css .fluent-card-interactive）
+  interactive: 'fluent-card-interactive bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] cursor-pointer',
 
-  // 统计卡片
-  stat: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-4',
+  // 统计卡 = 无边框变体（NeutralBackground2 底，用户确认的映射）
+  stat: 'bg-[var(--color-bg-stat)] rounded-[var(--radius-lg)] p-4',
 };
 
 /**
@@ -39,14 +39,14 @@ export const button = {
 };
 
 /**
- * 徽章样式 — 去掉 border，淡底色 pill
+ * 徽章样式 — Loop 标签（design-spec/components/11-badge.css 表格内紧凑型：高 22、radius 4、14/22/400；深色下仍是浅底深字）
  */
 export const badge = {
-  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-warning-bg)] text-[var(--label-warning-fg)]',
-  success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-success-bg)] text-[var(--label-success-fg)]',
-  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-danger-bg)] text-[var(--label-danger-fg)]',
-  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-info-bg)] text-[var(--label-info-fg)]',
-  neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-neutral-bg)] text-[var(--label-neutral-fg)]',
+  pending: 'inline-flex items-center h-[22px] px-1.5 rounded-[var(--radius-sm)] text-sm leading-[22px] font-normal bg-[var(--label-warning-bg)] text-[var(--label-warning-fg)]',
+  success: 'inline-flex items-center h-[22px] px-1.5 rounded-[var(--radius-sm)] text-sm leading-[22px] font-normal bg-[var(--label-success-bg)] text-[var(--label-success-fg)]',
+  error: 'inline-flex items-center h-[22px] px-1.5 rounded-[var(--radius-sm)] text-sm leading-[22px] font-normal bg-[var(--label-danger-bg)] text-[var(--label-danger-fg)]',
+  info: 'inline-flex items-center h-[22px] px-1.5 rounded-[var(--radius-sm)] text-sm leading-[22px] font-normal bg-[var(--label-info-bg)] text-[var(--label-info-fg)]',
+  neutral: 'inline-flex items-center h-[22px] px-1.5 rounded-[var(--radius-sm)] text-sm leading-[22px] font-normal bg-[var(--label-neutral-bg)] text-[var(--label-neutral-fg)]',
 };
 
 /**
@@ -99,46 +99,29 @@ export const tabs = {
 };
 
 /**
- * 加载状态样式
- */
-export const loading = {
-  spinner: 'inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-[var(--color-primary)]',
-  container: 'text-center py-12',
-  text: 'text-[var(--color-text-muted)] mt-4 text-sm',
-};
-
-/**
- * 空状态样式
+ * 空状态 — Loop 空状态（design-spec/components/20-empty-state.css）：居中，标题 16/22/600，说明 12/16 Foreground2、上 8 下 12
  */
 export const empty = {
-  container: 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-sm)] p-12 text-center',
-  text: 'text-[var(--color-text-muted)] text-sm',
+  container: 'flex flex-col items-center justify-center px-4 py-12 text-center',
+  title: 'text-base leading-[22px] font-semibold text-[var(--color-text)]',
+  text: 'mt-2 mb-3 text-xs leading-4 text-[var(--color-text-secondary)]',
 };
 
 /**
- * 表格样式 — 供 components/DataTable 使用的统一片段
+ * 表格样式 — Fluent Table（design-spec/components/10-table.css）：14/20、正文 Foreground2，表头 32 高 600，
+ * Stroke2 分隔线，单元格左右 8；行悬停 / 按下 / 选中为 Subtle 底色。单元格上下内边距用 --table-cell-py（用户决定暂保持 12px）
  * 对齐类（text-left 等）由 DataTable 按列 meta.align 动态附加，此处不写死
  */
 export const table = {
   wrapper: 'overflow-x-auto scroll-embed',
-  table: 'w-full border-collapse text-sm',
-  theadTr: 'border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]',
-  th: 'px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider whitespace-nowrap',
-  sortBtn: 'inline-flex items-center gap-1 hover:text-[var(--color-text)] transition-colors uppercase tracking-wider',
-  tbody: 'divide-y divide-[var(--color-border)]',
-  tr: 'transition-colors hover:bg-[var(--color-bg-hover)]',
-  trSelected: 'bg-[var(--color-primary-light)]',
+  table: 'w-full border-collapse text-sm leading-5 text-[var(--color-text-secondary)]',
+  theadTr: 'border-b border-[var(--color-border)]',
+  th: 'h-8 px-2 text-sm leading-5 font-semibold text-[var(--color-text-secondary)] whitespace-nowrap',
+  sortBtn: 'inline-flex items-center gap-1 hover:text-[var(--color-text)] transition-colors',
+  tbody: 'divide-y divide-[var(--color-border)] border-b border-[var(--color-border)]',
+  tr: 'hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] active:bg-[var(--color-bg-pressed)]',
+  trSelected: 'bg-[var(--color-bg-selected)]',
   trSelectable: 'cursor-pointer',
   trChild: 'bg-[var(--color-bg-subtle)]',
-  td: 'px-4 py-3 text-[var(--color-text)]',
-};
-
-/**
- * 提示消息样式 — 无 border，淡底色
- */
-export const alert = {
-  success: 'mb-4 bg-[var(--color-success-subtle)] border border-[var(--color-success-border)] text-[var(--color-success)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  error: 'mb-4 bg-[var(--color-danger-subtle)] border border-[var(--color-danger-border)] text-[var(--color-danger)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  warning: 'mb-4 bg-[var(--color-warning-subtle)] border border-[var(--color-warning-border)] text-[var(--color-warning)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
-  info: 'mb-4 bg-[var(--color-info-subtle)] border border-[var(--color-info-border)] text-[var(--color-info)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  td: 'px-2 py-[var(--table-cell-py)]',
 };
