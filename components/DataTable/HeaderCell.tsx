@@ -4,7 +4,9 @@
 'use client';
 
 import { flexRender, type Header, type Table } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown16Regular } from '@fluentui/react-icons/headless/svg/arrow-down';
+import { ArrowSort16Regular } from '@fluentui/react-icons/headless/svg/arrow-sort';
+import { ArrowUp16Regular } from '@fluentui/react-icons/headless/svg/arrow-up';
 import { table as tableStyles } from '@/lib/theme';
 import {
   ALIGN_JUSTIFY_CLASS,
@@ -47,11 +49,11 @@ export function HeaderCell<TData>({ header, table }: HeaderCellProps<TData>) {
           >
             {content}
             {sorted === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 shrink-0" />
+              <ArrowUp16Regular className="w-3.5 h-3.5 shrink-0" />
             ) : sorted === 'desc' ? (
-              <ArrowDown className="w-3.5 h-3.5 shrink-0" />
+              <ArrowDown16Regular className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 shrink-0 opacity-40" />
+              <ArrowSort16Regular className="w-3.5 h-3.5 shrink-0 opacity-40" />
             )}
           </button>
         ) : (

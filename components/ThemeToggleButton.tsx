@@ -1,6 +1,8 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
+import { WeatherMoon20Filled, WeatherMoon20Regular } from '@fluentui/react-icons/headless/svg/weather-moon';
+import { WeatherSunny20Filled, WeatherSunny20Regular } from '@fluentui/react-icons/headless/svg/weather-sunny';
+import DualIcon from '@/components/fluent/DualIcon';
 import { getResolvedTheme, setThemePreference } from '@/lib/theme-mode';
 import { useTooltip } from '@/components/fluent/Tooltip';
 
@@ -19,8 +21,12 @@ export default function ThemeToggleButton() {
       onClick={handleToggle}
       {...tip}
     >
-      <Sun className="icon-sun" size={20} />
-      <Moon className="icon-moon" size={20} />
+      <span className="icon-sun">
+        <DualIcon regular={WeatherSunny20Regular} filled={WeatherSunny20Filled} />
+      </span>
+      <span className="icon-moon">
+        <DualIcon regular={WeatherMoon20Regular} filled={WeatherMoon20Filled} />
+      </span>
     </button>
   );
 }

@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createColumnHelper } from '@tanstack/react-table';
-import { StickyNote } from 'lucide-react';
+import { Note16Regular } from '@fluentui/react-icons/headless/svg/note';
 import type { SalesRecord, Transaction } from '@/types/database.types';
 import { getSalesRecords, deleteSalesRecord, updateSalesRecord } from '@/lib/api/sales-records';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
@@ -224,7 +224,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
           <div className="flex items-center justify-end gap-2">
             {r.notes && (
               <span title={r.notes}>
-                <StickyNote className="w-4 h-4 text-[var(--color-text-muted)]" />
+                <Note16Regular className="text-[var(--color-text-muted)]" />
               </span>
             )}
             <button

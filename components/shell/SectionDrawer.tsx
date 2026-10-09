@@ -8,7 +8,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Dismiss20Filled, Dismiss20Regular } from '@fluentui/react-icons/headless/svg/dismiss';
+import DualIcon from '@/components/fluent/DualIcon';
 import { SECTION_DRAWER_INLINE_QUERY, closeSectionDrawer, useSectionDrawerState } from '@/lib/section-drawer';
 
 function useMediaQuery(query: string) {
@@ -144,7 +145,7 @@ export default function SectionDrawer() {
           <div className="section-drawer__header-row">
             <h2 className="section-drawer__title">{panel.title}</h2>
             <button ref={closeRef} type="button" className="shell-icon-btn" aria-label="关闭侧栏" onClick={closeSectionDrawer}>
-              <X className="h-5 w-5" />
+              <DualIcon regular={Dismiss20Regular} filled={Dismiss20Filled} />
             </button>
           </div>
         </div>

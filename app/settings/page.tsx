@@ -2,7 +2,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CreditCard, FileUp, Palette, ShoppingCart, Store } from 'lucide-react';
+import { BuildingShop20Filled, BuildingShop20Regular } from '@fluentui/react-icons/headless/svg/building-shop';
+import { Cart20Filled, Cart20Regular } from '@fluentui/react-icons/headless/svg/cart';
+import { Color20Filled, Color20Regular } from '@fluentui/react-icons/headless/svg/color';
+import { DocumentArrowUp20Filled, DocumentArrowUp20Regular } from '@fluentui/react-icons/headless/svg/document-arrow-up';
+import { Payment20Filled, Payment20Regular } from '@fluentui/react-icons/headless/svg/payment';
+import DualIcon from '@/components/fluent/DualIcon';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
@@ -17,11 +22,11 @@ import { useSectionDrawer } from '@/lib/section-drawer';
 import { scrollAppToTop } from '@/lib/app-scroll';
 
 const SECTION_ICONS: Record<SettingsSectionId, ReactNode> = {
-  appearance: <Palette className="h-5 w-5" />,
-  amazon: <ShoppingCart className="h-5 w-5" />,
-  'payment-methods': <CreditCard className="h-5 w-5" />,
-  kaitorix: <Store className="h-5 w-5" />,
-  'csv-import': <FileUp className="h-5 w-5" />,
+  appearance: <DualIcon regular={Color20Regular} filled={Color20Filled} />,
+  amazon: <DualIcon regular={Cart20Regular} filled={Cart20Filled} />,
+  'payment-methods': <DualIcon regular={Payment20Regular} filled={Payment20Filled} />,
+  kaitorix: <DualIcon regular={BuildingShop20Regular} filled={BuildingShop20Filled} />,
+  'csv-import': <DualIcon regular={DocumentArrowUp20Regular} filled={DocumentArrowUp20Filled} />,
 };
 
 const DRAWER_ITEMS = SETTINGS_SECTIONS.map(item => ({ ...item, icon: SECTION_ICONS[item.id] }));

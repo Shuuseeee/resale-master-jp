@@ -4,20 +4,19 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  BarChart3,
-  ClipboardList,
-  FileText,
-  Home,
-  LogOut,
-  Menu,
-  Package,
-  Plus,
-  ScanBarcode,
-  Settings,
-  User,
-  X,
-} from 'lucide-react';
+import type { FluentIcon } from '@fluentui/react-icons/headless';
+import { Add24Filled } from '@fluentui/react-icons/headless/svg/add';
+import { BarcodeScanner16Regular, BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
+import { Box16Regular, Box24Filled, Box24Regular } from '@fluentui/react-icons/headless/svg/box';
+import { ClipboardTextLtr16Regular, ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
+import { DataBarVertical24Filled, DataBarVertical24Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
+import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
+import { DocumentText24Filled, DocumentText24Regular } from '@fluentui/react-icons/headless/svg/document-text';
+import { Home20Filled, Home20Regular } from '@fluentui/react-icons/headless/svg/home';
+import { Navigation20Filled, Navigation20Regular } from '@fluentui/react-icons/headless/svg/navigation';
+import { Person20Regular } from '@fluentui/react-icons/headless/svg/person';
+import { Settings24Filled, Settings24Regular } from '@fluentui/react-icons/headless/svg/settings';
+import { SignOut20Regular } from '@fluentui/react-icons/headless/svg/sign-out';
 import { useAuth } from '@/contexts/AuthContext';
 import ScanArrivalModal from '@/components/ScanArrivalModal';
 import { triggerHaptic } from '@/lib/haptic';
@@ -55,12 +54,12 @@ function AccountButton({ email, canLogout, onLogout }: { email: string; canLogou
         <span className="shell-avatar">{initialsOf(canLogout ? email : null)}</span>
       </button>
       <FluentMenu open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} placement="bottom-end" ariaLabel="账户">
-        <MenuInfo icon={<User className="h-5 w-5" />}>{email}</MenuInfo>
+        <MenuInfo icon={<Person20Regular />}>{email}</MenuInfo>
         {canLogout && (
           <>
             <MenuDivider />
             <MenuItem
-              icon={<LogOut className="h-5 w-5" />}
+              icon={<SignOut20Regular />}
               onSelect={() => {
                 setOpen(false);
                 onLogout();
@@ -111,28 +110,12 @@ export default function Navigation() {
     }
   };
 
-  // 移动端更多抽屉中的次要项目
-  const moreItems = [
-    {
-      name: '设置',
-      href: '/settings',
-      icon: <Settings className="h-6 w-6" strokeWidth={2} />,
-    },
-    {
-      name: '耗材管理',
-      href: '/supplies',
-      icon: <Package className="h-6 w-6" strokeWidth={2} />,
-    },
-    {
-      name: '数据分析',
-      href: '/analytics',
-      icon: <BarChart3 className="h-6 w-6" strokeWidth={2} />,
-    },
-    {
-      name: '税务申报',
-      href: '/tax-report',
-      icon: <FileText className="h-6 w-6" strokeWidth={2} />,
-    },
+  // 移动端更多抽屉中的次要项目（当前页用实心图标）
+  const moreItems: { name: string; href: string; icon: FluentIcon; activeIcon: FluentIcon }[] = [
+    { name: '设置', href: '/settings', icon: Settings24Regular, activeIcon: Settings24Filled },
+    { name: '耗材管理', href: '/supplies', icon: Box24Regular, activeIcon: Box24Filled },
+    { name: '数据分析', href: '/analytics', icon: DataBarVertical24Regular, activeIcon: DataBarVertical24Filled },
+    { name: '税务申报', href: '/tax-report', icon: DocumentText24Regular, activeIcon: DocumentText24Filled },
   ];
 
   return (
@@ -197,7 +180,7 @@ export default function Navigation() {
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/dashboard') ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              <Home className="h-5 w-5" strokeWidth={1.5} />
+              {isActive('/dashboard') ? <Home20Filled /> : <Home20Regular />}
             </span>
             <span>仪表盘</span>
               </Link>
@@ -212,7 +195,7 @@ export default function Navigation() {
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/transactions') ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              <ClipboardList className="h-5 w-5" strokeWidth={1.5} />
+              {isActive('/transactions') ? <ClipboardTextLtr20Filled /> : <ClipboardTextLtr20Regular />}
             </span>
             <span>交易</span>
               </Link>
@@ -227,7 +210,7 @@ export default function Navigation() {
                   }`}
               aria-label="新增"
                 >
-              <Plus className={`h-[22px] w-[22px] transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} strokeWidth={2.5} />
+              <Add24Filled className={`h-[22px] w-[22px] transition-transform duration-200 ${showFabMenu ? 'rotate-45' : ''}`} />
                 </button>
               </div>
 
@@ -241,7 +224,7 @@ export default function Navigation() {
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/kaitorix-prices') ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              <ScanBarcode className="h-5 w-5" strokeWidth={1.5} />
+              {isActive('/kaitorix-prices') ? <BarcodeScanner20Filled /> : <BarcodeScanner20Regular />}
             </span>
             <span>买取价</span>
               </Link>
@@ -256,7 +239,7 @@ export default function Navigation() {
             aria-label="更多"
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${showMoreSheet ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              <Menu className="h-5 w-5" strokeWidth={2} />
+              {showMoreSheet ? <Navigation20Filled /> : <Navigation20Regular />}
             </span>
             <span>更多</span>
               </button>
@@ -281,14 +264,14 @@ export default function Navigation() {
                 label: '新增交易',
                 iconBg: 'bg-[var(--color-primary-light)]',
                 iconColor: 'text-[var(--color-primary)]',
-                icon: <ClipboardList className="h-4 w-4" strokeWidth={2} />,
+                icon: <ClipboardTextLtr16Regular />,
               },
               {
                 href: '/supplies/add',
                 label: '新增耗材',
                 iconBg: 'bg-[var(--color-info-subtle)]',
                 iconColor: 'text-[var(--color-info)]',
-                icon: <Package className="h-4 w-4" strokeWidth={2} />,
+                icon: <Box16Regular />,
               },
             ].map((item, i, arr) => (
               <Link
@@ -310,7 +293,7 @@ export default function Navigation() {
               className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-pressed)] border-t border-[var(--color-border)]"
             >
               <div className="w-8 h-8 bg-[var(--color-warning-subtle)] text-[var(--color-warning)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
-                <ScanBarcode className="h-4 w-4" strokeWidth={2} />
+                <BarcodeScanner16Regular />
               </div>
               <span className="text-sm font-semibold text-[var(--color-text)]">扫码到货</span>
             </button>
@@ -341,7 +324,7 @@ export default function Navigation() {
                 className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]"
                 aria-label="关闭"
               >
-                <X className="h-4 w-4" strokeWidth={2} />
+                <Dismiss16Regular />
               </button>
             </div>
             {/* 图标网格 — 可滚动 */}
@@ -349,6 +332,7 @@ export default function Navigation() {
               <div className="grid grid-cols-4 gap-2 px-4 py-4">
                 {moreItems.map((item) => {
                   const active = isActive(item.href);
+                  const Icon = active ? item.activeIcon : item.icon;
                   return (
                     <Link
                       key={item.href}
@@ -360,7 +344,7 @@ export default function Navigation() {
                           : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
                       }`}
                     >
-                      {item.icon}
+                      <Icon />
                       <span className="text-[11px] font-semibold text-center leading-tight">{item.name}</span>
                     </Link>
                   );
@@ -372,7 +356,7 @@ export default function Navigation() {
             <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-9 h-9 bg-[var(--color-primary-light)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
-                  <User className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={2} />
+                  <Person20Regular className="text-[var(--color-primary)]" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
@@ -386,7 +370,7 @@ export default function Navigation() {
                   onClick={handleLogout}
                   className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-colors"
                 >
-                  <LogOut className="h-4 w-4" strokeWidth={2} />
+                  <SignOut20Regular className="h-4 w-4" />
                   退出登录
                 </button>
               )}

@@ -2,7 +2,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, Suspense, type ReactNode } from 'react';
-import { CircleCheck, List, Package, PackageOpen, Truck, Undo2, Wallet } from 'lucide-react';
+import { ArrowUndo20Filled, ArrowUndo20Regular } from '@fluentui/react-icons/headless/svg/arrow-undo';
+import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
+import { BoxMultiple20Filled, BoxMultiple20Regular } from '@fluentui/react-icons/headless/svg/box-multiple';
+import { CheckmarkCircle20Filled, CheckmarkCircle20Regular } from '@fluentui/react-icons/headless/svg/checkmark-circle';
+import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
+import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
+import { Wallet20Filled, Wallet20Regular } from '@fluentui/react-icons/headless/svg/wallet';
+import DualIcon from '@/components/fluent/DualIcon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -93,13 +100,13 @@ const STATUS_FILTER_STORAGE_KEY = 'transactionListStatusFilter';
 type StatusCountKey = 'active' | 'total' | 'inStock' | 'pending' | 'awaitingPayment' | 'sold' | 'returned';
 // 桌面在分区抽屉里切换，手机在列表上方的标签栏里切换
 const STATUS_TABS: { key: StatusFilterKey; label: string; count: StatusCountKey; icon: ReactNode }[] = [
-  { key: 'active', label: '未售出', count: 'active', icon: <PackageOpen className="h-5 w-5" /> },
-  { key: 'all', label: '全部', count: 'total', icon: <List className="h-5 w-5" /> },
-  { key: 'in_stock', label: '库存中', count: 'inStock', icon: <Package className="h-5 w-5" /> },
-  { key: 'pending', label: '未到货', count: 'pending', icon: <Truck className="h-5 w-5" /> },
-  { key: 'awaiting_payment', label: '待入账', count: 'awaitingPayment', icon: <Wallet className="h-5 w-5" /> },
-  { key: 'sold', label: '已售出', count: 'sold', icon: <CircleCheck className="h-5 w-5" /> },
-  { key: 'returned', label: '已退货', count: 'returned', icon: <Undo2 className="h-5 w-5" /> },
+  { key: 'active', label: '未售出', count: 'active', icon: <DualIcon regular={BoxMultiple20Regular} filled={BoxMultiple20Filled} /> },
+  { key: 'all', label: '全部', count: 'total', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
+  { key: 'in_stock', label: '库存中', count: 'inStock', icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
+  { key: 'pending', label: '未到货', count: 'pending', icon: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} /> },
+  { key: 'awaiting_payment', label: '待入账', count: 'awaitingPayment', icon: <DualIcon regular={Wallet20Regular} filled={Wallet20Filled} /> },
+  { key: 'sold', label: '已售出', count: 'sold', icon: <DualIcon regular={CheckmarkCircle20Regular} filled={CheckmarkCircle20Filled} /> },
+  { key: 'returned', label: '已退货', count: 'returned', icon: <DualIcon regular={ArrowUndo20Regular} filled={ArrowUndo20Filled} /> },
 ];
 
 function isStatusFilterKey(v: unknown): v is StatusFilterKey {

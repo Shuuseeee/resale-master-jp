@@ -6,7 +6,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, X } from 'lucide-react';
+import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
+import { ChevronDown16Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
+import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import { input } from '@/lib/theme';
 
 export interface SelectOption {
@@ -117,10 +119,10 @@ export default function Select({
             onClick={(e) => { e.stopPropagation(); onChange(''); setOpen(false); }}
             className="flex-shrink-0 p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
           >
-            <X className="h-3.5 w-3.5" />
+            <Dismiss16Regular className="h-3.5 w-3.5" />
           </span>
         )}
-        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown16Regular className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && pos && createPortal(
@@ -150,7 +152,7 @@ export default function Select({
                   }`}
                 >
                   <span className="truncate">{opt.label}</span>
-                  {isSelected && <Check className="h-4 w-4 flex-shrink-0" />}
+                  {isSelected && <Checkmark16Regular className="flex-shrink-0" />}
                 </button>
               );
             })}

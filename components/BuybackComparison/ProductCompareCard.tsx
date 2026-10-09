@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
+import { Open16Regular } from '@fluentui/react-icons/headless/svg/open';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { card } from '@/lib/theme';
 import type { ProductSummary } from '@/hooks/useBuybackComparison';
@@ -30,7 +30,7 @@ export default function ProductCompareCard({ product, onQtyChange }: ProductComp
             title="在比价中心查看"
             aria-label="在比价中心查看"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
+            <Open16Regular className="h-3.5 w-3.5" />
           </Link>
         )}
       </div>

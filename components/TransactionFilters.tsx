@@ -5,7 +5,9 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check, X } from 'lucide-react';
+import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
+import { ChevronDown16Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
+import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import DatePicker from '@/components/DatePicker';
 import Select from '@/components/Select';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
@@ -226,7 +228,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       }`}
     >
       <span className="max-w-[40vw] truncate">{label}</span>
-      <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 ${active ? '' : 'text-[var(--color-text-muted)]'}`} />
+      <ChevronDown16Regular className={`h-3.5 w-3.5 flex-shrink-0 ${active ? '' : 'text-[var(--color-text-muted)]'}`} />
     </button>
   );
 }
@@ -318,7 +320,7 @@ function SheetCheckList({
             <span className="truncate">{opt.label}</span>
             <span className="ml-auto flex flex-shrink-0 items-center gap-2 pl-2">
               {opt.hint && <span className="text-xs font-normal text-[var(--color-text-muted)]">{opt.hint}</span>}
-              {checked && <Check className="h-4 w-4 text-[var(--color-primary)]" />}
+              {checked && <Checkmark16Regular className="text-[var(--color-primary)]" />}
             </span>
           </button>
         );
@@ -469,7 +471,7 @@ export default function TransactionFilters({
             onClick={() => setFilters({ ...emptyFilters })}
             className="flex h-9 flex-shrink-0 items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 text-sm text-[var(--color-text-muted)] active:text-[var(--color-danger)]"
           >
-            <X className="h-3.5 w-3.5" />
+            <Dismiss16Regular className="h-3.5 w-3.5" />
             清除
           </button>
         )}
@@ -837,7 +839,7 @@ export default function TransactionFilters({
                 }`}
               >
                 <span className="truncate">{store}</span>
-                {filters.buybackStore === store && <Check className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" />}
+                {filters.buybackStore === store && <Checkmark16Regular className="flex-shrink-0 text-[var(--color-primary)]" />}
               </button>
             ))}
           </div>

@@ -5,7 +5,15 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, ClipboardList, FileText, Home, Package, PanelLeft, ScanBarcode, Settings } from 'lucide-react';
+import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
+import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
+import { ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
+import { DataBarVertical20Filled, DataBarVertical20Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
+import { DocumentText20Filled, DocumentText20Regular } from '@fluentui/react-icons/headless/svg/document-text';
+import { Home20Filled, Home20Regular } from '@fluentui/react-icons/headless/svg/home';
+import { PanelLeftContract20Filled, PanelLeftContract20Regular } from '@fluentui/react-icons/headless/svg/panel-left-contract';
+import { Settings20Filled, Settings20Regular } from '@fluentui/react-icons/headless/svg/settings';
+import DualIcon from '@/components/fluent/DualIcon';
 import { Menu, MenuItem } from '@/components/fluent/Menu';
 import { hideTooltipNow, useTooltip } from '@/components/fluent/Tooltip';
 import { NAV_AUTO_COLLAPSE_QUERY, applyNavCollapsed, hasStoredNavMode, isNavCollapsed, setNavCollapsed } from '@/lib/nav-mode';
@@ -21,23 +29,23 @@ interface NavItem {
 const NAV_GROUPS: { caption?: string; items: NavItem[] }[] = [
   {
     items: [
-      { name: '仪表盘', href: '/dashboard', icon: <Home className="h-5 w-5" /> },
-      { name: '交易列表', href: '/transactions', icon: <ClipboardList className="h-5 w-5" /> },
-      { name: '买取价格', href: '/kaitorix-prices', icon: <ScanBarcode className="h-5 w-5" /> },
+      { name: '仪表盘', href: '/dashboard', icon: <DualIcon regular={Home20Regular} filled={Home20Filled} /> },
+      { name: '交易列表', href: '/transactions', icon: <DualIcon regular={ClipboardTextLtr20Regular} filled={ClipboardTextLtr20Filled} /> },
+      { name: '买取价格', href: '/kaitorix-prices', icon: <DualIcon regular={BarcodeScanner20Regular} filled={BarcodeScanner20Filled} /> },
     ],
   },
   {
     caption: '报表',
     items: [
-      { name: '数据分析', href: '/analytics', icon: <BarChart3 className="h-5 w-5" /> },
-      { name: '税务申报', href: '/tax-report', icon: <FileText className="h-5 w-5" /> },
+      { name: '数据分析', href: '/analytics', icon: <DualIcon regular={DataBarVertical20Regular} filled={DataBarVertical20Filled} /> },
+      { name: '税务申报', href: '/tax-report', icon: <DualIcon regular={DocumentText20Regular} filled={DocumentText20Filled} /> },
     ],
   },
   {
     caption: '管理',
     items: [
-      { name: '耗材管理', href: '/supplies', icon: <Package className="h-5 w-5" /> },
-      { name: '设置', href: '/settings', icon: <Settings className="h-5 w-5" /> },
+      { name: '耗材管理', href: '/supplies', icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
+      { name: '设置', href: '/settings', icon: <DualIcon regular={Settings20Regular} filled={Settings20Filled} /> },
     ],
   },
 ];
@@ -186,14 +194,14 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
         </span>
       </button>
       <Menu open={newMenuOpen} onClose={() => setNewMenuOpen(false)} anchorRef={newButtonRef} placement="bottom-start" variant="glass" ariaLabel="新建">
-        <MenuItem icon={<ClipboardList className="h-5 w-5" />} onSelect={() => goTo('/transactions/add')}>
+        <MenuItem icon={<ClipboardTextLtr20Regular />} onSelect={() => goTo('/transactions/add')}>
           新增交易
         </MenuItem>
-        <MenuItem icon={<Package className="h-5 w-5" />} onSelect={() => goTo('/supplies/add')}>
+        <MenuItem icon={<Box20Regular />} onSelect={() => goTo('/supplies/add')}>
           新增耗材
         </MenuItem>
         <MenuItem
-          icon={<ScanBarcode className="h-5 w-5" />}
+          icon={<BarcodeScanner20Regular />}
           onSelect={() => {
             setNewMenuOpen(false);
             onScanArrival();
@@ -213,7 +221,7 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
             onClick={toggleCollapsed}
             {...collapseTip}
           >
-            <PanelLeft className="h-5 w-5" />
+            <DualIcon regular={PanelLeftContract20Regular} filled={PanelLeftContract20Filled} />
           </button>
         </div>
 

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import '@fluentui/react-icons/headless/styles.css'
 import './fluent-tokens.css'
 import './globals.css'
 import AppShell from '@/components/shell/AppShell'

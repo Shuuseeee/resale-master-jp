@@ -4,7 +4,14 @@
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
-import { Ellipsis, List, Package, Pencil, Printer, Trash2, Truck } from 'lucide-react';
+import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
+import { Delete20Regular } from '@fluentui/react-icons/headless/svg/delete';
+import { Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
+import { MoreHorizontal20Filled, MoreHorizontal20Regular } from '@fluentui/react-icons/headless/svg/more-horizontal';
+import { Print20Filled, Print20Regular } from '@fluentui/react-icons/headless/svg/print';
+import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
+import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
+import DualIcon from '@/components/fluent/DualIcon';
 import { getSuppliesCosts, deleteSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -26,11 +33,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 // 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换
 const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
-  { id: 'all', label: '全部', icon: <List className="h-5 w-5" /> },
-  { id: '包装材料', label: CATEGORY_LABELS['包装材料'], icon: <Package className="h-5 w-5" /> },
-  { id: '运输耗材', label: CATEGORY_LABELS['运输耗材'], icon: <Truck className="h-5 w-5" /> },
-  { id: '标签打印', label: CATEGORY_LABELS['标签打印'], icon: <Printer className="h-5 w-5" /> },
-  { id: '其他', label: CATEGORY_LABELS['其他'], icon: <Ellipsis className="h-5 w-5" /> },
+  { id: 'all', label: '全部', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
+  { id: '包装材料', label: CATEGORY_LABELS['包装材料'], icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
+  { id: '运输耗材', label: CATEGORY_LABELS['运输耗材'], icon: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} /> },
+  { id: '标签打印', label: CATEGORY_LABELS['标签打印'], icon: <DualIcon regular={Print20Regular} filled={Print20Filled} /> },
+  { id: '其他', label: CATEGORY_LABELS['其他'], icon: <DualIcon regular={MoreHorizontal20Regular} filled={MoreHorizontal20Filled} /> },
 ];
 
 const columnHelper = createColumnHelper<SuppliesCost>();
@@ -109,14 +116,14 @@ export default function SuppliesPage() {
             className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-[var(--radius-md)] transition-all"
             title="编辑"
           >
-            <Pencil className="w-5 h-5" />
+            <Edit20Regular />
           </Link>
           <button
             onClick={() => handleDelete(row.original.id)}
             className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-all"
             title="删除"
           >
-            <Trash2 className="w-5 h-5" />
+            <Delete20Regular />
           </button>
         </div>
       ),

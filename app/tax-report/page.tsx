@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { CalendarLtr20Filled, CalendarLtr20Regular } from '@fluentui/react-icons/headless/svg/calendar-ltr';
+import DualIcon from '@/components/fluent/DualIcon';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   generateTaxReport,
@@ -53,7 +54,7 @@ export default function TaxReportPage() {
   // 桌面在分区抽屉里切换年度，手机在标题旁的下拉里切换
   useSectionDrawer({
     path: '/tax-report',
-    items: yearOptions.map(year => ({ id: String(year), label: `${year}年`, icon: <CalendarDays className="h-5 w-5" /> })),
+    items: yearOptions.map(year => ({ id: String(year), label: `${year}年`, icon: <DualIcon regular={CalendarLtr20Regular} filled={CalendarLtr20Filled} /> })),
     selected: String(selectedYear),
     onSelect: id => setSelectedYear(Number(id)),
   });

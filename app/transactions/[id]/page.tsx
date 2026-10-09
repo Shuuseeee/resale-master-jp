@@ -17,7 +17,7 @@ import ReturnForm from '@/components/ReturnForm';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import Toast from '@/components/Toast';
-import { Sparkles } from 'lucide-react';
+import { Sparkle20Regular } from '@fluentui/react-icons/headless/svg/sparkle';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
@@ -408,7 +408,7 @@ export default function TransactionDetailPage() {
                 title="复制 AI 分析数据"
                 aria-label="复制 AI 分析数据"
               >
-                <Sparkles className="w-5 h-5" strokeWidth={2} />
+                <Sparkle20Regular />
               </button>
               <Link
                 href={`/transactions/add?copy=${id}`}

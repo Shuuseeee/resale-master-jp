@@ -3,7 +3,14 @@
 import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckSquare, CircleHelp, History, List, Square, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowTrending20Filled, ArrowTrending20Regular } from '@fluentui/react-icons/headless/svg/arrow-trending';
+import { ArrowTrendingDown20Filled, ArrowTrendingDown20Regular } from '@fluentui/react-icons/headless/svg/arrow-trending-down';
+import { CheckboxChecked20Filled } from '@fluentui/react-icons/headless/svg/checkbox-checked';
+import { CheckboxUnchecked20Regular } from '@fluentui/react-icons/headless/svg/checkbox-unchecked';
+import { History20Filled, History20Regular } from '@fluentui/react-icons/headless/svg/history';
+import { QuestionCircle20Filled, QuestionCircle20Regular } from '@fluentui/react-icons/headless/svg/question-circle';
+import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
+import DualIcon from '@/components/fluent/DualIcon';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
@@ -32,11 +39,11 @@ type SortMode = 'stale' | 'expected_profit' | 'stock_value' | 'buyback_price' | 
 
 // 桌面在分区抽屉里切换，手机在搜索框下方的下拉里切换
 const FILTER_MODES: { value: FilterMode; label: string; icon: ReactNode }[] = [
-  { value: 'all', label: '全部库存 JAN', icon: <List className="h-5 w-5" /> },
-  { value: 'missing', label: '未获取价格', icon: <CircleHelp className="h-5 w-5" /> },
-  { value: 'stale', label: '缓存过旧', icon: <History className="h-5 w-5" /> },
-  { value: 'profitable', label: '有利润', icon: <TrendingUp className="h-5 w-5" /> },
-  { value: 'loss', label: '亏损', icon: <TrendingDown className="h-5 w-5" /> },
+  { value: 'all', label: '全部库存 JAN', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
+  { value: 'missing', label: '未获取价格', icon: <DualIcon regular={QuestionCircle20Regular} filled={QuestionCircle20Filled} /> },
+  { value: 'stale', label: '缓存过旧', icon: <DualIcon regular={History20Regular} filled={History20Filled} /> },
+  { value: 'profitable', label: '有利润', icon: <DualIcon regular={ArrowTrending20Regular} filled={ArrowTrending20Filled} /> },
+  { value: 'loss', label: '亏损', icon: <DualIcon regular={ArrowTrendingDown20Regular} filled={ArrowTrendingDown20Filled} /> },
 ];
 
 function isFilterMode(value: string): value is FilterMode {
@@ -479,9 +486,9 @@ function KaitorixPricesContent() {
                       aria-checked={selectedJans.has(item.jan)}
                     >
                       {selectedJans.has(item.jan) ? (
-                        <CheckSquare className="h-5 w-5 text-[var(--color-primary)] lg:h-4 lg:w-4" strokeWidth={2.25} />
+                        <CheckboxChecked20Filled className="text-[var(--color-primary)] lg:h-4 lg:w-4" />
                       ) : (
-                        <Square className="h-5 w-5 text-[var(--color-text-muted)] lg:h-4 lg:w-4" strokeWidth={2} />
+                        <CheckboxUnchecked20Regular className="text-[var(--color-text-muted)] lg:h-4 lg:w-4" />
                       )}
                     </button>
                     <div className="flex items-center gap-2 ml-auto lg:hidden">

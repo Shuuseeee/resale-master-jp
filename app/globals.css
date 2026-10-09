@@ -167,6 +167,26 @@
     box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
   }
 
+  /* Fluent 图标两态（components/fluent/DualIcon.tsx）：默认常规，subtle 按钮 / 导航 Tab 悬停与选中时换实心（Loop 实测瞬时切换）；
+     分区抽屉的树节点选中时换实心（Loop 的树节点是页面 emoji，没有两态可测，按「选中态用实心图标」的决定） */
+  .ic-f {
+    display: none;
+  }
+
+  .shell-icon-btn:hover .ic-r,
+  .nav-rail__tab:hover .ic-r,
+  .nav-rail__tab[data-selected] .ic-r,
+  .section-tree__layout[data-selected] .ic-r {
+    display: none;
+  }
+
+  .shell-icon-btn:hover .ic-f,
+  .nav-rail__tab:hover .ic-f,
+  .nav-rail__tab[data-selected] .ic-f,
+  .section-tree__layout[data-selected] .ic-f {
+    display: inline;
+  }
+
   /* 顶栏品牌按钮：高 40、padding 5px 12px 5px 14px，悬停 / 按下颜色不变 */
   .shell-brand {
     display: inline-flex;
@@ -217,11 +237,11 @@
   }
 
   .btn-theme .icon-moon {
-    display: block;
+    display: flex;
   }
 
   :root[data-theme="dark"] .btn-theme .icon-sun {
-    display: block;
+    display: flex;
   }
 
   :root[data-theme="dark"] .btn-theme .icon-moon {
@@ -523,15 +543,15 @@
   }
 
   /* 加号 = 用 mask 挖出形状的 14×14 色块（与 Loop 相同的做法），悬停时叠一层白色渐变形成反光。
-     形状取 lucide 加号的路径，viewBox 裁到字形外框（与 Loop 一样撑满 14px），线宽按 Loop 的臂粗比例（1.5 / 15.5）换算 */
+     形状 = Fluent Add20Filled 的路径（臂宽 1.5、外框 15.5，与 Loop 实测比例一致），viewBox 裁到字形外框（与 Loop 一样撑满 14px） */
   .new-pill__plus {
     display: block;
     flex: none;
     width: 14px;
     height: 14px;
     background-color: var(--loop-cn-plus);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 4 16 16' fill='none' stroke='black' stroke-width='1.548' stroke-linecap='round'%3E%3Cpath d='M5 12h14M12 5v14'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 4 16 16' fill='none' stroke='black' stroke-width='1.548' stroke-linecap='round'%3E%3Cpath d='M5 12h14M12 5v14'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='2.25 2.25 15.5 15.5'%3E%3Cpath d='M10 2.25c.41 0 .75.34.75.75v6.25H17a.75.75 0 0 1 0 1.5h-6.25V17a.75.75 0 0 1-1.5 0v-6.25H3a.75.75 0 0 1 0-1.5h6.25V3c0-.41.34-.75.75-.75Z'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='2.25 2.25 15.5 15.5'%3E%3Cpath d='M10 2.25c.41 0 .75.34.75.75v6.25H17a.75.75 0 0 1 0 1.5h-6.25V17a.75.75 0 0 1-1.5 0v-6.25H3a.75.75 0 0 1 0-1.5h6.25V3c0-.41.34-.75.75-.75Z'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
   }
 
   /* 加号反光：浅色实测规则；深色下是否同样存在待补测，暂只用于浅色 */

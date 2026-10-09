@@ -28,7 +28,7 @@
 
 - **框架**：Next.js 15 App Router + React 19 + TypeScript
 - **样式**：Tailwind CSS + `app/globals.css` 里的 SNUtils 风格 CSS 变量
-- **图标**：lucide-react
+- **图标**：Fluent UI System Icons（`@fluentui/react-icons`，headless 版）
 - **数据库与认证**：Supabase Auth + PostgreSQL + Storage
 - **PWA**：Manifest + Workbox Service Worker
 - **图表与导出**：Recharts、jsPDF、jspdf-autotable、XLSX
@@ -189,7 +189,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - UI 以 Microsoft Loop（Fluent 2）为蓝本，只有品牌紫一套配色。所有颜色一律走 CSS 变量 token：数值来自 `app/fluent-tokens.css`（Loop 实测的 Fluent token 浅色 / 深色全量），`app/globals.css` 的语义 token（`--color-*` / `--label-*` / `--chart-1..8`）只引用它们。
 - 深浅色支持浅色 / 深色 / 跟随系统：顶栏按钮快速切换，设置页「外观」可选跟随系统。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
-- 图标统一使用 `lucide-react`，避免新增手写 SVG。
+- 图标统一使用 Fluent UI System Icons 的 headless 版本（按分组路径导入，如 `@fluentui/react-icons/headless/svg/home`），选中 / 悬停的实心态用 `components/fluent/DualIcon.tsx`；避免新增手写 SVG。
 - 外壳由 `components/Navigation.tsx` 组装：桌面（≥768）为透明顶栏 + 左导航（`components/shell/NavRail.tsx`，展开 / 折叠、「新建」菜单），手机为顶栏 + 底部标签栏。
 - 交易列表（状态）、买取价格（视图）、税务申报（年度）、耗材管理（分类）、设置（分区）在桌面用左导航旁的分区抽屉切换（`components/shell/SectionDrawer.tsx`，页面用 `lib/section-drawer.ts` 的 `useSectionDrawer` 注册），手机仍在页面里切换。
 - 桌面正文一律限宽 920（含左右内边距 1000）居中，表格放不下时在表格内横向滚动。
