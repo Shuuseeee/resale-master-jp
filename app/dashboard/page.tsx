@@ -10,6 +10,8 @@ import { card, heading, layout } from '@/lib/theme';
 import PullToRefresh from '@/components/PullToRefresh';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { Gift20Filled, Gift20Regular } from '@fluentui/react-icons/headless/svg/gift';
+import PageHeader from '@/components/shell/PageHeader';
 
 function MetricCard({
   label,
@@ -113,15 +115,24 @@ export default function DashboardPage() {
   return (
     <PullToRefresh onRefresh={async () => { await refetch(); }}>
       <div className={layout.page}>
+        <PageHeader
+          crumbs={[{ label: '仪表盘' }]}
+          actions={[
+            {
+              id: 'points',
+              label: '包含积分价值',
+              icon: { regular: Gift20Regular, filled: Gift20Filled },
+              pressed: includePoints,
+              onClick: () => setIncludePoints(!includePoints),
+            },
+          ]}
+        />
         <div className={layout.container}>
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className={heading.h1}>仪表盘</h1>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润与积分概览</p>
-            </div>
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between md:mb-0 md:block">
+            <h1 className={heading.page}>仪表盘</h1>
             <button
               onClick={() => setIncludePoints(!includePoints)}
-              className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-colors md:hidden ${
                 includePoints
                   ? 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]'
                   : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'

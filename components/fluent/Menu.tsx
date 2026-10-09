@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
 
 type Placement = 'bottom-start' | 'bottom-end';
 
@@ -16,6 +17,8 @@ interface MenuProps {
   placement?: Placement;
   variant?: 'shell' | 'glass';
   ariaLabel?: string;
+  /** 固定宽度（文档头「…」菜单实测 240）；不传时按内容，最小 200 */
+  width?: number;
   children: ReactNode;
 }
 
@@ -32,12 +35,12 @@ function computePosition(anchor: HTMLElement, placement: Placement): Position {
     : { top: rect.bottom, right: window.innerWidth - rect.right };
 }
 
-export function Menu({ open, onClose, anchorRef, placement = 'bottom-start', variant = 'shell', ariaLabel, children }: MenuProps) {
+export function Menu({ open, onClose, anchorRef, placement = 'bottom-start', variant = 'shell', ariaLabel, width, children }: MenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<Position | null>(null);
 
   const items = useCallback(
-    () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []),
+    () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])') ?? []),
     [],
   );
 
@@ -101,7 +104,7 @@ export function Menu({ open, onClose, anchorRef, placement = 'bottom-start', var
       role="menu"
       aria-label={ariaLabel}
       className={variant === 'glass' ? 'fluent-menu fluent-menu--glass' : 'fluent-menu fluent-menu--shell'}
-      style={{ top: position.top, left: position.left, right: position.right }}
+      style={{ top: position.top, left: position.left, right: position.right, width }}
       onKeyDown={handleKeyDown}
     >
       {children}
@@ -113,25 +116,35 @@ export function Menu({ open, onClose, anchorRef, placement = 'bottom-start', var
 interface MenuItemProps {
   icon?: ReactNode;
   onSelect: () => void;
+  /** 禁用：不可选、跳过键盘焦点，文字用禁用色（Fluent 规则；Loop 现有菜单里未见） */
+  disabled?: boolean;
+  /** 切换型菜单项（menuitemcheckbox）：选中时行尾显示 16px 勾选图标 */
+  checked?: boolean;
   children: ReactNode;
 }
 
-export function MenuItem({ icon, onSelect, children }: MenuItemProps) {
+export function MenuItem({ icon, onSelect, disabled, checked, children }: MenuItemProps) {
+  const select = () => {
+    if (!disabled) onSelect();
+  };
   return (
     <div
-      role="menuitem"
+      role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+      aria-checked={checked}
+      aria-disabled={disabled || undefined}
       tabIndex={-1}
       className="fluent-menu-item"
-      onClick={onSelect}
+      onClick={select}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onSelect();
+          select();
         }
       }}
     >
       {icon && <span className="fluent-menu-item__icon">{icon}</span>}
       <span className="fluent-menu-item__text">{children}</span>
+      {checked && <Checkmark16Regular className="fluent-menu-item__check" />}
     </div>
   );
 }

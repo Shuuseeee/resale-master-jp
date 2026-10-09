@@ -11,6 +11,9 @@ import { History20Filled, History20Regular } from '@fluentui/react-icons/headles
 import { QuestionCircle20Filled, QuestionCircle20Regular } from '@fluentui/react-icons/headless/svg/question-circle';
 import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
 import DualIcon from '@/components/fluent/DualIcon';
+import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
+import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
+import PageHeader from '@/components/shell/PageHeader';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
@@ -378,18 +381,40 @@ function KaitorixPricesContent() {
 
   return (
     <div className={layout.page}>
+      <PageHeader
+        crumbs={[{ label: '买取价格' }, { label: FILTER_MODES.find(mode => mode.value === filterMode)?.label ?? '' }]}
+        actions={[
+          {
+            // 卡片视图（<1024）里勾选商品要先进入批量模式；表格视图常驻勾选框
+            id: 'select',
+            label: mobileSelectMode ? '退出批量选择' : '批量选择',
+            icon: { regular: MultiselectLtr20Regular, filled: MultiselectLtr20Filled },
+            pressed: mobileSelectMode,
+            onClick: toggleMobileSelectMode,
+            media: '(max-width: 1023px)',
+          },
+          {
+            id: 'batch-refresh',
+            label: batchRefreshing ? '强刷中…' : `批量强刷${selectedJans.size ? `（${selectedJans.size}）` : ''}`,
+            icon: { regular: ArrowSync20Regular, filled: ArrowSync20Filled },
+            primary: true,
+            disabled: selectedJans.size === 0 || batchRefreshing,
+            onClick: batchRefresh,
+            media: mobileSelectMode ? undefined : '(min-width: 1024px)',
+          },
+        ]}
+      />
       <div className={layout.container}>
-        <div className="mb-5 flex flex-col gap-4">
-          <div>
-            <h1 className={heading.h1}>买取价格比较</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">按 JAN 聚合库存商品，集中查看各店价格与官方 API 强刷</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className={`mb-5 flex flex-col gap-4 md:gap-0 ${usage ? '' : 'md:mb-0'}`}>
+          <h1 className={heading.page}>买取价格比较</h1>
+          {/* 官方配额是状态信息，桌面也留在内容区；两个批量按钮在桌面移到文档头工具栏 */}
+          <div className={`flex flex-wrap items-center gap-2 ${usage ? '' : 'md:hidden'}`}>
             {usage && (
               <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm text-[var(--color-text-muted)]">
                 官方配额 <span className="font-semibold text-[var(--color-text)]">{usage.remaining}/{usage.limit}</span>
               </div>
             )}
+            <div className="contents md:hidden">
             <button
               onClick={toggleMobileSelectMode}
               className={button.secondary + ' min-h-11 whitespace-nowrap px-4 lg:!hidden'}
@@ -403,6 +428,7 @@ function KaitorixPricesContent() {
             >
               {batchRefreshing ? '强刷中...' : `批量强刷${selectedJans.size ? ` (${selectedJans.size})` : ''}`}
             </button>
+            </div>
           </div>
         </div>
 

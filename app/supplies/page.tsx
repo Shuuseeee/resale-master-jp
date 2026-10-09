@@ -23,6 +23,8 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { DataTable } from '@/components/DataTable';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { useSectionDrawer } from '@/lib/section-drawer';
+import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
+import PageHeader from '@/components/shell/PageHeader';
 
 const CATEGORY_LABELS: Record<string, string> = {
   '包装材料': '包装材料',
@@ -169,19 +171,18 @@ export default function SuppliesPage() {
   return (
     <PullToRefresh onRefresh={async () => { await refetch(); }}>
     <div className={layout.page}>
+      <PageHeader
+        crumbs={[{ label: '耗材管理' }, { label: FILTER_ITEMS.find(item => item.id === filter)?.label ?? '' }]}
+        actions={[{ id: 'add', label: '添加耗材记录', icon: { regular: Add20Regular, filled: Add20Filled }, href: '/supplies/add', primary: true }]}
+      />
       <div className={layout.container}>
-        {/* 标题区域 */}
-        <div className={layout.section}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className={heading.h1 + ' mb-2'}>耗材成本管理</h1>
-              <p className="text-[var(--color-text-muted)]">
-                管理包装材料、运输耗材等固定成本
-              </p>
-            </div>
+        {/* 标题区域（桌面的「添加」在文档头工具栏里） */}
+        <div className={layout.section + ' md:mb-0'}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:block">
+            <h1 className={heading.page}>耗材成本管理</h1>
             <Link
               href="/supplies/add"
-              className={button.primary + ' flex items-center gap-2'}
+              className={button.primary + ' flex items-center gap-2 md:hidden'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

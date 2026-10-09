@@ -23,6 +23,7 @@ import CopyableJan from '@/components/CopyableJan';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useSectionDrawer } from '@/lib/section-drawer';
+import PageHeader from '@/components/shell/PageHeader';
 
 const reportCardClass = 'sn-detail-card';
 const statLabelClass = 'text-sm text-[var(--color-text-muted)] mb-1';
@@ -465,16 +466,12 @@ export default function TaxReportPage() {
 
   return (
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '税务申报' }, { label: `${selectedYear}年` }]} />
       <div className={layout.container}>
         {/* 标题区域 */}
-        <div className={layout.section}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className={heading.h1 + ' mb-2'}>税务申报报告</h1>
-              <p className="text-[var(--color-text-muted)]">
-                页面用于中文操作；导出的 Excel/PDF 使用日本报税资料语境的日文术语和文件名。
-              </p>
-            </div>
+        <div className={layout.section + ' md:mb-0'}>
+          <div className="flex flex-col justify-between gap-4">
+            <h1 className={heading.page}>税务申报报告</h1>
             <div className="flex items-center gap-3 md:hidden">
               <Select
                 value={String(selectedYear)}

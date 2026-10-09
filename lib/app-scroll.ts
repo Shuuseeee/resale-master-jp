@@ -3,6 +3,9 @@
 
 export const APP_SCROLL_ID = 'app-scroll';
 
+/** 桌面外壳内容卡片顶部的文档头工具栏插槽（components/shell/PageHeader.tsx 渲染进来） */
+export const DOC_HEADER_ID = 'app-doc-header';
+
 /** 当前页面的滚动位置：卡片可滚动时取卡片的，否则取窗口的 */
 export function getAppScrollTop(): number {
   const el = document.getElementById(APP_SCROLL_ID);

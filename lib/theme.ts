@@ -75,8 +75,14 @@ export const layout = {
  */
 export const heading = {
   h1: 'text-[28px] leading-tight font-bold tracking-tight text-[var(--color-text)]',
-  h2: 'text-[22px] font-bold text-[var(--color-text)]',
-  h3: 'text-[17px] font-semibold text-[var(--color-text)]',
+  // 页面大标题（每页一个）：手机沿用 h1；桌面 = Loop 页面标题 40/48/600、display 字体（design-spec/components/18-headings.css），
+  // 文档头底边 → 标题顶 64（内容区上内边距 25 + 39）、标题底 → 正文 27（补测-2 #5）
+  page: 'text-[28px] leading-tight font-bold tracking-tight text-[var(--color-text)] md:mt-[39px] md:mb-[27px] md:text-[40px] md:leading-[48px] md:font-semibold md:tracking-normal md:[font-family:var(--loop-font-display)]',
+  // 只有桌面部分：手机端标题有自己样式的页面（详情、编辑）拼这一段
+  pageDesktop: 'md:mt-[39px] md:mb-[27px] md:text-[40px] md:leading-[48px] md:font-semibold md:tracking-normal md:[font-family:var(--loop-font-display)]',
+  // 正文 H2 / H3：桌面按 Loop 实测 24/32、20/28（600）；手机不变
+  h2: 'text-[22px] font-bold text-[var(--color-text)] md:text-[24px] md:leading-[32px] md:font-semibold',
+  h3: 'text-[17px] font-semibold text-[var(--color-text)] md:text-[20px] md:leading-[28px]',
   h4: 'text-[15px] font-semibold text-[var(--color-text)]',
 };
 

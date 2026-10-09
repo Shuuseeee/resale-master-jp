@@ -6,7 +6,7 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import Navigation from '@/components/Navigation';
-import { APP_SCROLL_ID } from '@/lib/app-scroll';
+import { APP_SCROLL_ID, DOC_HEADER_ID } from '@/lib/app-scroll';
 
 /** 恢复滚动位置；内容还没长到足够高（如图表挂载后才撑开）时，随内容变化继续补位，最多等 1 秒，用户一滚动就停 */
 function restoreScroll(el: HTMLElement, target: number) {
@@ -79,6 +79,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <Navigation />
       <main className="app-main mobile-bottom-pad md:pb-0">
         <div className="app-card">
+          {/* 文档头工具栏：各页面用 components/shell/PageHeader.tsx 渲染进来（桌面外壳才显示） */}
+          <div id={DOC_HEADER_ID} className="app-doc-header" />
           <div ref={scrollRef} id={APP_SCROLL_ID} className="app-scroll">
             {children}
           </div>

@@ -77,6 +77,10 @@
 
   /* ── 应用外壳（components/shell/AppShell.tsx；Loop 浅色复刻 base.css .app、04-doc-header.css .art） ──
      手机外壳（<768）不用这些布局，内容在窗口里滚动 */
+  .app-doc-header {
+    display: none;
+  }
+
   @media (min-width: 768px) {
     .app-shell {
       display: grid;
@@ -114,6 +118,17 @@
       min-width: 0;
       background: var(--loop-article-bg);
       box-shadow: var(--loop-article-shadow);
+    }
+
+    /* 文档头工具栏：卡片顶部、不随页面滚动（原稿 .dhd：z 5、底边 1px 透明边框） */
+    .app-doc-header {
+      position: relative;
+      z-index: 5;
+      display: block;
+      flex: none;
+      height: 55px;
+      border-bottom: 1px solid transparent;
+      background: var(--loop-doc-header-bg);
     }
 
     /* 卡片内滚动：文档画布滚动条（thin、常驻占位 gutter，实测 design-spec/components/21-misc.css） */
@@ -167,24 +182,195 @@
     box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
   }
 
-  /* Fluent 图标两态（components/fluent/DualIcon.tsx）：默认常规，subtle 按钮 / 导航 Tab 悬停与选中时换实心（Loop 实测瞬时切换）；
+  /* subtle 图标按钮的禁用 / 切换态（design-spec/components/07-button.css：禁用只变字色；切换选中 SubtleBackgroundSelected 底 + 正文色） */
+  .shell-icon-btn:disabled,
+  .shell-icon-btn:disabled:hover {
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  .shell-icon-btn[aria-pressed="true"] {
+    background: var(--colorSubtleBackgroundSelected);
+    color: var(--colorNeutralForeground1);
+  }
+
+  /* Fluent 图标两态（components/fluent/DualIcon.tsx）：默认常规，下列状态换实心（Loop 实测瞬时切换）——
+     subtle 按钮 / 导航 Tab / 带图标的按钮 / 菜单项悬停，导航 Tab 选中，切换按钮选中；
      分区抽屉的树节点选中时换实心（Loop 的树节点是页面 emoji，没有两态可测，按「选中态用实心图标」的决定） */
   .ic-f {
     display: none;
   }
 
-  .shell-icon-btn:hover .ic-r,
+  .shell-icon-btn:not(:disabled):hover .ic-r,
+  .shell-icon-btn[aria-pressed="true"] .ic-r,
   .nav-rail__tab:hover .ic-r,
   .nav-rail__tab[data-selected] .ic-r,
-  .section-tree__layout[data-selected] .ic-r {
+  .section-tree__layout[data-selected] .ic-r,
+  .doc-header__primary:not(:disabled):hover .ic-r,
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-r {
     display: none;
   }
 
-  .shell-icon-btn:hover .ic-f,
+  .shell-icon-btn:not(:disabled):hover .ic-f,
+  .shell-icon-btn[aria-pressed="true"] .ic-f,
   .nav-rail__tab:hover .ic-f,
   .nav-rail__tab[data-selected] .ic-f,
-  .section-tree__layout[data-selected] .ic-f {
+  .section-tree__layout[data-selected] .ic-f,
+  .doc-header__primary:not(:disabled):hover .ic-f,
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-f {
     display: inline;
+  }
+
+  /* ── 文档头工具栏（components/shell/PageHeader.tsx；Loop 原稿 css/sections/04-doc-header.css）──
+     原稿里的 54.8 / 31.6 / 0.8px 是设备像素比 1.25 下 1px 边框的读数（responsive.md），按 1px 边框写成 55 / 32 */
+  .doc-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    align-items: center;
+    column-gap: 8px;
+    height: 54px;
+    margin: -2px;
+    padding: 7px 8px;
+    color: var(--colorNeutralForeground3);
+  }
+
+  .doc-header__left {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    height: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .doc-header__center {
+    display: flex;
+    justify-content: center;
+    height: 32px;
+    padding: 0 4px;
+  }
+
+  .doc-header__right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+    height: 32px;
+  }
+
+  /* 面包屑项 = Loop 页面名按钮（.dhd-page）：32 高、padding 5px 8px、14/20/600、正文色；可点的项悬停 / 按下 SubtleBackgroundHover */
+  .doc-header__crumb {
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    min-width: 0;
+    height: 32px;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusLarge);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--colorNeutralForeground1);
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
+  }
+
+  .doc-header__crumb--link:hover,
+  .doc-header__crumb--link:active {
+    background: var(--colorSubtleBackgroundHover);
+  }
+
+  .doc-header__crumb--link:focus-visible {
+    outline: 2px solid transparent;
+    border-color: var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
+  }
+
+  .doc-header__crumb-text {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-header__chev {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    margin: 2px;
+    color: var(--colorNeutralForeground3);
+  }
+
+  /* 品牌主按钮 = Loop「共有」（.dhd-share）：32 高、padding 5px 12px、左 8 右 4 外边距、radius 8、600；带 20px 图标、与文字间距 6（07-button.css） */
+  .doc-header__primary {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    margin: 0 4px 0 8px;
+    padding: 5px 12px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusLarge);
+    background: var(--colorBrandBackground);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--colorNeutralForegroundOnBrand);
+    white-space: nowrap;
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
+  }
+
+  .doc-header__primary:hover {
+    background: var(--colorBrandBackgroundHover);
+  }
+
+  .doc-header__primary:active {
+    background: var(--colorBrandBackgroundPressed);
+  }
+
+  .doc-header__primary:disabled {
+    background: var(--colorNeutralBackgroundDisabled);
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  .doc-header__primary:focus-visible {
+    outline: 2px solid transparent;
+    border-color: var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2), inset 0 0 0 2px var(--colorNeutralForegroundOnBrand);
+  }
+
+  .doc-header__primary-icon {
+    display: flex;
+    margin-right: 6px;
+  }
+
+  /* 「…」按钮外包一层 38 宽（按钮 32 + 右 6，原稿 .dhd-morewrap） */
+  .doc-header__more {
+    display: flex;
+    flex: none;
+    width: 38px;
+  }
+
+  .doc-header__more .shell-icon-btn {
+    margin-right: 6px;
+  }
+
+  /* 测量层：与实际按钮同样式，只用来量宽度决定哪些操作收进「…」 */
+  .doc-header__measure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    gap: 8px;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: nowrap;
   }
 
   /* 顶栏品牌按钮：高 40、padding 5px 12px 5px 14px，悬停 / 按下颜色不变 */
@@ -1037,12 +1223,12 @@
     padding: 6px 12px;
   }
 
-  .fluent-menu-item:not(.fluent-menu-item--static):hover {
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover {
     background: var(--colorNeutralBackground1Hover);
     color: var(--colorNeutralForeground2Hover);
   }
 
-  .fluent-menu-item:not(.fluent-menu-item--static):active {
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):active {
     background: var(--colorNeutralBackground1Pressed);
     color: var(--colorNeutralForeground2Hover);
   }
@@ -1055,6 +1241,17 @@
     border: 2px solid var(--colorStrokeFocus2);
     border-radius: var(--borderRadiusMedium);
     pointer-events: none;
+  }
+
+  .fluent-menu-item[aria-disabled="true"] {
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  /* 切换型菜单项的勾选图标：16×16、Foreground2（04-menu.css 实测；位置放行尾） */
+  .fluent-menu-item__check {
+    flex: none;
+    color: var(--colorNeutralForeground2);
   }
 
   .fluent-menu-item--static {

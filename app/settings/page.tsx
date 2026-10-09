@@ -19,6 +19,7 @@ import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 import TabList from '@/components/fluent/TabList';
 import { SETTINGS_SECTIONS, initSettingsSection, selectSettingsSection, useSettingsSection, type SettingsSectionId } from '@/lib/settings-nav';
 import { useSectionDrawer } from '@/lib/section-drawer';
+import PageHeader from '@/components/shell/PageHeader';
 import { scrollAppToTop } from '@/lib/app-scroll';
 
 const SECTION_ICONS: Record<SettingsSectionId, ReactNode> = {
@@ -140,13 +141,11 @@ export default function SettingsPage() {
 
   return (
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '设置' }, { label: SETTINGS_SECTIONS.find(item => item.id === section)?.label ?? '' }]} />
       {/* 一次只显示一个分区：桌面在左侧抽屉切换，手机在顶部横向 Tab 切换 */}
       <div className={"mx-auto max-w-6xl px-4 py-6 " + layout.narrowDesktop}>
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className={heading.h1}>设置</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">支付方式、积分返还率、买取价格与数据导入</p>
-          </div>
+        <div className="mb-6 md:mb-0">
+          <h1 className={heading.page}>设置</h1>
         </div>
 
         <div className="mb-4 md:hidden">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCostFormData } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import PageHeader from '@/components/shell/PageHeader';
 import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/utils/dateUtils';
@@ -74,16 +75,16 @@ export default function AddSupplyPage() {
 
   return (
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '耗材管理', href: '/supplies' }, { label: '新增耗材记录' }]} />
       <div className={'mx-auto max-w-3xl px-4 py-6 ' + layout.narrowDesktop}>
-        <div className={layout.section}>
-          <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2'}>
+        <div className={layout.section + ' md:mb-0'}>
+          <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2 md:hidden'}>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             返回
           </button>
-          <h1 className={heading.h1}>新增耗材记录</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">记录包装、运输与标签等采购成本。</p>
+          <h1 className={heading.page}>新增耗材记录</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { TransactionFormData } from '@/types/database.types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { layout, heading, button } from '@/lib/theme';
+import PageHeader from '@/components/shell/PageHeader';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig } from '@/lib/amazon-point-config';
@@ -121,12 +122,13 @@ function AddTransactionPageContent() {
 
   return (
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '交易列表', href: '/transactions' }, { label: '记录新交易' }]} />
       <div className={"relative max-w-2xl mx-auto px-4 py-8 " + layout.narrowDesktop}>
-        {/* Header */}
-        <div className={layout.section}>
+        {/* Header（桌面用文档头的面包屑返回） */}
+        <div className={layout.section + ' md:mb-0'}>
           <button
             onClick={() => router.back()}
-            className={button.ghost + ' flex items-center gap-2 mb-4'}
+            className={button.ghost + ' flex items-center gap-2 mb-4 md:hidden'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -134,8 +136,7 @@ function AddTransactionPageContent() {
             <span className="font-medium">返回</span>
           </button>
 
-          <h1 className={heading.h1 + ' mb-2'}>记录新交易</h1>
-          <p className="text-[var(--color-text-muted)]">快速录入您的转卖商品信息</p>
+          <h1 className={heading.page}>记录新交易</h1>
         </div>
 
         {/* Form */}

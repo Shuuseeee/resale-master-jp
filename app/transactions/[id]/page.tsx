@@ -9,7 +9,7 @@ import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { markTransactionArrived, confirmPaymentReceived } from '@/lib/api/financial';
 import Image from 'next/image';
 import Link from 'next/link';
-import { button, layout } from '@/lib/theme';
+import { button, heading, layout } from '@/lib/theme';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
 import ReturnRecordsList from '@/components/ReturnRecordsList';
@@ -17,7 +17,16 @@ import ReturnForm from '@/components/ReturnForm';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import Toast from '@/components/Toast';
-import { Sparkle20Regular } from '@fluentui/react-icons/headless/svg/sparkle';
+import { ArrowCounterclockwise20Filled, ArrowCounterclockwise20Regular } from '@fluentui/react-icons/headless/svg/arrow-counterclockwise';
+import { ArrowUndo20Filled, ArrowUndo20Regular } from '@fluentui/react-icons/headless/svg/arrow-undo';
+import { BoxCheckmark20Filled, BoxCheckmark20Regular } from '@fluentui/react-icons/headless/svg/box-checkmark';
+import { Copy20Filled, Copy20Regular } from '@fluentui/react-icons/headless/svg/copy';
+import { Delete20Filled, Delete20Regular } from '@fluentui/react-icons/headless/svg/delete';
+import { Edit20Filled, Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
+import { MoneyHand20Filled, MoneyHand20Regular } from '@fluentui/react-icons/headless/svg/money-hand';
+import { ReceiptMoney20Filled, ReceiptMoney20Regular } from '@fluentui/react-icons/headless/svg/receipt-money';
+import { Sparkle20Filled, Sparkle20Regular } from '@fluentui/react-icons/headless/svg/sparkle';
+import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
@@ -250,6 +259,26 @@ export default function TransactionDetailPage() {
     }
   };
 
+  const confirmArrival = async () => {
+    if (!transaction) return;
+    const success = await markTransactionArrived(transaction.id);
+    if (success) {
+      setTransaction({ ...transaction, status: 'in_stock' });
+    } else {
+      alert('到货处理失败');
+    }
+  };
+
+  const confirmPayment = async () => {
+    if (!transaction) return;
+    const success = await confirmPaymentReceived(transaction.id);
+    if (success) {
+      setTransaction({ ...transaction, status: 'sold' });
+    } else {
+      alert('入金确认失败');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen md:min-h-full text-[var(--color-text)] flex items-center justify-center">
@@ -268,14 +297,44 @@ export default function TransactionDetailPage() {
     return null;
   }
 
+  const canSell =
+    !showSaleForm &&
+    ((transaction.quantity > 1 && transaction.quantity_in_stock > 0) || (transaction.quantity === 1 && transaction.status === 'in_stock'));
+  const canReturn = transaction.quantity_in_stock > 0 && !showReturnForm;
+  const canCancelSale = transaction.status === 'sold' || transaction.status === 'awaiting_payment';
+  // 桌面文档头：流程操作里第一个适用的做品牌主按钮（Loop 工具栏最多一个），其余与编辑 / 复制 / 删除等为图标按钮
+  const workflowActions: PageAction[] = [
+    ...(transaction.status === 'pending'
+      ? [{ id: 'arrive', label: '确认到货', icon: { regular: BoxCheckmark20Regular, filled: BoxCheckmark20Filled }, onClick: confirmArrival }]
+      : []),
+    ...(transaction.status === 'awaiting_payment'
+      ? [{ id: 'paid', label: '确认入账', icon: { regular: MoneyHand20Regular, filled: MoneyHand20Filled }, onClick: confirmPayment }]
+      : []),
+    ...(canSell ? [{ id: 'sell', label: '记录销售', icon: { regular: ReceiptMoney20Regular, filled: ReceiptMoney20Filled }, onClick: () => setShowSaleForm(true) }] : []),
+  ];
+  const [primaryWorkflow, ...otherWorkflow] = workflowActions;
+  const headerActions: PageAction[] = [
+    ...otherWorkflow.map((action, i) => ({ ...action, priority: 2 + i })),
+    ...(canReturn ? [{ id: 'return', label: '退货', icon: { regular: ArrowUndo20Regular, filled: ArrowUndo20Filled }, onClick: () => setShowReturnForm(true), priority: 4 }] : []),
+    ...(canCancelSale
+      ? [{ id: 'cancel-sale', label: '取消销售', icon: { regular: ArrowCounterclockwise20Regular, filled: ArrowCounterclockwise20Filled }, onClick: cancelSale, priority: 5 }]
+      : []),
+    { id: 'edit', label: '编辑', icon: { regular: Edit20Regular, filled: Edit20Filled }, href: `/transactions/${id}/edit`, priority: 1 },
+    { id: 'ai', label: '复制 AI 分析数据', icon: { regular: Sparkle20Regular, filled: Sparkle20Filled }, disabled: aiCopying, onClick: copyAIExport, priority: 6 },
+    { id: 'copy', label: '复制为新交易', icon: { regular: Copy20Regular, filled: Copy20Filled }, href: `/transactions/add?copy=${id}`, priority: 7 },
+    { id: 'delete', label: '删除', icon: { regular: Delete20Regular, filled: Delete20Filled }, onClick: deleteTransaction, priority: 8 },
+    ...(primaryWorkflow ? [{ ...primaryWorkflow, primary: true, priority: 0 }] : []),
+  ];
+
   return (
     <div className="min-h-screen md:min-h-full text-[var(--color-text)]">
+      <PageHeader crumbs={[{ label: '交易列表', href: '/transactions' }, { label: transaction.product_name }]} actions={headerActions} />
       <div className={"relative max-w-5xl mx-auto px-4 py-8 " + layout.narrowDesktop}>
-        {/* 标题栏 */}
+        {/* 标题栏（桌面的返回在文档头面包屑、操作在文档头工具栏） */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4"
+            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4 md:hidden"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -285,7 +344,7 @@ export default function TransactionDetailPage() {
 
           <div className="flex flex-col gap-4">
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--color-text)] mb-2 line-clamp-3 sm:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
+              <h1 className={'text-2xl sm:text-3xl font-bold text-[var(--color-text)] mb-2 line-clamp-3 sm:line-clamp-2 md:line-clamp-none break-cjk-normal leading-tight ' + heading.pageDesktop}>{transaction.product_name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
@@ -314,19 +373,12 @@ export default function TransactionDetailPage() {
               </div>
             </div>
 
-            {/* 操作按钮 */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* 操作按钮（手机） */}
+            <div className="flex items-center gap-2 flex-wrap md:hidden">
               {/* 着荷按钮 - 仅当status=pending时显示 */}
               {transaction.status === 'pending' && (
                 <button
-                  onClick={async () => {
-                    const success = await markTransactionArrived(transaction.id);
-                    if (success) {
-                      setTransaction({ ...transaction, status: 'in_stock' });
-                    } else {
-                      alert('到货处理失败');
-                    }
-                  }}
+                  onClick={confirmArrival}
                   className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,10 +388,7 @@ export default function TransactionDetailPage() {
                 </button>
               )}
               {/* 记录销售按钮 */}
-              {!showSaleForm && (
-                (transaction.quantity > 1 && transaction.quantity_in_stock > 0) ||
-                (transaction.quantity === 1 && transaction.status === 'in_stock')
-              ) && (
+              {canSell && (
                 <button
                   onClick={() => setShowSaleForm(true)}
                   className={button.primary + " gap-1.5 whitespace-nowrap"}
@@ -351,7 +400,7 @@ export default function TransactionDetailPage() {
                 </button>
               )}
               {/* 退货按钮 - 有库存时显示 */}
-              {transaction.quantity_in_stock > 0 && !showReturnForm && (
+              {canReturn && (
                 <button
                   onClick={() => setShowReturnForm(true)}
                   className={button.danger + " gap-1.5 whitespace-nowrap"}
@@ -365,14 +414,7 @@ export default function TransactionDetailPage() {
               {/* 入金確認按钮 - 仅当status=awaiting_payment时显示 */}
               {transaction.status === 'awaiting_payment' && (
                 <button
-                  onClick={async () => {
-                    const success = await confirmPaymentReceived(transaction.id);
-                    if (success) {
-                      setTransaction({ ...transaction, status: 'sold' });
-                    } else {
-                      alert('入金确认失败');
-                    }
-                  }}
+                  onClick={confirmPayment}
                   className={button.primary + " gap-1.5 whitespace-nowrap"}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +423,7 @@ export default function TransactionDetailPage() {
                   确认入账
                 </button>
               )}
-              {(transaction.status === 'sold' || transaction.status === 'awaiting_payment') && (
+              {canCancelSale && (
                 <button
                   onClick={cancelSale}
                   className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-warning-bg)] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-[1.08] active:brightness-[0.92] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"

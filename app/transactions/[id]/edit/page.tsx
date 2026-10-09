@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { TransactionFormData, Transaction } from '@/types/database.types';
 import { layout, heading, button } from '@/lib/theme';
+import PageHeader from '@/components/shell/PageHeader';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
@@ -142,12 +143,19 @@ export default function EditTransactionPage() {
 
   return (
     <div className="min-h-screen md:min-h-full text-[var(--color-text)]">
+      <PageHeader
+        crumbs={[
+          { label: '交易列表', href: '/transactions' },
+          { label: '交易详情', href: `/transactions/${params.id}` },
+          { label: '编辑交易' },
+        ]}
+      />
       <div className={"relative max-w-2xl mx-auto px-4 py-8 " + layout.narrowDesktop}>
-        {/* Header */}
-        <div className="mb-8">
+        {/* Header（桌面用文档头的面包屑返回） */}
+        <div className="mb-8 md:mb-0">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4"
+            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4 md:hidden"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -155,8 +163,7 @@ export default function EditTransactionPage() {
             <span className="font-medium">返回</span>
           </button>
 
-          <h1 className="text-4xl font-bold text-[var(--color-text)] mb-2">编辑交易</h1>
-          <p className="text-[var(--color-text-muted)]">修改交易记录信息</p>
+          <h1 className={'text-4xl font-bold text-[var(--color-text)] ' + heading.pageDesktop}>编辑交易</h1>
         </div>
 
         {/* Form */}

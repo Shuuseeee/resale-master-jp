@@ -10,6 +10,16 @@ import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui
 import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
 import { Wallet20Filled, Wallet20Regular } from '@fluentui/react-icons/headless/svg/wallet';
 import DualIcon from '@/components/fluent/DualIcon';
+import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
+import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
+import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
+import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
+import { DocumentBulletList20Filled, DocumentBulletList20Regular } from '@fluentui/react-icons/headless/svg/document-bullet-list';
+import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
+import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
+import { Stop20Filled, Stop20Regular } from '@fluentui/react-icons/headless/svg/stop';
+import { TableSettings20Filled, TableSettings20Regular } from '@fluentui/react-icons/headless/svg/table-settings';
+import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -1018,6 +1028,65 @@ function TransactionsContent() {
   }, [compareMode, selectedIds]);
 
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
+  // 桌面文档头的操作（手机端仍是标题下方那排按钮）；priority 越大越先收进「…」
+  const headerActions: PageAction[] = [
+    ...(kaitorixEnabled
+      ? [
+          {
+            id: 'kaitorix',
+            label: kaitorixLoading
+              ? `停止获取买取价格${kaitorixProgress ? `（${kaitorixProgress.completed}/${kaitorixProgress.total}）` : ''}`
+              : '获取买取价格',
+            icon: kaitorixLoading ? { regular: Stop20Regular, filled: Stop20Filled } : { regular: ArrowSync20Regular, filled: ArrowSync20Filled },
+            onClick: kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions),
+            priority: 1,
+          },
+        ]
+      : []),
+    {
+      id: 'group',
+      label: '分组显示',
+      icon: { regular: GroupList20Regular, filled: GroupList20Filled },
+      pressed: isGrouped,
+      onClick: () => setIsGrouped(v => !v),
+      priority: 2,
+    },
+    {
+      id: 'select',
+      label: compareMode ? `退出多选（${selectedIds.size}）` : '多选',
+      icon: { regular: MultiselectLtr20Regular, filled: MultiselectLtr20Filled },
+      pressed: compareMode,
+      onClick: () => {
+        setCompareMode(!compareMode);
+        setSelectedIds(new Set());
+      },
+      priority: 3,
+    },
+    {
+      id: 'csv',
+      label: exporting ? '导出中…' : `导出 CSV（${filteredTransactions.length}）`,
+      icon: { regular: ArrowDownload20Regular, filled: ArrowDownload20Filled },
+      disabled: exporting,
+      onClick: handleExportCSV,
+      priority: 5,
+    },
+    {
+      id: 'columns',
+      label: '自定义列',
+      icon: { regular: TableSettings20Regular, filled: TableSettings20Filled },
+      onClick: () => {
+        setPickerDraft(columns);
+        setPickerOpen(true);
+      },
+      priority: 6,
+    },
+    { id: 'price-center', label: '价格中心', icon: { regular: BarcodeScanner20Regular, filled: BarcodeScanner20Filled }, href: '/kaitorix-prices', priority: 7 },
+    ...(kaitorixEnabled && buybackPrices.size > 0 && !kaitorixLoading
+      ? [{ id: 'jan-list', label: 'JAN 列表', icon: { regular: DocumentBulletList20Regular, filled: DocumentBulletList20Filled }, onClick: () => setShowJanList(true), priority: 8 }]
+      : []),
+    { id: 'new', label: '记录新交易', icon: { regular: Add20Regular, filled: Add20Filled }, href: '/transactions/add', primary: true, priority: 4 },
+  ];
+
   if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="交易数据" />;
 
   if (loading) {
@@ -1037,14 +1106,12 @@ function TransactionsContent() {
   return (
     <PullToRefresh onRefresh={() => queryClient.invalidateQueries({ queryKey: ['transactions'] })}>
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '交易列表' }, { label: STATUS_TABS.find(tab => tab.key === statusFilter)?.label ?? '' }]} actions={headerActions} />
       <div className={layout.container}>
-        {/* 标题区域 */}
-        <div className="mb-5 flex flex-col gap-4">
-          <div>
-            <h1 className={heading.h1}>交易列表</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润、买取价格与销售状态</p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1">
+        {/* 标题区域（桌面的操作按钮在文档头工具栏里） */}
+        <div className="mb-5 flex flex-col gap-4 md:mb-0">
+          <h1 className={heading.page}>交易列表</h1>
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 md:hidden">
               {/* 分组/平铺切换按钮 */}
               <button
                 onClick={() => setIsGrouped(v => !v)}

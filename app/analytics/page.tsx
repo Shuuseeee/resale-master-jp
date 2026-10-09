@@ -41,6 +41,7 @@ import {
 } from '@/lib/api/analytics';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { layout, heading, input } from '@/lib/theme';
+import PageHeader from '@/components/shell/PageHeader';
 import PullToRefresh from '@/components/PullToRefresh';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -184,11 +185,11 @@ export default function AnalyticsPage() {
   return (
     <PullToRefresh onRefresh={async () => { await refetch(); }}>
     <div className={layout.page}>
+      <PageHeader crumbs={[{ label: '数据分析' }]} />
       <div className={layout.container}>
         {/* 标题和筛选器 */}
-        <div className={layout.section}>
-          <h1 className={heading.h1 + ' mb-2'}>数据分析仪表板</h1>
-          <p className="text-[var(--color-text-muted)]">深度分析您的业务数据</p>
+        <div className={layout.section + ' md:mb-0'}>
+          <h1 className={heading.page}>数据分析仪表板</h1>
         </div>
 
         {/* 筛选器 */}

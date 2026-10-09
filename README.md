@@ -193,6 +193,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - 外壳由 `components/Navigation.tsx` 组装：桌面（≥768）为透明顶栏 + 左导航（`components/shell/NavRail.tsx`，展开 / 折叠、「新建」菜单），手机为顶栏 + 底部标签栏。
 - 交易列表（状态）、买取价格（视图）、税务申报（年度）、耗材管理（分类）、设置（分区）在桌面用左导航旁的分区抽屉切换（`components/shell/SectionDrawer.tsx`，页面用 `lib/section-drawer.ts` 的 `useSectionDrawer` 注册），手机仍在页面里切换。
 - 桌面正文一律限宽 920（含左右内边距 1000）居中，表格放不下时在表格内横向滚动。
+- 桌面每页顶部是 Loop 式文档头工具栏（`components/shell/PageHeader.tsx`：面包屑 + 操作按钮，放不下的收进「…」菜单），大标题用 `heading.page`，不写副标题；手机端标题区与按钮保持原样。
 - `node scripts/scan-design-tokens.mjs` 扫描硬编码色值残留，无标记输出即全部落实。
 
 ## Scraper
