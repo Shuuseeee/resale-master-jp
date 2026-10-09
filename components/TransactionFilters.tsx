@@ -163,7 +163,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
             <button
               type="button"
               onClick={() => { onBulkAdd(search); setSearch(''); }}
-              className="flex w-full items-center px-3 py-2 text-left text-sm text-[var(--color-primary)] hover:bg-[var(--color-bg-subtle)] transition-colors"
+              className="flex w-full items-center px-3 py-2 text-left text-sm text-[var(--color-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
             >
               未匹配 · 点击或回车添加「{search}」
             </button>
@@ -176,7 +176,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                 className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
                   isChecked
                     ? 'bg-[var(--color-primary-light)] hover:bg-[var(--color-primary-light)]'
-                    : 'hover:bg-[var(--color-bg-subtle)]'
+                    : 'hover:bg-[var(--color-bg-hover)]'
                 }`}
               >
                 <input
@@ -311,7 +311,7 @@ function SheetCheckList({
             key={opt.value}
             type="button"
             onClick={() => onToggle(opt.value)}
-            className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${mono ? 'font-mono' : ''} ${
+            className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-pressed)] ${mono ? 'font-mono' : ''} ${
               checked ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
             }`}
           >
@@ -561,8 +561,8 @@ export default function TransactionFilters({
               onClick={() => switchJanMode('include')}
               className={`px-3 py-2 font-semibold transition-colors ${
                 filters.janFilterMode === 'include'
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
+                  ? 'bg-[var(--color-primary-bg)] text-white'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)]'
               }`}
             >
               包含
@@ -572,8 +572,8 @@ export default function TransactionFilters({
               onClick={() => switchJanMode('exclude')}
               className={`border-l border-[var(--color-border)] px-3 py-2 font-semibold transition-colors ${
                 filters.janFilterMode === 'exclude'
-                  ? 'bg-[var(--color-warning)] text-white'
-                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)]'
+                  ? 'bg-[var(--color-warning-bg)] text-white'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)]'
               }`}
             >
               排除
@@ -760,7 +760,7 @@ export default function TransactionFilters({
                 type="button"
                 onClick={() => switchJanMode('include')}
                 className={`flex-1 py-2 font-semibold transition-colors ${
-                  filters.janFilterMode === 'include' ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-text-muted)]'
+                  filters.janFilterMode === 'include' ? 'bg-[var(--color-primary-bg)] text-white' : 'text-[var(--color-text-muted)]'
                 }`}
               >
                 包含
@@ -769,7 +769,7 @@ export default function TransactionFilters({
                 type="button"
                 onClick={() => switchJanMode('exclude')}
                 className={`flex-1 border-l border-[var(--color-border)] py-2 font-semibold transition-colors ${
-                  filters.janFilterMode === 'exclude' ? 'bg-[var(--color-warning)] text-white' : 'text-[var(--color-text-muted)]'
+                  filters.janFilterMode === 'exclude' ? 'bg-[var(--color-warning-bg)] text-white' : 'text-[var(--color-text-muted)]'
                 }`}
               >
                 排除
@@ -801,7 +801,7 @@ export default function TransactionFilters({
                 type="button"
                 disabled={parseJanInput(janSearch).codes.length === 0}
                 onClick={() => { handleJanBulkInput(janSearch); setJanSearch(''); }}
-                className="min-h-[40px] flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+                className="min-h-[40px] flex-shrink-0 rounded-[var(--radius-md)] bg-[var(--color-primary-bg)] px-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
               >
                 添加
               </button>
@@ -832,7 +832,7 @@ export default function TransactionFilters({
                 key={store}
                 type="button"
                 onClick={() => { updateFilter('buybackStore', filters.buybackStore === store ? '' : store); setOpenSheet(null); }}
-                className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-subtle)] ${
+                className={`flex min-h-[48px] w-full items-center justify-between rounded-[var(--radius-md)] px-3 text-left text-sm transition-colors active:bg-[var(--color-bg-pressed)] ${
                   filters.buybackStore === store ? 'font-semibold text-[var(--color-primary)]' : 'text-[var(--color-text)]'
                 }`}
               >

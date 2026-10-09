@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
                     onClick={() => setTimeRange(range)}
                     className={`rounded-[var(--radius-md)] px-4 py-2 text-sm font-semibold transition-colors ${
                       timeRange === range
-                        ? 'bg-[var(--color-primary)] text-white shadow-[0_4px_8px_var(--color-primary-border)]'
+                        ? 'bg-[var(--color-primary-bg)] text-white shadow-[0_4px_8px_var(--color-primary-border)]'
                         : 'border border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text)] hover:bg-[var(--color-bg-elevated)] active:opacity-70'
                     }`}
                   >
@@ -266,7 +266,7 @@ export default function AnalyticsPage() {
                     onClick={() => togglePaymentMethod(method.id)}
                     className={`rounded-[var(--radius-md)] px-3 py-1.5 text-sm font-semibold transition-colors ${
                       selectedPaymentMethods.includes(method.id)
-                        ? 'bg-[var(--color-primary)] text-white'
+                        ? 'bg-[var(--color-primary-bg)] text-white'
                         : 'border border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-[var(--color-text)] hover:bg-[var(--color-bg-elevated)] active:opacity-70'
                     }`}
                   >

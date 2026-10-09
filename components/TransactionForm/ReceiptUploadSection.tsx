@@ -39,7 +39,7 @@ export function ReceiptUploadSection({
               <button
                 type="button"
                 onClick={onClearImage}
-                className="absolute top-2 right-2 p-2 bg-[var(--color-danger)] active:opacity-80 rounded-lg transition-colors"
+                className="absolute top-2 right-2 p-2 bg-[var(--color-danger-bg)] active:opacity-80 rounded-lg transition-colors"
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

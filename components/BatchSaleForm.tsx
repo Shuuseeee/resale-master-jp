@@ -177,7 +177,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       </div>
 
       {successCount > 0 && (
-        <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-subtle)] p-4">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] p-4">
           <p className="text-sm text-[var(--color-primary)]">
             已保存 {successCount} 条销售记录。销售平台、单价、费用保留了上次的输入。
           </p>

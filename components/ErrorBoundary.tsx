@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="inline-flex min-h-[40px] items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)]"
+          className="inline-flex min-h-[40px] items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary-bg)] to-[var(--color-primary-bg-hover)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)]"
         >
           重新加载
         </button>

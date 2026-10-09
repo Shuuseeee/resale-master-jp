@@ -74,7 +74,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                     <span className="ml-2 text-[var(--color-warning)]">+{formatCurrency(bestPossibleRevenue - bestRevenue)}</span>
                   )}
                 </div>
-                <div className={`mt-1 text-xs font-mono ${bestPossibleProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+                <div className={`mt-1 text-xs font-mono ${bestPossibleProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                   利润 {bestPossibleProfit >= 0 ? '+' : ''}{formatCurrency(bestPossibleProfit)}
                 </div>
               </div>

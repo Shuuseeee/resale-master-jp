@@ -164,7 +164,7 @@ export default function Navigation() {
               <button
                 onClick={handleLogout}
                 title="退出登录"
-                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-soft)]"
+                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger)]"
               >
                 <LogOut className="h-4 w-4" strokeWidth={2} />
               </button>
@@ -172,10 +172,9 @@ export default function Navigation() {
           </div>
         </div>
       </header>
-      <div className="hidden lg:block fixed top-[60px] left-0 right-0 h-[3px] z-[9001] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
 
       {/* ── 桌面端侧边栏 ── */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[63px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
+      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[60px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
         {/* Logo */}
         <div className="h-14 flex items-center border-b border-[var(--color-border)] px-3 gap-2">
           {!collapsed && (
@@ -210,7 +209,7 @@ export default function Navigation() {
                     ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
                     : item.highlight
                       ? 'text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]'
-                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]'
                   }
                 `}
               >
@@ -225,7 +224,7 @@ export default function Navigation() {
         <div className="p-2 border-t border-[var(--color-border)] space-y-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)] transition-colors justify-center"
+            className="w-full flex items-center gap-2 px-3 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded-[var(--radius-md)] transition-colors justify-center"
             title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
           >
             <ChevronLeft className={`h-5 w-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} strokeWidth={2} />
@@ -268,15 +267,14 @@ export default function Navigation() {
             </div>
           </Link>
         </div>
-        <div className="h-[3px] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-bright)]" />
       </div>
 
       {/* 移动端顶部占位 */}
-      <div className="lg:hidden h-[calc(59px+env(safe-area-inset-top,0px))]" />
+      <div className="lg:hidden h-[calc(56px+env(safe-area-inset-top,0px))]" />
 
       {/* ── 移动端底部导航栏：SNUtils touch adaptation ── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-float)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -288,7 +286,7 @@ export default function Navigation() {
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
               isActive('/dashboard')
                 ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/dashboard') ? 'bg-[var(--color-primary-light)]' : ''}`}>
@@ -303,7 +301,7 @@ export default function Navigation() {
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
               isActive('/transactions')
                 ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/transactions') ? 'bg-[var(--color-primary-light)]' : ''}`}>
@@ -317,8 +315,8 @@ export default function Navigation() {
                   onClick={() => { triggerHaptic('medium'); setShowFabMenu(v => !v); }}
               className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] border font-semibold shadow-[0_6px_14px_var(--color-primary-border)] transition-colors active:opacity-80 ${
                     showFabMenu
-                  ? 'border-[var(--color-primary-hover)] bg-[var(--color-primary-hover)] text-white'
-                  : 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                  ? 'border-[var(--color-primary-bg-hover)] bg-[var(--color-primary-bg-hover)] text-white'
+                  : 'border-[var(--color-primary-bg)] bg-[var(--color-primary-bg)] text-white'
                   }`}
               aria-label="新增"
                 >
@@ -332,7 +330,7 @@ export default function Navigation() {
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
               isActive('/kaitorix-prices')
                 ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
             }`}
               >
             <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/kaitorix-prices') ? 'bg-[var(--color-primary-light)]' : ''}`}>
@@ -346,7 +344,7 @@ export default function Navigation() {
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
               showMoreSheet
                 ? 'text-[var(--color-primary)]'
-                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+                : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
             }`}
             aria-label="更多"
               >
@@ -390,7 +388,7 @@ export default function Navigation() {
                 key={item.href}
                 href={item.href}
                 onClick={() => triggerHaptic('light')}
-                className={`flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-subtle)] ${
+                className={`flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-pressed)] ${
                   i < arr.length - 1 ? 'border-b border-[var(--color-border)]' : ''
                 }`}
               >
@@ -402,7 +400,7 @@ export default function Navigation() {
             ))}
             <button
               onClick={() => { triggerHaptic('light'); setShowFabMenu(false); setShowScanArrival(true); }}
-              className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-subtle)] border-t border-[var(--color-border)]"
+              className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-bg-pressed)] border-t border-[var(--color-border)]"
             >
               <div className="w-8 h-8 bg-[var(--color-warning-subtle)] text-[var(--color-warning)] rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0">
                 <ScanBarcode className="h-4 w-4" strokeWidth={2} />
@@ -433,7 +431,7 @@ export default function Navigation() {
               <button
                 type="button"
                 onClick={() => setShowMoreSheet(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]"
+                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]"
                 aria-label="关闭"
               >
                 <X className="h-4 w-4" strokeWidth={2} />
@@ -452,7 +450,7 @@ export default function Navigation() {
                       className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-[var(--radius-md)] transition-colors ${
                         active
                           ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]'
-                          : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)]'
+                          : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
                       }`}
                     >
                       {item.icon}

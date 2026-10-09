@@ -26,7 +26,7 @@ export default function OfflineBanner() {
   return (
     <div
       role="status"
-      className="pointer-events-none fixed left-1/2 top-[calc(66px+env(safe-area-inset-top,0px))] z-[8500] w-max max-w-[calc(100vw-24px)] -translate-x-1/2 lg:top-[72px]"
+      className="pointer-events-none fixed left-1/2 top-[calc(63px+env(safe-area-inset-top,0px))] z-[8500] w-max max-w-[calc(100vw-24px)] -translate-x-1/2 lg:top-[69px]"
     >
       <div className="flex items-center gap-2 rounded-full border border-[var(--color-warning-border)] bg-[var(--color-bg-elevated)] px-3.5 py-1.5 text-xs font-medium text-[var(--color-text)] shadow-[var(--shadow-md)]">
         <WifiOff className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-warning)]" strokeWidth={2.25} />

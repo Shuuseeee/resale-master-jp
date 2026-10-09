@@ -30,7 +30,7 @@ export default function StoreRowDesktop({ row }: { row: StoreRow }) {
               <div className="font-mono text-[var(--color-text)]">
                 {formatCurrency(item.storePrice)}
               </div>
-              <div className={`text-[11px] font-mono ${item.profit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+              <div className={`text-[11px] font-mono ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                 {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
               </div>
             </>
@@ -47,7 +47,7 @@ export default function StoreRowDesktop({ row }: { row: StoreRow }) {
       </td>
 
       <td className="py-3 pl-3 text-right">
-        <span className={`font-mono font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+        <span className={`font-mono font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
           {row.totalProfit >= 0 ? '+' : ''}{formatCurrency(row.totalProfit)}
         </span>
       </td>

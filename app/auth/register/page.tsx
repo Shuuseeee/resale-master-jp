@@ -93,7 +93,7 @@ export default function RegisterPage() {
               if (error) { setError(error.message); setGoogleLoading(false); }
             }}
             disabled={googleLoading}
-            className="flex min-h-[42px] w-full items-center justify-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] transition-all hover:bg-[var(--color-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex min-h-[42px] w-full items-center justify-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] transition-all hover:bg-[var(--color-bg-hover)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -155,7 +155,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-[42px] w-full items-center justify-center rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary-bg)] to-[var(--color-primary-bg-hover)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text-inverted)] transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? '注册中...' : '注册'}
             </button>

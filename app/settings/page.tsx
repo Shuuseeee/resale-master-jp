@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
-import { DEFAULT_PALETTE, PALETTES, type PaletteId } from '@/lib/themes';
-import { applyPalette, getCurrentPalette } from '@/lib/theme-palette';
+import { getThemePreference, setThemePreference, THEME_PREFERENCE_EVENT, type ThemePreference } from '@/lib/theme-mode';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Switch from '@/components/Switch';
+import Select from '@/components/Select';
 import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 
 export default function SettingsPage() {
@@ -22,8 +22,8 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // 初始为默认值，effect 中读取 DOM 实际主题（避免 SSR 水合不一致）
-  const [palette, setPalette] = useState<PaletteId>(DEFAULT_PALETTE);
+  // 初始为默认值，effect 中读取本机保存的偏好（避免 SSR 水合不一致）
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
   // 旧版「信用卡返还」%：已改由支付方式的店铺特殊规则负责，本机设置里还有旧值时提示迁移
   const [legacyCardRate, setLegacyCardRate] = useState<number | null>(null);
 
@@ -32,13 +32,12 @@ export default function SettingsPage() {
     setLegacyCardRate(getLegacyAmazonCardRate());
     setKaitorixConfig(loadKaitorixConfig());
     setKnownStores(getKnownStores());
-    setPalette(getCurrentPalette());
+    setThemePreferenceState(getThemePreference());
+    // 顶栏快速切换会把偏好改成浅色 / 深色，这里同步显示
+    const handlePreferenceChange = () => setThemePreferenceState(getThemePreference());
+    window.addEventListener(THEME_PREFERENCE_EVENT, handlePreferenceChange);
+    return () => window.removeEventListener(THEME_PREFERENCE_EVENT, handlePreferenceChange);
   }, []);
-
-  const selectPalette = (id: PaletteId) => {
-    setPalette(id);
-    applyPalette(id); // 即点即生效：DOM + localStorage + 云同步
-  };
 
   const updateConfig = (field: keyof AmazonPointConfig, value: number | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
@@ -118,50 +117,23 @@ export default function SettingsPage() {
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
           <section className={card.primary + ' p-6'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-              外观主题
+              外观
             </h2>
-            <p className="mt-2 text-sm text-[var(--color-text-muted)]">配色主题即点即生效，登录设备间自动同步；深浅色模式在导航栏切换。</p>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">选择「跟随系统」时随系统的深浅色自动切换；顶栏按钮可以临时切换深色 / 浅色。</p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              {PALETTES.map(p => {
-                const isActive = palette === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => selectPalette(p.id)}
-                    aria-pressed={isActive}
-                    className={`rounded-[var(--radius-md)] border p-3 text-left transition-colors ${
-                      isActive
-                        ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
-                        : 'bg-[var(--color-bg-subtle)] border-[var(--color-border)] active:bg-[var(--color-bg-elevated)]'
-                    }`}
-                  >
-                    {/* mini 预览：header 色条 + bg 底 + primary 圆点 */}
-                    <div
-                      className="overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-border)]"
-                      style={{ background: p.preview[2] }}
-                    >
-                      <div className="h-2.5" style={{ background: p.preview[1] }} />
-                      <div className="flex items-center gap-1.5 p-2">
-                        <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.preview[0] }} />
-                        <span className="h-1.5 flex-1 rounded-full opacity-20" style={{ background: p.preview[1] }} />
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className={`text-sm font-semibold ${isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text)]'}`}>
-                        {p.label}
-                      </span>
-                      {isActive && (
-                        <svg className="h-4 w-4 flex-shrink-0 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{p.description}</div>
-                  </button>
-                );
-              })}
+            <div className="mt-6 text-sm text-[var(--color-text)]">
+              深浅色
+              <div className="mt-2 max-w-xs">
+                <Select
+                  value={themePreference}
+                  onChange={value => setThemePreference(value as ThemePreference)}
+                  options={[
+                    { value: 'light', label: '浅色' },
+                    { value: 'dark', label: '深色' },
+                    { value: 'system', label: '跟随系统' },
+                  ]}
+                />
+              </div>
             </div>
           </section>
 
@@ -262,7 +234,7 @@ export default function SettingsPage() {
                       }`}
                     >
                       <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[var(--radius-sm)] ${
-                        isChecked ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)]'
+                        isChecked ? 'bg-[var(--color-primary-bg)] text-white' : 'bg-[var(--color-bg-elevated)] border border-[var(--color-border)]'
                       }`}>
                         {isChecked && (
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

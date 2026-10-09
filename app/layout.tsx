@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
+import './fluent-tokens.css'
 import './globals.css'
-import './themes.css'
 import Navigation from '@/components/Navigation'
 import { ClientProviders } from '@/components/ClientProviders'
 import Script from 'next/script'
@@ -33,7 +33,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#1b1b26',
+  themeColor: '#F7F9FC',
 }
 
 export default function RootLayout({
@@ -47,41 +47,24 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {`
             (function () {
-              var storageKey = 'snutils-theme';
-              var theme;
+              // 偏好：light / dark / system（未保存过也按 system）。逻辑与 lib/theme-mode.ts 一致，改动需同步。
+              var preference;
               try {
-                theme = window.localStorage.getItem(storageKey);
+                preference = window.localStorage.getItem('snutils-theme');
+                // 旧版配色主题的存储键已不再使用
+                window.localStorage.removeItem('snutils-palette');
               } catch (e) {}
 
-              if (theme !== 'light' && theme !== 'dark') {
-                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-              }
+              var theme = preference === 'light' || preference === 'dark'
+                ? preference
+                : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
               document.documentElement.setAttribute('data-theme', theme);
-              document.documentElement.classList.toggle('dark', theme === 'dark');
-              if (document.body) {
-                document.body.setAttribute('data-theme', theme);
-              }
 
-              // 配色主题（data-palette 轴）— headerColors 是 lib/themes.ts 注册表的
-              // 零依赖精简副本（本脚本先于 paint 执行，不能 import），新增主题需同步。
-              // 值为 [light, dark]：浅 header 主题（如微信绿）两种模式 header 颜色不同。
-              var palette;
-              try {
-                palette = window.localStorage.getItem('snutils-palette');
-              } catch (e) {}
-              if (palette && palette !== 'emerald') {
-                document.documentElement.setAttribute('data-palette', palette);
-              }
-              var headerColors = {
-                horizon: ['#354a5f', '#354a5f'],
-                fluent: ['#1b1a19', '#1b1a19'],
-                wechat: ['#ededed', '#1e1e1e']
-              };
-              var hc = headerColors[palette] || ['#1b1b26', '#1b1b26'];
+              // theme-color：Loop 实测（lib/theme-mode.ts 的 THEME_COLORS 副本）
               var meta = document.querySelector('meta[name="theme-color"]');
               if (meta) {
-                meta.setAttribute('content', theme === 'dark' ? hc[1] : hc[0]);
+                meta.setAttribute('content', theme === 'dark' ? '#1E2022' : '#F7F9FC');
               }
             })();
           `}
@@ -89,7 +72,7 @@ export default function RootLayout({
         <ClientProviders>
           <div className="lg:flex lg:min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
             <Navigation />
-            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pt-[63px] lg:pb-0">
+            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pt-[60px] lg:pb-0">
               {children}
             </div>
           </div>

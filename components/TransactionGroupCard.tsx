@@ -79,7 +79,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           >
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               allSelected
-                ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
                 : someSelected
                   ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
                   : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
@@ -90,7 +90,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
                 </svg>
               )}
               {someSelected && (
-                <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
+                <div className="w-2 h-0.5 bg-[var(--color-primary-fill)] rounded" />
               )}
             </div>
           </button>
@@ -139,7 +139,7 @@ const TransactionGroupCard = memo(function TransactionGroupCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-[var(--color-text)] truncate min-w-0">{group.productName}</p>
-              <span className="flex-shrink-0 text-xs bg-[var(--color-primary)] text-white px-1.5 py-0.5 rounded-full font-semibold">
+              <span className="flex-shrink-0 text-xs bg-[var(--color-primary-bg)] text-white px-1.5 py-0.5 rounded-full font-semibold">
                 ×{group.transactions.length}
               </span>
             </div>

@@ -451,12 +451,12 @@ function KaitorixPricesContent() {
               {filteredSummaries.map(item => (
                 <div
                   key={item.jan}
-                  className="grid gap-3 px-4 py-4 lg:grid-cols-[44px_1.8fr_0.7fr_0.8fr_0.8fr_0.8fr_0.8fr_120px] lg:items-center hover:bg-[var(--color-bg-subtle)]"
+                  className="grid gap-3 px-4 py-4 lg:grid-cols-[44px_1.8fr_0.7fr_0.8fr_0.8fr_0.8fr_0.8fr_120px] lg:items-center hover:bg-[var(--color-bg-hover)]"
                 >
                   <div className="flex items-start gap-3 lg:block">
                     <button
                       onClick={() => toggleSelect(item.jan)}
-                      className={`h-11 w-11 -ml-2 items-center justify-center rounded-[var(--radius-md)] active:bg-[var(--color-bg-subtle)] lg:flex lg:h-5 lg:w-5 lg:ml-0 ${mobileSelectMode ? 'flex' : 'hidden'}`}
+                      className={`h-11 w-11 -ml-2 items-center justify-center rounded-[var(--radius-md)] active:bg-[var(--color-bg-pressed)] lg:flex lg:h-5 lg:w-5 lg:ml-0 ${mobileSelectMode ? 'flex' : 'hidden'}`}
                       aria-label="选择 JAN"
                       role="checkbox"
                       aria-checked={selectedJans.has(item.jan)}
@@ -470,7 +470,7 @@ function KaitorixPricesContent() {
                     <div className="flex items-center gap-2 ml-auto lg:hidden">
                       <button
                         onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }}
-                        className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] whitespace-nowrap"
+                        className="min-h-10 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)] whitespace-nowrap"
                       >
                         详情
                       </button>
@@ -512,7 +512,7 @@ function KaitorixPricesContent() {
                     <div>{sourceLabel(item.source)}</div>
                   </div>
                   <div className="hidden items-center justify-end gap-2 lg:flex">
-                    <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">详情</button>
+                    <button onClick={() => { setSelectedJan(item.jan); setRawOpen(false); }} className="min-h-9 px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] rounded whitespace-nowrap">详情</button>
                     <button
                       onClick={() => refreshOne(item.jan)}
                       disabled={forceRefreshingJan === item.jan || batchRefreshing}
@@ -551,7 +551,7 @@ function KaitorixPricesContent() {
                   >
                     在交易列表查看
                   </Link>
-                  <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] whitespace-nowrap">关闭</button>
+                  <button onClick={() => setSelectedJan(null)} className="min-h-11 rounded-[var(--radius-md)] px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] whitespace-nowrap">关闭</button>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -605,7 +605,7 @@ function KaitorixPricesContent() {
                     const unitCost = getUnitCost(tx);
                     const profit = selectedSummary.maxPrice > 0 ? (selectedSummary.maxPrice - unitCost) * stock : 0;
                     return (
-                      <Link key={tx.id} href={`/transactions/${tx.id}`} className="grid grid-cols-1 gap-2 px-4 py-3 text-sm hover:bg-[var(--color-bg-subtle)] md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+                      <Link key={tx.id} href={`/transactions/${tx.id}`} className="grid grid-cols-1 gap-2 px-4 py-3 text-sm hover:bg-[var(--color-bg-hover)] md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                         <div>
                           <div className="font-medium text-[var(--color-text)]">{new Date(tx.date).toLocaleDateString('ja-JP')}</div>
                           <div className="text-xs text-[var(--color-text-muted)]">{tx.purchase_platform?.name || '采购渠道未设置'}</div>

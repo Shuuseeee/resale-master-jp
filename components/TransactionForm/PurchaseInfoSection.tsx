@@ -119,7 +119,7 @@ export function PurchaseInfoSection({
               type="button"
               onClick={onAddPlatform}
               disabled={!newPlatformName.trim()}
-              className="px-3 py-2 bg-[var(--color-primary)] active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-[var(--color-primary-bg)] active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
             >
               添加
             </button>

@@ -84,25 +84,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background: var(--color-header-chip);
-    border: 1px solid var(--color-header-chip-hover);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition);
-    color: var(--color-header-text-muted);
+    width: 32px;
+    height: 32px;
+    padding: 5px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusLarge);
+    background: transparent;
+    color: var(--colorNeutralForeground3);
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
   }
 
   .btn-theme:hover {
-    background: var(--color-header-chip-hover);
-    border-color: color-mix(in srgb, var(--color-header-text) 25%, transparent);
-    color: var(--color-header-text);
+    color: var(--colorNeutralForeground2BrandHover);
   }
 
   .btn-theme:active {
-    transform: scale(0.95);
+    color: var(--colorNeutralForeground2BrandPressed);
+  }
+
+  .btn-theme:focus-visible {
+    outline: 2px solid transparent;
+    border-color: var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
   }
 
   .btn-theme .icon-sun {
@@ -113,13 +117,11 @@
     display: block;
   }
 
-  :root[data-theme="dark"] .btn-theme .icon-sun,
-  :root.dark .btn-theme .icon-sun {
+  :root[data-theme="dark"] .btn-theme .icon-sun {
     display: block;
   }
 
-  :root[data-theme="dark"] .btn-theme .icon-moon,
-  :root.dark .btn-theme .icon-moon {
+  :root[data-theme="dark"] .btn-theme .icon-moon {
     display: none;
   }
 }
@@ -190,102 +192,81 @@
     src: url('/fonts/NotoSans-Bold.woff2') format('woff2');
   }
 
+  /* 页面语义 token：一律引用 app/fluent-tokens.css 的 Fluent / Loop 实测 token（深浅色由那里切换），不在这里写色值、不做 color-mix 派生。
+     例外：Loop 标签色（徽章）与取景器上的危险色是固定值，深色下不变（实测如此）。 */
   :root {
-    --color-primary: #10b981;
-    --color-primary-hover: #059669;
-    --color-primary-light: #ecfdf5;
-    --color-primary-subtle: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    --color-header: #1b1b26;
-    --color-header-text: #ffffff;
-    --color-header-text-muted: rgba(255, 255, 255, 0.7);
-    /* header 上的 chip/按钮底色：从 header-text 派生，浅色 header 主题（如微信绿）自动变为黑色系 */
-    --color-header-chip: color-mix(in srgb, var(--color-header-text) 10%, transparent);
-    --color-header-chip-hover: color-mix(in srgb, var(--color-header-text) 15%, transparent);
-    --color-bg: #f8fafc;
-    --color-bg-elevated: #ffffff;
-    --color-bg-subtle: #f1f5f9;
-    --color-bg-input: #ffffff;
-    --color-text: #1e293b;
-    --color-text-muted: #64748b;
-    --color-text-inverted: #ffffff;
-    --color-border: #e2e8f0;
-    --color-border-light: #f1f5f9;
-    --color-success: #10b981;
-    --color-warning: #f59e0b;
-    --color-danger: #ef4444;
-    --color-info: #3b82f6;
-    /* 派生色阶：由基础 token color-mix 派生，修改基础色即全局联动 */
-    --color-primary-bright: #34d399;
-    --color-primary-border: color-mix(in srgb, var(--color-primary) 30%, transparent);
-    --color-warning-hover: #d97706;
-    --color-warning-subtle: color-mix(in srgb, var(--color-warning) 12%, transparent);
-    --color-warning-border: color-mix(in srgb, var(--color-warning) 30%, transparent);
-    --color-danger-hover: #dc2626;
-    --color-danger-soft: color-mix(in srgb, var(--color-danger) 40%, white);
-    --color-danger-subtle: color-mix(in srgb, var(--color-danger) 12%, transparent);
-    --color-danger-border: color-mix(in srgb, var(--color-danger) 30%, transparent);
-    --color-info-subtle: color-mix(in srgb, var(--color-info) 12%, transparent);
-    --color-info-border: color-mix(in srgb, var(--color-info) 30%, transparent);
-    --color-accent: #9333ea;
-    --color-accent-subtle: color-mix(in srgb, var(--color-accent) 12%, transparent);
-    --color-neutral-border: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
-    /* 图表分类色（analytics 图表引用；主题块可整组覆盖） */
-    --chart-1: #10b981;
-    --chart-2: #3b82f6;
-    --chart-3: #f59e0b;
-    --chart-4: #ef4444;
-    --chart-5: #8b5cf6;
-    --chart-6: #ec4899;
-    --chart-7: #06b6d4;
-    --chart-8: #84cc16;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-    --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-    --shadow-float: 0 -10px 24px rgba(15, 23, 42, 0.08);
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 10px;
-    --radius-full: 9999px;
-    --transition: 0.15s ease-in-out;
-    --transition-slow: 0.3s ease-in-out;
+    /* 品牌紫：前景（文字 / 图标 / 描边）与实底（按钮）在深色下取值不同（前景 #A375FF，实底 #7520F5） */
+    --color-primary: var(--colorCompoundBrandForeground1);
+    --color-primary-hover: var(--colorCompoundBrandForeground1Hover);
+    --color-primary-bg: var(--colorBrandBackground);
+    --color-primary-bg-hover: var(--colorBrandBackgroundHover);
+    /* 勾选框、开关、进度条、扫描线等「标记」的品牌填充 */
+    --color-primary-fill: var(--colorCompoundBrandBackground);
+    --color-primary-light: var(--colorBrandBackground2);
+    --color-primary-border: var(--colorBrandStroke2);
+    /* 顶栏（A2 改造前的过渡值，随 A2 删除） */
+    --color-header: var(--loop-app-bg);
+    --color-header-text: var(--colorNeutralForeground1);
+    --color-header-text-muted: var(--colorNeutralForeground3);
+    --color-header-chip: var(--colorSubtleBackgroundHover);
+    --color-header-chip-hover: var(--colorSubtleBackgroundPressed);
+    --color-bg: var(--loop-app-bg);
+    --color-bg-elevated: var(--colorNeutralBackground1);
+    --color-bg-subtle: var(--colorNeutralBackground3);
+    --color-bg-hover: var(--colorSubtleBackgroundHover);
+    --color-bg-pressed: var(--colorSubtleBackgroundPressed);
+    --color-text: var(--colorNeutralForeground1);
+    --color-text-muted: var(--colorNeutralForeground3);
+    --color-text-inverted: var(--colorNeutralForegroundOnBrand);
+    --color-border: var(--colorNeutralStroke2);
+    --color-border-light: var(--colorNeutralStroke3);
+    --color-success: var(--colorStatusSuccessForeground1);
+    --color-success-subtle: var(--colorStatusSuccessBackground1);
+    --color-success-border: var(--colorStatusSuccessBorder1);
+    --color-warning: var(--colorStatusWarningForeground1);
+    --color-warning-bg: var(--colorStatusWarningBackground3);
+    --color-warning-subtle: var(--colorStatusWarningBackground1);
+    --color-warning-border: var(--colorStatusWarningBorder1);
+    --color-danger: var(--colorStatusDangerForeground1);
+    --color-danger-bg: var(--colorStatusDangerBackground3);
+    --color-danger-bg-hover: var(--colorStatusDangerBackground3Hover);
+    --color-danger-subtle: var(--colorStatusDangerBackground1);
+    --color-danger-border: var(--colorStatusDangerBorder1);
+    /* 相机取景器是固定黑底：取深色主题的危险前景，不随主题变 */
+    --color-danger-on-black: #dc626d;
+    --color-info: var(--colorPaletteBlueBorderActive);
+    --color-info-border: var(--colorPaletteBlueBorderActive);
+    --color-info-subtle: var(--label-info-bg);
+    /* Loop 标签色（--fluidx-label-color-*）：深色下仍是浅底深字 */
+    --label-neutral-bg: #EAEEEF;
+    --label-neutral-fg: #4B5356;
+    --label-warning-bg: #F5EDCE;
+    --label-warning-fg: #6D5700;
+    --label-danger-bg: #E9C7CD;
+    --label-danger-fg: #750B1C;
+    --label-success-bg: #E5F2D3;
+    --label-success-fg: #406014;
+    --label-info-bg: #D0E7F8;
+    --label-info-fg: #005BA1;
+    --label-platform-bg: #D8CCE7;
+    --label-platform-fg: #401B6C;
+    /* 图表分类色：Fluent palette 各色相的 BorderActive，深色下自动换成深色值 */
+    --chart-1: var(--colorPaletteGreenBorderActive);
+    --chart-2: var(--colorPaletteBlueBorderActive);
+    --chart-3: var(--colorPaletteMarigoldBorderActive);
+    --chart-4: var(--colorPaletteRedBorderActive);
+    --chart-5: var(--colorPaletteLavenderBorderActive);
+    --chart-6: var(--colorPalettePinkBorderActive);
+    --chart-7: var(--colorPaletteTealBorderActive);
+    --chart-8: var(--colorPaletteForestBorderActive);
+    --shadow-sm: var(--shadow2);
+    --shadow-md: var(--shadow4);
+    --shadow-lg: var(--shadow16);
+    --shadow-modal: var(--shadow64);
+    --radius-sm: var(--borderRadiusMedium);
+    --radius-md: var(--borderRadiusLarge);
+    --radius-lg: var(--borderRadiusXLarge);
     --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK SC', Arial, sans-serif;
-    --font-mono: 'SF Mono', Monaco, Inconsolata, 'Fira Code', monospace;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --color-bg: #1b1b26;
-      --color-bg-elevated: #24283b;
-      --color-bg-subtle: #24283b;
-      --color-bg-input: #1a1b26;
-      --color-text: #c0caf5;
-      --color-text-muted: #a0a9cb;
-      --color-accent: #c084fc;
-      --color-border: rgba(255, 255, 255, 0.15);
-      --color-border-light: rgba(255, 255, 255, 0.08);
-      --color-primary-light: rgba(16, 185, 129, 0.15);
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    }
-  }
-
-  :root[data-theme="dark"],
-  :root.dark {
-    --color-bg: #1b1b26;
-    --color-bg-elevated: #24283b;
-    --color-bg-subtle: #24283b;
-    --color-bg-input: #1a1b26;
-    --color-text: #c0caf5;
-    --color-text-muted: #a0a9cb;
-    --color-accent: #c084fc;
-    --color-border: rgba(255, 255, 255, 0.15);
-    --color-border-light: rgba(255, 255, 255, 0.08);
-    --color-primary-light: rgba(16, 185, 129, 0.15);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
   }
 
   /* 触摸优化 - 移动端交互体验提升 */

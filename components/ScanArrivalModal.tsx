@@ -239,7 +239,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           />
           <button
             onClick={handleManualSubmit}
-            className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-text-inverted)] rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-[var(--color-primary-bg)] hover:bg-[var(--color-primary-bg-hover)] text-[var(--color-text-inverted)] rounded-lg text-sm font-medium transition-colors"
           >
             検索
           </button>
@@ -263,7 +263,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
               <div className="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-[var(--color-primary)] rounded-tr-sm" />
               <div className="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-[var(--color-primary)] rounded-bl-sm" />
               <div className="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-[var(--color-primary)] rounded-br-sm" />
-              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-[var(--color-primary)] animate-pulse" />
+              <div className="absolute inset-x-4 top-1/2 h-0.5 bg-[var(--color-primary-fill)] animate-pulse" />
             </div>
             <p className="absolute bottom-[calc(50%-80px)] text-white/50 text-xs">
               バーコードを枠に合わせてください
@@ -274,7 +274,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {/* Not found toast */}
         {notFound && (
           <div className="absolute inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex justify-center pointer-events-none">
-            <div className="bg-[var(--color-danger)] backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
+            <div className="bg-[var(--color-danger-bg)] backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
               未着荷の商品が見つかりませんでした
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {cameraError && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80">
             <div className="text-center px-6">
-              <svg className="w-12 h-12 text-[var(--color-danger-soft)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-[var(--color-danger-on-black)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <p className="text-white text-sm">{cameraError}</p>
@@ -365,7 +365,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] active:opacity-90 disabled:opacity-60 text-[var(--color-text-inverted)] font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
+            className="w-full py-3.5 bg-[var(--color-primary-bg)] hover:bg-[var(--color-primary-bg-hover)] active:opacity-90 disabled:opacity-60 text-[var(--color-text-inverted)] font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
           >
             {saving ? '処理中...' : '着荷確認する'}
           </button>

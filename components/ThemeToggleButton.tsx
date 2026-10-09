@@ -1,39 +1,12 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
-import { updateThemeColorMeta } from '@/lib/theme-palette';
+import { getResolvedTheme, setThemePreference } from '@/lib/theme-mode';
 
-const THEME_STORAGE_KEY = 'snutils-theme';
-
-function getCurrentTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-
-  const root = document.documentElement;
-  const theme = root.getAttribute('data-theme');
-  if (theme === 'dark' || theme === 'light') return theme;
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function applyTheme(theme: 'light' | 'dark') {
-  const root = document.documentElement;
-  root.setAttribute('data-theme', theme);
-  root.classList.toggle('dark', theme === 'dark');
-  document.body?.setAttribute('data-theme', theme);
-  // 浅 header 主题（如微信绿）深浅模式 header 颜色不同，meta 需跟随
-  updateThemeColorMeta();
-}
-
+/** 顶栏快速切换：把偏好显式设为与当前相反的浅色 / 深色（「跟随系统」在设置页选） */
 export default function ThemeToggleButton() {
   const handleToggle = () => {
-    const nextTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
-    applyTheme(nextTheme);
-
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    } catch {
-      // Ignore storage failures; the in-page theme still switches immediately.
-    }
+    setThemePreference(getResolvedTheme() === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -45,8 +18,8 @@ export default function ThemeToggleButton() {
         aria-label="切换深色/浅色模式"
         onClick={handleToggle}
       >
-        <Sun className="icon-sun" size={18} strokeWidth={2} />
-        <Moon className="icon-moon" size={18} strokeWidth={2} />
+        <Sun className="icon-sun" size={20} />
+        <Moon className="icon-moon" size={20} />
       </button>
     </div>
   );

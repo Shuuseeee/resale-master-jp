@@ -10,10 +10,9 @@ const walk = (d) =>
     if (e.isDirectory()) {
       if (!['node_modules', '.next', 'sw'].includes(e.name)) walk(p);
     } else if (
-      // lib/themes.ts 是主题注册表（预览色板 + headerColor 的 light/dark 键），与 token 定义源同等豁免
-      (/\.(tsx|ts)$/.test(e.name) && !/\.d\.ts$/.test(e.name) && p !== 'lib/themes.ts') ||
-      // CSS 也纳入扫描；globals.css / themes.css 是 token 定义源，允许 hex/rgba
-      (/\.css$/.test(e.name) && !['globals.css', 'themes.css'].includes(e.name))
+      (/\.(tsx|ts)$/.test(e.name) && !/\.d\.ts$/.test(e.name)) ||
+      // CSS 也纳入扫描；fluent-tokens.css / globals.css 是 token 定义源，允许 hex/rgba
+      (/\.css$/.test(e.name) && !['fluent-tokens.css', 'globals.css'].includes(e.name))
     ) files.push(p);
   });
 ['app', 'components', 'lib', 'assets'].forEach(walk);

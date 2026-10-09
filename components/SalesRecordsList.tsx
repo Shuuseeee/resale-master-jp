@@ -28,7 +28,7 @@ interface SalesRecordsListProps {
 const columnHelper = createColumnHelper<SalesRecordWithPlatform>();
 
 const profitClass = (value: number) =>
-  value >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]';
+  value >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]';
 
 export default function SalesRecordsList({ transactionId, transaction, onUpdate }: SalesRecordsListProps) {
   const [records, setRecords] = useState<SalesRecordWithPlatform[]>([]);

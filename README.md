@@ -97,7 +97,7 @@ resale-master-jp/
 │   ├── layout.tsx                    # 根布局、主题初始化、PWA 注册
 │   ├── manifest.ts                   # PWA Manifest
 │   ├── globals.css                   # 设计 token 定义源和全局组件样式
-│   ├── themes.css                    # 配色主题（data-palette）token 覆盖块
+│   ├── fluent-tokens.css             # Fluent / Loop 实测 token（浅色 / 深色）
 │   ├── api/
 │   │   ├── jan-product/[jan]/        # JAN 商品名补全（目录 → 缓存 → search API 兜底）
 │   │   ├── kaitorix/                 # 买取价查询（[jan]）、强制刷新、Open API 用量、每日 CSV 同步（catalog-sync）
@@ -116,8 +116,7 @@ resale-master-jp/
 │   ├── api/                          # 按业务域划分的 Supabase 调用
 │   ├── financial/calculator.ts       # ROI 和利润计算
 │   ├── supabase/client.ts            # Supabase SSR 客户端
-│   ├── themes.ts                     # 配色主题注册表
-│   ├── theme-palette.ts              # 配色主题切换与云同步
+│   ├── theme-mode.ts                 # 深浅色偏好（浅色 / 深色 / 跟随系统）
 │   └── theme.ts                      # 共用 Tailwind class 片段
 ├── public/
 │   ├── sw.js                         # Service Worker
@@ -146,7 +145,7 @@ resale-master-jp/
 - `points_platforms` / `purchase_platforms` / `selling_platforms`：积分、采购、销售平台配置。
 - `transaction_history`：交易字段变更历史。
 - `notifications` / `push_subscriptions`：通知与推送订阅（web 端已移除通知功能，表保留供原生 App 使用）。
-- `user_preferences`：用户级 UI 偏好，如交易列表列设置、配色主题。
+- `user_preferences`：用户级 UI 偏好，如交易列表列设置、默认支付方式（`theme_palette` 列仅原生 App 使用）。
 - `user_roles`：管理员角色。
 - `user_line_links`：用户与 LINE 账号绑定关系（web 端不使用）。
 - `kaitorix_price_cache` / `kaitorix_open_api_usage`：单个 JAN 的买取价缓存、Open API 每日用量。
@@ -187,8 +186,8 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 
 ## 设计系统
 
-- 所有颜色一律走 CSS 变量 token：基础值定义在 `app/globals.css`（含 `color-mix()` 派生色阶和图表色 `--chart-1..8`），配色主题覆盖块在 `app/themes.css`。
-- 主题为两个正交轴：深浅色（`data-theme`）+ 配色主题（`data-palette`，当前有翡翠绿 / Horizon 蓝 / Fluent 蓝 / 微信绿）。配色在设置页切换，即点即生效，localStorage 秒开 + `user_preferences` 跨设备同步。
+- UI 以 Microsoft Loop（Fluent 2）为蓝本，只有品牌紫一套配色。所有颜色一律走 CSS 变量 token：数值来自 `app/fluent-tokens.css`（Loop 实测的 Fluent token 浅色 / 深色全量），`app/globals.css` 的语义 token（`--color-*` / `--label-*` / `--chart-1..8`）只引用它们。
+- 深浅色支持浅色 / 深色 / 跟随系统：顶栏按钮快速切换，设置页「外观」可选跟随系统。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 `lucide-react`，避免新增手写 SVG。
 - 顶部桌面 banner、深浅色切换按钮、侧边栏和移动底部导航由 `components/Navigation.tsx` 统一控制。

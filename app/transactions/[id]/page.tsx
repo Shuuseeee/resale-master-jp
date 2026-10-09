@@ -288,7 +288,7 @@ export default function TransactionDetailPage() {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--color-text)] mb-2 line-clamp-3 sm:line-clamp-2 lg:line-clamp-none break-cjk-normal leading-tight">{transaction.product_name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {transaction.status === 'sold' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
                     已售出
                   </span>
                 ) : transaction.status === 'returned' ? (
@@ -296,11 +296,11 @@ export default function TransactionDetailPage() {
                     已退货
                   </span>
                 ) : transaction.status === 'awaiting_payment' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
                     待入账
                   </span>
                 ) : transaction.status === 'pending' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
                     未到货
                   </span>
                 ) : (
@@ -384,7 +384,7 @@ export default function TransactionDetailPage() {
               {(transaction.status === 'sold' || transaction.status === 'awaiting_payment') && (
                 <button
                   onClick={cancelSale}
-                  className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-warning)] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--color-warning-hover)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
+                  className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-warning-bg)] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-[1.08] active:brightness-[0.92] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -665,7 +665,7 @@ export default function TransactionDetailPage() {
             {transaction.image_url && (
               <div className="sn-detail-card">
                 <h3 className="sn-detail-title">采购凭证</h3>
-                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--color-header)]">
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--color-bg-subtle)]">
                   <Image
                     src={transaction.image_url}
                     alt="采购凭证"

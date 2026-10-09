@@ -15,7 +15,7 @@ export default function QuantityStepper({ value, onChange, min = 0, label }: Qua
         type="button"
         onClick={() => onChange(value - 1)}
         disabled={value <= min}
-        className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] disabled:opacity-40 md:h-8 md:w-8 md:text-sm"
+        className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)] disabled:opacity-40 md:h-8 md:w-8 md:text-sm"
         aria-label={label ? `减少数量 ${label}` : '减少数量'}
       >
         -
@@ -35,7 +35,7 @@ export default function QuantityStepper({ value, onChange, min = 0, label }: Qua
       <button
         type="button"
         onClick={() => onChange(value + 1)}
-        className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] md:h-8 md:w-8 md:text-sm"
+        className="h-11 w-11 text-base font-bold text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)] md:h-8 md:w-8 md:text-sm"
         aria-label={label ? `增加数量 ${label}` : '增加数量'}
       >
         +

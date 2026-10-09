@@ -88,7 +88,7 @@ export default function DashboardPage() {
         <div className="max-w-sm px-6 text-center">
           <p className="text-lg font-semibold text-[var(--color-text)]">仪表盘数据加载失败</p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">请检查网络后重试。</p>
-          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-subtle)]">
+          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-pressed)]">
             重试
           </button>
         </div>
@@ -124,10 +124,10 @@ export default function DashboardPage() {
               className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-colors ${
                 includePoints
                   ? 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]'
-                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)]'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]'
               }`}
             >
-              <span className={`relative inline-flex h-4 w-8 rounded-full ${includePoints ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-border)]'}`}>
+              <span className={`relative inline-flex h-4 w-8 rounded-full ${includePoints ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--color-border)]'}`}>
                 <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${includePoints ? 'left-4' : 'left-0.5'}`} />
               </span>
               包含积分价值

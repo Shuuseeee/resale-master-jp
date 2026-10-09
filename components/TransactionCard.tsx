@@ -133,11 +133,11 @@ const TransactionCard = memo(function TransactionCard({
       case 'pending':
         return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">未到货</span>;
       case 'in_stock':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-subtle)] text-[var(--color-primary)]">库存{remainingQty}</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)]">库存{remainingQty}</span>;
       case 'awaiting_payment':
         return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">待入账</span>;
       case 'sold':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-subtle)] text-[var(--color-success)]">已完成</span>;
+        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-light)] text-[var(--color-success)]">已完成</span>;
       case 'returned':
         return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-danger-subtle)] text-[var(--color-danger)]">已退货</span>;
       default:
@@ -163,8 +163,8 @@ const TransactionCard = memo(function TransactionCard({
         ${compareMode
           ? isSelected
             ? 'ring-2 ring-[var(--color-primary)] bg-[var(--color-primary-light)] cursor-pointer'
-            : 'cursor-pointer active:bg-[var(--color-bg-subtle)]'
-          : 'cursor-pointer active:bg-[var(--color-bg-subtle)]'
+            : 'cursor-pointer active:bg-[var(--color-bg-pressed)]'
+          : 'cursor-pointer active:bg-[var(--color-bg-pressed)]'
         }`}
       onClick={handleCardClick}
       onTouchStart={handleTouchStart}
@@ -178,7 +178,7 @@ const TransactionCard = memo(function TransactionCard({
       {compareMode && (
         <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10
           ${isSelected
-            ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+            ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
             : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
           }`}
         >
@@ -221,7 +221,7 @@ const TransactionCard = memo(function TransactionCard({
                   triggerHaptic('medium');
                   onMarkArrived(transaction.id);
                 }}
-                className="px-2 py-0.5 text-xs font-semibold bg-[var(--color-warning)] active:opacity-80 text-white rounded-[var(--radius-sm)] transition-colors"
+                className="px-2 py-0.5 text-xs font-semibold bg-[var(--color-warning-bg)] active:opacity-80 text-white rounded-[var(--radius-sm)] transition-colors"
               >
                 着荷
               </button>
@@ -323,7 +323,7 @@ const TransactionCard = memo(function TransactionCard({
         <div className="flex items-center justify-end gap-1 overflow-x-auto">
           <button
             onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickEdit?.(transaction.id); }}
-            className="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
+            className="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
           >
             编辑
           </button>
@@ -353,7 +353,7 @@ const TransactionCard = memo(function TransactionCard({
           )}
           <button
             onClick={(e) => { e.stopPropagation(); triggerHaptic('light'); onQuickCopy?.(transaction.id); }}
-            className="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-subtle)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
+            className="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
           >
             复制
           </button>

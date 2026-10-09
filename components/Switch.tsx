@@ -11,7 +11,7 @@ export default function Switch({
   /** 无障碍名称（屏幕阅读器读出） */
   label: string;
 }) {
-  const activeClass = tone === 'warning' ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]';
+  const activeClass = tone === 'warning' ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--color-primary-fill)]';
 
   return (
     <button

@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { SWUpdatePrompt } from '@/components/SWUpdatePrompt';
-import { ThemePaletteSync } from '@/components/ThemePaletteSync';
+import { ThemeSync } from '@/components/ThemeSync';
 import OfflineCacheProvider from '@/components/OfflineCacheProvider';
 import OfflineBanner from '@/components/OfflineBanner';
 import QueryInvalidationBridge from '@/components/QueryInvalidationBridge';
@@ -47,7 +47,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
           <OfflineCacheProvider>
             <PlatformsProvider>
               <BfcacheRefreshListener />
-              <ThemePaletteSync />
+              <ThemeSync />
               <SWUpdatePrompt />
               <OfflineBanner />
               <QueryInvalidationBridge />

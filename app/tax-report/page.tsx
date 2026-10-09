@@ -412,7 +412,7 @@ export default function TaxReportPage() {
         <div className="max-w-sm px-6 text-center">
           <p className="text-lg font-semibold text-[var(--color-text)]">税务报表加载失败</p>
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">请检查网络后重试。</p>
-          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-subtle)]">
+          <button onClick={() => refetch()} className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] active:bg-[var(--color-bg-pressed)]">
             重试
           </button>
         </div>

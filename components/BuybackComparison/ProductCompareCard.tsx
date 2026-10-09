@@ -61,7 +61,7 @@ export default function ProductCompareCard({ product, onQtyChange }: ProductComp
             </div>
             <div className="text-right">
               <div className="text-xs text-[var(--color-text-muted)]">预计利润</div>
-              <div className={`mt-0.5 font-mono text-sm font-semibold ${bestProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+              <div className={`mt-0.5 font-mono text-sm font-semibold ${bestProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                 {bestProfit >= 0 ? '+' : ''}{formatCurrency(bestProfit)}
               </div>
             </div>

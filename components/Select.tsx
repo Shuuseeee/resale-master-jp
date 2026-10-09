@@ -146,7 +146,7 @@ export default function Select({
                   className={`flex min-h-[40px] w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors ${
                     isSelected
                       ? 'bg-[var(--color-primary-light)] font-medium text-[var(--color-primary)]'
-                      : 'text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)]'
+                      : 'text-[var(--color-text)] hover:bg-[var(--color-bg-hover)]'
                   }`}
                 >
                   <span className="truncate">{opt.label}</span>

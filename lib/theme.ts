@@ -23,19 +23,16 @@ export const card = {
  */
 export const button = {
   // 主要按钮
-  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
-
-  // 成功按钮
-  success: 'px-5 py-2.5 text-sm bg-[var(--color-success)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary-bg)] to-[var(--color-primary-bg-hover)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 危险按钮
-  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-danger-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger-bg)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-danger-bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 次要按钮
-  secondary: 'px-5 py-2.5 text-sm bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-bg-subtle)] hover:border-[var(--color-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  secondary: 'px-5 py-2.5 text-sm bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
 
   // 幽灵按钮
-  ghost: 'px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)] font-medium transition-all',
+  ghost: 'px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded-[var(--radius-md)] font-medium transition-all',
 
   // 链接按钮
   link: 'text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium transition-colors',
@@ -45,12 +42,11 @@ export const button = {
  * 徽章样式 — 去掉 border，淡底色 pill
  */
 export const badge = {
-  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-warning-subtle)] text-[var(--color-warning)]',
-  success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-primary-subtle)] text-[var(--color-primary)]',
-  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-danger-subtle)] text-[var(--color-danger)]',
-  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-info-subtle)] text-[var(--color-info)]',
-  neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)]',
-  awaiting: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--color-accent-subtle)] text-[var(--color-accent)]',
+  pending: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-warning-bg)] text-[var(--label-warning-fg)]',
+  success: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-success-bg)] text-[var(--label-success-fg)]',
+  error: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-danger-bg)] text-[var(--label-danger-fg)]',
+  info: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-info-bg)] text-[var(--label-info-fg)]',
+  neutral: 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--label-neutral-bg)] text-[var(--label-neutral-fg)]',
 };
 
 /**
@@ -88,7 +84,7 @@ export const tabs = {
   tab: {
     base: 'flex-1 px-3 py-1.5 rounded-[var(--radius-md)] font-medium text-[13px] transition-all',
     active: 'bg-[var(--color-primary-light)] text-[var(--color-primary)]',
-    inactive: 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text)]',
+    inactive: 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]',
   },
 };
 
@@ -120,7 +116,7 @@ export const table = {
   th: 'px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider whitespace-nowrap',
   sortBtn: 'inline-flex items-center gap-1 hover:text-[var(--color-text)] transition-colors uppercase tracking-wider',
   tbody: 'divide-y divide-[var(--color-border)]',
-  tr: 'transition-colors hover:bg-[var(--color-bg-subtle)]',
+  tr: 'transition-colors hover:bg-[var(--color-bg-hover)]',
   trSelected: 'bg-[var(--color-primary-light)]',
   trSelectable: 'cursor-pointer',
   trChild: 'bg-[var(--color-bg-subtle)]',
@@ -131,7 +127,7 @@ export const table = {
  * 提示消息样式 — 无 border，淡底色
  */
 export const alert = {
-  success: 'mb-4 bg-[var(--color-primary-subtle)] border border-[var(--color-primary-border)] text-[var(--color-primary)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
+  success: 'mb-4 bg-[var(--color-success-subtle)] border border-[var(--color-success-border)] text-[var(--color-success)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
   error: 'mb-4 bg-[var(--color-danger-subtle)] border border-[var(--color-danger-border)] text-[var(--color-danger)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
   warning: 'mb-4 bg-[var(--color-warning-subtle)] border border-[var(--color-warning-border)] text-[var(--color-warning)] px-4 py-3 rounded-[var(--radius-md)] text-sm',
   info: 'mb-4 bg-[var(--color-info-subtle)] border border-[var(--color-info-border)] text-[var(--color-info)] px-4 py-3 rounded-[var(--radius-md)] text-sm',

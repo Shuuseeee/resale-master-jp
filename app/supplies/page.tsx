@@ -207,7 +207,7 @@ export default function SuppliesPage() {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 filter === 'all'
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--color-primary-bg)] text-white'
                   : 'bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80'
               }`}
             >
@@ -219,7 +219,7 @@ export default function SuppliesPage() {
                 onClick={() => setFilter(key)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === key
-                    ? 'bg-[var(--color-primary)] text-white'
+                    ? 'bg-[var(--color-primary-bg)] text-white'
                     : 'bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80'
                 }`}
               >

@@ -26,32 +26,6 @@ export async function saveColumnPreferences(cols: ColumnConfig[]): Promise<{ err
   return { error: error ?? undefined };
 }
 
-// —— 配色主题（data-palette 轴，见 lib/themes.ts）——
-
-export async function getThemePalette(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('user_preferences')
-    .select('theme_palette')
-    .single();
-
-  if (error || !data?.theme_palette) return null;
-  return data.theme_palette as string;
-}
-
-export async function saveThemePalette(palette: string): Promise<{ error?: unknown }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated' };
-
-  const { error } = await supabase
-    .from('user_preferences')
-    .upsert(
-      { user_id: user.id, theme_palette: palette, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-
-  return { error: error ?? undefined };
-}
-
 // —— 默认支付卡（新建交易时自动选中；user_preferences.default_payment_method_id）——
 
 /** 读取默认卡 id；没有设置、或读取失败（如线上库还没加这一列）时返回 null，不影响其它功能 */

@@ -382,7 +382,7 @@ export default function MultiItemSaleForm({
                 <div className="flex items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] px-3 py-2 text-xs text-[var(--color-text-muted)]">
                   <span>售价 ¥{totalSell.toLocaleString()}</span>
                   {preview && (
-                    <span className={preview.total_profit >= 0 ? 'text-[var(--color-primary)] font-semibold' : 'text-[var(--color-danger)] font-semibold'}>
+                    <span className={preview.total_profit >= 0 ? 'text-[var(--color-success)] font-semibold' : 'text-[var(--color-danger)] font-semibold'}>
                       利润 ¥{Math.round(preview.total_profit).toLocaleString()}
                       <span className="ml-1 font-normal">({preview.roi.toFixed(1)}%)</span>
                     </span>
@@ -408,7 +408,7 @@ export default function MultiItemSaleForm({
           </div>
           <div>
             <p className="text-xs text-[var(--color-text-muted)]">预计利润</p>
-            <p className={`font-bold ${totals.totalProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+            <p className={`font-bold ${totals.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
               ¥{Math.round(totals.totalProfit).toLocaleString()}
             </p>
           </div>

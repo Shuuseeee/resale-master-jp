@@ -211,7 +211,7 @@ export default function PaymentMethodsSection() {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {methods.map(method => (
-              <tr key={method.id} className="transition-colors hover:bg-[var(--color-bg-subtle)]">
+              <tr key={method.id} className="transition-colors hover:bg-[var(--color-bg-hover)]">
                 <td className="truncate px-5 py-3 text-sm font-semibold text-[var(--color-text)]">{nameCell(method)}</td>
                 <td className="px-5 py-3 text-center text-sm font-semibold text-[var(--color-primary)]">{formatPointRate(method.point_rate)}</td>
                 <td className="px-5 py-3 text-center">{statusBadge(method)}</td>
@@ -273,7 +273,7 @@ export default function PaymentMethodsSection() {
                     key={p.name}
                     type="button"
                     onClick={() => openDialog(null, p)}
-                    className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-primary-border)] hover:bg-[var(--color-primary-subtle)] hover:text-[var(--color-primary)]"
+                    className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text)] transition-colors hover:border-[var(--color-primary-border)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]"
                   >
                     + {p.name}
                   </button>

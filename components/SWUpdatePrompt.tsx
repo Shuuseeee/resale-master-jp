@@ -45,7 +45,7 @@ export function SWUpdatePrompt() {
         style={{
           appearance: 'none',
           border: 'none',
-          background: 'var(--color-primary)',
+          background: 'var(--color-primary-bg)',
           color: 'var(--color-text-inverted)',
           borderRadius: '0.375rem',
           padding: '0.375rem 0.875rem',

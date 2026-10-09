@@ -48,7 +48,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
                 <div className="font-mono text-[var(--color-text)]">
                   {formatCurrency(item.storePrice)}/件
                 </div>
-                <div className={`text-xs font-mono ${item.profit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+                <div className={`text-xs font-mono ${item.profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
                   利润 {item.profit >= 0 ? '+' : ''}{formatCurrency(item.profit)}
                 </div>
               </div>
@@ -67,7 +67,7 @@ export default function StoreRowMobile({ row, bestRevenue }: { row: StoreRow; be
 
       <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
         <span className="text-sm text-[var(--color-text-muted)]">合计利润</span>
-        <span className={`font-mono text-base font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-primary)]' : 'text-[var(--color-danger)]'}`}>
+        <span className={`font-mono text-base font-bold ${row.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
           {row.totalProfit >= 0 ? '+' : ''}{formatCurrency(row.totalProfit)}
         </span>
       </div>

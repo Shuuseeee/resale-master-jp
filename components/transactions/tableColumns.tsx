@@ -83,11 +83,11 @@ function statusBadge(tx: TransactionWithProfit) {
     case 'pending':
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">未到货</span>;
     case 'in_stock':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-subtle)] rounded whitespace-nowrap">库存{remainingQty}</span>;
+      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-light)] rounded whitespace-nowrap">库存{remainingQty}</span>;
     case 'awaiting_payment':
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">待入账</span>;
     case 'sold':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[var(--color-primary-subtle)] rounded whitespace-nowrap">已完成</span>;
+      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[var(--color-primary-light)] rounded whitespace-nowrap">已完成</span>;
     case 'returned':
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-danger)] bg-[var(--color-danger-subtle)] rounded whitespace-nowrap">已退货</span>;
     default:
@@ -113,7 +113,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         >
           <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
             deps.allVisibleSelected
-              ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+              ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
               : deps.someVisibleSelected
                 ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
                 : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
@@ -122,7 +122,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
             )}
             {deps.someVisibleSelected && (
-              <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
+              <div className="w-2 h-0.5 bg-[var(--color-primary-fill)] rounded" />
             )}
           </div>
         </button>
@@ -142,7 +142,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                 allSelected
-                  ? 'bg-[var(--color-primary)] border-[var(--color-primary)]'
+                  ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]'
                   : someSelected
                     ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]'
                     : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
@@ -151,7 +151,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 )}
                 {someSelected && (
-                  <div className="w-2 h-0.5 bg-[var(--color-primary)] rounded" />
+                  <div className="w-2 h-0.5 bg-[var(--color-primary-fill)] rounded" />
                 )}
               </div>
             </button>
@@ -160,7 +160,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         const isSelected = deps.selectedIds.has(row.original.tx.id);
         return (
           <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-            isSelected ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
+            isSelected ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary-fill)]' : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
           }`}>
             {isSelected && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </div>
@@ -225,7 +225,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
                   <span className="text-sm font-semibold text-[var(--color-text)] truncate max-w-[200px]">
                     {group.productName}
                   </span>
-                  <span className="flex-shrink-0 text-xs bg-[var(--color-primary)] text-[var(--color-text-inverted)] px-1.5 py-0.5 rounded-full font-medium">
+                  <span className="flex-shrink-0 text-xs bg-[var(--color-primary-bg)] text-[var(--color-text-inverted)] px-1.5 py-0.5 rounded-full font-medium">
                     ×{group.transactions.length}
                   </span>
                 </div>
@@ -374,7 +374,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
               e.stopPropagation();
               deps.onMarkArrived(tx.id);
             }}
-            className="px-2 py-1 text-xs font-semibold bg-[var(--color-warning)] hover:bg-[var(--color-warning-hover)] text-white rounded transition-colors whitespace-nowrap"
+            className="px-2 py-1 text-xs font-semibold bg-[var(--color-warning-bg)] hover:brightness-[1.08] active:brightness-[0.92] text-white rounded transition-colors whitespace-nowrap"
           >
             着荷
           </button>
@@ -506,10 +506,10 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         return (
           <div className="flex flex-col gap-0.5 min-w-[90px]">
             <div className="flex gap-1">
-              <Link href={`/transactions/${tx.id}`} className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center transition-colors whitespace-nowrap">详情</Link>
+              <Link href={`/transactions/${tx.id}`} className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded text-center transition-colors whitespace-nowrap">详情</Link>
               <button
                 onClick={(e) => { e.stopPropagation(); deps.onQuickEdit(tx.id); }}
-                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
               >
                 编辑
               </button>
@@ -534,7 +534,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
             <div className="flex gap-1">
               <button
                 onClick={(e) => { e.stopPropagation(); deps.onQuickCopy(tx.id); }}
-                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-subtle)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
+                className="flex-1 px-1 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded text-center cursor-pointer transition-colors whitespace-nowrap"
               >
                 复制
               </button>
