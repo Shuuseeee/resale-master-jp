@@ -16,17 +16,19 @@ import { percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMetho
 interface FormState {
   name: string;
   point_rate: string; // 百分数，如 "1.5"
+  card_last4: string;
   card_points_platform_id: string;
   is_active: boolean;
 }
 
-const EMPTY_FORM: FormState = { name: '', point_rate: '1', card_points_platform_id: '', is_active: true };
+const EMPTY_FORM: FormState = { name: '', point_rate: '1', card_last4: '', card_points_platform_id: '', is_active: true };
 
 function formFromMethod(method: PaymentMethod | null): FormState {
   if (!method) return EMPTY_FORM;
   return {
     name: method.name,
     point_rate: pointRateToPercent(method.point_rate).toString(),
+    card_last4: method.card_last4 || '',
     card_points_platform_id: method.card_points_platform_id || '',
     is_active: method.is_active,
   };
@@ -73,6 +75,8 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     const percent = parseFloat(form.point_rate);
     if (!name) { setError('请填写名称'); return; }
     if (!Number.isFinite(percent) || percent < 0) { setError('返点率请填写 0 或以上的数字'); return; }
+    const last4 = form.card_last4.trim();
+    if (last4 && !/^\d{4}$/.test(last4)) { setError('卡号后 4 位请填写 4 位数字，或留空'); return; }
 
     setSaving(true);
     setError(null);
@@ -81,6 +85,8 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
       point_rate: percentToPointRate(percent),
       card_points_platform_id: form.card_points_platform_id || null,
       is_active: form.is_active,
+      // 只在填了 / 改了后 4 位时才提交这一列：线上库还没加这一列时，不碰它的保存照常成功
+      ...(last4 !== initial.card_last4 ? { card_last4: last4 || null } : {}),
     };
     // 还款周期三列（closing_day / payment_day / payment_same_month）不提交：web 不再管理，原生仍在用，不能覆盖
     const { data, error: saveError } = method
@@ -155,6 +161,20 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
               placeholder="例如：楽天カード"
               autoFocus={!method}
             />
+          </div>
+
+          <div>
+            <label className="sn-form-label">卡号后 4 位（可选）</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={form.card_last4}
+              onChange={e => update({ card_last4: e.target.value.replace(/\D/g, '') })}
+              className={field}
+              placeholder="例如：4821"
+            />
+            <p className="sn-form-muted">只用来区分名字相近的卡，只保存这 4 位。</p>
           </div>
 
           <div>

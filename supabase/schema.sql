@@ -212,7 +212,8 @@ CREATE TABLE public.payment_methods (
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   user_id uuid,
-  card_points_platform_id uuid
+  card_points_platform_id uuid,
+  card_last4 text
 );
 
 CREATE TABLE public.points_platforms (
@@ -429,6 +430,8 @@ ALTER TABLE public.jan_thumbnail_queue ADD CONSTRAINT jan_thumbnail_queue_status
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_last_fetch_source_check CHECK ((last_fetch_source = ANY (ARRAY['scraper'::text, 'official'::text, 'cache'::text])));
 ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'completed'::text, 'failed'::text])));
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_type_check CHECK ((type = ANY (ARRAY['card'::text, 'bank'::text, 'wallet'::text])));
+-- 卡号后 4 位（可选，只存 4 位数字，用来区分多张卡）
+ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_card_last4_check CHECK ((card_last4 IS NULL OR card_last4 ~ '^[0-9]{4}$'));
 ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returned_check CHECK ((quantity_returned > 0));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_platform_fee_check CHECK ((platform_fee >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_quantity_sold_check CHECK ((quantity_sold > 0));

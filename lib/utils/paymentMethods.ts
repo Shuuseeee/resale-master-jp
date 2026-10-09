@@ -1,12 +1,13 @@
 // lib/utils/paymentMethods.ts
-// 支付方式的展示工具：停用标注、返点率与百分数的换算。
+// 支付方式的展示工具：显示名（后 4 位、停用标注）、返点率与百分数的换算。
 
 /**
- * 停用的卡仍会被历史交易引用（编辑旧交易、按卡筛选历史），所以下拉 / 筛选里要能看到它，
- * 用名称后的标注和启用中的卡区分开。
+ * 下拉 / 筛选里的显示名：「楽天カード ····4821」。
+ * 停用的卡仍会被历史交易引用（编辑旧交易、按卡筛选历史），所以也要能看到，名称后标注「（已停用）」。
  */
-export function paymentMethodDisplayName(pm: { name: string; is_active?: boolean | null }): string {
-  return pm.is_active === false ? `${pm.name}（已停用）` : pm.name;
+export function paymentMethodDisplayName(pm: { name: string; is_active?: boolean | null; card_last4?: string | null }): string {
+  const base = pm.card_last4 ? `${pm.name} ····${pm.card_last4}` : pm.name;
+  return pm.is_active === false ? `${base}（已停用）` : base;
 }
 
 /**

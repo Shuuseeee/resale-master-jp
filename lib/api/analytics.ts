@@ -701,7 +701,7 @@ export async function getAllPaymentMethods(): Promise<PaymentMethodFilter[]> {
   try {
     const { data, error } = await supabase
       .from('payment_methods')
-      .select('id, name, is_active')
+      .select('*')
       .order('is_active', { ascending: false })
       .order('name');
 

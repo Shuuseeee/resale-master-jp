@@ -310,7 +310,7 @@ function TransactionsContent() {
     // 含停用的卡（排在后面、名称带标注）：历史交易仍引用它们，要能按它们筛选
     const { data, error } = await supabase
       .from('payment_methods')
-      .select('id, name, is_active')
+      .select('*')
       .order('is_active', { ascending: false })
       .order('name');
 

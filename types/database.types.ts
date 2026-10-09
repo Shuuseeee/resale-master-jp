@@ -69,6 +69,8 @@ export interface PaymentMethod {
   payment_same_month: boolean; // true: 当月还款, false: 次月还款
   point_rate: number; // 信用卡返点率（小数，0.01 = 1%）；新建交易时用来计算预期卡积分
   card_points_platform_id: string | null; // 关联的积分平台ID
+  /** 卡号后 4 位（可选，用来区分多张卡）；线上库加列前读不到，按可选处理 */
+  card_last4?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

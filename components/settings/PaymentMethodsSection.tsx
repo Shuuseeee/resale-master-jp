@@ -173,7 +173,10 @@ export default function PaymentMethodsSection() {
             {cardMethods.map(method => (
               <div key={method.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] px-4 py-3">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-[var(--color-text)]">{method.name}</div>
+                  <div className="truncate text-sm font-semibold text-[var(--color-text)]">
+                    {method.name}
+                    {method.card_last4 && <span className="ml-2 font-mono text-xs font-normal text-[var(--color-text-muted)]">····{method.card_last4}</span>}
+                  </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
                     <span>返点率 <span className="font-semibold text-[var(--color-primary)]">{formatPointRate(method.point_rate)}</span></span>
                     {defaultControl(method)}
@@ -204,7 +207,10 @@ export default function PaymentMethodsSection() {
               <tbody className="divide-y divide-[var(--color-border)]">
                 {cardMethods.map(method => (
                   <tr key={method.id} className="transition-colors hover:bg-[var(--color-bg-subtle)]">
-                    <td className="px-5 py-3 text-sm font-semibold text-[var(--color-text)]">{method.name}</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-[var(--color-text)]">
+                      {method.name}
+                      {method.card_last4 && <span className="ml-2 font-mono text-xs font-normal text-[var(--color-text-muted)]">····{method.card_last4}</span>}
+                    </td>
                     <td className="px-5 py-3 text-center text-sm font-semibold text-[var(--color-primary)]">
                       {formatPointRate(method.point_rate)}
                     </td>
