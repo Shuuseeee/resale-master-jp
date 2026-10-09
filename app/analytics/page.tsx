@@ -41,6 +41,7 @@ import {
 } from '@/lib/api/analytics';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { layout, heading, input } from '@/lib/theme';
+import PageSkeleton from '@/components/Skeleton';
 import PageHeader from '@/components/shell/PageHeader';
 import PullToRefresh from '@/components/PullToRefresh';
 import OfflineNoCache from '@/components/OfflineNoCache';
@@ -165,13 +166,7 @@ export default function AnalyticsPage() {
   if (isPending && !report && fetchStatus === 'paused' && !online) return <OfflineNoCache what="分析数据" />;
 
   if (isPending && !report) {
-    return (
-      <div className={layout.page}>
-        <div className="flex items-center justify-center min-h-screen md:min-h-full">
-          <div className="text-[var(--color-text)] text-xl">加载中...</div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   // 准备成本结构饼图数据

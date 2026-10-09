@@ -48,6 +48,11 @@ function subscribeNothing() {
   return () => {};
 }
 
+/** 文档头插槽（服务端渲染与首次水合时为 null，挂载后取到外壳里的 #app-doc-header） */
+export function useDocHeaderSlot() {
+  return useSyncExternalStore(subscribeNothing, () => document.getElementById(DOC_HEADER_ID), () => null);
+}
+
 /** 多个媒体查询的匹配结果，拼成「0 / 1」字符串作为快照（引用稳定）；服务端渲染时都按不匹配 */
 function useMediaMatches(queries: string[]) {
   const key = queries.join('\n');
@@ -145,7 +150,7 @@ function MoreButton({ open, onToggle, buttonRef }: { open: boolean; onToggle: ()
 
 export default function PageHeader({ crumbs, actions = [] }: { crumbs: PageCrumb[]; actions?: PageAction[] }) {
   const router = useRouter();
-  const slot = useSyncExternalStore(subscribeNothing, () => document.getElementById(DOC_HEADER_ID), () => null);
+  const slot = useDocHeaderSlot();
   const queries = Array.from(new Set(actions.flatMap(a => (a.media ? [a.media] : []))));
   const matches = useMediaMatches(queries);
   const available = actions.filter(a => !a.media || matches[queries.indexOf(a.media)] === '1');

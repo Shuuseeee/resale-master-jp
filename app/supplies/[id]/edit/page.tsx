@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { SuppliesCostFormData } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import PageSkeleton from '@/components/Skeleton';
 import PageHeader from '@/components/shell/PageHeader';
 import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
@@ -113,7 +114,7 @@ export default function EditSupplyPage() {
   const field = input.base + ' w-full';
 
   if (loading) {
-    return <div className={layout.page + ' flex min-h-screen md:min-h-full items-center justify-center text-[var(--color-text-muted)]'}>加载中...</div>;
+    return <PageSkeleton />;
   }
 
   if (errors.fetch) {

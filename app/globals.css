@@ -361,6 +361,134 @@
     margin-right: 6px;
   }
 
+  /* ── 页面级骨架屏（components/Skeleton.tsx；补测-2 #6 Loop 切页骨架屏，颜色与流光 design-spec/components/21-misc.css） ── */
+  .skeleton-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--borderRadiusMedium);
+    background: var(--loop-skeleton);
+  }
+
+  /* 流光默认停在块左侧外：系统「减少动态效果」把动画压到 0.01ms 后停在这里，只剩底色块（Loop 实测） */
+  .skeleton-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(to right, transparent 0%, var(--loop-skeleton) 50%, transparent 100%);
+    transform: translate(-100%);
+    animation: skeleton-wave 3s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-wave {
+    from {
+      transform: translate(-100%);
+    }
+    to {
+      transform: translate(100%);
+    }
+  }
+
+  /* 文档头一行 8 块（高 55、左右 16、间距 10；右侧 4 块靠右，两个头像之间 2） */
+  .doc-header-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+    padding: 0 16px;
+  }
+
+  .doc-header-skeleton__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .doc-header-skeleton__name {
+    width: 104px;
+    height: 12px;
+  }
+
+  .doc-header-skeleton__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .doc-header-skeleton__page {
+    width: 132px;
+    height: 12px;
+  }
+
+  .doc-header-skeleton__avatars {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  .doc-header-skeleton__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+  }
+
+  .doc-header-skeleton__pill {
+    width: 70px;
+    height: 24px;
+    border-radius: 10000px;
+  }
+
+  .doc-header-skeleton__more {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* 正文 5 块：标题 58%×34，段落 92（间距 34），两列 76（间距 22、列间 16），大块 120（间距 22）；
+     手机沿用页面容器的 24 / 16，桌面 max-width 1080 居中、上 56、左右 40，≥1600 左右 80（断点用户确认） */
+  .page-skeleton {
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+  }
+
+  @media (min-width: 768px) {
+    .page-skeleton {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 56px 40px 0;
+    }
+  }
+
+  @media (min-width: 1600px) {
+    .page-skeleton {
+      padding: 56px 80px 0;
+    }
+  }
+
+  .page-skeleton__title {
+    width: 58%;
+    height: 34px;
+  }
+
+  .page-skeleton__para {
+    height: 92px;
+    margin-top: 34px;
+  }
+
+  .page-skeleton__cols {
+    display: flex;
+    gap: 16px;
+    margin-top: 22px;
+  }
+
+  .page-skeleton__cols > .skeleton-item {
+    flex: 1 1 0%;
+    height: 76px;
+  }
+
+  .page-skeleton__block {
+    height: 120px;
+    margin-top: 22px;
+  }
+
   /* 测量层：与实际按钮同样式，只用来量宽度决定哪些操作收进「…」 */
   .doc-header__measure {
     position: absolute;

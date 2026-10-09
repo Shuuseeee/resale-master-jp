@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
 import { formatCurrency, getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
 import { button, card, heading, input, layout } from '@/lib/theme';
+import PageSkeleton from '@/components/Skeleton';
 import Select from '@/components/Select';
 import type { Transaction } from '@/types/database.types';
 import {
@@ -372,11 +373,7 @@ function KaitorixPricesContent() {
   if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="买取价格数据" />;
 
   if (loading) {
-    return (
-      <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="text-[var(--color-text)]">加载买取价格数据...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (

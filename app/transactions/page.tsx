@@ -27,6 +27,7 @@ import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calc
 import { markTransactionArrived, confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
+import PageSkeleton from '@/components/Skeleton';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
@@ -1090,17 +1091,7 @@ function TransactionsContent() {
   if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="交易数据" />;
 
   if (loading) {
-    return (
-      <div className={layout.page + ' flex items-center justify-center'}>
-        <div className="flex items-center gap-3 text-[var(--color-text)]">
-          <svg className="animate-spin h-8 w-8 text-[var(--color-primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-lg font-medium">加载中...</span>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
@@ -2139,17 +2130,7 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
 export default function TransactionsPage() {
   return (
     <>
-      <Suspense fallback={
-        <div className={layout.page + ' flex items-center justify-center'}>
-          <div className="flex items-center gap-3 text-[var(--color-text)]">
-            <svg className="animate-spin h-8 w-8 text-[var(--color-primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="text-lg font-medium">加载中...</span>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<PageSkeleton />}>
         <TransactionsContent />
       </Suspense>
     </>
