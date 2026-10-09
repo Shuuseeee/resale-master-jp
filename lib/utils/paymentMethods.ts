@@ -62,3 +62,18 @@ export function percentToPointRate(percent: number): number {
 export function formatPointRate(rate: number | null | undefined): string {
   return `${pointRateToPercent(rate)}%`;
 }
+
+/**
+ * 某支付方式在某采购平台的实际返点率：有店铺特殊规则用规则，否则用支付方式的默认返点率。
+ * ruleApplied 用于在表单里提示「按店铺规则」。
+ */
+export function effectivePointRate(
+  pm: { id: string; point_rate: number },
+  purchasePlatformId: string | null | undefined,
+  rules: ReadonlyArray<{ payment_method_id: string; purchase_platform_id: string; point_rate: number }>,
+): { rate: number; ruleApplied: boolean } {
+  const rule = purchasePlatformId
+    ? rules.find(r => r.payment_method_id === pm.id && r.purchase_platform_id === purchasePlatformId)
+    : undefined;
+  return rule ? { rate: Number(rule.point_rate), ruleApplied: true } : { rate: pm.point_rate, ruleApplied: false };
+}

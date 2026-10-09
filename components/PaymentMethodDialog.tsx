@@ -1,17 +1,19 @@
 'use client';
 
 // 支付方式的新增 / 编辑弹窗（设置页「支付方式」区块内使用）。
-// 字段：类型、名称、卡号后 4 位（仅信用卡）、返点率、返点积分平台、启用状态（开关）。
+// 字段：类型、名称、卡号后 4 位（仅信用卡）、返点率、店铺特殊规则、返点积分平台、启用状态（开关）。
 // 有未保存修改时关闭会二次确认。
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod, PaymentMethodType, PointsPlatform } from '@/types/database.types';
+import type { PaymentMethod, PaymentMethodStoreRate, PaymentMethodType, PointsPlatform } from '@/types/database.types';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import Select from '@/components/Select';
 import Switch from '@/components/Switch';
 import { button, input } from '@/lib/theme';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
+import { usePlatforms } from '@/contexts/PlatformsContext';
+import { fetchStoreRates, syncStoreRates } from '@/lib/api/payment-method-rules';
 import { PAYMENT_METHOD_TYPE_LABELS, percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMethods';
 
 interface FormState {
@@ -60,6 +62,17 @@ interface PaymentMethodDialogProps {
   onDeleted: (id: string) => void;
 }
 
+/** 编辑中的一条店铺规则（percent 为百分数字符串） */
+interface RuleRow {
+  key: string;
+  purchase_platform_id: string;
+  percent: string;
+}
+
+function rulesToRows(rules: PaymentMethodStoreRate[]): RuleRow[] {
+  return rules.map(r => ({ key: r.id, purchase_platform_id: r.purchase_platform_id, percent: pointRateToPercent(r.point_rate).toString() }));
+}
+
 export default function PaymentMethodDialog({ isOpen, method, preset = null, pointsPlatforms, onClose, onSaved, onDeleted }: PaymentMethodDialogProps) {
   const initial = useMemo(() => formFromMethod(method, preset), [method, preset]);
   const [form, setForm] = useState<FormState>(initial);
@@ -69,6 +82,12 @@ export default function PaymentMethodDialog({ isOpen, method, preset = null, poi
   const [confirmDelete, setConfirmDelete] = useState(false);
   const guard = useModalCloseGuard(onClose);
   const { setIsDirty } = guard;
+  const { purchasePlatforms } = usePlatforms();
+  // 店铺特殊规则：打开时从库里读出（新增时为空）；existingRules 用于保存时对比增删
+  const [existingRules, setExistingRules] = useState<PaymentMethodStoreRate[]>([]);
+  const [initialRuleRows, setInitialRuleRows] = useState<RuleRow[]>([]);
+  const [ruleRows, setRuleRows] = useState<RuleRow[]>([]);
+  const [rulesUnavailable, setRulesUnavailable] = useState(false);
 
   // 每次打开时用当前卡（或空表单）重置
   useEffect(() => {
@@ -80,8 +99,29 @@ export default function PaymentMethodDialog({ isOpen, method, preset = null, poi
   }, [isOpen, initial]);
 
   useEffect(() => {
-    setIsDirty(JSON.stringify(form) !== JSON.stringify(initial));
-  }, [form, initial, setIsDirty]);
+    if (!isOpen) return;
+    setExistingRules([]); setInitialRuleRows([]); setRuleRows([]); setRulesUnavailable(false);
+    if (!method) return;
+    let cancelled = false;
+    fetchStoreRates(method.id).then(({ data, error: rulesError }) => {
+      if (cancelled) return;
+      // 线上库还没建规则表时读取会失败：不显示规则编辑，其它字段照常可用
+      if (rulesError) { setRulesUnavailable(true); return; }
+      setExistingRules(data);
+      setInitialRuleRows(rulesToRows(data));
+      setRuleRows(rulesToRows(data));
+    });
+    return () => { cancelled = true; };
+  }, [isOpen, method]);
+
+  useEffect(() => {
+    setIsDirty(JSON.stringify(form) !== JSON.stringify(initial) || JSON.stringify(ruleRows) !== JSON.stringify(initialRuleRows));
+  }, [form, initial, ruleRows, initialRuleRows, setIsDirty]);
+
+  const updateRule = (key: string, patch: Partial<RuleRow>) =>
+    setRuleRows(rows => rows.map(r => (r.key === key ? { ...r, ...patch } : r)));
+  const addRule = () => setRuleRows(rows => [...rows, { key: `new-${Date.now()}-${rows.length}`, purchase_platform_id: '', percent: form.point_rate || '0' }]);
+  const removeRule = (key: string) => setRuleRows(rows => rows.filter(r => r.key !== key));
 
   const update = (patch: Partial<FormState>) => setForm(prev => ({ ...prev, ...patch }));
 
@@ -93,6 +133,13 @@ export default function PaymentMethodDialog({ isOpen, method, preset = null, poi
     if (!Number.isFinite(percent) || percent < 0) { setError('返点率请填写 0 或以上的数字'); return; }
     const last4 = form.type === 'card' ? form.card_last4.trim() : '';
     if (last4 && !/^\d{4}$/.test(last4)) { setError('卡号后 4 位请填写 4 位数字，或留空'); return; }
+    const desiredRules: Array<{ purchase_platform_id: string; point_rate: number }> = [];
+    for (const row of ruleRows) {
+      const rulePercent = parseFloat(row.percent);
+      if (!row.purchase_platform_id) { setError('店铺特殊规则：请选择采购平台，或删除这一行'); return; }
+      if (!Number.isFinite(rulePercent) || rulePercent < 0) { setError('店铺特殊规则：返点率请填写 0 或以上的数字'); return; }
+      desiredRules.push({ purchase_platform_id: row.purchase_platform_id, point_rate: percentToPointRate(rulePercent) });
+    }
 
     setSaving(true);
     setError(null);
@@ -109,14 +156,26 @@ export default function PaymentMethodDialog({ isOpen, method, preset = null, poi
     const { data, error: saveError } = method
       ? await supabase.from('payment_methods').update(payload).eq('id', method.id).select('*').single()
       : await supabase.from('payment_methods').insert([payload]).select('*').single();
-    setSaving(false);
 
     if (saveError || !data) {
+      setSaving(false);
       setError(saveError?.message || '保存失败，请重试');
       return;
     }
+
+    // 支付方式本身已保存，再同步店铺规则（规则表不可用时跳过）
+    let rulesFailed = false;
+    if (!rulesUnavailable && JSON.stringify(ruleRows) !== JSON.stringify(initialRuleRows)) {
+      const { error: rulesError } = await syncStoreRates((data as PaymentMethod).id, existingRules, desiredRules);
+      if (rulesError) {
+        console.error('保存店铺规则失败:', rulesError);
+        rulesFailed = true;
+      }
+    }
+    setSaving(false);
     setIsDirty(false);
     onSaved(data as PaymentMethod);
+    if (rulesFailed) alert('支付方式已保存，但店铺特殊规则保存失败，请稍后在「编辑」里重试。');
   };
 
   // 删除：transactions.card_id 外键指向这张卡（无级联），用过的卡数据库会拒绝删除；
@@ -217,6 +276,52 @@ export default function PaymentMethodDialog({ isOpen, method, preset = null, poi
             />
             <p className="sn-form-muted">新建交易时按「支付金额 × 返点率」自动计算返点积分；1% 填 1。</p>
           </div>
+
+          {!rulesUnavailable && (
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
+              <div className="text-sm font-medium text-[var(--color-text)]">店铺特殊规则</div>
+              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                在某个采购平台用不同的返点率（例如 Amazon 卡在 Amazon 返 3%）。录入交易时按「采购平台」自动套用，优先于上面的返点率。
+              </p>
+              <div className="mt-3 space-y-2">
+                {ruleRows.map(row => {
+                  const usedElsewhere = new Set(ruleRows.filter(r => r.key !== row.key).map(r => r.purchase_platform_id));
+                  return (
+                    <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_6.5rem_auto] items-center gap-2">
+                      <Select
+                        value={row.purchase_platform_id}
+                        onChange={v => updateRule(row.key, { purchase_platform_id: v })}
+                        options={purchasePlatforms
+                          .filter(p => !usedElsewhere.has(p.id))
+                          .map(p => ({ value: p.id, label: p.name }))}
+                        placeholder="选择采购平台"
+                        className={field}
+                      />
+                      <div className="relative">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={row.percent}
+                          onChange={e => updateRule(row.key, { percent: e.target.value })}
+                          step="0.01"
+                          min="0"
+                          className={field + ' pr-7'}
+                          aria-label="规则返点率 (%)"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--color-text-muted)]">%</span>
+                      </div>
+                      <button type="button" onClick={() => removeRule(row.key)} className="px-2 text-xs text-[var(--color-danger)] hover:underline">
+                        删除
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <button type="button" onClick={addRule} className="mt-2 text-xs font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
+                + 添加规则
+              </button>
+            </div>
+          )}
 
           <div>
             <label className="sn-form-label">返点积分平台</label>

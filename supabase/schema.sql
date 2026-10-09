@@ -216,6 +216,17 @@ CREATE TABLE public.payment_methods (
   card_last4 text
 );
 
+-- 支付方式的店铺特殊规则：同一支付方式在某个进货平台用不同返点率（如 Amazon 卡在 Amazon 返 3%）。
+-- 新建 / 编辑交易时，卡积分 = 支付金额 × 返点率；有对应进货平台的规则就用规则，否则用支付方式的默认返点率。
+CREATE TABLE public.payment_method_store_rates (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid,
+  payment_method_id uuid NOT NULL,
+  purchase_platform_id uuid NOT NULL,
+  point_rate numeric(6,4) NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE public.points_platforms (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   name text NOT NULL,
@@ -401,6 +412,7 @@ ALTER TABLE public.kaitorix_price_history ADD CONSTRAINT kaitorix_price_history_
 ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_pkey PRIMARY KEY (id);
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_pkey PRIMARY KEY (id);
+ALTER TABLE public.payment_method_store_rates ADD CONSTRAINT payment_method_store_rates_pkey PRIMARY KEY (id);
 ALTER TABLE public.points_platforms ADD CONSTRAINT points_platforms_pkey PRIMARY KEY (id);
 ALTER TABLE public.purchase_platforms ADD CONSTRAINT purchase_platforms_pkey PRIMARY KEY (id);
 ALTER TABLE public.push_subscriptions ADD CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id);
@@ -432,6 +444,10 @@ ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_st
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_type_check CHECK ((type = ANY (ARRAY['card'::text, 'bank'::text, 'wallet'::text, 'other'::text])));
 -- 卡号后 4 位（可选，只存 4 位数字，用来区分多张卡）
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_card_last4_check CHECK ((card_last4 IS NULL OR card_last4 ~ '^[0-9]{4}$'));
+ALTER TABLE public.payment_method_store_rates ADD CONSTRAINT payment_method_store_rates_unique UNIQUE (payment_method_id, purchase_platform_id);
+ALTER TABLE public.payment_method_store_rates ADD CONSTRAINT payment_method_store_rates_point_rate_check CHECK ((point_rate >= 0));
+ALTER TABLE public.payment_method_store_rates ADD CONSTRAINT payment_method_store_rates_payment_method_id_fkey FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id) ON DELETE CASCADE;
+ALTER TABLE public.payment_method_store_rates ADD CONSTRAINT payment_method_store_rates_purchase_platform_id_fkey FOREIGN KEY (purchase_platform_id) REFERENCES public.purchase_platforms(id) ON DELETE CASCADE;
 ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returned_check CHECK ((quantity_returned > 0));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_platform_fee_check CHECK ((platform_fee >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_quantity_sold_check CHECK ((quantity_sold > 0));
@@ -950,6 +966,7 @@ CREATE TRIGGER set_updated_at_kaitorix_open_api_usage BEFORE UPDATE ON public.ka
 CREATE TRIGGER trg_kaitorix_price_cache_updated BEFORE UPDATE ON public.kaitorix_price_cache FOR EACH ROW EXECUTE FUNCTION public.update_kaitorix_updated_at();
 CREATE TRIGGER trg_kaitorix_scrape_queue_updated BEFORE UPDATE ON public.kaitorix_scrape_queue FOR EACH ROW EXECUTE FUNCTION public.update_kaitorix_updated_at();
 CREATE TRIGGER set_user_id_payment_methods BEFORE INSERT ON public.payment_methods FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
+CREATE TRIGGER set_user_id_payment_method_store_rates BEFORE INSERT ON public.payment_method_store_rates FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
 CREATE TRIGGER update_points_platforms_updated_at BEFORE UPDATE ON public.points_platforms FOR EACH ROW EXECUTE FUNCTION public.update_points_platforms_updated_at();
 CREATE TRIGGER update_purchase_platforms_updated_at BEFORE UPDATE ON public.purchase_platforms FOR EACH ROW EXECUTE FUNCTION public.update_purchase_platforms_updated_at();
 CREATE TRIGGER trigger_update_quantity_returned_on_delete AFTER DELETE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_returned();
@@ -1089,6 +1106,7 @@ ALTER TABLE public.kaitorix_price_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_scrape_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_method_store_rates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.points_platforms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchase_platforms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
@@ -1138,6 +1156,10 @@ CREATE POLICY "Users can delete their own payment methods" ON public.payment_met
 CREATE POLICY "Users can insert their own payment methods" ON public.payment_methods FOR INSERT WITH CHECK ((auth.uid() = user_id));
 CREATE POLICY "Users can update their own payment methods" ON public.payment_methods FOR UPDATE USING ((auth.uid() = user_id));
 CREATE POLICY "Users can view their own payment methods" ON public.payment_methods FOR SELECT USING ((auth.uid() = user_id));
+CREATE POLICY "Users can delete their own store rates" ON public.payment_method_store_rates FOR DELETE TO authenticated USING ((user_id = (SELECT auth.uid())));
+CREATE POLICY "Users can insert their own store rates" ON public.payment_method_store_rates FOR INSERT TO authenticated WITH CHECK ((user_id = (SELECT auth.uid())));
+CREATE POLICY "Users can update their own store rates" ON public.payment_method_store_rates FOR UPDATE TO authenticated USING ((user_id = (SELECT auth.uid()))) WITH CHECK ((user_id = (SELECT auth.uid())));
+CREATE POLICY "Users can view their own store rates" ON public.payment_method_store_rates FOR SELECT TO authenticated USING ((user_id = (SELECT auth.uid())));
 
 -- points_platforms
 CREATE POLICY "Anyone can view points platforms" ON public.points_platforms FOR SELECT TO authenticated USING (true);

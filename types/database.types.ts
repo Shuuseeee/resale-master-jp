@@ -27,6 +27,16 @@ export type CashbackType =
   | 'next_month';     // 翌月付与
 
 // 购入平台接口
+/** 支付方式的店铺特殊规则：该支付方式在某个进货平台的返点率（优先于支付方式的默认返点率） */
+export interface PaymentMethodStoreRate {
+  id: string;
+  user_id: string | null;
+  payment_method_id: string;
+  purchase_platform_id: string;
+  point_rate: number; // 小数，0.03 = 3%
+  created_at: string;
+}
+
 export interface PurchasePlatform {
   id: string;
   user_id: string | null; // null = 内置平台

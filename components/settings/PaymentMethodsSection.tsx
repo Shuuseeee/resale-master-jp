@@ -10,6 +10,7 @@ import { badge, button, card } from '@/lib/theme';
 import { PAYMENT_METHOD_PRESETS, PAYMENT_METHOD_TYPE_LABELS, comparePaymentMethods, formatPointRate } from '@/lib/utils/paymentMethods';
 import PaymentMethodDialog, { type PaymentMethodPreset } from '@/components/PaymentMethodDialog';
 import { getDefaultPaymentMethodId, saveDefaultPaymentMethodId } from '@/lib/api/user-preferences';
+import { fetchStoreRates } from '@/lib/api/payment-method-rules';
 
 export default function PaymentMethodsSection() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -21,10 +22,21 @@ export default function PaymentMethodsSection() {
   const [preset, setPreset] = useState<PaymentMethodPreset | null>(null);
   // 默认卡（新建交易时自动选中）；存在 user_preferences，跨设备同步
   const [defaultId, setDefaultId] = useState<string | null>(null);
+  // 每个支付方式的店铺特殊规则条数（列表里提示用）
+  const [ruleCounts, setRuleCounts] = useState<Record<string, number>>({});
+
+  const loadRuleCounts = () => {
+    fetchStoreRates().then(({ data }) => {
+      const counts: Record<string, number> = {};
+      data.forEach(r => { counts[r.payment_method_id] = (counts[r.payment_method_id] ?? 0) + 1; });
+      setRuleCounts(counts);
+    });
+  };
 
   useEffect(() => {
     loadPaymentMethods();
     getDefaultPaymentMethodId().then(setDefaultId);
+    loadRuleCounts();
     supabase.from('points_platforms').select('*').eq('is_active', true).order('display_name')
       .then(({ data }) => setPointsPlatforms(data || []));
   }, []);
@@ -70,6 +82,7 @@ export default function PaymentMethodsSection() {
       return next.sort(comparePaymentMethods);
     });
     setDialogOpen(false);
+    loadRuleCounts();
   };
 
   const handleDeleted = (id: string) => {
@@ -153,6 +166,9 @@ export default function PaymentMethodsSection() {
       {method.card_last4 && <span className="ml-2 font-mono text-xs font-normal text-[var(--color-text-muted)]">····{method.card_last4}</span>}
       {method.type !== 'card' && (
         <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">{PAYMENT_METHOD_TYPE_LABELS[method.type] ?? method.type}</span>
+      )}
+      {(ruleCounts[method.id] ?? 0) > 0 && (
+        <span className="ml-2 text-xs font-normal text-[var(--color-primary)]">店铺规则 {ruleCounts[method.id]}</span>
       )}
     </>
   );
