@@ -372,7 +372,8 @@ CREATE TABLE public.user_preferences (
   user_id uuid NOT NULL,
   transactions_columns jsonb,
   updated_at timestamp with time zone DEFAULT now(),
-  theme_palette text
+  theme_palette text,
+  default_payment_method_id uuid
 );
 
 CREATE TABLE public.user_roles (
@@ -466,6 +467,8 @@ ALTER TABLE public.transactions ADD CONSTRAINT transactions_extra_platform_point
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_platform_points_platform_id_fkey FOREIGN KEY (platform_points_platform_id) REFERENCES public.points_platforms(id);
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_purchase_platform_id_fkey FOREIGN KEY (purchase_platform_id) REFERENCES public.purchase_platforms(id);
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+-- 默认卡：新建交易时自动选中；卡被删除时置空
+ALTER TABLE public.user_preferences ADD CONSTRAINT user_preferences_default_payment_method_id_fkey FOREIGN KEY (default_payment_method_id) REFERENCES public.payment_methods(id) ON DELETE SET NULL;
 ALTER TABLE public.user_line_links ADD CONSTRAINT user_line_links_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_preferences ADD CONSTRAINT user_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;

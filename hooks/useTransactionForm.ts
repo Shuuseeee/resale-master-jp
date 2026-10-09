@@ -11,6 +11,7 @@ import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
 import { useJanProductAutoFill } from '@/hooks/useJanProductAutoFill';
 import type { AmazonPointConfig } from '@/lib/amazon-point-config';
 import { formatPointRate } from '@/lib/utils/paymentMethods';
+import { getDefaultPaymentMethodId } from '@/lib/api/user-preferences';
 
 export interface PersistData {
   formData: TransactionFormData;
@@ -100,6 +101,16 @@ export function useTransactionForm({
   useEffect(() => {
     Promise.all([fetchPaymentMethods(), fetchPointsPlatforms()]);
   }, [fetchPaymentMethods, fetchPointsPlatforms]);
+
+  // ──── 默认卡（设置页「支付方式」里设定）────
+  // 新建时，开始填「信用卡支付」金额而还没选卡，就自动选默认卡（见 handlePaymentChange）。
+  // 不在打开表单时就填：全用积分 / 余额支付的交易若也挂上卡，按支付方式筛选和分析时会被错算进去。
+  const [defaultPaymentMethodId, setDefaultPaymentMethodId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'create') return;
+    getDefaultPaymentMethodId().then(setDefaultPaymentMethodId);
+  }, [mode]);
 
   // ──── initialData merge ────
   useEffect(() => {
@@ -228,6 +239,14 @@ export function useTransactionForm({
         newFormData.point_paid
       );
 
+      if (mode === 'create' && field === 'card_paid' && numValue > 0 && !newFormData.card_id && defaultPaymentMethodId) {
+        const defaultCard = paymentMethods.find(pm => pm.id === defaultPaymentMethodId && pm.is_active);
+        if (defaultCard) {
+          newFormData.card_id = defaultCard.id;
+          newFormData.card_points_platform_id = defaultCard.card_points_platform_id || '';
+        }
+      }
+
       let cardPoints = newFormData.expected_card_points;
       if (field === 'card_paid' && newFormData.card_id) {
         const selectedCard = paymentMethods.find(pm => pm.id === newFormData.card_id);
@@ -245,7 +264,7 @@ export function useTransactionForm({
 
       return { ...newFormData, balance_paid: balancePaid, expected_card_points: cardPoints };
     });
-  }, [paymentMethods, calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, autoCalcAmazonPoints]);
+  }, [paymentMethods, calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, autoCalcAmazonPoints, defaultPaymentMethodId]);
 
   const handleDateChange = useCallback((date: Date | null) => {
     setFormData(prev => ({ ...prev, date: formatDateToLocal(date) }));
