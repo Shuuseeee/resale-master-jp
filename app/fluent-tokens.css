@@ -1315,6 +1315,13 @@
   --loop-drawer-bg: rgba(255, 255, 255, 0.5);
   --loop-drawer-overlay-bg: rgba(236, 240, 247, 0.8);
   --loop-toast-bg: #ffffff;                                        /* 13-toast.css：复制提示内层容器 [实测] */
+  /* 日期选择器（design-spec/components/17-datepicker.css）：日期格 / 标题 / 箭头的悬停、按下、选中用固定浅紫，深色下也不变 [实测] */
+  --loop-calendar-hover-bg: #EEE8FF;
+  --loop-calendar-hover-fg: #7520F5;
+  --loop-calendar-pressed-bg: #D0BEFE;
+  --loop-calendar-pressed-fg: #560FBF;
+  --loop-calendar-selected-bg: #E0D5FE;
+  --loop-calendar-day-fg: #242424;
   --loop-drawer-size: 320px;
   --loop-article-bg: var(--colorNeutralBackground1);
   --loop-article-shadow: rgba(0, 0, 0, 0.08) 0px 0px 2px 0px, rgba(0, 0, 0, 0.12) 0px 2px 4px 0px;

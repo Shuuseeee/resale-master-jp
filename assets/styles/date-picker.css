@@ -1,184 +1,291 @@
-/* React DatePicker カスタムスタイル — 颜色一律走 snutils token，自动适配深浅色 */
+/* 日期选择器 = Fluent Calendar（design-spec/components/17-datepicker.css；组件 components/DatePicker.tsx）
+   颜色只用 token：中性色走 Fluent token，日期格 / 标题 / 箭头的悬停、按下、选中是固定浅紫 --loop-calendar-*（深色下不变，实测） */
 
-/* ラッパーとコンテナ */
+/* 触发器包装 */
 .react-datepicker-wrapper,
 .react-datepicker__input-container {
   display: block;
   width: 100%;
 }
 
-/* カレンダー本体 */
-.react-datepicker {
+/* 弹层：246 宽、padding 12、radius 12、无边框、shadow16；进出无动画 */
+.fluent-calendar.react-datepicker {
+  display: block;
+  width: 246px;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--borderRadiusXLarge);
+  background: var(--colorNeutralBackground1);
+  box-shadow: var(--shadow16);
   font-family: inherit;
-  background-color: var(--color-bg-elevated);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  color: var(--colorNeutralForeground1);
 }
 
-/* 三角形を非表示 */
-.react-datepicker__triangle {
+.fluent-calendar .react-datepicker__triangle {
   display: none;
 }
 
-/* ヘッダー部分 */
-.react-datepicker__header {
-  background-color: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-bg-elevated);
-  border-radius: 0.75rem 0.75rem 0 0;
-  padding-top: 8px;
+/* 日视图：220 宽、内边距 12（内容 196）；底部给「转到今天」留 33（30 高 + 上 3） */
+.fluent-calendar .react-datepicker__month-container {
+  position: relative;
+  float: none;
+  width: 220px;
+  padding: 12px 12px 33px;
 }
 
-/* 月タイトル・時刻ヘッダー */
-.react-datepicker__current-month,
-.react-datepicker-time__header,
-.react-datepicker-year-header {
-  color: var(--color-text);
+.fluent-calendar .react-datepicker__header {
+  position: static;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
 }
 
-/* ナビゲーション */
-.react-datepicker__navigation {
-  top: 13px;
+/* 头部：标题按钮 140×28 + 两个 28×28 箭头 */
+.fluent-calendar__header {
+  display: flex;
+  justify-content: space-between;
+  height: 28px;
 }
 
-/* 曜日 */
-.react-datepicker__day-name {
-  color: var(--color-text-muted);
+.fluent-calendar__title,
+.fluent-calendar__picker-current {
+  width: 140px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-radius: var(--borderRadiusMedium);
+  background: transparent;
+  font-size: 16px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground1);
+  text-align: left;
 }
 
-/* 日付 */
-.react-datepicker__day {
-  border-radius: 0.5rem;
-  color: var(--color-text);
+.fluent-calendar__title:hover {
+  outline: 1px solid transparent;
+  background: var(--loop-calendar-hover-bg);
+  color: var(--loop-calendar-hover-fg);
 }
 
-/* 日付ホバー時 */
-.react-datepicker__day:hover {
-  background: var(--color-primary) !important;
-  color: var(--color-text-inverted) !important;
-  border-radius: 0.5rem;
+.fluent-calendar__title:active {
+  background: var(--loop-calendar-pressed-bg);
+  color: var(--loop-calendar-pressed-fg);
 }
 
-/* 今日の日付（キーボード選択時） */
-.react-datepicker__day--keyboard-selected,
-.react-datepicker__month-text--keyboard-selected,
-.react-datepicker__quarter-text--keyboard-selected,
-.react-datepicker__year-text--keyboard-selected {
-  border-radius: 0.5rem;
-  background-color: var(--color-bg-elevated) !important;
-  color: var(--color-text) !important;
+.fluent-calendar__nav {
+  display: flex;
+  width: 56px;
+  height: 28px;
 }
 
-/* 選択された日付 */
-.react-datepicker__day--selected,
-.react-datepicker__day--in-selecting-range,
-.react-datepicker__day--in-range,
-.react-datepicker__month-text--selected,
-.react-datepicker__month-text--in-selecting-range,
-.react-datepicker__month-text--in-range,
-.react-datepicker__time-container
-  .react-datepicker__time
-  .react-datepicker__time-box
-  ul.react-datepicker__time-list
-  li.react-datepicker__time-list-item--selected {
-  background: var(--color-primary) !important;
-  font-weight: normal;
-  color: var(--color-text-inverted) !important;
-  border-radius: 0.5rem;
+.fluent-calendar__nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--borderRadiusMedium);
+  background: transparent;
+  color: var(--colorNeutralForeground3);
 }
 
-/* 選択中の日付（範囲選択時） */
-.react-datepicker__day--in-selecting-range:not(
-    .react-datepicker__day--in-range,
-    .react-datepicker__month-text--in-range,
-    .react-datepicker__quarter-text--in-range,
-    .react-datepicker__year-text--in-range
-  ),
-.react-datepicker__month-text--in-selecting-range:not(
-    .react-datepicker__day--in-range,
-    .react-datepicker__month-text--in-range,
-    .react-datepicker__quarter-text--in-range,
-    .react-datepicker__year-text--in-range
-  ),
-.react-datepicker__quarter-text--in-selecting-range:not(
-    .react-datepicker__day--in-range,
-    .react-datepicker__month-text--in-range,
-    .react-datepicker__quarter-text--in-range,
-    .react-datepicker__year-text--in-range
-  ),
-.react-datepicker__year-text--in-selecting-range:not(
-    .react-datepicker__day--in-range,
-    .react-datepicker__month-text--in-range,
-    .react-datepicker__quarter-text--in-range,
-    .react-datepicker__year-text--in-range
-  ) {
-  background-color: var(--color-primary-light) !important;
-  border-radius: 0.5rem;
+.fluent-calendar__nav-btn:not(:disabled):hover {
+  background: var(--loop-calendar-hover-bg);
+  color: var(--loop-calendar-hover-fg);
 }
 
-/* 今日の日付にボーダー */
-.react-datepicker__day--today {
-  font-weight: bold;
-  border: 1px solid var(--color-primary);
+.fluent-calendar__nav-btn:not(:disabled):active {
+  background: var(--loop-calendar-pressed-bg);
+  color: var(--loop-calendar-pressed-fg);
 }
 
-/* 無効な日付 */
-.react-datepicker__day--disabled {
-  color: var(--color-text-muted) !important;
-  opacity: 0.5;
-  cursor: not-allowed;
+.fluent-calendar__nav-btn:disabled {
+  color: var(--colorNeutralForegroundDisabled);
+  cursor: default;
 }
 
-/* ドロップダウン（scroll モード：テーマ化されたカスタムリスト） */
-.react-datepicker__month-dropdown,
-.react-datepicker__year-dropdown {
-  background-color: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow-lg);
+/* 星期行：28 宽、24 高、12/20，正文色 */
+.fluent-calendar .react-datepicker__day-names {
+  display: flex;
+  margin: 4px 0 0;
+}
+
+.fluent-calendar .react-datepicker__day-name {
+  width: 28px;
+  height: 24px;
+  margin: 0;
+  padding: 2px;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--colorNeutralForeground1);
+}
+
+/* 日期表：每格 28（日期按钮 24 + 四周 2），下方留 10 */
+.fluent-calendar .react-datepicker__month {
+  margin: 0;
+  padding-bottom: 10px;
+}
+
+.fluent-calendar .react-datepicker__week {
+  display: flex;
+}
+
+.fluent-calendar .react-datepicker__day {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--borderRadiusMedium);
+  background: transparent;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 400;
+  color: var(--colorNeutralForeground1);
+}
+
+.fluent-calendar .react-datepicker__day--outside-month {
+  color: var(--colorNeutralForeground4);
+}
+
+/* 今天：只加粗，没有底色 */
+.fluent-calendar .react-datepicker__day--today {
+  font-weight: 600;
+}
+
+/* 键盘预选不加底色，只在键盘聚焦时画焦点环 */
+.fluent-calendar .react-datepicker__day--keyboard-selected {
+  background: transparent;
+}
+
+.fluent-calendar .react-datepicker__day:hover {
+  border-radius: var(--borderRadiusMedium);
+  background: var(--loop-calendar-hover-bg);
+  color: var(--loop-calendar-day-fg);
+}
+
+.fluent-calendar .react-datepicker__day:active {
+  background: var(--loop-calendar-pressed-bg);
+}
+
+.fluent-calendar .react-datepicker__day--selected,
+.fluent-calendar .react-datepicker__day--selected:hover {
+  border-color: var(--colorCompoundBrandStroke);
+  background: var(--loop-calendar-selected-bg);
+  color: var(--loop-calendar-day-fg);
+}
+
+.fluent-calendar .react-datepicker__day:focus-visible {
+  outline: none;
+}
+
+.fluent-calendar .react-datepicker__day:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: 1;
+  border: 2px solid var(--colorStrokeFocus2);
+  border-radius: var(--borderRadiusMedium);
+  pointer-events: none;
+}
+
+.fluent-calendar .react-datepicker__day--disabled,
+.fluent-calendar .react-datepicker__day--disabled:hover {
+  background: transparent;
+  color: var(--colorNeutralForegroundDisabled);
+  cursor: default;
+}
+
+/* 底部「转到今天」：右对齐、离日历右边 16、30 高、12/30；显示当月时禁用 */
+.fluent-calendar__go-today {
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  height: 30px;
+  padding: 0 4px;
+  background: transparent;
+  font-size: 12px;
+  line-height: 30px;
+  color: var(--colorNeutralForeground1);
+}
+
+.fluent-calendar__go-today:not(:disabled):hover {
+  color: var(--colorCompoundBrandForeground1);
+}
+
+.fluent-calendar__go-today:not(:disabled):active {
+  color: var(--loop-calendar-selected-bg);
+}
+
+.fluent-calendar__go-today:disabled {
+  color: var(--colorNeutralForegroundDisabled);
+  pointer-events: none;
+}
+
+/* 月份视图：盖住整个日视图；年份按钮静止即为浅紫底（当前层级指示）；4 列 × 3 行，当前月不加高亮（实测） */
+.fluent-calendar__picker {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   overflow: hidden;
+  padding: 12px;
+  background: var(--colorNeutralBackground1);
 }
 
-.react-datepicker__year-dropdown--scrollable {
-  height: 200px;
-  overflow-y: auto;
+.fluent-calendar__picker-header {
+  display: flex;
+  justify-content: space-between;
+  height: 28px;
 }
 
-.react-datepicker__month-option,
-.react-datepicker__year-option {
-  color: var(--color-text);
-  padding: 5px 0;
+.fluent-calendar__picker-current {
+  background: var(--loop-calendar-hover-bg);
+  color: var(--loop-calendar-hover-fg);
 }
 
-.react-datepicker__month-option:hover,
-.react-datepicker__year-option:hover {
-  background-color: var(--color-primary-light);
+.fluent-calendar__picker-grid {
+  margin-top: 4px;
 }
 
-/* 選択中の年月 */
-.react-datepicker__month-option--selected_month,
-.react-datepicker__year-option--selected_year {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+.fluent-calendar__picker-row {
+  display: flex;
+  height: 40px;
+  margin-bottom: 16px;
 }
 
-.react-datepicker__month-option--selected,
-.react-datepicker__year-option--selected {
-  color: var(--color-primary);
+.fluent-calendar__picker-row:last-child {
+  margin-bottom: 0;
 }
 
-/* ヘッダーの年月 read-view（クリックでドロップダウン展開） */
-.react-datepicker__month-read-view,
-.react-datepicker__year-read-view {
-  color: var(--color-text);
+.fluent-calendar__picker-item {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  padding: 0 4px;
+  border-radius: var(--borderRadiusMedium);
+  background: transparent;
+  font-size: 12px;
+  line-height: 40px;
+  color: var(--colorNeutralForeground3);
 }
 
-.react-datepicker__month-read-view--down-arrow,
-.react-datepicker__year-read-view--down-arrow {
-  border-color: var(--color-text-muted);
-  border-width: 2px 2px 0 0;
-  height: 7px;
-  width: 7px;
-  top: 3px;
+.fluent-calendar__picker-item:nth-child(4n) {
+  margin-right: 0;
+}
+
+.fluent-calendar__picker-item:hover {
+  background: var(--loop-calendar-hover-bg);
+  color: var(--loop-calendar-day-fg);
+}
+
+.fluent-calendar__picker-item:active {
+  background: var(--loop-calendar-pressed-bg);
+}
+
+.fluent-calendar__picker-item[aria-selected="true"] {
+  color: var(--colorNeutralForeground3);
 }
