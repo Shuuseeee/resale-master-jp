@@ -66,7 +66,6 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 ```env
 KAITORIX_API_TOKENS=your_token1,your_token2
-NEXT_PUBLIC_KAITORIX_RATE_LIMIT_MODE=ultra-safe
 KAITORIX_OPEN_API_KEY=your_open_api_key
 KAITORIX_OPEN_API_DAILY_LIMIT=500   # 仅首次响应前的兜底；之后以官方响应头为准
 CRON_SECRET=your_random_secret      # /api/kaitorix/catalog-sync 的 Cron 鉴权
