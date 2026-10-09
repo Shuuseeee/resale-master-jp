@@ -1343,6 +1343,15 @@
   --loop-cn-inner-shadow: rgba(153, 84, 250, 0.2) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.1) 2px -2px 3px 0px inset;
   --loop-cn-inner-shadow-hover: rgba(153, 84, 250, 0.15) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.05) 2px -2px 3px 0px inset;
   --loop-cn-inner-shadow-focus: rgba(114, 104, 95, 0.14) -2px 2px 3px 0px inset, rgba(31, 46, 61, 0.08) 2px -2px 3px 0px inset;
+  /* 抽屉标题与树节点（浅色复刻 03-drawer.css） */
+  --loop-drawer-title: var(--colorNeutralForeground1);
+  --loop-tree-icon: rgb(97, 97, 97);
+  --loop-tree-icon-hover: rgb(66, 66, 66);
+  --loop-tree-hover-bg: rgba(0, 0, 0, 0.05);
+  --loop-tree-pressed-bg: rgba(0, 0, 0, 0.1);
+  --loop-tree-selected-bg: rgb(255, 255, 255);
+  --loop-tree-selected-hover-bg: rgb(235, 235, 235);
+  --loop-tree-selected-pressed-icon: rgb(128, 128, 128);
   /* tooltip 投影（浅色复刻 base.css；深色 dark.css） */
   --loop-tooltip-shadow: drop-shadow(rgba(0, 0, 0, 0.1) 0px 0px 2px) drop-shadow(rgba(0, 0, 0, 0.12) 0px 4px 8px);
 }
@@ -1371,4 +1380,13 @@
   --loop-cn-inner-shadow-hover: rgba(153, 84, 250, 0.3) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.2) 2px -2px 3px 0px inset;
   --loop-cn-inner-shadow-focus: #ffffff1a -2px 2px 3px 0px inset, #ffffff1a 2px -2px 3px 0px inset;
   --loop-tooltip-shadow: drop-shadow(rgba(0, 0, 0, 0.4) 0px 0px 2px) drop-shadow(rgba(0, 0, 0, 0.48) 0px 4px 8px);
+  --loop-drawer-title: rgb(214, 214, 214);
+  --loop-tree-hover-bg: rgba(255, 255, 255, 0.1);
+  --loop-tree-pressed-bg: rgba(255, 255, 255, 0.05);
+  --loop-tree-selected-bg: rgb(61, 61, 61);
+  /* 待补测（深色未实测到）：暂用浅色实测值对应的 Fluent token 的深色值 */
+  --loop-tree-icon: var(--colorNeutralForeground3);
+  --loop-tree-icon-hover: var(--colorNeutralForeground3Hover);
+  --loop-tree-selected-hover-bg: var(--colorNeutralBackground1Selected);
+  --loop-tree-selected-pressed-icon: var(--colorNeutralForeground3);
 }

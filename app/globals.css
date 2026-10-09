@@ -616,6 +616,304 @@
     height: 33px;
   }
 
+  /* ── 设置页分区抽屉（components/settings/SettingsDrawer.tsx；Loop 03-drawer.css + design-spec/dark.css、09-overlay-drawer.css） ── */
+  .settings-drawer {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 299px;
+    height: 100%;
+    padding: 8px 4px;
+    border-right: 1px solid transparent;
+    border-radius: var(--borderRadiusXLarge);
+    overflow: hidden;
+    background: var(--loop-drawer-bg);
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--colorNeutralForeground1);
+  }
+
+  /* 768–1024：浮层（实测 top 53；左缘紧贴导航：折叠时 60、展开时 188；宽 299；1024×768 下高 699） */
+  .settings-drawer--overlay {
+    position: fixed;
+    z-index: 9000;
+    top: 53px;
+    bottom: 16px;
+    left: 188px;
+    height: auto;
+    background: var(--loop-drawer-overlay-bg);
+    -webkit-backdrop-filter: blur(var(--loop-glass-blur));
+    backdrop-filter: blur(var(--loop-glass-blur));
+    box-shadow: var(--shadow64);
+  }
+
+  :root[data-nav="collapsed"] .settings-drawer--overlay {
+    left: 60px;
+  }
+
+  .settings-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 8990;
+  }
+
+  .settings-drawer__header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 44px;
+    min-height: 44px;
+    padding: 2px 8px;
+  }
+
+  .settings-drawer__header-row {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    min-height: 32px;
+  }
+
+  .settings-drawer__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 10px 0 8px;
+    overflow: hidden;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 600;
+    color: var(--loop-drawer-title);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .settings-drawer__body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0 -4px;
+    padding: 0 4px;
+    overflow: hidden;
+  }
+
+  .settings-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .settings-tree__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 2px;
+    color: var(--colorNeutralForeground2);
+  }
+
+  .settings-tree__layout {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    height: 40px;
+    min-height: 32px;
+    margin: 0 -2px;
+    padding-left: 25px;
+    border-radius: var(--borderRadiusLarge);
+    overflow: hidden;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  /* 选中条：2×18，未选中时藏在左缘外 translateX(-6px)，0.35s 滑入 */
+  .settings-tree__layout::before {
+    content: "";
+    position: absolute;
+    top: 11px;
+    bottom: 11px;
+    left: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--colorCompoundBrandForeground1);
+    transform: translateX(-6px);
+    transition: transform 0.35s var(--loop-ease-tab-indicator);
+  }
+
+  /* svg 图标位：宽 26（图标左 4 右 2）+ 右内边距 4 */
+  .settings-tree__icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    align-self: center;
+    box-sizing: content-box;
+    width: 26px;
+    height: 20px;
+    padding-right: 4px;
+    color: var(--loop-tree-icon);
+  }
+
+  .settings-tree__icon > svg {
+    margin: 0 2px 0 4px;
+  }
+
+  .settings-tree__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .settings-tree__layout:hover {
+    background: var(--loop-tree-hover-bg);
+  }
+
+  .settings-tree__layout:hover .settings-tree__icon {
+    color: var(--loop-tree-icon-hover);
+  }
+
+  .settings-tree__layout:active {
+    background: var(--loop-tree-pressed-bg);
+    color: var(--colorNeutralForeground1);
+  }
+
+  .settings-tree__layout[data-selected] {
+    background: var(--loop-tree-selected-bg);
+    color: var(--colorNeutralForeground1);
+  }
+
+  .settings-tree__layout[data-selected]::before {
+    transform: translateX(0);
+  }
+
+  .settings-tree__layout[data-selected] .settings-tree__icon {
+    color: var(--colorCompoundBrandForeground1);
+  }
+
+  .settings-tree__layout[data-selected]:hover {
+    background: var(--loop-tree-selected-hover-bg);
+  }
+
+  .settings-tree__layout[data-selected]:active .settings-tree__icon {
+    color: var(--loop-tree-selected-pressed-icon);
+  }
+
+  .settings-tree__layout:focus-visible {
+    outline: 2px solid var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+  }
+
+  /* ── 横向 Tab（Fluent TabList horizontal；design-spec/components/14-tabs-horizontal.css） ── */
+  .htabs {
+    display: flex;
+    height: 44px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .htab {
+    position: relative;
+    display: grid;
+    flex: none;
+    grid-auto-flow: column;
+    column-gap: 6px;
+    align-items: center;
+    height: 44px;
+    padding: 12px 10px;
+    border-radius: var(--borderRadiusMedium);
+    background: transparent;
+  }
+
+  .htab__label {
+    display: grid;
+    padding: 0 2px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--colorNeutralForeground2);
+    white-space: nowrap;
+  }
+
+  /* 未选中时按粗体预留宽度，切换选中时宽度不跳（实测 .fui-Tab__content--reserved-space） */
+  .htab__reserved {
+    display: block;
+    height: 0;
+    overflow: hidden;
+    font-weight: 600;
+    visibility: hidden;
+  }
+
+  .htab[aria-selected="true"] .htab__label,
+  .htab:hover .htab__label,
+  .htab:active .htab__label {
+    color: var(--colorNeutralForeground1);
+  }
+
+  .htab[aria-selected="true"] .htab__label {
+    font-weight: 600;
+  }
+
+  .htab::before,
+  .htab::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    bottom: 0;
+    left: 12px;
+    height: 3px;
+    border-radius: var(--borderRadiusCircular);
+    opacity: 0;
+  }
+
+  .htab::before {
+    background: var(--colorNeutralStroke1Hover);
+  }
+
+  .htab::after {
+    background: var(--colorCompoundBrandStroke);
+    transform: var(--ind, translateX(0px) scaleX(1));
+    transition: transform 0.3s var(--loop-ease-tab-indicator);
+  }
+
+  .htab.no-anim::after {
+    transition: none;
+  }
+
+  .htab[aria-selected="true"]::after {
+    opacity: 1;
+  }
+
+  .htab[aria-selected="true"]:hover::after {
+    background: var(--colorCompoundBrandStrokeHover);
+  }
+
+  .htab[aria-selected="true"]:active::after {
+    background: var(--colorCompoundBrandStrokePressed);
+  }
+
+  .htab:not([aria-selected="true"]):hover::before {
+    opacity: 1;
+  }
+
+  .htab:not([aria-selected="true"]):active::before {
+    background: var(--colorNeutralStroke1Pressed);
+    opacity: 1;
+  }
+
+  .htab:focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: var(--shadow4), 0 0 0 2px var(--colorStrokeFocus2);
+    z-index: 1;
+  }
+
   /* ── Tooltip（components/fluent/Tooltip.tsx）：白底 drop-shadow、12/16，进出无动画 ── */
   .fluent-tooltip {
     position: fixed;

@@ -11,3 +11,9 @@ export function getAppScrollTop(): number {
   }
   return window.scrollY;
 }
+
+/** 回到页面顶部（桌面滚卡片，手机滚窗口） */
+export function scrollAppToTop() {
+  document.getElementById(APP_SCROLL_ID)?.scrollTo(0, 0);
+  window.scrollTo(0, 0);
+}

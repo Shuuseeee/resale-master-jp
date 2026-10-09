@@ -26,6 +26,7 @@ import { readLastUser } from '@/lib/offline/persister';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { BrandIcon } from '@/components/BrandIcon';
 import NavRail from '@/components/shell/NavRail';
+import SettingsDrawer from '@/components/settings/SettingsDrawer';
 import { Menu as FluentMenu, MenuDivider, MenuInfo, MenuItem } from '@/components/fluent/Menu';
 import { useTooltip } from '@/components/fluent/Tooltip';
 
@@ -155,6 +156,8 @@ export default function Navigation() {
       {/* ── 桌面端左导航（grid 第二行第一列，padding-left 8） ── */}
       <aside className="app-shell__aside hidden md:flex">
         <NavRail onScanArrival={() => setShowScanArrival(true)} />
+        {/* 设置页的分区抽屉：≥1025 内嵌在导航右侧，768–1024 以浮层渲染到 body；不在设置页时不渲染内容 */}
+        <SettingsDrawer />
       </aside>
 
       {/* ── 移动端顶部栏：SNUtils compact header ── */}

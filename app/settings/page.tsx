@@ -10,8 +10,12 @@ import { button, card, heading, input, layout } from '@/lib/theme';
 import Switch from '@/components/Switch';
 import Select from '@/components/Select';
 import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
+import TabList from '@/components/fluent/TabList';
+import { SETTINGS_SECTIONS, initSettingsNav, resetSettingsDrawer, selectSettingsSection, useSettingsNav } from '@/lib/settings-nav';
+import { scrollAppToTop } from '@/lib/app-scroll';
 
 export default function SettingsPage() {
+  const { section } = useSettingsNav();
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -38,6 +42,20 @@ export default function SettingsPage() {
     window.addEventListener(THEME_PREFERENCE_EVENT, handlePreferenceChange);
     return () => window.removeEventListener(THEME_PREFERENCE_EVENT, handlePreferenceChange);
   }, []);
+
+  // 分区与抽屉：按地址 hash 定分区，抽屉按入口与宽度给默认值；离开时复位
+  useEffect(() => {
+    initSettingsNav();
+    return () => resetSettingsDrawer();
+  }, []);
+
+  // 切换分区 = Loop 的切页：新分区从顶部开始（首次进入时由外壳决定滚动位置）
+  const shownSectionRef = useRef(section);
+  useEffect(() => {
+    if (shownSectionRef.current === section) return;
+    shownSectionRef.current = section;
+    scrollAppToTop();
+  }, [section]);
 
   const updateConfig = (field: keyof AmazonPointConfig, value: number | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
@@ -105,7 +123,7 @@ export default function SettingsPage() {
 
   return (
     <div className={layout.page}>
-      {/* 设置内容天然偏窄：限宽 + 桌面双栏，避免全宽卡片大量留白 */}
+      {/* 一次只显示一个分区：桌面在左侧抽屉切换，手机在顶部横向 Tab 切换 */}
       <div className={"mx-auto max-w-6xl px-4 py-6 " + layout.narrowDesktop}>
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -114,7 +132,12 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="mb-4 md:hidden">
+          <TabList items={SETTINGS_SECTIONS} selected={section} onSelect={selectSettingsSection} ariaLabel="设置分区" />
+        </div>
+
+        <div>
+          {section === 'appearance' && (
           <section className={card.primary + ' p-6'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
               外观
@@ -136,14 +159,16 @@ export default function SettingsPage() {
               </div>
             </div>
           </section>
+          )}
 
+          {section === 'amazon' && (
           <section className={card.primary + ' p-6'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
                   Amazon 积分返还自动计算
                 </h2>
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算平台积分与 d 积分。卡积分按下方「支付方式」的返点率与店铺特殊规则计算。</p>
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算平台积分与 d 积分。卡积分按「支付方式」分区里的返点率与店铺特殊规则计算。</p>
               </div>
               <Switch
                 checked={config.auto_calc_enabled}
@@ -157,7 +182,7 @@ export default function SettingsPage() {
               <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-warning-border)] bg-[var(--color-warning-subtle)] p-3 text-sm text-[var(--color-text)]">
                 <p>
                   原来这里的「信用卡返还 {legacyCardRate}%」已移除：它不分卡、一律按这个比例算，录入顺序不同结果还会不一样。
-                  如果是某张卡在 Amazon 返 {legacyCardRate}%，请在下方「支付方式」里编辑那张卡，添加一条「Amazon → {legacyCardRate}%」的店铺特殊规则。
+                  如果是某张卡在 Amazon 返 {legacyCardRate}%，请在「支付方式」分区里编辑那张卡，添加一条「Amazon → {legacyCardRate}%」的店铺特殊规则。
                 </p>
                 <button
                   type="button"
@@ -199,10 +224,12 @@ export default function SettingsPage() {
               {saveMessage && <span className="text-sm text-[var(--color-success)]">{saveMessage}</span>}
             </div>
           </section>
+          )}
 
-          <PaymentMethodsSection />
+          {section === 'payment-methods' && <PaymentMethodsSection />}
 
-          <section className={card.primary + ' p-6 lg:col-span-2'}>
+          {section === 'kaitorix' && (
+          <section className={card.primary + ' p-6'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
@@ -256,8 +283,10 @@ export default function SettingsPage() {
               {kaitorixSaveMessage && <span className="text-sm text-[var(--color-success)]">{kaitorixSaveMessage}</span>}
             </div>
           </section>
+          )}
 
-          <section className={card.primary + ' p-6 lg:col-span-2'}>
+          {section === 'csv-import' && (
+          <section className={card.primary + ' p-6'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
               CSV 导入
             </h2>
@@ -310,6 +339,7 @@ export default function SettingsPage() {
               )}
             </div>
           </section>
+          )}
         </div>
       </div>
     </div>

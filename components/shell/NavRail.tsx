@@ -9,6 +9,7 @@ import { BarChart3, ClipboardList, FileText, Home, Package, PanelLeft, ScanBarco
 import { Menu, MenuItem } from '@/components/fluent/Menu';
 import { hideTooltipNow, useTooltip } from '@/components/fluent/Tooltip';
 import { NAV_AUTO_COLLAPSE_QUERY, applyNavCollapsed, hasStoredNavMode, isNavCollapsed, setNavCollapsed } from '@/lib/nav-mode';
+import { openSettingsDrawer, useSettingsNav } from '@/lib/settings-nav';
 
 interface NavItem {
   name: string;
@@ -95,7 +96,10 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
   // 点击当下就切换选中（Loop 实测如此），不等路由切换完成；路由到位后以实际路径为准
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const routeHref = activeHrefOf(pathname);
-  const activeHref = pendingHref ?? routeHref;
+  // 「设置」Tab 对应设置页的分区抽屉（Loop：Tab 选中 = 抽屉打开；关掉抽屉 Tab 取消选中）
+  const { drawer: settingsDrawer } = useSettingsNav();
+  const candidateHref = pendingHref ?? routeHref;
+  const activeHref = candidateHref === '/settings' && settingsDrawer !== 'open' ? null : candidateHref;
 
   useEffect(() => {
     setPendingHref(null);
@@ -228,6 +232,8 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
                   onSelect={e => {
                     // 修饰键 / 非左键点击会在新标签页打开，当前页的选中不变
                     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    // 点「设置」打开分区抽屉（已在设置页时用于重新打开关掉的抽屉）
+                    if (item.href === '/settings') openSettingsDrawer();
                     if (item.href !== routeHref) setPendingHref(item.href);
                   }}
                   tabRef={el => {
