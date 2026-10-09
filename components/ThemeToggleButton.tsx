@@ -6,7 +6,7 @@ import { useTooltip } from '@/components/fluent/Tooltip';
 
 /** 顶栏快速切换：把偏好显式设为与当前相反的浅色 / 深色（「跟随系统」在设置页选） */
 export default function ThemeToggleButton() {
-  const tip = useTooltip('切换深色/浅色模式');
+  const tip = useTooltip('切换深色/浅色模式', { placement: 'bottom-start' });
   const handleToggle = () => {
     setThemePreference(getResolvedTheme() === 'dark' ? 'light' : 'dark');
   };

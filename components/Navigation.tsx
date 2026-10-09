@@ -38,7 +38,7 @@ function initialsOf(email: string | null | undefined) {
 function AccountButton({ email, canLogout, onLogout }: { email: string; canLogout: boolean; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
-  const tip = useTooltip('账户');
+  const tip = useTooltip('账户', { placement: 'bottom-end' });
   return (
     <>
       <button
