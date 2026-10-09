@@ -21,6 +21,7 @@ import { Sparkles } from 'lucide-react';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
+import { formatPointRate } from '@/lib/utils/paymentMethods';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -739,7 +740,7 @@ export default function TransactionDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[var(--color-text-muted)]">返点率</span>
-                    <span className="text-[var(--color-primary)] font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
+                    <span className="text-[var(--color-primary)] font-medium">{formatPointRate(transaction.payment_method.point_rate)}</span>
                   </div>
                 </div>
               </div>

@@ -10,6 +10,7 @@ import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
 import { useJanProductAutoFill } from '@/hooks/useJanProductAutoFill';
 import type { AmazonPointConfig } from '@/lib/amazon-point-config';
+import { formatPointRate } from '@/lib/utils/paymentMethods';
 
 export interface PersistData {
   formData: TransactionFormData;
@@ -442,7 +443,7 @@ export function useTransactionForm({
     if (!formData.card_id) return null;
     const card = paymentMethods.find(pm => pm.id === formData.card_id);
     if (!card) return null;
-    return `(返点率: ${card.point_rate * 100}%)`;
+    return `(返点率: ${formatPointRate(card.point_rate)})`;
   }, [formData.card_id, paymentMethods]);
 
   return {

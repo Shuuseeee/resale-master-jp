@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { PointsPlatform } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Select from '@/components/Select';
+import { percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMethods';
 
 export default function EditPaymentMethodPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function EditPaymentMethodPage() {
       if (error) throw error;
       setFormData({
         name: data.name,
-        point_rate: (data.point_rate * 100).toString(),
+        point_rate: pointRateToPercent(data.point_rate).toString(),
         card_points_platform_id: data.card_points_platform_id || '',
         is_active: data.is_active,
       });
@@ -55,7 +56,7 @@ export default function EditPaymentMethodPage() {
     try {
       const { error } = await supabase.from('payment_methods').update({
         name: formData.name,
-        point_rate: parseFloat(formData.point_rate) / 100,
+        point_rate: percentToPointRate(parseFloat(formData.point_rate)),
         card_points_platform_id: formData.card_points_platform_id || null,
         is_active: formData.is_active,
       }).eq('id', id);

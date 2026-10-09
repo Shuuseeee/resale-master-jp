@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentMethod } from '@/types/database.types';
 import { badge, button, card, heading, layout } from '@/lib/theme';
+import { formatPointRate } from '@/lib/utils/paymentMethods';
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -118,7 +119,7 @@ export default function PaymentMethodsPage() {
                 <div className="grid grid-cols-1 gap-3 text-sm">
                   <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)] p-3">
                     <div className="text-xs text-[var(--color-text-muted)]">返点率</div>
-                    <div className="mt-1 font-semibold text-[var(--color-primary)]">{((method.point_rate || 0) * 100).toFixed(2)}%</div>
+                    <div className="mt-1 font-semibold text-[var(--color-primary)]">{formatPointRate(method.point_rate)}</div>
                   </div>
                 </div>
 
@@ -148,7 +149,7 @@ export default function PaymentMethodsPage() {
                     <tr key={method.id} className="transition-colors hover:bg-[var(--color-bg-subtle)]">
                       <td className="px-5 py-4 text-sm font-semibold text-[var(--color-text)]">{method.name}</td>
                       <td className="px-5 py-4 text-center text-sm font-semibold text-[var(--color-primary)]">
-                        {((method.point_rate || 0) * 100).toFixed(2)}%
+                        {formatPointRate(method.point_rate)}
                       </td>
                       <td className="px-5 py-4 text-center">
                         <button

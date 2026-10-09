@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { PointsPlatform } from '@/types/database.types';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Select from '@/components/Select';
+import { percentToPointRate } from '@/lib/utils/paymentMethods';
 
 export default function AddPaymentMethodPage() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function AddPaymentMethodPage() {
       const { error } = await supabase.from('payment_methods').insert([{
         name: formData.name,
         type: 'card',
-        point_rate: parseFloat(formData.point_rate) / 100,
+        point_rate: percentToPointRate(parseFloat(formData.point_rate)),
         card_points_platform_id: formData.card_points_platform_id || null,
         is_active: formData.is_active,
       }]);
