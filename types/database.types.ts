@@ -63,10 +63,11 @@ export interface PaymentMethod {
   id: string;
   name: string;
   type: PaymentMethodType;
+  // 还款周期配置：web 端已不再显示 / 编辑（2026-10-09 移除），线上库保留，原生 App 仍在读写
   closing_day: number | null;
   payment_day: number | null;
   payment_same_month: boolean; // true: 当月还款, false: 次月还款
-  point_rate: number; // (已废弃) 使用card_points_platform_id代替
+  point_rate: number; // 信用卡返点率（小数，0.01 = 1%）；新建交易时用来计算预期卡积分
   card_points_platform_id: string | null; // 关联的积分平台ID
   is_active: boolean;
   created_at: string;
@@ -105,7 +106,7 @@ export interface Transaction {
   card_points_platform_id: string | null; // 信用卡积分的平台ID
   extra_platform_points_platform_id: string | null; // 额外平台积分的平台ID
 
-  // 还款信息
+  // 预计还款日：web 端不写入也不显示（仅出现在 AI 导出里，需与原生保持一致），原生 App 仍在写入
   expected_payment_date: string | null;
 
   // 购入平台信息
