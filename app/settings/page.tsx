@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
@@ -10,6 +9,7 @@ import { DEFAULT_PALETTE, PALETTES, type PaletteId } from '@/lib/themes';
 import { applyPalette, getCurrentPalette } from '@/lib/theme-palette';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Switch from '@/components/Switch';
+import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
@@ -109,14 +109,8 @@ export default function SettingsPage() {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className={heading.h1}>设置</h1>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">积分返还率、买取价格与数据导入</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">支付方式、积分返还率、买取价格与数据导入</p>
           </div>
-          <Link href="/settings/payment-methods" className={button.secondary + ' inline-flex items-center gap-2'}>
-            支付方式
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
         </div>
 
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
@@ -215,6 +209,8 @@ export default function SettingsPage() {
               {saveMessage && <span className="text-sm text-[var(--color-success)]">{saveMessage}</span>}
             </div>
           </section>
+
+          <PaymentMethodsSection />
 
           <section className={card.primary + ' p-6 lg:col-span-2'}>
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
