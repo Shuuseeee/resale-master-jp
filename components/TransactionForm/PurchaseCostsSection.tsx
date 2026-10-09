@@ -3,7 +3,7 @@
 import React from 'react';
 import Select from '@/components/Select';
 import type { PaymentMethod } from '@/types/database.types';
-import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
+import { comparePaymentMethods, paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 interface PurchaseCostsSectionProps {
   totalPrice: number;
@@ -66,7 +66,7 @@ export function PurchaseCostsSection({
           <div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="min-w-0">
-                <label className="sn-form-label">信用卡支付</label>
+                <label className="sn-form-label">信用卡 / 其他支付</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -80,14 +80,15 @@ export function PurchaseCostsSection({
                 </div>
               </div>
               <div className="min-w-0">
-                <label className="sn-form-label">支付卡片</label>
+                <label className="sn-form-label">支付方式</label>
                 <Select
                   value={cardId}
                   onChange={(v) => onInputChange({ target: { name: 'card_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
                   options={paymentMethods
-                    .filter((pm) => pm.type === 'card' && (pm.is_active || pm.id === cardId))
+                    .filter((pm) => pm.is_active || pm.id === cardId)
+                    .sort(comparePaymentMethods)
                     .map((pm) => ({ value: pm.id, label: paymentMethodDisplayName(pm) }))}
-                  placeholder="选择卡片"
+                  placeholder="选择支付方式"
                   clearable
                   className="w-full sn-form-input"
                   disabled={cardPaid === 0}

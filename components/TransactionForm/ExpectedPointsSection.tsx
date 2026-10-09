@@ -126,7 +126,7 @@ export function ExpectedPointsSection({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="sn-form-label">
-              信用卡积分数量
+              支付返点积分
               {rateLabel && (
                 <span className="ml-2 text-xs text-[var(--color-primary)]">{rateLabel}</span>
               )}
@@ -146,7 +146,7 @@ export function ExpectedPointsSection({
             <p className="sn-form-muted">根据卡片返点率自动计算，可手动调整</p>
           </div>
           <div>
-            <label className="sn-form-label">信用卡积分平台</label>
+            <label className="sn-form-label">返点积分平台</label>
             <Select
               value={cardPointsPlatformId}
               onChange={selectChange('card_points_platform_id')}

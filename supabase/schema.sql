@@ -429,7 +429,7 @@ ALTER TABLE public.fixed_costs ADD CONSTRAINT fixed_costs_billing_cycle_check CH
 ALTER TABLE public.jan_thumbnail_queue ADD CONSTRAINT jan_thumbnail_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'completed'::text, 'failed'::text])));
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_last_fetch_source_check CHECK ((last_fetch_source = ANY (ARRAY['scraper'::text, 'official'::text, 'cache'::text])));
 ALTER TABLE public.kaitorix_scrape_queue ADD CONSTRAINT kaitorix_scrape_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'completed'::text, 'failed'::text])));
-ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_type_check CHECK ((type = ANY (ARRAY['card'::text, 'bank'::text, 'wallet'::text])));
+ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_type_check CHECK ((type = ANY (ARRAY['card'::text, 'bank'::text, 'wallet'::text, 'other'::text])));
 -- 卡号后 4 位（可选，只存 4 位数字，用来区分多张卡）
 ALTER TABLE public.payment_methods ADD CONSTRAINT payment_methods_card_last4_check CHECK ((card_last4 IS NULL OR card_last4 ~ '^[0-9]{4}$'));
 ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returned_check CHECK ((quantity_returned > 0));

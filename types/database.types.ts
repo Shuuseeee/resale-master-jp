@@ -1,7 +1,8 @@
 // types/database.types.ts
 // Resale Master JP - TypeScript Type Definitions
 
-export type PaymentMethodType = 'card';
+// card 信用卡；wallet 电子钱包・扫码支付；bank 银行转账；other 其他（便利店支付、货到付款、商品券等）
+export type PaymentMethodType = 'card' | 'wallet' | 'bank' | 'other';
 export type TransactionStatus = 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned';
 export type BillingCycle = 'monthly' | 'yearly';
 export type DiscountType =

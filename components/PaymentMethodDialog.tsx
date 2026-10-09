@@ -1,19 +1,21 @@
 'use client';
 
-// 支付方式的新增 / 编辑弹窗（设置 → 支付方式管理页内使用，取代原先的两个独立页面）。
-// 字段：名称、返点率、信用卡积分平台、启用状态（开关）。有未保存修改时关闭会二次确认。
+// 支付方式的新增 / 编辑弹窗（设置页「支付方式」区块内使用）。
+// 字段：类型、名称、卡号后 4 位（仅信用卡）、返点率、返点积分平台、启用状态（开关）。
+// 有未保存修改时关闭会二次确认。
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod, PointsPlatform } from '@/types/database.types';
+import type { PaymentMethod, PaymentMethodType, PointsPlatform } from '@/types/database.types';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import Select from '@/components/Select';
 import Switch from '@/components/Switch';
 import { button, input } from '@/lib/theme';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
-import { percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMethods';
+import { PAYMENT_METHOD_TYPE_LABELS, percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMethods';
 
 interface FormState {
+  type: PaymentMethodType;
   name: string;
   point_rate: string; // 百分数，如 "1.5"
   card_last4: string;
@@ -21,11 +23,23 @@ interface FormState {
   is_active: boolean;
 }
 
-const EMPTY_FORM: FormState = { name: '', point_rate: '1', card_last4: '', card_points_platform_id: '', is_active: true };
+const EMPTY_FORM: FormState = { type: 'card', name: '', point_rate: '1', card_last4: '', card_points_platform_id: '', is_active: true };
 
-function formFromMethod(method: PaymentMethod | null): FormState {
-  if (!method) return EMPTY_FORM;
+/** 新增时的预填（如从「常用支付方式」一键添加） */
+export interface PaymentMethodPreset {
+  name: string;
+  type: PaymentMethodType;
+  percent: number;
+}
+
+function formFromMethod(method: PaymentMethod | null, preset: PaymentMethodPreset | null): FormState {
+  if (!method) {
+    return preset
+      ? { ...EMPTY_FORM, type: preset.type, name: preset.name, point_rate: preset.percent.toString() }
+      : EMPTY_FORM;
+  }
   return {
+    type: method.type,
     name: method.name,
     point_rate: pointRateToPercent(method.point_rate).toString(),
     card_last4: method.card_last4 || '',
@@ -38,14 +52,16 @@ interface PaymentMethodDialogProps {
   isOpen: boolean;
   /** null = 新增 */
   method: PaymentMethod | null;
+  /** 新增时的预填 */
+  preset?: PaymentMethodPreset | null;
   pointsPlatforms: PointsPlatform[];
   onClose: () => void;
   onSaved: (method: PaymentMethod) => void;
   onDeleted: (id: string) => void;
 }
 
-export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, onClose, onSaved, onDeleted }: PaymentMethodDialogProps) {
-  const initial = useMemo(() => formFromMethod(method), [method]);
+export default function PaymentMethodDialog({ isOpen, method, preset = null, pointsPlatforms, onClose, onSaved, onDeleted }: PaymentMethodDialogProps) {
+  const initial = useMemo(() => formFromMethod(method, preset), [method, preset]);
   const [form, setForm] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,12 +91,13 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     const percent = parseFloat(form.point_rate);
     if (!name) { setError('请填写名称'); return; }
     if (!Number.isFinite(percent) || percent < 0) { setError('返点率请填写 0 或以上的数字'); return; }
-    const last4 = form.card_last4.trim();
+    const last4 = form.type === 'card' ? form.card_last4.trim() : '';
     if (last4 && !/^\d{4}$/.test(last4)) { setError('卡号后 4 位请填写 4 位数字，或留空'); return; }
 
     setSaving(true);
     setError(null);
     const payload = {
+      type: form.type,
       name,
       point_rate: percentToPointRate(percent),
       card_points_platform_id: form.card_points_platform_id || null,
@@ -91,7 +108,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     // 还款周期三列（closing_day / payment_day / payment_same_month）不提交：web 不再管理，原生仍在用，不能覆盖
     const { data, error: saveError } = method
       ? await supabase.from('payment_methods').update(payload).eq('id', method.id).select('*').single()
-      : await supabase.from('payment_methods').insert([{ ...payload, type: 'card' }]).select('*').single();
+      : await supabase.from('payment_methods').insert([payload]).select('*').single();
     setSaving(false);
 
     if (saveError || !data) {
@@ -113,9 +130,9 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
       .select('id', { count: 'exact', head: true })
       .eq('card_id', method.id);
     setDeleting(false);
-    if (countError) { setError('无法确认这张卡的使用情况，请稍后重试'); return; }
+    if (countError) { setError('无法确认使用情况，请稍后重试'); return; }
     if ((count ?? 0) > 0) {
-      setError(`已有 ${count} 笔交易使用此卡，无法删除。不再使用的话可以改为停用。`);
+      setError(`已有 ${count} 笔交易使用此支付方式，无法删除。不再使用的话可以改为停用。`);
       return;
     }
     setConfirmDelete(true);
@@ -130,7 +147,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     if (deleteError) {
       // 23503 = 外键约束：确认之后、删除之前恰好有交易用上了这张卡
       setError(deleteError.code === '23503'
-        ? '这张卡已被交易使用，无法删除。不再使用的话可以改为停用。'
+        ? '此支付方式已被交易使用，无法删除。不再使用的话可以改为停用。'
         : deleteError.message || '删除失败，请重试');
       return;
     }
@@ -152,6 +169,16 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
       >
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
+            <label className="sn-form-label">类型</label>
+            <Select
+              value={form.type}
+              onChange={v => update({ type: v as PaymentMethodType })}
+              options={(Object.keys(PAYMENT_METHOD_TYPE_LABELS) as PaymentMethodType[]).map(t => ({ value: t, label: PAYMENT_METHOD_TYPE_LABELS[t] }))}
+              className={field}
+            />
+          </div>
+
+          <div>
             <label className="sn-form-label">名称 <span className="text-[var(--color-danger)]">*</span></label>
             <input
               type="text"
@@ -163,7 +190,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
             />
           </div>
 
-          <div>
+          {form.type === 'card' && <div>
             <label className="sn-form-label">卡号后 4 位（可选）</label>
             <input
               type="text"
@@ -175,7 +202,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
               placeholder="例如：4821"
             />
             <p className="sn-form-muted">只用来区分名字相近的卡，只保存这 4 位。</p>
-          </div>
+          </div>}
 
           <div>
             <label className="sn-form-label">返点率 (%)</label>
@@ -188,11 +215,11 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
               min="0"
               className={field}
             />
-            <p className="sn-form-muted">新建交易时按「信用卡支付金额 × 返点率」自动计算卡积分；1% 填 1。</p>
+            <p className="sn-form-muted">新建交易时按「支付金额 × 返点率」自动计算返点积分；1% 填 1。</p>
           </div>
 
           <div>
-            <label className="sn-form-label">信用卡积分平台</label>
+            <label className="sn-form-label">返点积分平台</label>
             <Select
               value={form.card_points_platform_id}
               onChange={v => update({ card_points_platform_id: v })}
@@ -207,7 +234,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
           <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
             <div>
               <div className="text-sm font-medium text-[var(--color-text)]">{form.is_active ? '已启用' : '已停用'}</div>
-              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">停用后新建交易时不再出现在支付卡片里，历史交易不受影响。</p>
+              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">停用后新建交易时不再出现在支付方式里，历史交易不受影响。</p>
             </div>
             <Switch checked={form.is_active} onClick={() => update({ is_active: !form.is_active })} label="启用此支付方式" />
           </div>
@@ -242,7 +269,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
         onClose={() => setConfirmDelete(false)}
         onConfirm={doDelete}
         title="删除支付方式？"
-        message={`删除「${method?.name ?? ''}」后无法恢复。这张卡没有被任何交易使用。`}
+        message={`删除「${method?.name ?? ''}」后无法恢复。它没有被任何交易使用。`}
         confirmText="删除"
         cancelText="取消"
         confirmVariant="danger"

@@ -21,7 +21,7 @@ import { Sparkles } from 'lucide-react';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
-import { formatPointRate } from '@/lib/utils/paymentMethods';
+import { formatPointRate, paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -44,11 +44,11 @@ const FIELD_LABELS: Record<string, string> = {
   purchase_price_total: '合计金额',
   unit_price: '单价',
   quantity: '数量',
-  card_paid: '信用卡支付',
+  card_paid: '信用卡 / 其他支付',
   point_paid: '积分抵扣',
   balance_paid: '余额支付',
   expected_platform_points: '平台积分',
-  expected_card_points: '信用卡积分',
+  expected_card_points: '支付返点积分',
   extra_platform_points: '额外积分',
   jan_code: 'JAN 码',
   order_number: '订单号',
@@ -504,7 +504,7 @@ export default function TransactionDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-muted)]">信用卡支付</span>
+                    <span className="text-[var(--color-text-muted)]">信用卡 / 其他支付</span>
                     <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.card_paid)}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -713,11 +713,11 @@ export default function TransactionDetailPage() {
                   </div>
                 )}
 
-                {/* 信用卡积分 */}
+                {/* 支付返点积分（信用卡或其他支付方式） */}
                 <div className="bg-[var(--color-primary-light)] rounded-xl p-4 border border-[var(--color-primary-border)]">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-[var(--color-primary)] text-sm mb-1">信用卡积分</div>
+                      <div className="text-[var(--color-primary)] text-sm mb-1">支付返点积分</div>
                       <div className="text-2xl font-bold text-[var(--color-primary)]">{transaction.expected_card_points} P</div>
                     </div>
                     {transaction.card_points_platform && (
@@ -735,8 +735,8 @@ export default function TransactionDetailPage() {
                 <h3 className="sn-detail-title">支付方式</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">卡片名称</span>
-                    <span className="text-[var(--color-text)] font-medium">{transaction.payment_method.name}</span>
+                    <span className="text-[var(--color-text-muted)]">名称</span>
+                    <span className="text-[var(--color-text)] font-medium">{paymentMethodDisplayName(transaction.payment_method)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[var(--color-text-muted)]">返点率</span>
