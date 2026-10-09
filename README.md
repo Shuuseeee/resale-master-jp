@@ -121,7 +121,7 @@ resale-master-jp/
 ├── public/
 │   ├── sw.js                         # Service Worker
 │   ├── icons/                        # PWA 图标
-│   └── fonts/                        # Outfit / Noto Sans 字体
+│   └── fonts/                        # NotoSansJP（税务 PDF 导出用；界面用系统字体）
 ├── supabase/schema.sql               # 新装唯一入口（完整库结构）
 ├── supabase/migrations-archive/              # 历史增量记录（新装不需要）
 ├── scraper/                          # 独立服务：缩略图 worker；价格 scraper 仅为原生 App 保留
@@ -190,6 +190,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - 深浅色支持浅色 / 深色 / 跟随系统：顶栏按钮快速切换，设置页「外观」可选跟随系统。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 Fluent UI System Icons 的 headless 版本（按分组路径导入，如 `@fluentui/react-icons/headless/svg/home`），选中 / 悬停的实心态用 `components/fluent/DualIcon.tsx`；避免新增手写 SVG。
+- 界面字体用 Loop 的系统字体栈（`--loop-font-text` / 标题 `--loop-font-display`，Segoe UI Variable → Apple / Android 系统字体），不加载网页字体。
 - 外壳由 `components/Navigation.tsx` 组装：桌面（≥768）为透明顶栏 + 左导航（`components/shell/NavRail.tsx`，展开 / 折叠、「新建」菜单），手机为顶栏 + 底部标签栏。
 - 交易列表（状态）、买取价格（视图）、税务申报（年度）、耗材管理（分类）、设置（分区）在桌面用左导航旁的分区抽屉切换（`components/shell/SectionDrawer.tsx`，页面用 `lib/section-drawer.ts` 的 `useSectionDrawer` 注册），手机仍在页面里切换。
 - 桌面正文一律限宽 920（含左右内边距 1000）居中，表格放不下时在表格内横向滚动。

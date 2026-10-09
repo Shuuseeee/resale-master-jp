@@ -2146,71 +2146,6 @@
 }
 
 @layer base {
-  @font-face {
-    font-family: 'Outfit';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url('/fonts/Outfit-Regular.ttf') format('truetype');
-  }
-
-  @font-face {
-    font-family: 'Outfit';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('/fonts/Outfit-Medium.ttf') format('truetype');
-  }
-
-  @font-face {
-    font-family: 'Outfit';
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url('/fonts/Outfit-SemiBold.ttf') format('truetype');
-  }
-
-  @font-face {
-    font-family: 'Outfit';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/Outfit-Bold.ttf') format('truetype');
-  }
-
-  /* Noto Sans — Horizon 主题字体（仅在 --font-sans 引用时才会下载，emerald 用户零开销） */
-  @font-face {
-    font-family: 'Noto Sans';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
-  }
-
-  @font-face {
-    font-family: 'Noto Sans';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('/fonts/NotoSans-Medium.woff2') format('woff2');
-  }
-
-  @font-face {
-    font-family: 'Noto Sans';
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url('/fonts/NotoSans-SemiBold.woff2') format('woff2');
-  }
-
-  @font-face {
-    font-family: 'Noto Sans';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/NotoSans-Bold.woff2') format('woff2');
-  }
-
   /* 页面语义 token：一律引用 app/fluent-tokens.css 的 Fluent / Loop 实测 token（深浅色由那里切换），不在这里写色值、不做 color-mix 派生。
      例外：Loop 标签色（徽章）与取景器上的危险色是固定值，深色下不变（实测如此）。 */
   /* 左导航宽度：展开 172 / 折叠 52（Loop 实测），外壳占位按它计算 */
@@ -2296,7 +2231,8 @@
     --radius-lg: var(--borderRadiusXLarge);
     /* 表格单元格上下内边距：Loop 表格单元格没有上下 padding（行高 = 内容高），用户决定暂时保持原来的 12px，想调行高时只改这里 */
     --table-cell-py: 12px;
-    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', 'Noto Sans CJK SC', Arial, sans-serif;
+    /* 正文字体 = Loop 实测的系统字体栈（Segoe UI Variable Text → Apple / Android 系统字体），不再加载网页字体；标题用 --loop-font-display */
+    --font-sans: var(--loop-font-text);
   }
 
   /* 触摸优化 - 移动端交互体验提升 */
