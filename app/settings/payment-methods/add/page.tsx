@@ -12,9 +12,6 @@ export default function AddPaymentMethodPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    closing_day: '',
-    payment_day: '',
-    payment_same_month: false,
     point_rate: '1.0',
     card_points_platform_id: '',
     is_active: true,
@@ -37,9 +34,6 @@ export default function AddPaymentMethodPage() {
       const { error } = await supabase.from('payment_methods').insert([{
         name: formData.name,
         type: 'card',
-        closing_day: formData.closing_day ? parseInt(formData.closing_day) : null,
-        payment_day: formData.payment_day ? parseInt(formData.payment_day) : null,
-        payment_same_month: formData.payment_same_month,
         point_rate: parseFloat(formData.point_rate) / 100,
         card_points_platform_id: formData.card_points_platform_id || null,
         is_active: formData.is_active,
@@ -67,7 +61,7 @@ export default function AddPaymentMethodPage() {
             返回
           </Link>
           <h1 className={heading.h1}>新增支付方式</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">配置信用卡账单日、还款日与返点率。</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">配置信用卡的返点率和积分平台。</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -80,28 +74,6 @@ export default function AddPaymentMethodPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">名称 <span className="text-[var(--color-danger)]">*</span></label>
                 <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={field} placeholder="例如：楽天カード" />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">账单日</label>
-                  <input type="number" value={formData.closing_day} onChange={e => setFormData({ ...formData, closing_day: e.target.value })} min="1" max="31" className={field} placeholder="1-31" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">还款日</label>
-                  <input type="number" value={formData.payment_day} onChange={e => setFormData({ ...formData, payment_day: e.target.value })} min="1" max="31" className={field} placeholder="1-31" />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">还款周期</label>
-                <Select
-                  value={formData.payment_same_month ? 'same' : 'next'}
-                  onChange={v => setFormData({ ...formData, payment_same_month: v === 'same' })}
-                  options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
-                  className={field}
-                />
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">次月还款是大部分信用卡模式，当月还款适用于部分特殊卡种。</p>
               </div>
 
               <div>

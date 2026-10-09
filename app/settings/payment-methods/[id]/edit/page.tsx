@@ -14,9 +14,6 @@ export default function EditPaymentMethodPage() {
   const id = params.id as string;
   const [formData, setFormData] = useState({
     name: '',
-    closing_day: '',
-    payment_day: '',
-    payment_same_month: false,
     point_rate: '',
     card_points_platform_id: '',
     is_active: true,
@@ -38,9 +35,6 @@ export default function EditPaymentMethodPage() {
       if (error) throw error;
       setFormData({
         name: data.name,
-        closing_day: data.closing_day?.toString() || '',
-        payment_day: data.payment_day?.toString() || '',
-        payment_same_month: data.payment_same_month || false,
         point_rate: (data.point_rate * 100).toString(),
         card_points_platform_id: data.card_points_platform_id || '',
         is_active: data.is_active,
@@ -61,9 +55,6 @@ export default function EditPaymentMethodPage() {
     try {
       const { error } = await supabase.from('payment_methods').update({
         name: formData.name,
-        closing_day: formData.closing_day ? parseInt(formData.closing_day) : null,
-        payment_day: formData.payment_day ? parseInt(formData.payment_day) : null,
-        payment_same_month: formData.payment_same_month,
         point_rate: parseFloat(formData.point_rate) / 100,
         card_points_platform_id: formData.card_points_platform_id || null,
         is_active: formData.is_active,
@@ -98,7 +89,7 @@ export default function EditPaymentMethodPage() {
             返回
           </Link>
           <h1 className={heading.h1}>编辑支付方式</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">更新信用卡账单日、还款日与返点率。</p>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">更新信用卡的返点率和积分平台。</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -111,27 +102,6 @@ export default function EditPaymentMethodPage() {
               <div>
                 <label className="sn-form-label">名称 <span className="text-[var(--color-danger)]">*</span></label>
                 <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={field} required />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="sn-form-label">账单日</label>
-                  <input type="number" value={formData.closing_day} onChange={e => setFormData({ ...formData, closing_day: e.target.value })} min="1" max="31" className={field} placeholder="1-31" />
-                </div>
-                <div>
-                  <label className="sn-form-label">还款日</label>
-                  <input type="number" value={formData.payment_day} onChange={e => setFormData({ ...formData, payment_day: e.target.value })} min="1" max="31" className={field} placeholder="1-31" />
-                </div>
-              </div>
-
-              <div>
-                <label className="sn-form-label">还款周期</label>
-                <Select
-                  value={formData.payment_same_month ? 'same' : 'next'}
-                  onChange={v => setFormData({ ...formData, payment_same_month: v === 'same' })}
-                  options={[{ value: 'next', label: '次月还款' }, { value: 'same', label: '当月还款' }]}
-                  className={field}
-                />
               </div>
 
               <div>
