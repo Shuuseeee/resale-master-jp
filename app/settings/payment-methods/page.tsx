@@ -38,6 +38,11 @@ export default function PaymentMethodsPage() {
     setDialogOpen(false);
   };
 
+  const handleDeleted = (id: string) => {
+    setPaymentMethods(methods => methods.filter(m => m.id !== id));
+    setDialogOpen(false);
+  };
+
   const loadPaymentMethods = async () => {
     setLoading(true);
     try {
@@ -201,6 +206,7 @@ export default function PaymentMethodsPage() {
         pointsPlatforms={pointsPlatforms}
         onClose={() => setDialogOpen(false)}
         onSaved={handleSaved}
+        onDeleted={handleDeleted}
       />
     </div>
   );

@@ -39,13 +39,16 @@ interface PaymentMethodDialogProps {
   pointsPlatforms: PointsPlatform[];
   onClose: () => void;
   onSaved: (method: PaymentMethod) => void;
+  onDeleted: (id: string) => void;
 }
 
-export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, onClose, onSaved }: PaymentMethodDialogProps) {
+export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, onClose, onSaved, onDeleted }: PaymentMethodDialogProps) {
   const initial = useMemo(() => formFromMethod(method), [method]);
   const [form, setForm] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const guard = useModalCloseGuard(onClose);
   const { setIsDirty } = guard;
 
@@ -54,6 +57,7 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     if (isOpen) {
       setForm(initial);
       setError(null);
+      setConfirmDelete(false);
     }
   }, [isOpen, initial]);
 
@@ -92,6 +96,42 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
     onSaved(data as PaymentMethod);
   };
 
+  // 删除：transactions.card_id 外键指向这张卡（无级联），用过的卡数据库会拒绝删除；
+  // 先查使用笔数，用过的直接提示改为停用（历史交易的支付卡片不能被抹掉），没用过的再二次确认删除
+  const requestDelete = async () => {
+    if (!method) return;
+    setError(null);
+    setDeleting(true);
+    const { count, error: countError } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('card_id', method.id);
+    setDeleting(false);
+    if (countError) { setError('无法确认这张卡的使用情况，请稍后重试'); return; }
+    if ((count ?? 0) > 0) {
+      setError(`已有 ${count} 笔交易使用此卡，无法删除。不再使用的话可以改为停用。`);
+      return;
+    }
+    setConfirmDelete(true);
+  };
+
+  const doDelete = async () => {
+    if (!method) return;
+    setDeleting(true);
+    const { error: deleteError } = await supabase.from('payment_methods').delete().eq('id', method.id);
+    setDeleting(false);
+    setConfirmDelete(false);
+    if (deleteError) {
+      // 23503 = 外键约束：确认之后、删除之前恰好有交易用上了这张卡
+      setError(deleteError.code === '23503'
+        ? '这张卡已被交易使用，无法删除。不再使用的话可以改为停用。'
+        : deleteError.message || '删除失败，请重试');
+      return;
+    }
+    setIsDirty(false);
+    onDeleted(method.id);
+  };
+
   const field = input.base + ' w-full';
 
   return (
@@ -100,8 +140,8 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
         isOpen={isOpen}
         onClose={guard.doClose}
         beforeClose={guard.handleCloseRequest}
-        closeOnEsc={!guard.showConfirm}
-        closeOnOverlayClick={!guard.showConfirm}
+        closeOnEsc={!guard.showConfirm && !confirmDelete}
+        closeOnOverlayClick={!guard.showConfirm && !confirmDelete}
         title={method ? '编辑支付方式' : '添加支付方式'}
       >
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -154,16 +194,39 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
 
           {error && <div className="sn-form-alert-error">{error}</div>}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={guard.handleCloseRequest} className={button.secondary}>
-              取消
-            </button>
-            <button type="submit" disabled={saving} className={button.primary}>
-              {saving ? '保存中...' : method ? '保存更改' : '添加'}
-            </button>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {method ? (
+              <button
+                type="button"
+                onClick={requestDelete}
+                disabled={deleting || saving}
+                className={button.ghost + ' text-[var(--color-danger)] hover:text-[var(--color-danger)]'}
+              >
+                {deleting ? '处理中...' : '删除'}
+              </button>
+            ) : <span />}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <button type="button" onClick={guard.handleCloseRequest} className={button.secondary}>
+                取消
+              </button>
+              <button type="submit" disabled={saving || deleting} className={button.primary}>
+                {saving ? '保存中...' : method ? '保存更改' : '添加'}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={doDelete}
+        title="删除支付方式？"
+        message={`删除「${method?.name ?? ''}」后无法恢复。这张卡没有被任何交易使用。`}
+        confirmText="删除"
+        cancelText="取消"
+        confirmVariant="danger"
+      />
 
       <ConfirmModal
         isOpen={guard.showConfirm}
