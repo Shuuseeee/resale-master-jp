@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
-  ChevronLeft,
   ClipboardList,
   FileText,
   Home,
@@ -26,7 +25,9 @@ import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { readLastUser } from '@/lib/offline/persister';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { BrandIcon } from '@/components/BrandIcon';
+import NavRail from '@/components/shell/NavRail';
 import { Menu as FluentMenu, MenuDivider, MenuInfo, MenuItem } from '@/components/fluent/Menu';
+import { useTooltip } from '@/components/fluent/Tooltip';
 
 /** 头像首字母：没有姓名，取邮箱 @ 前的前 2 个字符 */
 function initialsOf(email: string | null | undefined) {
@@ -37,6 +38,7 @@ function initialsOf(email: string | null | undefined) {
 function AccountButton({ email, canLogout, onLogout }: { email: string; canLogout: boolean; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const tip = useTooltip('账户');
   return (
     <>
       <button
@@ -47,6 +49,7 @@ function AccountButton({ email, canLogout, onLogout }: { email: string; canLogou
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(v => !v)}
+        {...tip}
       >
         <span className="shell-avatar">{initialsOf(canLogout ? email : null)}</span>
       </button>
@@ -77,7 +80,6 @@ export default function Navigation() {
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [showScanArrival, setShowScanArrival] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [collapsed, setCollapsed] = useState(true);
   const { user, signOut } = useAuth();
   const online = useOnlineStatus();
 
@@ -100,63 +102,13 @@ export default function Navigation() {
     ? user?.email || (!online ? readLastUser()?.email : null) || '未登录'
     : '加载中...';
 
-  const isActive = (href: string) => {
-    if (href === '/transactions' && pathname?.startsWith('/transactions/')) {
-      return pathname === '/transactions';
-    }
-    return pathname === href || pathname?.startsWith(href + '/');
-  };
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
 
   const handleLogout = async () => {
     if (confirm('确定要退出登录吗？')) {
       await signOut();
     }
   };
-
-  // 桌面端完整导航项
-  const desktopNavItems = [
-    {
-      name: '仪表盘',
-      href: '/dashboard',
-      icon: <Home className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '交易列表',
-      href: '/transactions',
-      icon: <ClipboardList className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '记录交易',
-      href: '/transactions/add',
-      icon: <Plus className="h-5 w-5" strokeWidth={2} />,
-      highlight: true,
-    },
-    {
-      name: '买取价格',
-      href: '/kaitorix-prices',
-      icon: <ScanBarcode className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '设置',
-      href: '/settings',
-      icon: <Settings className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '耗材管理',
-      href: '/supplies',
-      icon: <Package className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '数据分析',
-      href: '/analytics',
-      icon: <BarChart3 className="h-5 w-5" strokeWidth={2} />,
-    },
-    {
-      name: '税务申报',
-      href: '/tax-report',
-      icon: <FileText className="h-5 w-5" strokeWidth={2} />,
-    },
-  ];
 
   // 移动端更多抽屉中的次要项目
   const moreItems = [
@@ -185,7 +137,7 @@ export default function Navigation() {
   return (
     <>
       {/* 桌面端顶部栏：Loop 外壳顶栏（60px，内部 40px 工具栏；透明，露出应用背景） */}
-      <header className="hidden lg:block fixed top-0 left-0 right-0 z-[9000] h-[60px] app-bg">
+      <header className="hidden md:block fixed top-0 left-0 right-0 z-[9000] h-[60px] app-bg">
         <div className="mt-[10px] grid h-10 grid-cols-2 items-center gap-x-2 pl-[3px] pr-[10px]">
           <div className="flex h-10 items-center gap-0.5">
             <Link href="/dashboard" className="shell-brand">
@@ -200,53 +152,17 @@ export default function Navigation() {
         </div>
       </header>
 
-      {/* ── 桌面端侧边栏 ── */}
-      <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[60px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
-        {/* 导航菜单 */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {desktopNavItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.name : undefined}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-all text-sm
-                  ${collapsed ? 'justify-center h-12 w-12 mx-auto' : ''}
-                  ${active
-                    ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
-                    : item.highlight
-                      ? 'text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]'
-                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]'
-                  }
-                `}
-              >
-                {item.icon}
-                {!collapsed && <span>{item.name}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* 折叠 / 展开 */}
-        <div className="p-2 border-t border-[var(--color-border)]">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded-[var(--radius-md)] transition-colors justify-center"
-            title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
-          >
-            <ChevronLeft className={`h-5 w-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} strokeWidth={2} />
-          </button>
-        </div>
+      {/* ── 桌面端左导航（Loop：aside padding-left 8、顶栏下 1px 行距、底部留 8） ── */}
+      <aside className="hidden md:block fixed left-2 top-[61px] bottom-2 z-[8000]">
+        <NavRail onScanArrival={() => setShowScanArrival(true)} />
       </aside>
 
-      {/* 桌面端侧边栏占位 */}
-      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`} aria-hidden="true" />
+      {/* 桌面端左导航占位：8 + 导航宽 + 8（列间距） */}
+      <div className="hidden md:block flex-shrink-0 w-[calc(var(--nav-w)+16px)]" aria-hidden="true" />
 
       {/* ── 移动端顶部栏：SNUtils compact header ── */}
       <div
-        className="lg:hidden fixed top-0 left-0 right-0 z-[9999] app-bg"
+        className="md:hidden fixed top-0 left-0 right-0 z-[9999] app-bg"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center justify-between h-14 px-4">
@@ -261,11 +177,11 @@ export default function Navigation() {
       </div>
 
       {/* 移动端顶部占位 */}
-      <div className="lg:hidden h-[calc(56px+env(safe-area-inset-top,0px))]" />
+      <div className="md:hidden h-[calc(56px+env(safe-area-inset-top,0px))]" />
 
       {/* ── 移动端底部导航栏：SNUtils touch adaptation ── */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -350,7 +266,7 @@ export default function Navigation() {
       {/* ── FAB 弹出菜单卡片 ── */}
       {showFabMenu && (
         <div
-          className="lg:hidden fixed inset-0 z-[10000] flex items-end justify-center"
+          className="md:hidden fixed inset-0 z-[10000] flex items-end justify-center"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
           onClick={() => setShowFabMenu(false)}
         >
@@ -404,7 +320,7 @@ export default function Navigation() {
 
       {/* ── 更多上滑抽屉 ── */}
       {showMoreSheet && (
-        <div className="lg:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
+        <div className="md:hidden fixed inset-0 z-[10001]" onClick={() => setShowMoreSheet(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
             className="absolute left-3 right-3 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)] flex flex-col"

@@ -1329,6 +1329,22 @@
   --loop-ease-button: cubic-bezier(0.33, 0, 0.67, 1);
   --loop-ease-drawer-enter: cubic-bezier(0, 0, 0, 1);
   --loop-ease-drawer-exit: cubic-bezier(0.8, 0, 0.78, 1);
+  /* 「新建」胶囊（浅色复刻 02-nav.css；聚焦态见 design-spec/dark.css 补测 #7） */
+  --loop-cn-bg: rgb(240, 240, 240);
+  --loop-cn-color: rgb(130, 48, 255);
+  --loop-cn-plus: rgb(147, 84, 255);
+  --loop-cn-shadow: rgba(171, 191, 243, 0.12) -0.085px 0.098px 0.472px 0px, rgba(171, 191, 243, 0.19) -0.373px 0.431px 0.978px 0px, rgba(171, 191, 243, 0.24) -0.916px 1.059px 1.95px 0px, rgba(171, 191, 243, 0.29) -1.765px 2.039px 3.822px 0px, rgba(171, 191, 243, 0.36) -2.969px 3.43px 7.028px 0px, rgba(195, 212, 255, 0.48) -8.58px 9.29px 12px 0px;
+  --loop-cn-shadow-hover: rgba(193, 209, 249, 0.08) -0.306px 0.269px 0.748px 0px, rgba(193, 209, 249, 0.13) -1.346px 1.184px 1.548px 0px, rgba(193, 209, 249, 0.17) -3.303px 2.907px 3.088px 0px, rgba(193, 209, 249, 0.2) -6.361px 5.599px 6.052px 0px, rgba(193, 209, 249, 0.25) -10.704px 9.421px 11.127px 0px, rgba(193, 209, 249, 0.33) -16.515px 14.535px 19px 0px, rgb(193, 209, 249) -2px 1px 4px 0px;
+  --loop-cn-ring: linear-gradient(45deg, rgb(121, 199, 250) 15.28%, rgb(106, 84, 255) 35.71%, rgb(153, 78, 250) 60.02%, rgb(220, 120, 255) 85.75%);
+  --loop-cn-ring-shadow: rgb(248, 173, 250) -0.5px 0.5px 1px 0px inset, rgb(248, 173, 250) -0.5px 0.5px 0px 0px inset, rgba(255, 255, 255, 0.4) 0.5px -0.5px 0.5px 0px inset;
+  --loop-cn-ring-focus: linear-gradient(54deg, #1f2e3d 9.25%, #72685f 86.75%);
+  --loop-cn-ring-focus-shadow: inset -0.5px 0.5px 1px #ccc, inset -0.5px 0.5px #ccc, inset 0.5px -0.5px 0.5px #fff9;
+  --loop-cn-inner-bg: rgb(237, 241, 251);
+  --loop-cn-inner-shadow: rgba(153, 84, 250, 0.2) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.1) 2px -2px 3px 0px inset;
+  --loop-cn-inner-shadow-hover: rgba(153, 84, 250, 0.15) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.05) 2px -2px 3px 0px inset;
+  --loop-cn-inner-shadow-focus: rgba(114, 104, 95, 0.14) -2px 2px 3px 0px inset, rgba(31, 46, 61, 0.08) 2px -2px 3px 0px inset;
+  /* tooltip 投影（浅色复刻 base.css；深色 dark.css） */
+  --loop-tooltip-shadow: drop-shadow(rgba(0, 0, 0, 0.1) 0px 0px 2px) drop-shadow(rgba(0, 0, 0, 0.12) 0px 4px 8px);
 }
 
 :root[data-theme="dark"] {
@@ -1341,4 +1357,18 @@
   --loop-scrollbar-canvas: rgba(255, 255, 255, 0.6);
   --loop-scrollbar-embed: rgb(107, 107, 107);
   --loop-skeleton: rgba(255, 255, 255, 0.1);
+  --loop-cn-bg: rgb(107, 107, 107);
+  --loop-cn-color: rgb(209, 209, 209);
+  --loop-cn-plus: rgb(209, 209, 209);
+  --loop-cn-shadow: rgba(0, 0, 0, 0.06) -0.188px 0.179px 0.669px 0px, rgba(0, 0, 0, 0.09) -0.827px 0.786px 1.385px 0px, rgba(0, 0, 0, 0.12) -2.03px 1.929px 2.763px 0px, rgba(0, 0, 0, 0.14) -3.909px 3.715px 5.415px 0px, rgba(0, 0, 0, 0.17) -6.577px 6.251px 9.956px 0px, rgba(0, 0, 0, 0.23) -10.148px 9.645px 17px 0px;
+  --loop-cn-shadow-hover: rgba(0, 0, 0, 0.04) -0.308px 0.266px 0.551px 0px, rgba(0, 0, 0, 0.07) -1.356px 1.173px 1.141px 0px, rgba(0, 0, 0, 0.09) -3.328px 2.878px 2.275px 0px, rgba(0, 0, 0, 0.11) -6.41px 5.543px 4.459px 0px, rgba(0, 0, 0, 0.14) -10.786px 9.327px 8.199px 0px, rgba(0, 0, 0, 0.18) -16.641px 14.391px 14px 0px;
+  --loop-cn-ring: linear-gradient(48deg, rgb(36, 173, 255) 26.23%, rgb(133, 116, 249) 71.64%, rgb(153, 78, 250) 84.17%, rgb(220, 120, 255) 91.97%);
+  --loop-cn-ring-shadow: rgb(239, 134, 249) -0.5px 0.5px 1px 0px inset, rgb(248, 173, 250) -0.5px 0.5px 0px 0px inset, rgba(5, 2, 139, 0.4) 0.5px -0.5px 0.5px 0px inset;
+  --loop-cn-ring-focus: linear-gradient(54deg, #8c8c8c -29.64%, #fff 86.75%);
+  --loop-cn-ring-focus-shadow: inset -0.5px 0.5px 1px #fff, inset -0.5px 0.5px #fff, inset 0.5px -0.5px 0.5px #0006;
+  --loop-cn-inner-bg: rgb(28, 30, 31);
+  --loop-cn-inner-shadow: rgba(153, 84, 250, 0.5) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.3) 2px -2px 3px 0px inset;
+  --loop-cn-inner-shadow-hover: rgba(153, 84, 250, 0.3) -2px 2px 3px 0px inset, rgba(122, 200, 251, 0.2) 2px -2px 3px 0px inset;
+  --loop-cn-inner-shadow-focus: #ffffff1a -2px 2px 3px 0px inset, #ffffff1a 2px -2px 3px 0px inset;
+  --loop-tooltip-shadow: drop-shadow(rgba(0, 0, 0, 0.4) 0px 0px 2px) drop-shadow(rgba(0, 0, 0, 0.48) 0px 4px 8px);
 }

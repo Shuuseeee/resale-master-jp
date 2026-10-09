@@ -61,6 +61,16 @@ export default function RootLayout({
 
               document.documentElement.setAttribute('data-theme', theme);
 
+              // 桌面左导航展开 / 折叠：有手动记录用记录，否则 ≤1365px 自动折叠（与 lib/nav-mode.ts 一致，改动需同步）
+              var nav;
+              try {
+                nav = window.localStorage.getItem('snutils-nav');
+              } catch (e) {}
+              if (nav !== 'expanded' && nav !== 'collapsed') {
+                nav = window.matchMedia && window.matchMedia('(max-width: 1365px)').matches ? 'collapsed' : 'expanded';
+              }
+              document.documentElement.setAttribute('data-nav', nav);
+
               // theme-color：Loop 实测（lib/theme-mode.ts 的 THEME_COLORS 副本）
               var meta = document.querySelector('meta[name="theme-color"]');
               if (meta) {
@@ -70,9 +80,9 @@ export default function RootLayout({
           `}
         </Script>
         <ClientProviders>
-          <div className="lg:flex lg:min-h-screen text-[var(--color-text)]">
+          <div className="md:flex md:min-h-screen text-[var(--color-text)]">
             <Navigation />
-            <div className="flex-1 min-w-0 mobile-bottom-pad lg:pt-[60px] lg:pb-0">
+            <div className="flex-1 min-w-0 mobile-bottom-pad md:pt-[61px] md:pb-0">
               {children}
             </div>
           </div>

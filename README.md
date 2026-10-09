@@ -190,7 +190,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 - 深浅色支持浅色 / 深色 / 跟随系统：顶栏按钮快速切换，设置页「外观」可选跟随系统。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 `lucide-react`，避免新增手写 SVG。
-- 顶部桌面 banner、深浅色切换按钮、侧边栏和移动底部导航由 `components/Navigation.tsx` 统一控制。
+- 外壳由 `components/Navigation.tsx` 组装：桌面（≥768）为透明顶栏 + 左导航（`components/shell/NavRail.tsx`，展开 / 折叠、「新建」菜单），手机为顶栏 + 底部标签栏。
 - `node scripts/scan-design-tokens.mjs` 扫描硬编码色值残留，无标记输出即全部落实。
 
 ## Scraper

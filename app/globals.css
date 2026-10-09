@@ -171,6 +171,411 @@
     display: none;
   }
 
+  /* ── 左导航（components/shell/NavRail.tsx；Loop 浅色复刻 02-nav.css + design-spec/dark.css）──
+     展开 172 / 折叠 52，切换瞬时无过渡；折叠状态写在 <html data-nav>（theme-init 首屏前写入） */
+  .nav-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: var(--nav-w);
+    height: 100%;
+    padding: 8px 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--colorNeutralForeground1);
+  }
+
+  .nav-rail__col {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .nav-rail__collapse-wrap {
+    width: 160px;
+    max-width: 160px;
+    height: 41px;
+    margin-left: 6px;
+  }
+
+  .nav-rail__collapse {
+    width: 40px;
+    margin-top: 9px;
+    padding: 5px 9px;
+  }
+
+  .nav-rail__tablist {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 16px;
+    width: 166px;
+  }
+
+  .nav-rail__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-rail__caption {
+    margin-left: 10px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--colorNeutralForeground4);
+  }
+
+  .nav-rail__divider {
+    display: none;
+  }
+
+  .nav-rail__tab {
+    position: relative;
+    display: grid;
+    flex: none;
+    grid-template-columns: 20px auto;
+    column-gap: 6px;
+    align-items: center;
+    justify-content: start;
+    width: 160px;
+    max-width: 160px;
+    height: 32px;
+    margin-left: 6px;
+    padding: 6px 10px;
+    border-radius: var(--borderRadiusMedium);
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .nav-rail__icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--colorNeutralForeground2);
+  }
+
+  .nav-rail__label {
+    padding: 0 2px;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--colorNeutralForeground2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 悬停灰条（::before）与选中紫条（::after）：3×20，选中条从上一个 Tab 的位置滑过来（--ind，0.3s） */
+  .nav-rail__tab::before,
+  .nav-rail__tab::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    width: 3px;
+    border-radius: var(--borderRadiusCircular);
+  }
+
+  .nav-rail__tab::before {
+    background: var(--colorNeutralStroke1Hover);
+    opacity: 0;
+  }
+
+  .nav-rail__tab::after {
+    background: var(--colorCompoundBrandStroke);
+    opacity: 0;
+    transform: var(--ind, translateY(0px) scaleY(1));
+    transition: transform 0.3s var(--loop-ease-tab-indicator);
+  }
+
+  .nav-rail__tab.no-anim::after {
+    transition: none;
+  }
+
+  .nav-rail__tab:hover .nav-rail__icon,
+  .nav-rail__tab:hover .nav-rail__label {
+    color: var(--colorNeutralForeground1);
+  }
+
+  .nav-rail__tab:hover::before {
+    opacity: 1;
+  }
+
+  .nav-rail__tab:active::before {
+    background: var(--colorNeutralStroke1Pressed);
+  }
+
+  .nav-rail__tab[data-selected] {
+    overflow: visible;
+  }
+
+  .nav-rail__tab[data-selected]::before {
+    opacity: 0;
+  }
+
+  .nav-rail__tab[data-selected]::after {
+    opacity: 1;
+  }
+
+  .nav-rail__tab[data-selected] .nav-rail__label {
+    font-weight: 600;
+    color: var(--colorNeutralForeground1);
+  }
+
+  .nav-rail__tab[data-selected] .nav-rail__icon {
+    color: var(--colorCompoundBrandForeground1);
+  }
+
+  .nav-rail__tab[data-selected]:hover::after {
+    background: var(--colorCompoundBrandStrokeHover);
+  }
+
+  .nav-rail__tab[data-selected]:hover .nav-rail__icon {
+    color: var(--colorCompoundBrandForeground1Hover);
+  }
+
+  .nav-rail__tab[data-selected]:active::after {
+    background: var(--colorCompoundBrandStrokePressed);
+  }
+
+  .nav-rail__tab[data-selected]:active .nav-rail__icon {
+    color: var(--colorCompoundBrandForeground1Pressed);
+  }
+
+  .nav-rail__tab:focus-visible {
+    outline: 2px solid var(--colorStrokeFocus2);
+    box-shadow: var(--shadow4), 0 0 0 2px var(--colorStrokeFocus2);
+  }
+
+  /* 折叠态（52px）：只剩图标，分组标题换成分隔线 */
+  :root[data-nav="collapsed"] .nav-rail__col {
+    align-items: center;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__collapse-wrap {
+    width: 40px;
+    margin-left: 0;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__tablist {
+    width: 40px;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__tab {
+    grid-template-columns: 20px;
+    width: 40px;
+    margin-left: 0;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__label,
+  :root[data-nav="collapsed"] .nav-rail__caption,
+  :root[data-nav="collapsed"] .new-pill__text {
+    display: none;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__divider {
+    display: flex;
+    width: 40px;
+    height: 1px;
+    padding: 0 12px;
+  }
+
+  :root[data-nav="collapsed"] .nav-rail__divider::before {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--colorNeutralStroke1);
+  }
+
+  /* ── 「新建」胶囊（渐变描边用 CSS；边缘高光在 NavRail.tsx 里按原参数内联绘制） ── */
+  .new-pill {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    width: 152px;
+    height: 36px;
+    margin-right: 8px;
+    border: 2px solid transparent;
+    border-radius: var(--borderRadiusCircular);
+    background: var(--loop-cn-bg);
+    box-shadow: var(--loop-cn-shadow);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--loop-cn-color);
+    white-space: nowrap;
+    outline: none;
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
+    animation: new-pill-in 0.2s cubic-bezier(0.17, 0.17, 0.2, 1);
+  }
+
+  @keyframes new-pill-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .new-pill::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: var(--borderRadiusCircular);
+    background-image: var(--loop-cn-ring);
+    box-shadow: var(--loop-cn-ring-shadow);
+    transition: transform 0.05s ease-out, background-image 0.05s ease-out, box-shadow 0.05s ease-out;
+  }
+
+  /* 边缘高光：153×35，偏出胶囊内边距盒左 3 / 上 2；悬停平移 (1px, -1.5px) */
+  .new-pill__edge {
+    position: absolute;
+    top: -2px;
+    left: -3px;
+    width: 153px;
+    height: 35px;
+    overflow: hidden;
+    pointer-events: none;
+    transition: transform 0.05s ease-out;
+  }
+
+  .new-pill__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 148px;
+    height: 32px;
+    border-radius: var(--borderRadiusCircular);
+    background: var(--loop-cn-inner-bg);
+    box-shadow: var(--loop-cn-inner-shadow);
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
+  }
+
+  /* 加号 = 用 mask 挖出形状的 14×14 色块（与 Loop 相同的做法），悬停时叠一层白色渐变形成反光。
+     形状取 lucide 加号的路径，viewBox 裁到字形外框（与 Loop 一样撑满 14px），线宽按 Loop 的臂粗比例（1.5 / 15.5）换算 */
+  .new-pill__plus {
+    display: block;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    background-color: var(--loop-cn-plus);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 4 16 16' fill='none' stroke='black' stroke-width='1.548' stroke-linecap='round'%3E%3Cpath d='M5 12h14M12 5v14'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 4 16 16' fill='none' stroke='black' stroke-width='1.548' stroke-linecap='round'%3E%3Cpath d='M5 12h14M12 5v14'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+  }
+
+  /* 加号反光：浅色实测规则；深色下是否同样存在待补测，暂只用于浅色 */
+  :root:not([data-theme="dark"]) .new-pill:hover .new-pill__plus {
+    background-image: linear-gradient(237deg, rgba(255, 255, 255, 0.4) 12.2%, rgba(255, 255, 255, 0) 28.87%);
+  }
+
+  .new-pill:active .new-pill__plus {
+    background-image: none;
+  }
+
+  /* 悬停与菜单展开时（实测：菜单打开期间胶囊保持悬停态） */
+  .new-pill:hover,
+  .new-pill[aria-expanded="true"] {
+    box-shadow: var(--loop-cn-shadow-hover);
+  }
+
+  .new-pill:hover::before,
+  .new-pill:hover .new-pill__inner,
+  .new-pill[aria-expanded="true"]::before,
+  .new-pill[aria-expanded="true"] .new-pill__inner {
+    transform: matrix(1.01316, 0, 0, 1.05556, 0, 0);
+  }
+
+  .new-pill:hover .new-pill__inner,
+  .new-pill[aria-expanded="true"] .new-pill__inner {
+    box-shadow: var(--loop-cn-inner-shadow-hover);
+  }
+
+  .new-pill:hover .new-pill__edge,
+  .new-pill[aria-expanded="true"] .new-pill__edge {
+    transform: translate(1px, -1.5px);
+  }
+
+  /* 按下：回到静止值，过渡 0.1s */
+  .new-pill:active,
+  .new-pill:active::before,
+  .new-pill:active .new-pill__inner,
+  .new-pill:active .new-pill__edge {
+    transition-duration: 0.1s;
+  }
+
+  .new-pill:active {
+    box-shadow: var(--loop-cn-shadow);
+  }
+
+  .new-pill:active::before,
+  .new-pill:active .new-pill__inner,
+  .new-pill:active .new-pill__edge {
+    transform: none;
+  }
+
+  .new-pill:active .new-pill__inner {
+    box-shadow: var(--loop-cn-inner-shadow);
+  }
+
+  .new-pill:focus-visible::before {
+    background-image: var(--loop-cn-ring-focus);
+    box-shadow: var(--loop-cn-ring-focus-shadow);
+    transform: scale(calc(154 / 152), calc(38 / 36));
+  }
+
+  .new-pill:focus-visible .new-pill__inner {
+    box-shadow: var(--loop-cn-inner-shadow-focus);
+  }
+
+  :root[data-nav="collapsed"] .new-pill {
+    width: 36px;
+    height: 36px;
+    margin-right: 0;
+  }
+
+  :root[data-nav="collapsed"] .new-pill__inner {
+    width: 32px;
+    height: 32px;
+  }
+
+  :root[data-nav="collapsed"] .new-pill__edge {
+    top: -2px;
+    left: 1px;
+    width: 33px;
+    height: 33px;
+  }
+
+  /* ── Tooltip（components/fluent/Tooltip.tsx）：白底 drop-shadow、12/16，进出无动画 ── */
+  .fluent-tooltip {
+    position: fixed;
+    z-index: 9600;
+    max-width: 240px;
+    padding: 4px 11px 6px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusMedium);
+    background: var(--colorNeutralBackground1);
+    color: var(--colorNeutralForeground1);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+    pointer-events: none;
+    filter: var(--loop-tooltip-shadow);
+  }
+
   /* ── Fluent 菜单（components/fluent/Menu.tsx，规格见 design-spec/components/04-menu.css） ── */
   .fluent-menu {
     position: fixed;
@@ -346,6 +751,15 @@
 
   /* 页面语义 token：一律引用 app/fluent-tokens.css 的 Fluent / Loop 实测 token（深浅色由那里切换），不在这里写色值、不做 color-mix 派生。
      例外：Loop 标签色（徽章）与取景器上的危险色是固定值，深色下不变（实测如此）。 */
+  /* 左导航宽度：展开 172 / 折叠 52（Loop 实测），外壳占位按它计算 */
+  :root {
+    --nav-w: 172px;
+  }
+
+  :root[data-nav="collapsed"] {
+    --nav-w: 52px;
+  }
+
   :root {
     /* 品牌紫：前景（文字 / 图标 / 描边）与实底（按钮）在深色下取值不同（前景 #A375FF，实底 #7520F5） */
     --color-primary: var(--colorCompoundBrandForeground1);
@@ -649,5 +1063,24 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Loop 实测：「新建」胶囊的入场与悬停 / 按下过渡不受减少动态效果影响 */
+  .new-pill {
+    animation-duration: 0.2s !important;
+  }
+
+  .new-pill,
+  .new-pill::before,
+  .new-pill__inner,
+  .new-pill__edge {
+    transition-duration: 0.05s !important;
+  }
+
+  .new-pill:active,
+  .new-pill:active::before,
+  .new-pill:active .new-pill__inner,
+  .new-pill:active .new-pill__edge {
+    transition-duration: 0.1s !important;
   }
 }
