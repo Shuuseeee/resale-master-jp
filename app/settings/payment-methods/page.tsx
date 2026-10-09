@@ -4,17 +4,39 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod } from '@/types/database.types';
+import type { PaymentMethod, PointsPlatform } from '@/types/database.types';
 import { badge, button, card, heading, layout } from '@/lib/theme';
 import { formatPointRate } from '@/lib/utils/paymentMethods';
+import PaymentMethodDialog from '@/components/PaymentMethodDialog';
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pointsPlatforms, setPointsPlatforms] = useState<PointsPlatform[]>([]);
+  // 新增 / 编辑弹窗：editing 为 null 表示新增
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<PaymentMethod | null>(null);
 
   useEffect(() => {
     loadPaymentMethods();
+    supabase.from('points_platforms').select('*').eq('is_active', true).order('display_name')
+      .then(({ data }) => setPointsPlatforms(data || []));
   }, []);
+
+  const openDialog = (method: PaymentMethod | null) => {
+    setEditing(method);
+    setDialogOpen(true);
+  };
+
+  // 保存后原地更新列表（不整页重新加载，避免闪出加载态）
+  const handleSaved = (saved: PaymentMethod) => {
+    setPaymentMethods(methods => {
+      const exists = methods.some(m => m.id === saved.id);
+      const next = exists ? methods.map(m => (m.id === saved.id ? saved : m)) : [...methods, saved];
+      return next.sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
+    });
+    setDialogOpen(false);
+  };
 
   const loadPaymentMethods = async () => {
     setLoading(true);
@@ -89,12 +111,12 @@ export default function PaymentMethodsPage() {
               <h1 className={heading.h1}>支付方式管理</h1>
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">配置返点率和启用状态。</p>
             </div>
-            <Link href="/settings/payment-methods/add" className={`${button.primary} gap-2`}>
+            <button type="button" onClick={() => openDialog(null)} className={`${button.primary} gap-2`}>
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               添加支付方式
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -124,9 +146,9 @@ export default function PaymentMethodsPage() {
                 </div>
 
                 <div className="mt-4 flex items-center justify-end">
-                  <Link href={`/settings/payment-methods/${method.id}/edit`} className={button.link}>
+                  <button type="button" onClick={() => openDialog(method)} className={button.link}>
                     编辑
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
@@ -160,9 +182,9 @@ export default function PaymentMethodsPage() {
                         </button>
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <Link href={`/settings/payment-methods/${method.id}/edit`} className={button.link}>
+                        <button type="button" onClick={() => openDialog(method)} className={button.link}>
                           编辑
-                        </Link>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -172,6 +194,14 @@ export default function PaymentMethodsPage() {
           </div>
         </section>
       </div>
+
+      <PaymentMethodDialog
+        isOpen={dialogOpen}
+        method={editing}
+        pointsPlatforms={pointsPlatforms}
+        onClose={() => setDialogOpen(false)}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
