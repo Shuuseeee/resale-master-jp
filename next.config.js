@@ -39,6 +39,14 @@ const nextConfig = {
     return config
   },
 
+  // -- Redirects: 已并入其它页面的旧地址（收藏 / PWA 历史记录里可能还指向它们）--
+  async redirects() {
+    return [
+      // 支付方式已并入设置页的一个区块（2026-10-09）；:path* 同时覆盖旧的 add、[id]/edit
+      { source: '/settings/payment-methods/:path*', destination: '/settings#payment-methods', permanent: false },
+    ]
+  },
+
   // -- Headers: ensure browsers revalidate sw.js on every load --
   async headers() {
     return [

@@ -24,6 +24,14 @@ export default function PaymentMethodsSection() {
       .then(({ data }) => setPointsPlatforms(data || []));
   }, []);
 
+  // 从旧地址 /settings/payment-methods 跳转过来时带 #payment-methods：设置页先显示加载骨架，
+  // 浏览器按锚点滚动时本区块还没渲染出来，所以等列表加载完再自己滚到这里
+  useEffect(() => {
+    if (!loading && window.location.hash === '#payment-methods') {
+      document.getElementById('payment-methods')?.scrollIntoView({ block: 'start' });
+    }
+  }, [loading]);
+
   const loadPaymentMethods = async () => {
     setLoading(true);
     try {
