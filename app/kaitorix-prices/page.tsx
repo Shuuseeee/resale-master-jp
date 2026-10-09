@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowTrending20Filled, ArrowTrending20Regular } from '@fluentui/react-icons/headless/svg/arrow-trending';
@@ -14,6 +14,7 @@ import DualIcon from '@/components/fluent/DualIcon';
 import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
 import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
 import PageHeader from '@/components/shell/PageHeader';
+import OverlayDrawer from '@/components/fluent/OverlayDrawer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
@@ -275,6 +276,10 @@ function KaitorixPricesContent() {
     () => summaries.find(item => item.jan === selectedJan) || null,
     [summaries, selectedJan],
   );
+  const lastSummaryRef = useRef(selectedSummary);
+  if (selectedSummary) lastSummaryRef.current = selectedSummary;
+  const drawerSummary = selectedSummary ?? lastSummaryRef.current;
+  const closeDrawer = useCallback(() => setSelectedJan(null), []);
 
   const filteredSummaries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -575,25 +580,23 @@ function KaitorixPricesContent() {
         </div>
       </div>
 
-      {selectedSummary && (
-        <div className="fixed inset-0 z-[10000] flex justify-end bg-black/40" onClick={() => setSelectedJan(null)}>
-          <aside
-            className="h-full w-full max-w-3xl overflow-y-auto border-l border-[var(--color-border)] app-bg shadow-[var(--shadow-lg)]"
-            style={{
-              paddingTop: 'env(safe-area-inset-top, 0px)',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+      {/* 详情抽屉：桌面 = Fluent 覆盖式抽屉从右侧进出；关闭动画期间沿用最后一次的商品 */}
+      <OverlayDrawer
+        open={!!selectedSummary}
+        onClose={closeDrawer}
+        className="max-md:h-full max-md:w-full max-md:overflow-y-auto max-md:border-l max-md:border-[var(--color-border)] max-md:app-bg max-md:shadow-[var(--shadow-lg)] max-md:pt-[env(safe-area-inset-top,0px)] max-md:pb-[calc(env(safe-area-inset-bottom,0px)+88px)]"
+      >
+        {drawerSummary && (
+          <>
             <div className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-lg font-bold text-[var(--color-text)] break-cjk">{selectedSummary.productName}</h2>
-                  <CopyableJan jan={selectedSummary.jan} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
+                  <h2 className="text-lg font-bold text-[var(--color-text)] break-cjk">{drawerSummary.productName}</h2>
+                  <CopyableJan jan={drawerSummary.jan} className="block mt-1 text-xs text-[var(--color-text-muted)]" />
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-1">
                   <Link
-                    href={`/transactions?tab=in_stock&jan=${encodeURIComponent(selectedSummary.jan)}`}
+                    href={`/transactions?tab=in_stock&jan=${encodeURIComponent(drawerSummary.jan)}`}
                     className="min-h-11 flex items-center rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] whitespace-nowrap"
                   >
                     在交易列表查看
@@ -602,27 +605,27 @@ function KaitorixPricesContent() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <div><div className="text-xs text-[var(--color-text-muted)]">库存</div><div className="font-semibold text-[var(--color-text)]">{selectedSummary.totalStock}</div></div>
-                <div><div className="text-xs text-[var(--color-text-muted)]">最高价</div><div className="font-mono font-semibold text-[var(--color-text)]">{selectedSummary.maxPrice > 0 ? formatCurrency(selectedSummary.maxPrice) : '-'}</div></div>
-                <div><div className="text-xs text-[var(--color-text-muted)]">预估利润</div><div className={`font-mono font-semibold ${selectedSummary.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{selectedSummary.maxPrice > 0 ? formatCurrency(selectedSummary.expectedProfit) : '-'}</div></div>
-                <div><div className="text-xs text-[var(--color-text-muted)]">刷新</div><div className="font-semibold text-[var(--color-text)]">{formatAge(selectedSummary.lastFetchedAt)}</div></div>
+                <div><div className="text-xs text-[var(--color-text-muted)]">库存</div><div className="font-semibold text-[var(--color-text)]">{drawerSummary.totalStock}</div></div>
+                <div><div className="text-xs text-[var(--color-text-muted)]">最高价</div><div className="font-mono font-semibold text-[var(--color-text)]">{drawerSummary.maxPrice > 0 ? formatCurrency(drawerSummary.maxPrice) : '-'}</div></div>
+                <div><div className="text-xs text-[var(--color-text-muted)]">预估利润</div><div className={`font-mono font-semibold ${drawerSummary.expectedProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{drawerSummary.maxPrice > 0 ? formatCurrency(drawerSummary.expectedProfit) : '-'}</div></div>
+                <div><div className="text-xs text-[var(--color-text-muted)]">刷新</div><div className="font-semibold text-[var(--color-text)]">{formatAge(drawerSummary.lastFetchedAt)}</div></div>
               </div>
             </div>
 
             <div className="space-y-4 p-4">
               <section className={card.primary + ' overflow-hidden'}>
                 <div className="border-b border-[var(--color-border)] px-4 py-3 font-semibold text-[var(--color-text)]">店铺价格</div>
-                {selectedSummary.prices.length === 0 ? (
+                {drawerSummary.prices.length === 0 ? (
                   <div className="p-6 text-sm text-[var(--color-text-muted)]">暂无价格数据</div>
                 ) : (
                   <div className="divide-y divide-[var(--color-border)]">
-                    {selectedSummary.prices
+                    {drawerSummary.prices
                       .slice()
                       .sort((a, b) => b.price - a.price)
                       .map((price, index) => {
                         const isEnabled = enabledStoreSet.has(price.store);
-                        const diff = selectedSummary.maxPrice - price.price;
-                        const isExpired = !isPriceReferenceable(price, selectedSummary.lastFetchedAt);
+                        const diff = drawerSummary.maxPrice - price.price;
+                        const isExpired = !isPriceReferenceable(price, drawerSummary.lastFetchedAt);
                         return (
                           <div key={`${price.store}-${index}`} className={`grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center ${isEnabled && !isExpired ? '' : 'opacity-50'}`}>
                             <div className="min-w-0">
@@ -647,10 +650,10 @@ function KaitorixPricesContent() {
               <section className={card.primary + ' overflow-hidden'}>
                 <div className="border-b border-[var(--color-border)] px-4 py-3 font-semibold text-[var(--color-text)]">关联交易</div>
                 <div className="divide-y divide-[var(--color-border)]">
-                  {selectedSummary.transactions.map(tx => {
+                  {drawerSummary.transactions.map(tx => {
                     const stock = getAvailableQty(tx);
                     const unitCost = getUnitCost(tx);
-                    const profit = selectedSummary.maxPrice > 0 ? (selectedSummary.maxPrice - unitCost) * stock : 0;
+                    const profit = drawerSummary.maxPrice > 0 ? (drawerSummary.maxPrice - unitCost) * stock : 0;
                     return (
                       <Link key={tx.id} href={`/transactions/${tx.id}`} className="grid grid-cols-1 gap-2 px-4 py-3 text-sm hover:bg-[var(--color-bg-hover)] md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                         <div>
@@ -659,7 +662,7 @@ function KaitorixPricesContent() {
                         </div>
                         <div className="font-mono text-[var(--color-text)]">库存 {stock}/{tx.quantity}</div>
                         <div className="font-mono text-[var(--color-text)]">{formatCurrency(unitCost)}</div>
-                        <div className={`font-mono ${profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{selectedSummary.maxPrice > 0 ? formatCurrency(profit) : '-'}</div>
+                        <div className={`font-mono ${profit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{drawerSummary.maxPrice > 0 ? formatCurrency(profit) : '-'}</div>
                       </Link>
                     );
                   })}
@@ -681,9 +684,9 @@ function KaitorixPricesContent() {
                 )}
               </section>
             </div>
-          </aside>
-        </div>
-      )}
+          </>
+        )}
+      </OverlayDrawer>
     </div>
   );
 }

@@ -1,8 +1,12 @@
 // components/Modal.tsx
+// 桌面（≥768）= Fluent Dialog（design-spec/components/08-dialog.css：padding 32、radius 16、shadow64、遮罩无模糊；
+// 进场 遮罩 opacity 250ms + 面板 scale .85→1 / opacity 250ms，无退场动画），样式在 globals.css 的 .modal-*；
+// 手机（<768）仍是底部弹层，用 max-md: 前缀的类，结构与尺寸不变
 'use client';
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Dismiss20Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import { button } from '@/lib/theme';
 
 interface ModalProps {
@@ -74,7 +78,7 @@ export default function Modal({
 
   // 尺寸映射
   const sizeClasses = {
-    sm: 'md:max-w-md',
+    sm: 'md:max-w-[450px]',
     md: 'md:max-w-lg',
     lg: 'md:max-w-2xl',
     xl: 'md:max-w-4xl',
@@ -83,7 +87,7 @@ export default function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[10010] flex items-end md:items-center justify-center animate-fade-in overflow-hidden overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0"
+      className="fixed inset-0 z-[10010] flex items-end md:items-center justify-center max-md:animate-fade-in overflow-hidden overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0"
       onClick={handleOverlayClick}
       onTouchMove={(e) => {
         // 拦截外层(遮罩)上的滑动,防止冒泡到底部页面;Modal 内容区有 data-modal-scroll 标记不受影响
@@ -93,7 +97,7 @@ export default function Modal({
     >
       {/* 遮罩层 */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[4px]"
+        className="modal-backdrop absolute inset-0 max-md:bg-black/50 max-md:backdrop-blur-[4px]"
         aria-hidden="true"
       />
 
@@ -104,26 +108,26 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
         className={`
-          relative w-full ${sizeClasses[size]}
-          max-h-[min(calc(90vh-5rem),calc(100vh-5.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] md:max-h-[85vh]
-          bg-[var(--color-bg-elevated)]
-          border border-[var(--color-border)]
-          rounded-t-[20px] md:rounded-[16px]
-          shadow-[var(--shadow-modal)]
+          modal-surface relative w-full ${sizeClasses[size]}
+          max-md:max-h-[min(calc(90vh-5rem),calc(100vh-5.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))]
+          max-md:bg-[var(--color-bg-elevated)]
+          max-md:border max-md:border-[var(--color-border)]
+          max-md:rounded-t-[20px]
+          max-md:shadow-[var(--shadow-modal)]
           overflow-hidden
-          animate-slide-up md:animate-fade-in
+          max-md:animate-slide-up
         `}
       >
         {/* 标题栏 */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]">
+          <div className="modal-header flex items-center justify-between max-md:px-4 max-md:py-4 max-md:border-b max-md:border-[var(--color-border)] max-md:bg-[var(--color-bg-subtle)]">
             {/* 移动端拖动指示器 */}
             <div className="absolute top-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-[var(--color-border)] md:hidden" />
 
             {title && (
               <h2
                 id="modal-title"
-                className="text-lg md:text-xl font-semibold text-[var(--color-text)] pt-2 md:pt-0"
+                className="modal-title max-md:text-lg max-md:font-semibold max-md:text-[var(--color-text)] max-md:pt-2"
               >
                 {title}
               </h2>
@@ -132,12 +136,10 @@ export default function Modal({
             {showCloseButton && (
               <button
                 onClick={beforeClose || onClose}
-                className="ml-auto p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text)] transition-colors rounded-[var(--radius-md)] min-h-touch min-w-touch flex items-center justify-center"
+                className="modal-close ml-auto flex items-center justify-center max-md:p-2 max-md:text-[var(--color-text-muted)] max-md:hover:bg-[var(--color-bg-elevated)] max-md:hover:text-[var(--color-text)] max-md:transition-colors max-md:rounded-[var(--radius-md)] max-md:min-h-touch max-md:min-w-touch"
                 aria-label="关闭"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Dismiss20Regular />
               </button>
             )}
           </div>
@@ -146,7 +148,7 @@ export default function Modal({
         {/* 内容区域 */}
         <div
           data-modal-scroll
-          className="overflow-y-auto max-h-[min(calc(90vh-9rem),calc(100vh-9.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] md:max-h-[calc(85vh-5rem)] px-4 md:px-6 py-4 md:py-6 overscroll-contain text-[var(--color-text)]"
+          className="modal-content overflow-y-auto max-md:max-h-[min(calc(90vh-9rem),calc(100vh-9.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] max-md:px-4 max-md:py-4 overscroll-contain text-[var(--color-text)]"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}
@@ -222,20 +224,14 @@ export function ConfirmModal({
       closeOnOverlayClick={!isLoading}
       closeOnEsc={!isLoading}
     >
-      <div className="py-4">
-        <p className="text-sm text-[var(--color-text)] md:text-base">
+      <div className="py-4 md:py-0">
+        <p className="text-sm text-[var(--color-text)]">
           {message}
         </p>
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end pt-4">
-        <button
-          onClick={onClose}
-          disabled={isLoading}
-          className={button.secondary}
-        >
-          {cancelText}
-        </button>
+      {/* Fluent DialogActions：靠右、间距 8、主按钮在左（08-dialog.css）；手机仍是主按钮在上的纵向排列 */}
+      <div className="flex flex-col gap-3 pt-4 sm:flex-row-reverse sm:justify-start md:flex-row md:justify-end md:gap-2 md:pt-6">
         <button
           onClick={onConfirm}
           disabled={isLoading}
@@ -252,6 +248,13 @@ export function ConfirmModal({
           ) : (
             confirmText
           )}
+        </button>
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className={button.secondary}
+        >
+          {cancelText}
         </button>
       </div>
     </Modal>

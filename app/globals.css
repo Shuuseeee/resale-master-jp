@@ -786,6 +786,207 @@
     background: var(--colorNeutralBackgroundDisabled);
   }
 
+  /* ── 对话框（components/Modal.tsx 桌面部分；design-spec/components/08-dialog.css）──
+     遮罩 Overlay 色、无模糊、opacity 250ms；面板 padding 32、radius 16、shadow64，scale .85→1 + opacity 250ms；无退场动画 */
+  @keyframes fluent-dialog-backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fluent-dialog-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .modal-backdrop {
+      background: var(--colorBackgroundOverlay);
+      animation: fluent-dialog-backdrop-in 250ms cubic-bezier(0.33, 0, 0.67, 1);
+    }
+
+    .modal-surface {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(100vh - 48px);
+      padding: 32px;
+      border-radius: var(--borderRadius3XLarge);
+      background: var(--colorNeutralBackground1);
+      box-shadow: var(--shadow64);
+      animation: fluent-dialog-in 250ms cubic-bezier(0, 0, 0, 1);
+    }
+
+    .modal-header {
+      flex: none;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      line-height: 28px;
+      font-weight: 600;
+      color: var(--colorNeutralForeground1);
+    }
+
+    /* 右上关闭：32×32、padding 5、radius 8、Foreground2；悬停 / 按下换 subtle 底色 */
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      padding: 5px;
+      border-radius: var(--borderRadiusLarge);
+      color: var(--colorNeutralForeground2);
+      transition: background 0.1s var(--loop-ease-button);
+    }
+
+    .modal-close:hover {
+      background: var(--colorSubtleBackgroundHover);
+    }
+
+    .modal-close:active {
+      background: var(--colorSubtleBackgroundPressed);
+    }
+
+    .modal-content {
+      flex: 1 1 auto;
+      min-height: 32px;
+      margin: -2px;
+      padding: 2px;
+    }
+  }
+
+  /* ── 操作反馈提示（components/Toast.tsx；Loop 复制提示，design-spec/components/13-toast.css）──
+     居中 475 宽（≤480 铺满屏宽）、radius 12、shadow64；内层 padding 16、radius 8；标题行 32 高；进场同对话框、无退场 */
+  .loop-toast-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 10030;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .loop-toast-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--colorBackgroundOverlay);
+    animation: fluent-dialog-backdrop-in 250ms cubic-bezier(0.33, 0, 0.67, 1);
+  }
+
+  .loop-toast {
+    position: relative;
+    width: 475px;
+    max-width: 475px;
+    border-radius: var(--borderRadiusXLarge);
+    background: var(--colorNeutralBackground1);
+    box-shadow: var(--shadow64);
+    animation: fluent-dialog-in 250ms cubic-bezier(0, 0, 0, 1);
+  }
+
+  @media (max-width: 480px) {
+    .loop-toast {
+      width: 100vw;
+      max-width: 100vw;
+    }
+  }
+
+  .loop-toast__inner {
+    padding: 16px;
+    border-radius: var(--borderRadiusLarge);
+    background: var(--loop-toast-bg);
+    color: var(--colorNeutralForeground1);
+  }
+
+  .loop-toast__header {
+    display: flex;
+    align-items: center;
+    height: 32px;
+  }
+
+  .loop-toast__icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--colorPaletteGreenBackground3);
+  }
+
+  .loop-toast__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding-left: 8px;
+    overflow: hidden;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 右上关闭：32×32、radius 2、padding 0 4px（悬停样式材料里没有，待补测） */
+  .loop-toast__close {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0 4px;
+    border-radius: 2px;
+    color: var(--colorNeutralForeground1);
+  }
+
+  /* ── 右侧覆盖式抽屉（components/fluent/OverlayDrawer.tsx；design-spec/components/09-overlay-drawer.css）──
+     手机：整屏面板 + 半透明遮罩（原样）；桌面：毛玻璃、radius 12、shadow64、遮罩全透明，从右侧进出 */
+  .overlay-drawer-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .overlay-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--colorBackgroundOverlay);
+  }
+
+  .overlay-drawer {
+    position: relative;
+  }
+
+  @media (min-width: 768px) {
+    .overlay-drawer-backdrop {
+      background: transparent;
+    }
+
+    /* 宽度沿用原来的 768（Loop 实测 320 放不下价格对比，待确认），位置按材料建议贴右侧 top 0 / right 0 */
+    .overlay-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 768px;
+      max-width: 100vw;
+      padding: 8px 4px;
+      overflow-y: auto;
+      border-radius: var(--borderRadiusXLarge);
+      background: var(--loop-drawer-overlay-bg);
+      -webkit-backdrop-filter: blur(var(--loop-glass-blur));
+      backdrop-filter: blur(var(--loop-glass-blur));
+      box-shadow: var(--shadow64);
+    }
+  }
+
   /* ── 页面级骨架屏（components/Skeleton.tsx；补测-2 #6 Loop 切页骨架屏，颜色与流光 design-spec/components/21-misc.css） ── */
   .skeleton-item {
     position: relative;

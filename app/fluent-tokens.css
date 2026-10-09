@@ -1314,6 +1314,7 @@
   --loop-app-bg-image: radial-gradient(circle at 80% 32%, rgba(68, 235, 195, 0.08) 0%, rgba(122, 216, 221, 0.08) 15%, rgba(68, 115, 235, 0.02) 40%), radial-gradient(31.2% 31.19% at 49.79% 29.97%, rgba(68, 115, 235, 0.08) 0%, rgba(68, 115, 235, 0) 100%), radial-gradient(circle at 40% 95%, rgba(130, 48, 255, 0.06) 0%, rgba(130, 48, 255, 0) 50%), linear-gradient(rgba(236, 240, 247, 0.6) 0%, rgba(236, 240, 247, 0.6) 100%);
   --loop-drawer-bg: rgba(255, 255, 255, 0.5);
   --loop-drawer-overlay-bg: rgba(236, 240, 247, 0.8);
+  --loop-toast-bg: #ffffff;                                        /* 13-toast.css：复制提示内层容器 [实测] */
   --loop-drawer-size: 320px;
   --loop-article-bg: var(--colorNeutralBackground1);
   --loop-article-shadow: rgba(0, 0, 0, 0.08) 0px 0px 2px 0px, rgba(0, 0, 0, 0.12) 0px 2px 4px 0px;
@@ -1361,6 +1362,7 @@
   --loop-app-bg-image: radial-gradient(90.68% 40.04% at 80.38% 45.37%, rgba(41, 223, 248, 0.06) 0%, rgba(68, 115, 235, 0) 100%), radial-gradient(31.2% 31.19% at 49.79% 29.97%, rgba(35, 123, 255, 0.08) 0%, rgba(68, 115, 235, 0) 100%), radial-gradient(circle at 44.03% 100%, rgba(161, 81, 255, 0.1) 0%, rgba(255, 47, 222, 0) 50%), linear-gradient(rgb(35, 37, 39) 0%, rgb(35, 37, 39) 100%);
   --loop-drawer-bg: rgba(26, 26, 26, 0.5);
   --loop-drawer-overlay-bg: rgba(35, 37, 39, 0.8);
+  --loop-toast-bg: #000000;                                        /* 13-toast.css：复制提示内层容器，比外层 #292929 更黑 [实测] */
   --loop-article-shadow: rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.28) 0px 2px 4px 0px;
   --loop-glass-bg: rgba(31, 36, 37, 0.498);
   --loop-scrollbar-canvas: rgba(255, 255, 255, 0.6);
