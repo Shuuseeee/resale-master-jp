@@ -303,7 +303,9 @@
   }
 
   /* 表单元素触摸优化 */
-  input, select, textarea, button {
+  /* 复选框 / 单选框不能做这个重置：它们的方框和勾选标记就是「外观」本身，去掉后选中与未选中
+     完全一样（透明背景、0 边框，等于隐形）。它们的主题色用 accent-color（accent-[var(--color-*)]）设置 */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea, button {
     /* iOS 样式重置 */
     -webkit-appearance: none;
     -moz-appearance: none;
