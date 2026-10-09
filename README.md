@@ -32,7 +32,7 @@
 - **数据库与认证**：Supabase Auth + PostgreSQL + Storage
 - **PWA**：Manifest + Workbox Service Worker
 - **图表与导出**：Recharts、jsPDF、jspdf-autotable、XLSX
-- **表格**：`@tanstack/react-table`（headless）+ `@tanstack/react-virtual`
+- **表格**：`@tanstack/react-table`（headless）
 - **数据请求缓存**：`@tanstack/react-query`
 - **Service Worker**：Workbox（`InjectManifest`，源码 `lib/sw/sw-source.ts`）
 - **图片处理**：heic2any
