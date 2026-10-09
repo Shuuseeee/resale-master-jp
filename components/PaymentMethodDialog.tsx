@@ -1,13 +1,14 @@
 'use client';
 
 // 支付方式的新增 / 编辑弹窗（设置 → 支付方式管理页内使用，取代原先的两个独立页面）。
-// 字段：名称、返点率、信用卡积分平台、启用状态。有未保存修改时关闭会二次确认。
+// 字段：名称、返点率、信用卡积分平台、启用状态（开关）。有未保存修改时关闭会二次确认。
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentMethod, PointsPlatform } from '@/types/database.types';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import Select from '@/components/Select';
+import Switch from '@/components/Switch';
 import { button, input } from '@/lib/theme';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import { percentToPointRate, pointRateToPercent } from '@/lib/utils/paymentMethods';
@@ -143,15 +144,13 @@ export default function PaymentMethodDialog({ isOpen, method, pointsPlatforms, o
             <p className="sn-form-muted">新建交易时自动关联此积分平台。</p>
           </div>
 
-          <label className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={e => update({ is_active: e.target.checked })}
-              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-            />
-            <span className="text-sm font-medium text-[var(--color-text)]">启用此支付方式</span>
-          </label>
+          <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-4 py-3">
+            <div>
+              <div className="text-sm font-medium text-[var(--color-text)]">{form.is_active ? '已启用' : '已停用'}</div>
+              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">停用后新建交易时不再出现在支付卡片里，历史交易不受影响。</p>
+            </div>
+            <Switch checked={form.is_active} onClick={() => update({ is_active: !form.is_active })} label="启用此支付方式" />
+          </div>
 
           {error && <div className="sn-form-alert-error">{error}</div>}
 
