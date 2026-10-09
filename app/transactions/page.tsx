@@ -54,6 +54,9 @@ import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 // 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
 type TransactionWithPayment = TransactionWithProfit;
+// 查询还没有数据（加载中 / 失败 / 离线无缓存）时的默认值必须是同一个数组：每次渲染给新的 [] 会让依赖它的
+// useMemo / useEffect（如 JAN 缩略图）每次都重跑并 setState，陷入无限更新
+const NO_TRANSACTIONS: TransactionWithProfit[] = [];
 
 export interface TransactionGroup {
   janCode: string;
@@ -137,7 +140,7 @@ function TransactionsContent() {
   const online = useOnlineStatus();
   // 用 isPending 而不是 isLoading：离线缓存恢复期间查询被暂停（isLoading 为 false 但还没有数据），
   // 用 isLoading 会在这几十毫秒里闪出「暂无交易记录」；离线且无缓存时 fetchStatus 为 paused
-  const { data: transactions = [], isPending: loading, fetchStatus } = useQuery({
+  const { data: transactions = NO_TRANSACTIONS, isPending: loading, fetchStatus } = useQuery({
     queryKey: ['transactions'],
     queryFn: fetchTransactionsWithProfit,
   });
