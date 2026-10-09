@@ -1,7 +1,7 @@
 // components/Navigation.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -26,6 +26,50 @@ import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { readLastUser } from '@/lib/offline/persister';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { BrandIcon } from '@/components/BrandIcon';
+import { Menu as FluentMenu, MenuDivider, MenuInfo, MenuItem } from '@/components/fluent/Menu';
+
+/** 头像首字母：没有姓名，取邮箱 @ 前的前 2 个字符 */
+function initialsOf(email: string | null | undefined) {
+  return email ? email.split('@')[0].slice(0, 2).toUpperCase() : '';
+}
+
+/** 顶栏账户按钮：首字母头像（Loop 实测规格），点击弹出菜单显示邮箱与退出登录 */
+function AccountButton({ email, canLogout, onLogout }: { email: string; canLogout: boolean; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        className="shell-icon-btn"
+        aria-label="账户"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(v => !v)}
+      >
+        <span className="shell-avatar">{initialsOf(canLogout ? email : null)}</span>
+      </button>
+      <FluentMenu open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} placement="bottom-end" ariaLabel="账户">
+        <MenuInfo icon={<User className="h-5 w-5" />}>{email}</MenuInfo>
+        {canLogout && (
+          <>
+            <MenuDivider />
+            <MenuItem
+              icon={<LogOut className="h-5 w-5" />}
+              onSelect={() => {
+                setOpen(false);
+                onLogout();
+              }}
+            >
+              退出登录
+            </MenuItem>
+          </>
+        )}
+      </FluentMenu>
+    </>
+  );
+}
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -140,59 +184,24 @@ export default function Navigation() {
 
   return (
     <>
-      {/* 桌面端顶部栏 — SNUtils manage shell */}
-      <header className="hidden lg:flex fixed top-0 left-0 right-0 z-[9000] h-[60px] bg-[var(--color-header)] shadow-[var(--shadow-md)] items-center justify-between px-6">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <BrandIcon className="h-9 w-9" />
-          <div className="leading-tight">
-            <div className="text-[var(--color-header-text)] text-base font-bold tracking-[-0.3px]">Resale Master</div>
-            <div className="text-[var(--color-primary)] text-xs font-medium uppercase tracking-[0.5px]">财务控制台</div>
+      {/* 桌面端顶部栏：Loop 外壳顶栏（60px，内部 40px 工具栏；透明，露出应用背景） */}
+      <header className="hidden lg:block fixed top-0 left-0 right-0 z-[9000] h-[60px] app-bg">
+        <div className="mt-[10px] grid h-10 grid-cols-2 items-center gap-x-2 pl-[3px] pr-[10px]">
+          <div className="flex h-10 items-center gap-0.5">
+            <Link href="/dashboard" className="shell-brand">
+              <BrandIcon className="shell-brand__logo" />
+              <span className="shell-brand__text">Resale Master</span>
+            </Link>
           </div>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <ThemeToggleButton />
-
-          <div className="hidden xl:flex items-center h-9 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-header-chip-hover)] bg-[var(--color-header-chip)] text-[var(--color-header-text-muted)]">
-            <div className="flex h-full items-center gap-2 px-3 transition-colors hover:bg-[var(--color-header-chip)]">
-              <User className="h-4 w-4 flex-shrink-0 opacity-70" strokeWidth={2} />
-              <span className="max-w-[240px] truncate text-[13px] font-medium">
-                {displayEmail}
-              </span>
-            </div>
-            {mounted && (
-              <button
-                onClick={handleLogout}
-                title="退出登录"
-                className="flex h-full w-9 flex-shrink-0 items-center justify-center border-l border-[var(--color-header-chip)] text-[var(--color-header-text-muted)] transition-colors hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger)]"
-              >
-                <LogOut className="h-4 w-4" strokeWidth={2} />
-              </button>
-            )}
+          <div className="flex h-8 items-center justify-end gap-2">
+            <ThemeToggleButton />
+            <AccountButton email={displayEmail} canLogout={mounted && displayEmail !== '未登录'} onLogout={handleLogout} />
           </div>
         </div>
       </header>
 
       {/* ── 桌面端侧边栏 ── */}
       <aside className={`hidden lg:flex lg:flex-col lg:fixed lg:top-[60px] lg:bottom-0 lg:left-0 lg:bg-[var(--color-bg-elevated)] lg:border-r lg:border-[var(--color-border)] transition-all duration-300 ${collapsed ? 'lg:w-[72px]' : 'lg:w-[250px]'}`}>
-        {/* Logo */}
-        <div className="h-14 flex items-center border-b border-[var(--color-border)] px-3 gap-2">
-          {!collapsed && (
-            <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
-              <BrandIcon className="h-9 w-9" />
-              <div className="min-w-0">
-                <div className="text-[var(--color-text)] font-semibold text-sm truncate">管理系统</div>
-                <div className="text-[var(--color-text-muted)] text-[11px] truncate">内部财务控制台</div>
-              </div>
-            </Link>
-          )}
-          {collapsed && (
-            <Link href="/dashboard" className="flex-1 flex justify-center">
-              <BrandIcon className="h-10 w-10" />
-            </Link>
-          )}
-        </div>
-
         {/* 导航菜单 */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {desktopNavItems.map((item) => {
@@ -220,8 +229,8 @@ export default function Navigation() {
           })}
         </nav>
 
-        {/* 用户信息和退出 */}
-        <div className="p-2 border-t border-[var(--color-border)] space-y-2">
+        {/* 折叠 / 展开 */}
+        <div className="p-2 border-t border-[var(--color-border)]">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="w-full flex items-center gap-2 px-3 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded-[var(--radius-md)] transition-colors justify-center"
@@ -229,24 +238,6 @@ export default function Navigation() {
           >
             <ChevronLeft className={`h-5 w-5 flex-shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} strokeWidth={2} />
           </button>
-          {!collapsed && (
-            <div className="px-3 py-2 bg-[var(--color-bg-subtle)] rounded-[var(--radius-md)]">
-              <div className="text-xs text-[var(--color-text-muted)]">当前用户</div>
-              <div className="text-sm text-[var(--color-text)] font-medium truncate">
-                {displayEmail}
-              </div>
-            </div>
-          )}
-          {mounted && (
-            <button
-              onClick={handleLogout}
-              title={collapsed ? '退出登录' : undefined}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-[var(--color-danger)] hover:bg-[var(--color-danger-subtle)] rounded-[var(--radius-md)] transition-colors ${collapsed ? 'justify-center' : ''}`}
-            >
-              <LogOut className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
-              {!collapsed && <span className="text-sm font-medium">退出登录</span>}
-            </button>
-          )}
         </div>
       </aside>
 
@@ -255,14 +246,14 @@ export default function Navigation() {
 
       {/* ── 移动端顶部栏：SNUtils compact header ── */}
       <div
-        className="lg:hidden fixed top-0 left-0 right-0 z-[9999] bg-[var(--color-header)] shadow-[var(--shadow-md)]"
+        className="lg:hidden fixed top-0 left-0 right-0 z-[9999] app-bg"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <BrandIcon className="h-8 w-8" />
             <div className="leading-tight">
-              <div className="text-sm font-bold text-[var(--color-header-text)]">Resale Master</div>
+              <div className="text-sm font-bold text-[var(--color-text)]">Resale Master</div>
               <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>
             </div>
           </Link>

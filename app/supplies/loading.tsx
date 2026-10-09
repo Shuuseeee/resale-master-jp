@@ -1,6 +1,6 @@
 export default function SuppliesLoading() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] px-4 py-6 text-[var(--color-text)] lg:px-6">
+    <div className="min-h-screen px-4 py-6 text-[var(--color-text)] lg:px-6">
       <div className="mx-auto max-w-5xl animate-pulse">
         <div className="mb-4 flex items-center justify-between">
           <div className="h-7 w-24 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />

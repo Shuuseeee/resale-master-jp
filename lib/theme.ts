@@ -61,7 +61,7 @@ export const input = {
  * 布局样式
  */
 export const layout = {
-  page: 'min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]',
+  page: 'min-h-screen text-[var(--color-text)]',
   container: 'max-w-lg mx-auto px-4 py-6 lg:max-w-none lg:px-6 lg:py-6',
   section: 'mb-6',
 };

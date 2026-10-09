@@ -49,7 +49,7 @@ export default function RegisterPage() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-8 text-[var(--color-text)]">
+      <div className="flex min-h-screen items-center justify-center px-4 py-8 text-[var(--color-text)]">
         <div className="w-full max-w-[380px] text-center">
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-8 shadow-[var(--shadow-sm)]">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-primary-light)]">
@@ -71,7 +71,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-8 text-[var(--color-text)]">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8 text-[var(--color-text)]">
       <div className="w-full max-w-[380px]">
         {/* Header */}
         <div className="mb-6 text-center">

@@ -531,7 +531,7 @@ function KaitorixPricesContent() {
       {selectedSummary && (
         <div className="fixed inset-0 z-[10000] flex justify-end bg-black/40" onClick={() => setSelectedJan(null)}>
           <aside
-            className="h-full w-full max-w-3xl overflow-y-auto border-l border-[var(--color-border)] bg-[var(--color-bg)] shadow-[var(--shadow-lg)]"
+            className="h-full w-full max-w-3xl overflow-y-auto border-l border-[var(--color-border)] app-bg shadow-[var(--shadow-lg)]"
             style={{
               paddingTop: 'env(safe-area-inset-top, 0px)',
               paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',

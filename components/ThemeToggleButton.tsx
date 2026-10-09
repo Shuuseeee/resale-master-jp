@@ -10,17 +10,14 @@ export default function ThemeToggleButton() {
   };
 
   return (
-    <div className="theme-toggle" title="切换深色/浅色模式">
-      <button
-        id="theme-toggle-btn"
-        type="button"
-        className="btn-theme"
-        aria-label="切换深色/浅色模式"
-        onClick={handleToggle}
-      >
-        <Sun className="icon-sun" size={20} />
-        <Moon className="icon-moon" size={20} />
-      </button>
-    </div>
+    <button
+      type="button"
+      className="shell-icon-btn btn-theme"
+      aria-label="切换深色/浅色模式"
+      onClick={handleToggle}
+    >
+      <Sun className="icon-sun" size={20} />
+      <Moon className="icon-moon" size={20} />
+    </button>
   );
 }

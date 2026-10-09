@@ -75,13 +75,12 @@
     @apply flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)] transition-all hover:bg-[var(--color-bg-subtle)];
   }
 
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-  }
+  /* ── Loop 外壳控件（design-spec dark.css / 01-app-header.css / components/21-misc.css 实测） ── */
 
-  .btn-theme {
-    display: flex;
+  /* 顶栏 subtle 图标按钮：32×32、padding 5、radius 8，悬停只变色不变底 */
+  .shell-icon-btn {
+    display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
     width: 32px;
@@ -91,24 +90,71 @@
     border-radius: var(--borderRadiusLarge);
     background: transparent;
     color: var(--colorNeutralForeground3);
+    font-weight: 600;
     transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
   }
 
-  .btn-theme:hover {
+  .shell-icon-btn:hover {
     color: var(--colorNeutralForeground2BrandHover);
   }
 
-  .btn-theme:active {
+  .shell-icon-btn:active {
     color: var(--colorNeutralForeground2BrandPressed);
   }
 
-  .btn-theme:focus-visible {
+  .shell-icon-btn:focus-visible,
+  .shell-brand:focus-visible {
     outline: 2px solid transparent;
     border-color: var(--colorStrokeFocus2);
     border-radius: var(--borderRadiusMedium);
     box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
   }
 
+  /* 顶栏品牌按钮：高 40、padding 5px 12px 5px 14px，悬停 / 按下颜色不变 */
+  .shell-brand {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    min-width: 96px;
+    padding: 5px 12px 5px 14px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusLarge);
+    color: var(--colorNeutralForeground2);
+    font-weight: 600;
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
+  }
+
+  .shell-brand__logo {
+    width: 28px;
+    height: 28px;
+    margin-right: 6px;
+  }
+
+  .shell-brand__text {
+    font-size: 18px;
+    line-height: 22px;
+    font-weight: 600;
+    letter-spacing: -0.36px;
+    color: var(--colorNeutralForeground1);
+  }
+
+  /* 首字母头像（Fluent Avatar neutral）24×24，首字母 10/10/600；放在 32×32、padding 5 的按钮里会超出内容区，与 Loop 相同 */
+  .shell-avatar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--borderRadiusCircular);
+    font-size: 10px;
+    line-height: 10px;
+    font-weight: 600;
+    color: var(--colorNeutralForeground3);
+    background: var(--colorNeutralBackground6);
+  }
+
+  /* 深浅色切换按钮的图标：浅色显示月亮，深色显示太阳 */
   .btn-theme .icon-sun {
     display: none;
   }
@@ -123,6 +169,112 @@
 
   :root[data-theme="dark"] .btn-theme .icon-moon {
     display: none;
+  }
+
+  /* ── Fluent 菜单（components/fluent/Menu.tsx，规格见 design-spec/components/04-menu.css） ── */
+  .fluent-menu {
+    position: fixed;
+    z-index: 9500;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusXLarge);
+    box-shadow: var(--shadow28);
+    animation: fluent-menu-in 400ms cubic-bezier(0, 0, 0, 1);
+  }
+
+  .fluent-menu--shell {
+    min-width: 200px;
+    background: var(--colorNeutralBackground1);
+  }
+
+  .fluent-menu--glass {
+    background: var(--loop-glass-bg);
+    -webkit-backdrop-filter: blur(var(--loop-glass-blur));
+    backdrop-filter: blur(var(--loop-glass-blur));
+  }
+
+  @keyframes fluent-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .fluent-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    padding: 5px 12px;
+    border-radius: var(--borderRadiusLarge);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--colorNeutralForeground2);
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+  }
+
+  .fluent-menu--glass .fluent-menu-item {
+    gap: 8px;
+    padding: 6px 12px;
+  }
+
+  .fluent-menu-item:not(.fluent-menu-item--static):hover {
+    background: var(--colorNeutralBackground1Hover);
+    color: var(--colorNeutralForeground2Hover);
+  }
+
+  .fluent-menu-item:not(.fluent-menu-item--static):active {
+    background: var(--colorNeutralBackground1Pressed);
+    color: var(--colorNeutralForeground2Hover);
+  }
+
+  .fluent-menu-item:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: 1;
+    border: 2px solid var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    pointer-events: none;
+  }
+
+  .fluent-menu-item--static {
+    cursor: default;
+  }
+
+  .fluent-menu-item__icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+  }
+
+  .fluent-menu-item__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 分隔线：横贯整个面板（负边距抵消 padding 4 + 边框 1），与上下项各相距 4px（含 flex gap 2px） */
+  .fluent-menu-divider {
+    height: 0;
+    margin: 2px -5px;
+    border-bottom: 1px solid var(--colorNeutralStroke2);
   }
 }
 
@@ -204,12 +356,6 @@
     --color-primary-fill: var(--colorCompoundBrandBackground);
     --color-primary-light: var(--colorBrandBackground2);
     --color-primary-border: var(--colorBrandStroke2);
-    /* 顶栏（A2 改造前的过渡值，随 A2 删除） */
-    --color-header: var(--loop-app-bg);
-    --color-header-text: var(--colorNeutralForeground1);
-    --color-header-text-muted: var(--colorNeutralForeground3);
-    --color-header-chip: var(--colorSubtleBackgroundHover);
-    --color-header-chip-hover: var(--colorSubtleBackgroundPressed);
     --color-bg: var(--loop-app-bg);
     --color-bg-elevated: var(--colorNeutralBackground1);
     --color-bg-subtle: var(--colorNeutralBackground3);
@@ -350,6 +496,13 @@
 }
 
 @layer utilities {
+  /* 与 body 相同的应用背景：给盖住页面的全屏浮层、固定顶栏用，视觉上等同于「透明」 */
+  .app-bg {
+    background-color: var(--loop-app-bg);
+    background-image: var(--loop-app-bg-image);
+    background-attachment: fixed;
+  }
+
   /* 自定义工具类 */
   .text-balance {
     text-wrap: balance;
@@ -471,9 +624,13 @@
   outline: none;
 }
 
-/* 全局样式 */
+/* 全局样式
+   应用背景 = Loop 外壳的底色 + 4 层渐变，固定在视口上（Loop 的外壳本身就是一屏高）；
+   页面容器不再铺底色，透明露出这层背景 */
 body {
-  background: var(--color-bg);
+  background-color: var(--loop-app-bg);
+  background-image: var(--loop-app-bg-image);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans);
   /* 启用字体平滑 */

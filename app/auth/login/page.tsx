@@ -38,7 +38,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-8 text-[var(--color-text)]">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8 text-[var(--color-text)]">
       <div className="w-full max-w-[380px]">
         {/* Header */}
         <div className="mb-6 text-center">

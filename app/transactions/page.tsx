@@ -1959,7 +1959,7 @@ function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListShee
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[10020] flex flex-col bg-[var(--color-bg)]">
+    <div className="fixed inset-0 z-[10020] flex flex-col app-bg">
       {/* Header */}
       <div className="text-[var(--color-text)]">
         <div className="flex items-center justify-between px-4 pt-12 pb-3">

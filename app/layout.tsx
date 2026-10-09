@@ -70,7 +70,7 @@ export default function RootLayout({
           `}
         </Script>
         <ClientProviders>
-          <div className="lg:flex lg:min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+          <div className="lg:flex lg:min-h-screen text-[var(--color-text)]">
             <Navigation />
             <div className="flex-1 min-w-0 mobile-bottom-pad lg:pt-[60px] lg:pb-0">
               {children}

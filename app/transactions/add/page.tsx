@@ -274,7 +274,7 @@ function AddTransactionPageContent() {
 export default function AddTransactionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
+      <div className="min-h-screen text-[var(--color-text)] flex items-center justify-center">
         <div className="flex items-center gap-3 text-[var(--color-text)]">
           <svg className="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
