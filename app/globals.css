@@ -109,7 +109,7 @@
       min-height: 0;
     }
 
-    /* 内容卡片 = Loop 文档卡片（圆角待补测，原稿未写） */
+    /* 内容卡片 = Loop 文档卡片（圆角 0，补测-2 #4 确认） */
     .app-card {
       display: flex;
       flex: 1 1 auto;
@@ -1602,7 +1602,7 @@
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='2.25 2.25 15.5 15.5'%3E%3Cpath d='M10 2.25c.41 0 .75.34.75.75v6.25H17a.75.75 0 0 1 0 1.5h-6.25V17a.75.75 0 0 1-1.5 0v-6.25H3a.75.75 0 0 1 0-1.5h6.25V3c0-.41.34-.75.75-.75Z'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
   }
 
-  /* 加号反光：浅色实测规则；深色下是否同样存在待补测，暂只用于浅色 */
+  /* 加号反光：只有浅色有，深色下没有（补测-2 #3 确认） */
   :root:not([data-theme="dark"]) .new-pill:hover .new-pill__plus {
     background-image: linear-gradient(237deg, rgba(255, 255, 255, 0.4) 12.2%, rgba(255, 255, 255, 0) 28.87%);
   }
