@@ -4,6 +4,7 @@ import React from 'react';
 import DatePicker from '@/components/DatePicker';
 import { parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { JanField } from './JanField';
+import Switch from '@/components/Switch';
 
 interface BasicInfoSectionProps {
   date: string;
@@ -127,21 +128,7 @@ export function BasicInfoSection({
                 <label className="text-sm font-medium text-[var(--color-text)]">未到货</label>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">商品尚未到达</p>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isPending}
-                onClick={onTogglePending}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isPending ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-border)]'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPending ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <Switch checked={isPending} onClick={onTogglePending} tone="warning" label="未到货" />
             </div>
           )}
         </div>

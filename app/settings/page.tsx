@@ -9,33 +9,7 @@ import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixCo
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from '@/lib/themes';
 import { applyPalette, getCurrentPalette } from '@/lib/theme-palette';
 import { button, card, heading, input, layout } from '@/lib/theme';
-
-function Toggle({
-  checked,
-  onClick,
-  tone = 'primary',
-  label,
-}: {
-  checked: boolean;
-  onClick: () => void;
-  tone?: 'primary' | 'warning';
-  label: string;
-}) {
-  const activeClass = tone === 'warning' ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-primary)]';
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onClick}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? activeClass : 'bg-[var(--color-border)]'}`}
-    >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-    </button>
-  );
-}
+import Switch from '@/components/Switch';
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
@@ -203,7 +177,7 @@ export default function SettingsPage() {
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算积分返还率。</p>
               </div>
-              <Toggle
+              <Switch
                 checked={config.auto_calc_enabled}
                 onClick={() => updateConfig('auto_calc_enabled', !config.auto_calc_enabled)}
                 tone="warning"
@@ -250,7 +224,7 @@ export default function SettingsPage() {
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-muted)]">从 KaitoriX 获取买取价格，在交易列表中显示预期利润。</p>
               </div>
-              <Toggle
+              <Switch
                 checked={kaitorixConfig.enabled}
                 onClick={() => setKaitorixConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
                 label="启用买取价格检查"
