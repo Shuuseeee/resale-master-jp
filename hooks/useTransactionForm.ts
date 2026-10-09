@@ -3,14 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, uploadImage } from '@/lib/supabase/client';
 import { processImageForUpload, isValidImageFile } from '@/lib/image-utils';
-import type { PaymentMethod, TransactionFormData, PointsPlatform, Transaction } from '@/types/database.types';
+import type { PaymentMethod, PaymentMethodStoreRate, TransactionFormData, PointsPlatform, Transaction } from '@/types/database.types';
 import { createPurchasePlatform } from '@/lib/api/platforms';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getTodayString, formatDateToLocal } from '@/lib/utils/dateUtils';
 import { useJanProductAutoFill } from '@/hooks/useJanProductAutoFill';
 import type { AmazonPointConfig } from '@/lib/amazon-point-config';
-import { formatPointRate } from '@/lib/utils/paymentMethods';
+import { effectivePointRate, formatPointRate } from '@/lib/utils/paymentMethods';
+import { fetchStoreRates } from '@/lib/api/payment-method-rules';
 import { getDefaultPaymentMethodId } from '@/lib/api/user-preferences';
 
 export interface PersistData {
@@ -101,6 +102,20 @@ export function useTransactionForm({
   useEffect(() => {
     Promise.all([fetchPaymentMethods(), fetchPointsPlatforms()]);
   }, [fetchPaymentMethods, fetchPointsPlatforms]);
+
+  // ──── 店铺特殊规则（设置页「支付方式」里设定）────
+  // 返点积分 = 支付金额 × 返点率；这张支付方式对当前采购平台有规则就用规则，否则用默认返点率。
+  // 读取失败（如线上库还没建表）按「没有规则」处理。
+  const [storeRates, setStoreRates] = useState<PaymentMethodStoreRate[]>([]);
+  useEffect(() => {
+    fetchStoreRates().then(({ data, error }) => {
+      if (error) { console.error('获取店铺特殊规则失败:', error); return; }
+      setStoreRates(data);
+    });
+  }, []);
+
+  const rateFor = useCallback((card: PaymentMethod, purchasePlatformId: string | null | undefined) =>
+    effectivePointRate(card, purchasePlatformId, storeRates).rate, [storeRates]);
 
   // ──── 默认卡（设置页「支付方式」里设定）────
   // 新建时，开始填「信用卡支付」金额而还没选卡，就自动选默认卡（见 handlePaymentChange）。
@@ -199,8 +214,16 @@ export function useTransactionForm({
         if (selectedCard) {
           next.card_points_platform_id = selectedCard.card_points_platform_id || '';
           if (next.card_paid > 0) {
-            next.expected_card_points = Math.floor(next.card_paid * selectedCard.point_rate);
+            next.expected_card_points = Math.floor(next.card_paid * rateFor(selectedCard, next.purchase_platform_id));
           }
+        }
+      }
+
+      // 换采购平台：已选支付方式且有支付金额时，按新平台（可能命中店铺规则）重算返点积分
+      if (name === 'purchase_platform_id' && next.card_id && next.card_paid > 0) {
+        const selectedCard = paymentMethods.find(pm => pm.id === next.card_id);
+        if (selectedCard) {
+          next.expected_card_points = Math.floor(next.card_paid * rateFor(selectedCard, value));
         }
       }
 
@@ -221,7 +244,7 @@ export function useTransactionForm({
         return newErrors;
       });
     }
-  }, [paymentMethods, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+  }, [paymentMethods, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms, rateFor]);
 
   const handleNumberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -251,7 +274,7 @@ export function useTransactionForm({
       if (field === 'card_paid' && newFormData.card_id) {
         const selectedCard = paymentMethods.find(pm => pm.id === newFormData.card_id);
         if (selectedCard) {
-          cardPoints = Math.floor(numValue * selectedCard.point_rate);
+          cardPoints = Math.floor(numValue * rateFor(selectedCard, newFormData.purchase_platform_id));
         }
       }
 
@@ -264,7 +287,7 @@ export function useTransactionForm({
 
       return { ...newFormData, balance_paid: balancePaid, expected_card_points: cardPoints };
     });
-  }, [paymentMethods, calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, autoCalcAmazonPoints, defaultPaymentMethodId]);
+  }, [paymentMethods, calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, autoCalcAmazonPoints, defaultPaymentMethodId, rateFor]);
 
   const handleDateChange = useCallback((date: Date | null) => {
     setFormData(prev => ({ ...prev, date: formatDateToLocal(date) }));
@@ -462,8 +485,11 @@ export function useTransactionForm({
     if (!formData.card_id) return null;
     const card = paymentMethods.find(pm => pm.id === formData.card_id);
     if (!card) return null;
-    return `(返点率: ${formatPointRate(card.point_rate)})`;
-  }, [formData.card_id, paymentMethods]);
+    const { rate, ruleApplied } = effectivePointRate(card, formData.purchase_platform_id, storeRates);
+    if (!ruleApplied) return `(返点率: ${formatPointRate(rate)})`;
+    const platformName = purchasePlatforms.find(p => p.id === formData.purchase_platform_id)?.name ?? '该平台';
+    return `(返点率: ${formatPointRate(rate)} · ${platformName}规则)`;
+  }, [formData.card_id, formData.purchase_platform_id, paymentMethods, storeRates, purchasePlatforms]);
 
   return {
     // State
