@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
-import { formatCurrency, formatROI, daysUntil, calculatePaymentDate } from '@/lib/financial/calculator';
+import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { markTransactionArrived, confirmPaymentReceived } from '@/lib/api/financial';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -266,26 +266,6 @@ export default function TransactionDetailPage() {
   if (!transaction) {
     return null;
   }
-
-  // 重新计算预计还款日期（使用最新的 payment_same_month 配置）
-  let calculatedPaymentDate: string | null = null;
-  if (transaction.payment_method && transaction.payment_method.closing_day && transaction.payment_method.payment_day && transaction.date) {
-    try {
-      const paymentDate = calculatePaymentDate(
-        new Date(transaction.date),
-        transaction.payment_method.closing_day,
-        transaction.payment_method.payment_day,
-        transaction.payment_method.payment_same_month || false
-      );
-      if (paymentDate && !isNaN(paymentDate.getTime())) {
-        calculatedPaymentDate = paymentDate.toLocaleString().split(' ')[0]; // 只取日期部分
-      }
-    } catch (error) {
-      console.error('Error calculating payment date:', error);
-    }
-  }
-
-  const daysToPayment = calculatedPaymentDate ? daysUntil(calculatedPaymentDate) : null;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -761,16 +741,6 @@ export default function TransactionDetailPage() {
                     <span className="text-[var(--color-text-muted)]">返点率</span>
                     <span className="text-[var(--color-primary)] font-medium">{(transaction.payment_method.point_rate * 100).toFixed(2)}%</span>
                   </div>
-                  {calculatedPaymentDate && (
-                    <>
-                      <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
-                        <span className="text-[var(--color-text-muted)]">预计还款日</span>
-                        <span className="text-[var(--color-text)] font-medium">
-                          {calculatedPaymentDate}
-                        </span>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             )}
