@@ -225,7 +225,7 @@ function AddTransactionPageContent() {
             <button
               type="submit"
               disabled={form.isSubmitting}
-              className={button.primary + ' flex-1 py-3'}
+              className={button.primary + ' flex-1 max-md:py-3'}
             >
               {form.isSubmitting && !form.continueAdding ? (
                 <span className="flex items-center justify-center gap-2">
@@ -243,7 +243,7 @@ function AddTransactionPageContent() {
               type="button"
               disabled={form.isSubmitting}
               onClick={form.triggerSubmitAndContinue}
-              className={button.secondary + ' flex-1 py-3'}
+              className={button.secondary + ' flex-1 max-md:py-3'}
             >
               {form.isSubmitting && form.continueAdding ? (
                 <span className="flex items-center justify-center gap-2">

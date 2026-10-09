@@ -11,8 +11,7 @@ export default function Switch({
   /** 无障碍名称（屏幕阅读器读出） */
   label: string;
 }) {
-  const activeClass = tone === 'warning' ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--color-primary-fill)]';
-
+  // Fluent Switch（globals.css .fluent-switch，design-spec/components/05-switch.css）：轨道 40×20、滑块 18
   return (
     <button
       type="button"
@@ -20,9 +19,9 @@ export default function Switch({
       aria-checked={checked}
       aria-label={label}
       onClick={onClick}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${checked ? activeClass : 'bg-[var(--color-border)]'}`}
+      className={tone === 'warning' ? 'fluent-switch fluent-switch--warning' : 'fluent-switch'}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span className="fluent-switch__thumb" />
     </button>
   );
 }

@@ -19,23 +19,23 @@ export const card = {
 };
 
 /**
- * 按钮样式 — Apple 风格：active:opacity 替代 hover 变色
+ * 按钮样式 — Fluent Button（样式在 globals.css 的 .fluent-btn*；桌面 32 高，手机保持 40 高触控尺寸）
  */
 export const button = {
-  // 主要按钮
-  primary: 'px-5 py-2.5 text-sm bg-gradient-to-br from-[var(--color-primary-bg)] to-[var(--color-primary-bg-hover)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:-translate-y-px hover:shadow-[0_4px_8px_var(--color-primary-border)] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  // 品牌主按钮
+  primary: 'fluent-btn fluent-btn--primary',
 
-  // 危险按钮
-  danger: 'px-5 py-2.5 text-sm bg-[var(--color-danger-bg)] text-[var(--color-text-inverted)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-danger-bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  // 危险按钮（StatusDanger 底 + brightness，用户确认的映射）
+  danger: 'fluent-btn fluent-btn--danger',
 
-  // 次要按钮
-  secondary: 'px-5 py-2.5 text-sm bg-[var(--color-bg-elevated)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] font-semibold transition-all hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-text-muted)] disabled:opacity-40 disabled:cursor-not-allowed min-h-[40px] inline-flex items-center justify-center',
+  // 次要按钮 = Fluent 默认（描边）
+  secondary: 'fluent-btn fluent-btn--default',
 
-  // 幽灵按钮
-  ghost: 'px-4 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-hover)] rounded-[var(--radius-md)] font-medium transition-all',
+  // 幽灵按钮 = Fluent subtle（内容区变体：悬停 / 按下换底色）
+  ghost: 'fluent-btn fluent-btn--subtle',
 
-  // 链接按钮
-  link: 'text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] font-medium transition-colors',
+  // 链接按钮 = Fluent Link
+  link: 'fluent-link',
 };
 
 /**
@@ -50,11 +50,11 @@ export const badge = {
 };
 
 /**
- * 输入框样式 — 无边框，极浅阴影
+ * 输入框样式 — Fluent Input filled-darker（样式在 globals.css 的 .fluent-input；下拉触发器同用）
  */
 export const input = {
-  base: 'px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] placeholder:opacity-50 focus:outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary-light)] transition-all',
-  error: 'w-full px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] border border-[var(--color-danger)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none focus:ring-4 focus:ring-[var(--color-danger-subtle)] transition-all',
+  base: 'fluent-input',
+  error: 'fluent-input fluent-input--error w-full',
 };
 
 /**

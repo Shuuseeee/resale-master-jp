@@ -234,7 +234,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <button onClick={saveConfig} disabled={saving} className={button.primary + ' px-6 py-2'}>
+              <button onClick={saveConfig} disabled={saving} className={button.primary + ' max-md:px-6 max-md:py-2'}>
                 {saving ? '保存中...' : '保存'}
               </button>
               {saveMessage && <span className="text-sm text-[var(--color-success)]">{saveMessage}</span>}
@@ -293,7 +293,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <button onClick={saveKaitorixSettings} disabled={kaitorixSaving} className={button.primary + ' px-6 py-2'}>
+              <button onClick={saveKaitorixSettings} disabled={kaitorixSaving} className={button.primary + ' max-md:px-6 max-md:py-2'}>
                 {kaitorixSaving ? '保存中...' : '保存'}
               </button>
               {kaitorixSaveMessage && <span className="text-sm text-[var(--color-success)]">{kaitorixSaveMessage}</span>}

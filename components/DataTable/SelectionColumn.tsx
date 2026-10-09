@@ -7,7 +7,8 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export const SELECT_COLUMN_ID = '_select';
 
-const checkboxClass = 'w-4 h-4 accent-[var(--color-primary)] cursor-pointer';
+// Fluent 方形复选框（globals.css .fluent-checkbox，design-spec/components/06-checkbox.css B）
+const checkboxClass = 'fluent-checkbox';
 
 export function createSelectionColumn<TData>(): ColumnDef<TData> {
   return {

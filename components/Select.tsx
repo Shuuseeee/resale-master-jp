@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
-import { ChevronDown16Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
+import { ChevronDown20Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
 import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import { input } from '@/lib/theme';
 
@@ -65,7 +65,8 @@ export default function Select({
       left: rect.left,
       width: rect.width,
       up,
-      maxHeight: Math.max(120, Math.min(280, up ? spaceAbove : spaceBelow)),
+      // Fluent listbox 没有固定上限：最高到视口边缘，再多就在面板里滚动（design-spec/components/03-select.css）；面板 padding 4 × 2
+      maxHeight: Math.max(120, (up ? spaceAbove : spaceBelow) - 8),
     });
     setOpen(true);
   };
@@ -107,7 +108,7 @@ export default function Select({
         ref={triggerRef}
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openPopup())}
-        className={`${className || input.base} flex items-center gap-1 text-left disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`${className || input.base} flex items-center gap-1 text-left`}
       >
         <span className={`flex-1 min-w-0 truncate ${selected ? 'text-[var(--color-text)]' : 'text-[var(--color-text-muted)]'}`}>
           {selected ? selected.label : placeholder}
@@ -122,7 +123,7 @@ export default function Select({
             <Dismiss16Regular className="h-3.5 w-3.5" />
           </span>
         )}
-        <ChevronDown16Regular className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown20Regular className="fluent-select__chevron" />
       </button>
 
       {open && pos && createPortal(
@@ -135,24 +136,23 @@ export default function Select({
             minWidth: pos.width,
             transform: pos.up ? 'translateY(-100%)' : undefined,
           }}
-          className="z-[10020] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-[var(--shadow-lg)]"
+          className="fluent-listbox z-[10020]"
+          role="listbox"
         >
-          <div className="overflow-y-auto py-1" style={{ maxHeight: pos.maxHeight }}>
+          <div className="flex flex-col gap-0.5 overflow-y-auto" style={{ maxHeight: pos.maxHeight }}>
             {options.filter(o => o.value !== '').map(opt => {
               const isSelected = opt.value === value;
               return (
                 <button
                   key={opt.value}
                   type="button"
+                  role="option"
+                  aria-selected={isSelected}
                   onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`flex min-h-[40px] w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                    isSelected
-                      ? 'bg-[var(--color-primary-light)] font-medium text-[var(--color-primary)]'
-                      : 'text-[var(--color-text)] hover:bg-[var(--color-bg-hover)]'
-                  }`}
+                  className="fluent-option"
                 >
+                  <Checkmark16Regular className="fluent-option__check" />
                   <span className="truncate">{opt.label}</span>
-                  {isSelected && <Checkmark16Regular className="flex-shrink-0" />}
                 </button>
               );
             })}

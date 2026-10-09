@@ -11,24 +11,23 @@
     @apply flex items-center gap-2 text-[17px] font-semibold text-[var(--color-text)];
   }
 
+  /* 字段标签：桌面 = Fluent Field 标签（14/20/400、上下 2px、离输入框 2px，design-spec/components/19-form-field.css） */
   .sn-form-label {
-    @apply mb-2 block text-sm font-medium text-[var(--color-text)];
-  }
-
-  .sn-form-input {
-    @apply w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-all placeholder:text-[var(--color-text-muted)] placeholder:opacity-50 focus:border-[var(--color-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--color-primary-light)] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply mb-2 block text-sm font-medium text-[var(--color-text)] md:mb-[2px] md:py-[2px] md:font-normal md:leading-5;
   }
 
   .sn-form-input-readonly {
     @apply w-full cursor-not-allowed rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3.5 py-2.5 text-sm text-[var(--color-text-muted)];
   }
 
+  /* 字段提示：桌面 12/16、Foreground3、输入框下方 2px（19-form-field.css） */
   .sn-form-muted {
-    @apply mt-1 text-xs text-[var(--color-text-muted)];
+    @apply mt-1 text-xs text-[var(--color-text-muted)] md:mt-[2px] md:leading-4;
   }
 
+  /* 字段错误：桌面同提示文字的位置与字号（Fluent 校验文字） */
   .sn-form-error {
-    @apply mt-1 text-sm text-[var(--color-danger)];
+    @apply mt-1 text-sm text-[var(--color-danger)] md:mt-[2px] md:text-xs md:leading-4;
   }
 
   .sn-form-addon {
@@ -359,6 +358,432 @@
 
   .doc-header__more .shell-icon-btn {
     margin-right: 6px;
+  }
+
+  /* ── 表单控件（B9；design-spec/components/01-input、03-select、05-switch、06-checkbox、07-button、19-form-field）──
+     lib/theme.ts 的 button.* / input.* 与 .sn-form-* 都引用这里；手机外壳（<768）保留原来的触控尺寸，只换外观 */
+
+  /* 按钮：桌面 = Fluent medium（32 高、padding 5px 12px、radius 8、14/20/600、最小宽 96），手机保持 40 高 */
+  .fluent-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusLarge);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
+  }
+
+  @media (min-width: 768px) {
+    .fluent-btn {
+      min-width: 96px;
+      min-height: 32px;
+      padding: 5px 12px;
+    }
+  }
+
+  .fluent-btn:disabled {
+    background: var(--colorNeutralBackgroundDisabled);
+    border-color: transparent;
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  .fluent-btn:focus-visible {
+    z-index: 1;
+    outline: 2px solid transparent;
+    border-color: var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
+  }
+
+  .fluent-btn--primary {
+    background: var(--colorBrandBackground);
+    color: var(--colorNeutralForegroundOnBrand);
+  }
+
+  .fluent-btn--primary:not(:disabled):hover {
+    background: var(--colorBrandBackgroundHover);
+  }
+
+  .fluent-btn--primary:not(:disabled):active {
+    background: var(--colorBrandBackgroundPressed);
+  }
+
+  .fluent-btn--primary:focus-visible {
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2), inset 0 0 0 2px var(--colorNeutralForegroundOnBrand);
+  }
+
+  /* 默认（描边） */
+  .fluent-btn--default {
+    border-color: var(--colorNeutralStroke1);
+    background: var(--colorNeutralBackground1);
+    color: var(--colorNeutralForeground1);
+  }
+
+  .fluent-btn--default:not(:disabled):hover {
+    border-color: var(--colorNeutralStroke1Hover);
+    background: var(--colorNeutralBackground1Hover);
+  }
+
+  .fluent-btn--default:not(:disabled):active {
+    border-color: var(--colorNeutralStroke1Pressed);
+    background: var(--colorNeutralBackground1Pressed);
+  }
+
+  .fluent-btn--default:disabled {
+    border-color: var(--colorNeutralStrokeDisabled);
+  }
+
+  /* 危险（用户确认的映射：StatusDanger 底 + brightness） */
+  .fluent-btn--danger {
+    background: var(--colorStatusDangerBackground3);
+    color: var(--colorNeutralForegroundOnBrand);
+  }
+
+  .fluent-btn--danger:not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+
+  .fluent-btn--danger:not(:disabled):active {
+    filter: brightness(0.92);
+  }
+
+  /* subtle（内容区变体：悬停 / 按下换底色，正文色） */
+  .fluent-btn--subtle {
+    background: transparent;
+    color: var(--colorNeutralForeground1);
+  }
+
+  .fluent-btn--subtle:not(:disabled):hover {
+    background: var(--colorSubtleBackgroundHover);
+  }
+
+  .fluent-btn--subtle:not(:disabled):active {
+    background: var(--colorSubtleBackgroundPressed);
+  }
+
+  .fluent-btn--subtle:disabled {
+    background: transparent;
+  }
+
+  /* 手机端 subtle（返回等）保持原来的 36 高、padding 8px 16px */
+  @media (max-width: 767px) {
+    .fluent-btn--subtle {
+      min-height: 0;
+      padding: 8px 16px;
+    }
+  }
+
+  /* 链接 */
+  .fluent-link {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--colorBrandForegroundLink);
+  }
+
+  .fluent-link:hover {
+    color: var(--colorBrandForegroundLinkHover);
+    text-decoration: underline;
+  }
+
+  .fluent-link:active {
+    color: var(--colorBrandForegroundLinkPressed);
+  }
+
+  /* 输入框 = filled-darker（Loop 表单全部是这种）：Background3 底、边框透明、radius 4、14/20；
+     聚焦时底部 2px 品牌线从中间展开（Fluent ::after scaleX 0→1 进 200ms / 出 50ms，这里用背景渐变的宽度实现，原生 input 没有伪元素）。
+     桌面 32 高（padding 5px 12px；文字左右内边距按「对话框内 0 12px」，待补测），手机保持原尺寸 */
+  .fluent-input,
+  .sn-form-input {
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusMedium);
+    background-color: var(--colorNeutralBackground3);
+    background-image: linear-gradient(var(--colorCompoundBrandStroke), var(--colorCompoundBrandStroke));
+    background-repeat: no-repeat;
+    background-position: 50% 100%;
+    background-size: 0% 2px;
+    background-origin: border-box;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--colorNeutralForeground1);
+    transition: background-size 50ms ease;
+  }
+
+  .sn-form-input {
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .fluent-input,
+    .sn-form-input {
+      padding: 5px 12px;
+    }
+  }
+
+  .fluent-input::placeholder,
+  .sn-form-input::placeholder {
+    color: var(--colorNeutralForeground4);
+    opacity: 1;
+  }
+
+  .fluent-input:focus,
+  .fluent-input:focus-within,
+  .sn-form-input:focus {
+    outline: 2px solid transparent;
+    background-size: 100% 2px;
+    transition: background-size 200ms ease;
+  }
+
+  .fluent-input:focus:active,
+  .sn-form-input:focus:active {
+    background-image: linear-gradient(var(--colorCompoundBrandStrokePressed), var(--colorCompoundBrandStrokePressed));
+  }
+
+  .fluent-input:disabled,
+  .sn-form-input:disabled {
+    border-color: var(--colorNeutralStrokeDisabled);
+    background-color: transparent;
+    background-image: none;
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  /* 错误：Fluent 规则为底边变红（Loop 无实例） */
+  .fluent-input--error,
+  .fluent-input[aria-invalid="true"],
+  .sn-form-input[aria-invalid="true"] {
+    border-bottom-color: var(--colorPaletteRedBorder2);
+  }
+
+  /* 下拉触发器右侧箭头：20px、Foreground3 */
+  .fluent-select__chevron {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-left: 2px;
+    color: var(--colorNeutralForeground3);
+  }
+
+  /* 下拉面板（listbox）：radius 12、padding 4、shadow16、无进场动画 */
+  .fluent-listbox {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    border-radius: var(--borderRadiusXLarge);
+    background: var(--colorNeutralBackground1);
+    box-shadow: var(--shadow16);
+  }
+
+  /* 选项：padding 6px 8px、radius 4、14/20、前置 16px 勾（未选中占位隐藏）；手机保持 40 高 */
+  .fluent-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 8px;
+    border-radius: var(--borderRadiusMedium);
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--colorNeutralForeground1);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  @media (min-width: 768px) {
+    .fluent-option {
+      min-height: 32px;
+    }
+  }
+
+  .fluent-option:hover {
+    background: var(--colorNeutralBackground1Hover);
+  }
+
+  .fluent-option:active {
+    background: var(--colorNeutralBackground1Pressed);
+  }
+
+  .fluent-option:focus-visible {
+    outline: none;
+  }
+
+  .fluent-option:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    pointer-events: none;
+  }
+
+  .fluent-option__check {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0 2px 0 -2px;
+    color: var(--colorNeutralForeground1);
+    visibility: hidden;
+  }
+
+  .fluent-option[aria-selected="true"] .fluent-option__check {
+    visibility: visible;
+  }
+
+  /* 开关：轨道 40×20、1px 描边、18px 实心滑块，滑动 200ms cubic-bezier(0.33,0,0.67,1) */
+  .fluent-switch {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    width: 40px;
+    height: 20px;
+    border: 1px solid var(--colorNeutralStrokeAccessible);
+    border-radius: 10000px;
+    background: transparent;
+    color: var(--colorNeutralStrokeAccessible);
+    transition: background 0.2s cubic-bezier(0.33, 0, 0.67, 1), border-color 0.2s cubic-bezier(0.33, 0, 0.67, 1), color 0.2s cubic-bezier(0.33, 0, 0.67, 1);
+  }
+
+  .fluent-switch__thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: currentColor;
+    transition: transform 200ms cubic-bezier(0.33, 0, 0.67, 1);
+  }
+
+  .fluent-switch:not(:disabled):hover {
+    border-color: var(--colorNeutralStrokeAccessibleHover);
+    color: var(--colorNeutralStrokeAccessibleHover);
+  }
+
+  .fluent-switch:not(:disabled):active {
+    border-color: var(--colorNeutralStrokeAccessiblePressed);
+    color: var(--colorNeutralStrokeAccessiblePressed);
+  }
+
+  .fluent-switch[aria-checked="true"] {
+    border-color: transparent;
+    background: var(--colorCompoundBrandBackground);
+    color: var(--colorNeutralForegroundInverted);
+  }
+
+  .fluent-switch[aria-checked="true"]:not(:disabled):hover {
+    border-color: transparent;
+    background: var(--colorCompoundBrandBackgroundHover);
+    color: var(--colorNeutralForegroundInverted);
+  }
+
+  .fluent-switch[aria-checked="true"]:not(:disabled):active {
+    border-color: transparent;
+    background: var(--colorCompoundBrandBackgroundPressed);
+    color: var(--colorNeutralForegroundInverted);
+  }
+
+  /* 「警示」语义的开关（如未到货）：选中底色用警示色，其余同上 */
+  .fluent-switch--warning[aria-checked="true"],
+  .fluent-switch--warning[aria-checked="true"]:not(:disabled):hover,
+  .fluent-switch--warning[aria-checked="true"]:not(:disabled):active {
+    background: var(--color-warning-bg);
+  }
+
+  .fluent-switch[aria-checked="true"] .fluent-switch__thumb {
+    transform: translateX(20px);
+  }
+
+  .fluent-switch:focus-visible {
+    outline: none;
+  }
+
+  .fluent-switch:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border: 2px solid var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusMedium);
+    pointer-events: none;
+  }
+
+  .fluent-switch:disabled {
+    border-color: var(--colorNeutralStrokeDisabled);
+    color: var(--colorNeutralForegroundDisabled);
+    cursor: not-allowed;
+  }
+
+  .fluent-switch[aria-checked="true"]:disabled {
+    border-color: transparent;
+    background: var(--colorNeutralBackgroundDisabled);
+  }
+
+  /* 复选框（方形，表格多选 / 筛选多选）：16×16、radius 4、AccessibleStroke 描边；选中 CompoundBrand 底 + 12px 勾 */
+  .fluent-checkbox {
+    display: inline-grid;
+    flex: none;
+    place-content: center;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1px solid var(--colorNeutralStrokeAccessible);
+    border-radius: var(--borderRadiusMedium);
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .fluent-checkbox:hover {
+    border-color: var(--colorNeutralStrokeAccessibleHover);
+  }
+
+  .fluent-checkbox:active {
+    border-color: var(--colorNeutralStrokeAccessiblePressed);
+  }
+
+  .fluent-checkbox:checked,
+  .fluent-checkbox:indeterminate {
+    border-color: var(--colorCompoundBrandBackground);
+    background: var(--colorCompoundBrandBackground);
+  }
+
+  .fluent-checkbox:checked::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    background: var(--colorNeutralForegroundInverted);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+  }
+
+  .fluent-checkbox:indeterminate::before {
+    content: "";
+    width: 8px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--colorNeutralForegroundInverted);
+  }
+
+  .fluent-checkbox:focus-visible {
+    outline: 2px solid var(--colorStrokeFocus2);
+    outline-offset: 2px;
+  }
+
+  .fluent-checkbox:disabled {
+    border-color: var(--colorNeutralStrokeDisabled);
+    cursor: not-allowed;
+  }
+
+  .fluent-checkbox:disabled:checked {
+    background: var(--colorNeutralBackgroundDisabled);
   }
 
   /* ── 页面级骨架屏（components/Skeleton.tsx；补测-2 #6 Loop 切页骨架屏，颜色与流光 design-spec/components/21-misc.css） ── */

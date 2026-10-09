@@ -264,7 +264,7 @@ export default function MultiItemSaleForm({
               type="button"
               onClick={handleAddPlatform}
               disabled={!newPlatformName.trim()}
-              className={button.primary + ' px-4 py-2 text-sm'}
+              className={button.primary + ' max-md:px-4 max-md:py-2'}
             >
               添加
             </button>

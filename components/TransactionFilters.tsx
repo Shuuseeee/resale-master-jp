@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
-import { ChevronDown16Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
+import { ChevronDown16Regular, ChevronDown20Regular } from '@fluentui/react-icons/headless/svg/chevron-down';
 import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import DatePicker from '@/components/DatePicker';
 import Select from '@/components/Select';
@@ -61,7 +61,8 @@ const statusOptions = [
   { value: 'returned', label: '已退货' },
 ];
 
-const inputClass = 'min-h-[40px] px-3.5 py-2.5 text-sm bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] placeholder:opacity-50 focus:outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary-light)] transition-all';
+// 筛选器里的输入框 / 下拉触发器 = Fluent filled-darker 输入框（globals.css .fluent-input）
+const inputClass = 'fluent-input';
 
 // ── 多选下拉组件 ──────────────────────────────────────────
 interface MultiSelectProps {
@@ -124,15 +125,13 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
             )}
           </div>
         )}
-        <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)] ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown20Regular className="fluent-select__chevron ml-auto" />
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] overflow-hidden">
+        <div className="fluent-listbox absolute z-50 top-full left-0 mt-1 min-w-full" role="listbox" aria-multiselectable="true">
           {searchable && (
-            <div className="p-1.5 border-b border-[var(--color-border)]">
+            <div className="mb-1 border-b border-[var(--color-border)] pb-1">
               <input
                 type="text"
                 value={search}
@@ -152,7 +151,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
                   if (search.trim()) { onBulkAdd(search); setSearch(''); }
                 }}
                 placeholder="搜索..."
-                className="w-full px-2 py-1 text-sm bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-[var(--color-text)] placeholder-[color:var(--color-text-muted)] focus:outline-none"
+                className="fluent-input w-full"
                 autoFocus
               />
               {onBulkAdd && bulkHint && (
@@ -160,12 +159,12 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
               )}
             </div>
           )}
-          <div className="max-h-[240px] overflow-y-auto">
+          <div className="flex max-h-[240px] flex-col gap-0.5 overflow-y-auto">
           {onBulkAdd && search && visibleOptions.length === 0 && (
             <button
               type="button"
               onClick={() => { onBulkAdd(search); setSearch(''); }}
-              className="flex w-full items-center px-3 py-2 text-left text-sm text-[var(--color-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+              className="fluent-option text-[var(--color-primary)]"
             >
               未匹配 · 点击或回车添加「{search}」
             </button>
@@ -173,23 +172,14 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
           {visibleOptions.map(opt => {
             const isChecked = selected.includes(opt.value);
             return (
-              <label
-                key={opt.value}
-                className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
-                  isChecked
-                    ? 'bg-[var(--color-primary-light)] hover:bg-[var(--color-primary-light)]'
-                    : 'hover:bg-[var(--color-bg-hover)]'
-                }`}
-              >
+              <label key={opt.value} role="option" aria-selected={isChecked} className="fluent-option">
                 <input
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => toggle(opt.value)}
-                  className="w-3.5 h-3.5 rounded accent-[var(--color-primary)] flex-shrink-0"
+                  className="fluent-checkbox"
                 />
-                <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-[var(--color-primary)] font-semibold' : 'text-[var(--color-text)]'}`}>
-                  {opt.label}
-                </span>
+                <span className="whitespace-nowrap">{opt.label}</span>
                 {opt.hint && (
                   <span className="ml-auto flex-shrink-0 pl-2 text-xs text-[var(--color-text-muted)]">{opt.hint}</span>
                 )}
@@ -198,7 +188,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
           })}
           </div>
           {selected.length > 0 && (
-            <div className="border-t border-[var(--color-border)] px-3 py-1.5">
+            <div className="mt-1 border-t border-[var(--color-border)] px-2 pt-1.5 pb-0.5">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onChange([]); setOpen(false); }}

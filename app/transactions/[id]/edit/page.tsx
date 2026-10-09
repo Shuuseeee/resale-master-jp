@@ -247,7 +247,7 @@ export default function EditTransactionPage() {
             <button
               type="submit"
               disabled={form.isSubmitting}
-              className={button.primary + ' flex-1 py-3'}
+              className={button.primary + ' flex-1 max-md:py-3'}
             >
               {form.isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -264,7 +264,7 @@ export default function EditTransactionPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className={button.secondary + ' py-3'}
+              className={button.secondary + ' max-md:py-3'}
             >
               取消
             </button>
