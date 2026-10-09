@@ -74,7 +74,7 @@ export default function AddSupplyPage() {
 
   return (
     <div className={layout.page}>
-      <div className={layout.container + ' max-w-3xl'}>
+      <div className={'mx-auto max-w-3xl px-4 py-6 ' + layout.narrowDesktop}>
         <div className={layout.section}>
           <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2'}>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -106,7 +106,7 @@ export default function SettingsPage() {
   return (
     <div className={layout.page}>
       {/* 设置内容天然偏窄：限宽 + 桌面双栏，避免全宽卡片大量留白 */}
-      <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6">
+      <div className={"mx-auto max-w-6xl px-4 py-6 " + layout.narrowDesktop}>
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className={heading.h1}>设置</h1>

@@ -61,8 +61,12 @@ export const input = {
  * 布局样式
  */
 export const layout = {
-  page: 'min-h-screen text-[var(--color-text)]',
-  container: 'max-w-lg mx-auto px-4 py-6 lg:max-w-none lg:px-6 lg:py-6',
+  // 桌面外壳里页面在内容卡片中滚动，不能再撑满一屏（否则每页都多出一截滚动）
+  page: 'min-h-screen md:min-h-full text-[var(--color-text)]',
+  // 桌面：Loop 正文内边距 25px 40px；列表 / 表格 / 图表页铺满卡片
+  container: 'max-w-lg mx-auto px-4 py-6 md:max-w-none md:px-10 md:py-[25px]',
+  // 窄内容页（设置、表单、详情）的桌面部分：Loop 正文列最大 920 + 左右 40 = 1000，居中；手机端沿用各页原来的类
+  narrowDesktop: 'md:max-w-[1000px] md:px-10 md:py-[25px]',
   section: 'mb-6',
 };
 
@@ -110,7 +114,7 @@ export const empty = {
  * 对齐类（text-left 等）由 DataTable 按列 meta.align 动态附加，此处不写死
  */
 export const table = {
-  wrapper: 'overflow-x-auto',
+  wrapper: 'overflow-x-auto scroll-embed',
   table: 'w-full border-collapse text-sm',
   theadTr: 'border-b border-[var(--color-border)] bg-[var(--color-bg-subtle)]',
   th: 'px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider whitespace-nowrap',

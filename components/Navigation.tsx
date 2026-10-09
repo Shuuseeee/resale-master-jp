@@ -136,9 +136,9 @@ export default function Navigation() {
 
   return (
     <>
-      {/* 桌面端顶部栏：Loop 外壳顶栏（60px，内部 40px 工具栏；透明，露出应用背景） */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 z-[9000] h-[60px] app-bg">
-        <div className="mt-[10px] grid h-10 grid-cols-2 items-center gap-x-2 pl-[3px] pr-[10px]">
+      {/* 桌面端顶部栏：Loop 外壳顶栏（grid 第一行，60px，内部 40px 工具栏；透明，露出应用背景） */}
+      <header className="app-shell__header hidden md:block h-[60px]">
+        <div className="mt-[10px] grid h-10 grid-cols-2 items-center gap-x-2 pl-[3px] pr-[2px]">
           <div className="flex h-10 items-center gap-0.5">
             <Link href="/dashboard" className="shell-brand">
               <BrandIcon className="shell-brand__logo" />
@@ -152,13 +152,10 @@ export default function Navigation() {
         </div>
       </header>
 
-      {/* ── 桌面端左导航（Loop：aside padding-left 8、顶栏下 1px 行距、底部留 8） ── */}
-      <aside className="hidden md:block fixed left-2 top-[61px] bottom-2 z-[8000]">
+      {/* ── 桌面端左导航（grid 第二行第一列，padding-left 8） ── */}
+      <aside className="app-shell__aside hidden md:flex">
         <NavRail onScanArrival={() => setShowScanArrival(true)} />
       </aside>
-
-      {/* 桌面端左导航占位：8 + 导航宽 + 8（列间距） */}
-      <div className="hidden md:block flex-shrink-0 w-[calc(var(--nav-w)+16px)]" aria-hidden="true" />
 
       {/* ── 移动端顶部栏：SNUtils compact header ── */}
       <div

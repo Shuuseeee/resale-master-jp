@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './fluent-tokens.css'
 import './globals.css'
-import Navigation from '@/components/Navigation'
+import AppShell from '@/components/shell/AppShell'
 import { ClientProviders } from '@/components/ClientProviders'
 import Script from 'next/script'
 
@@ -80,12 +80,7 @@ export default function RootLayout({
           `}
         </Script>
         <ClientProviders>
-          <div className="md:flex md:min-h-screen text-[var(--color-text)]">
-            <Navigation />
-            <div className="flex-1 min-w-0 mobile-bottom-pad md:pt-[61px] md:pb-0">
-              {children}
-            </div>
-          </div>
+          <AppShell>{children}</AppShell>
         </ClientProviders>
         <Script id="sw-register" strategy="afterInteractive">
           {`

@@ -75,6 +75,63 @@
     @apply flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)] transition-all hover:bg-[var(--color-bg-subtle)];
   }
 
+  /* ── 应用外壳（components/shell/AppShell.tsx；Loop 浅色复刻 base.css .app、04-doc-header.css .art） ──
+     手机外壳（<768）不用这些布局，内容在窗口里滚动 */
+  @media (min-width: 768px) {
+    .app-shell {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: 60px 1fr;
+      gap: 1px 8px;
+      height: 100dvh;
+      padding: 0 8px 8px 0;
+      overflow: hidden;
+    }
+
+    .app-shell__header {
+      grid-column: 1 / -1;
+    }
+
+    .app-shell__aside {
+      grid-row: 2;
+      min-height: 0;
+      padding-left: 8px;
+    }
+
+    .app-main {
+      display: flex;
+      grid-row: 2;
+      grid-column: 2;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    /* 内容卡片 = Loop 文档卡片（圆角待补测，原稿未写） */
+    .app-card {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--loop-article-bg);
+      box-shadow: var(--loop-article-shadow);
+    }
+
+    /* 卡片内滚动：文档画布滚动条（thin、常驻占位 gutter，实测 design-spec/components/21-misc.css） */
+    .app-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      scrollbar-color: var(--loop-scrollbar-canvas) transparent;
+    }
+  }
+
+  /* 内容里的嵌入式滚动区（表格横向滚动等）：Loop 正文嵌入块的滚动条 */
+  .scroll-embed {
+    scrollbar-width: thin;
+    scrollbar-color: var(--loop-scrollbar-embed) transparent;
+  }
+
   /* ── Loop 外壳控件（design-spec dark.css / 01-app-header.css / components/21-misc.css 实测） ── */
 
   /* 顶栏 subtle 图标按钮：32×32、padding 5、radius 8，悬停只变色不变底 */
@@ -877,9 +934,10 @@
     appearance: textfield;
   }
 
+  /* 滚动条默认：thin、颜色用浏览器默认（Loop 外壳实测）；卡片内滚动与嵌入块另有颜色（.app-scroll / .scroll-embed）。
+     下面的 ::-webkit-scrollbar 只对不支持 scrollbar-* 的浏览器（Safari）生效 */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
   }
 
   *::-webkit-scrollbar {

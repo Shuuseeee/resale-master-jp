@@ -112,13 +112,13 @@ export default function EditSupplyPage() {
   const field = input.base + ' w-full';
 
   if (loading) {
-    return <div className={layout.page + ' flex min-h-screen items-center justify-center text-[var(--color-text-muted)]'}>加载中...</div>;
+    return <div className={layout.page + ' flex min-h-screen md:min-h-full items-center justify-center text-[var(--color-text-muted)]'}>加载中...</div>;
   }
 
   if (errors.fetch) {
     return (
       <div className={layout.page}>
-        <div className="flex min-h-screen items-center justify-center">
+        <div className="flex min-h-screen md:min-h-full items-center justify-center">
           <div className="text-center">
             <p className="text-[var(--color-danger)]">{errors.fetch}</p>
             <button onClick={() => router.back()} className={button.primary + ' mt-4'}>返回</button>
@@ -130,7 +130,7 @@ export default function EditSupplyPage() {
 
   return (
     <div className={layout.page}>
-      <div className={layout.container + ' max-w-3xl'}>
+      <div className={'mx-auto max-w-3xl px-4 py-6 ' + layout.narrowDesktop}>
         <div className={layout.section}>
           <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2'}>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>

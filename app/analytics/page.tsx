@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
   if (isPending && !report) {
     return (
       <div className={layout.page}>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen md:min-h-full">
           <div className="text-[var(--color-text)] text-xl">加载中...</div>
         </div>
       </div>

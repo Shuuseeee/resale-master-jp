@@ -1,6 +1,6 @@
 export default function SettingsLoading() {
   return (
-    <div className="min-h-screen px-4 py-6 text-[var(--color-text)] lg:px-6">
+    <div className="min-h-screen md:min-h-full px-4 py-6 text-[var(--color-text)] lg:px-6">
       <div className="mx-auto max-w-4xl animate-pulse">
         <div className="mb-6 h-7 w-16 rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]" />
         <div className="space-y-3">

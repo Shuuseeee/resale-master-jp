@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { triggerHaptic } from '@/lib/haptic';
+import { getAppScrollTop } from '@/lib/app-scroll';
 
 const THRESHOLD = 72;
 const MAX_PULL = 100;
@@ -36,7 +37,8 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
-      if (refreshingRef.current || window.scrollY > 0) return;
+      // 桌面外壳（含 iPad 竖屏）里页面在内容卡片内滚动，要看卡片的滚动位置
+      if (refreshingRef.current || getAppScrollTop() > 0) return;
       // 滑动起点在 Modal 内时不参与下拉刷新,避免与 Modal 内滚动冲突
       const target = e.target as HTMLElement | null;
       if (target?.closest('[role="dialog"]')) return;
@@ -45,7 +47,7 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
 
     const onTouchMove = (e: TouchEvent) => {
       if (startYRef.current === null || refreshingRef.current) return;
-      if (window.scrollY > 0) { startYRef.current = null; return; }
+      if (getAppScrollTop() > 0) { startYRef.current = null; return; }
       const dy = e.touches[0].clientY - startYRef.current;
       if (dy <= 0) { startYRef.current = null; return; }
       e.preventDefault();
