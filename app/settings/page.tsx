@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
-import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, type AmazonPointConfig } from '@/lib/amazon-point-config';
+import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
 import { DEFAULT_PALETTE, PALETTES, type PaletteId } from '@/lib/themes';
 import { applyPalette, getCurrentPalette } from '@/lib/theme-palette';
@@ -24,9 +24,12 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // 初始为默认值，effect 中读取 DOM 实际主题（避免 SSR 水合不一致）
   const [palette, setPalette] = useState<PaletteId>(DEFAULT_PALETTE);
+  // 旧版「信用卡返还」%：已改由支付方式的店铺特殊规则负责，本机设置里还有旧值时提示迁移
+  const [legacyCardRate, setLegacyCardRate] = useState<number | null>(null);
 
   useEffect(() => {
     setConfig(loadAmazonPointConfig());
+    setLegacyCardRate(getLegacyAmazonCardRate());
     setKaitorixConfig(loadKaitorixConfig());
     setKnownStores(getKnownStores());
     setPalette(getCurrentPalette());
@@ -97,7 +100,6 @@ export default function SettingsPage() {
   }> = [
     { key: 'amazon_point_rate', label: 'Amazon 积分', step: '0.1', max: 100, suffix: '%', width: 'w-24' },
     { key: 'campaign_rate', label: '活动', step: '0.1', max: 100, suffix: '%', width: 'w-24' },
-    { key: 'card_rate', label: '信用卡返还', hint: '不含积分使用部分', step: '0.1', max: 100, suffix: '%', width: 'w-24' },
     { key: 'd_point_rate', label: 'd 积分', step: '0.1', max: 100, suffix: '%', width: 'w-24' },
     { key: 'd_point_cap', label: 'd 积分上限', step: '1', suffix: '¥', width: 'w-28' },
   ];
@@ -169,7 +171,7 @@ export default function SettingsPage() {
                 <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
                   Amazon 积分返还自动计算
                 </h2>
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算积分返还率。</p>
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">Amazon 采购时自动计算平台积分与 d 积分。卡积分按下方「支付方式」的返点率与店铺特殊规则计算。</p>
               </div>
               <Switch
                 checked={config.auto_calc_enabled}
@@ -178,6 +180,22 @@ export default function SettingsPage() {
                 label="新采购时自动计算"
               />
             </div>
+
+            {legacyCardRate !== null && (
+              <div className="mb-4 rounded-[var(--radius-md)] border border-[var(--color-warning-border)] bg-[var(--color-warning-subtle)] p-3 text-sm text-[var(--color-text)]">
+                <p>
+                  原来这里的「信用卡返还 {legacyCardRate}%」已移除：它不分卡、一律按这个比例算，录入顺序不同结果还会不一样。
+                  如果是某张卡在 Amazon 返 {legacyCardRate}%，请在下方「支付方式」里编辑那张卡，添加一条「Amazon → {legacyCardRate}%」的店铺特殊规则。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { dismissLegacyAmazonCardRate(); setLegacyCardRate(null); }}
+                  className="mt-2 text-xs font-medium text-[var(--color-warning)] hover:underline"
+                >
+                  已设置好，不再提示
+                </button>
+              </div>
+            )}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               {pointRows.map(row => (

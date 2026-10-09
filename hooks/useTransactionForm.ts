@@ -154,29 +154,26 @@ export function useTransactionForm({
 
   const autoCalcAmazonPoints = useCallback((
     total: number,
-    pointPaid: number,
     cfg: AmazonPointConfig,
   ) => {
+    // 只算网站给的积分；卡积分由支付方式的返点率 / 店铺特殊规则计算（见 rateFor）
     const platformPoints = Math.floor(total * (cfg.amazon_point_rate + cfg.campaign_rate) / 100);
-    const cardPoints = Math.floor((total - pointPaid) * cfg.card_rate / 100);
     const dPointsRaw = Math.floor(total * cfg.d_point_rate / 100);
     const extraPoints = Math.min(dPointsRaw, cfg.d_point_cap);
-    return { platformPoints, cardPoints, extraPoints };
+    return { platformPoints, extraPoints };
   }, []);
 
   const computeAmazonPointUpdates = useCallback((
     total: number,
-    pointPaid: number,
     cfg: AmazonPointConfig,
     platforms: PointsPlatform[],
   ): Partial<TransactionFormData> => {
-    const { platformPoints, cardPoints, extraPoints } = autoCalcAmazonPoints(total, pointPaid, cfg);
+    const { platformPoints, extraPoints } = autoCalcAmazonPoints(total, cfg);
     const amazonP = platforms.find(p => p.display_name.includes('Amazon'));
     const dPointP = platforms.find(p => p.display_name.includes('d'));
 
     return {
       expected_platform_points: platformPoints,
-      expected_card_points: cardPoints,
       extra_platform_points: extraPoints,
       ...(amazonP ? { platform_points_platform_id: amazonP.id } : {}),
       ...(dPointP && extraPoints > 0 ? { extra_platform_points_platform_id: dPointP.id } : {}),
@@ -229,7 +226,7 @@ export function useTransactionForm({
 
       if (mode === 'create' && name === 'purchase_platform_id' && value && amazonConfig?.auto_calc_enabled) {
         if (isAmazonPlatform(value) && prev.purchase_price_total > 0) {
-          Object.assign(next, computeAmazonPointUpdates(prev.purchase_price_total, prev.point_paid, amazonConfig, pointsPlatforms));
+          Object.assign(next, computeAmazonPointUpdates(prev.purchase_price_total, amazonConfig, pointsPlatforms));
         }
       }
 
@@ -278,16 +275,9 @@ export function useTransactionForm({
         }
       }
 
-      // Amazon card points recalculation (point_paid change affects card points)
-      if (mode === 'create' && field === 'point_paid' && amazonConfig?.auto_calc_enabled) {
-        if (prev.purchase_platform_id && isAmazonPlatform(prev.purchase_platform_id) && prev.purchase_price_total > 0) {
-          cardPoints = autoCalcAmazonPoints(prev.purchase_price_total, numValue, amazonConfig).cardPoints;
-        }
-      }
-
       return { ...newFormData, balance_paid: balancePaid, expected_card_points: cardPoints };
     });
-  }, [paymentMethods, calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, autoCalcAmazonPoints, defaultPaymentMethodId, rateFor]);
+  }, [paymentMethods, calculateBalancePaid, mode, defaultPaymentMethodId, rateFor]);
 
   const handleDateChange = useCallback((date: Date | null) => {
     setFormData(prev => ({ ...prev, date: formatDateToLocal(date) }));
@@ -302,7 +292,7 @@ export function useTransactionForm({
 
       // Amazon auto-calc (create mode only)
       const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && newTotal > 0)
-        ? computeAmazonPointUpdates(newTotal, prev.point_paid, amazonConfig, pointsPlatforms)
+        ? computeAmazonPointUpdates(newTotal, amazonConfig, pointsPlatforms)
         : {};
 
       return {
@@ -327,7 +317,7 @@ export function useTransactionForm({
 
         // Amazon auto-calc (create mode only)
         const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && newTotal > 0)
-          ? computeAmazonPointUpdates(newTotal, prev.point_paid, amazonConfig, pointsPlatforms)
+          ? computeAmazonPointUpdates(newTotal, amazonConfig, pointsPlatforms)
           : {};
 
         return {
@@ -349,7 +339,7 @@ export function useTransactionForm({
 
       // Amazon auto-calc (create mode only)
       const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && total > 0)
-        ? computeAmazonPointUpdates(total, prev.point_paid, amazonConfig, pointsPlatforms)
+        ? computeAmazonPointUpdates(total, amazonConfig, pointsPlatforms)
         : {};
 
       return { ...prev, purchase_price_total: total, balance_paid: balancePaid, ...amazonUpdates };
