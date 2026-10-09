@@ -207,7 +207,7 @@ CREATE TABLE public.payment_methods (
   closing_day integer,
   payment_day integer,
   payment_same_month boolean DEFAULT false NOT NULL,
-  point_rate numeric(5,2) DEFAULT 1.0 NOT NULL,
+  point_rate numeric(6,4) DEFAULT 1.0 NOT NULL,
   is_active boolean DEFAULT true NOT NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
