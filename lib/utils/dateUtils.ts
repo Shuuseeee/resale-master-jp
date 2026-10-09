@@ -50,17 +50,3 @@ export function daysBetween(date1: Date | string, date2: Date | string): number 
   const diffTime = d2.getTime() - d1.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
-
-/**
- * 计算距离指定日期还有多少天
- */
-export function daysUntil(dateString: string): number {
-  const targetDate = parseDateFromLocal(dateString);
-  if (!targetDate) return -999;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const diffTime = targetDate.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
