@@ -1,7 +1,8 @@
 // app/settings/page.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { CreditCard, FileUp, Palette, ShoppingCart, Store } from 'lucide-react';
 import { importCSV, type ImportResult } from '@/lib/api/import-csv';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
@@ -11,11 +12,23 @@ import Switch from '@/components/Switch';
 import Select from '@/components/Select';
 import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 import TabList from '@/components/fluent/TabList';
-import { SETTINGS_SECTIONS, initSettingsNav, resetSettingsDrawer, selectSettingsSection, useSettingsNav } from '@/lib/settings-nav';
+import { SETTINGS_SECTIONS, initSettingsSection, selectSettingsSection, useSettingsSection, type SettingsSectionId } from '@/lib/settings-nav';
+import { useSectionDrawer } from '@/lib/section-drawer';
 import { scrollAppToTop } from '@/lib/app-scroll';
 
+const SECTION_ICONS: Record<SettingsSectionId, ReactNode> = {
+  appearance: <Palette className="h-5 w-5" />,
+  amazon: <ShoppingCart className="h-5 w-5" />,
+  'payment-methods': <CreditCard className="h-5 w-5" />,
+  kaitorix: <Store className="h-5 w-5" />,
+  'csv-import': <FileUp className="h-5 w-5" />,
+};
+
+const DRAWER_ITEMS = SETTINGS_SECTIONS.map(item => ({ ...item, icon: SECTION_ICONS[item.id] }));
+
 export default function SettingsPage() {
-  const { section } = useSettingsNav();
+  const section = useSettingsSection();
+  useSectionDrawer({ path: '/settings', items: DRAWER_ITEMS, selected: section, onSelect: selectSettingsSection });
   const [config, setConfig] = useState<AmazonPointConfig>(DEFAULT_AMAZON_CONFIG);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -43,10 +56,9 @@ export default function SettingsPage() {
     return () => window.removeEventListener(THEME_PREFERENCE_EVENT, handlePreferenceChange);
   }, []);
 
-  // 分区与抽屉：按地址 hash 定分区，抽屉按入口与宽度给默认值；离开时复位
+  // 地址带分区 hash 时按 hash 显示（抽屉的开关由 lib/section-drawer.ts 按入口与宽度决定）
   useEffect(() => {
-    initSettingsNav();
-    return () => resetSettingsDrawer();
+    initSettingsSection();
   }, []);
 
   // 切换分区 = Loop 的切页：新分区从顶部开始（首次进入时由外壳决定滚动位置）

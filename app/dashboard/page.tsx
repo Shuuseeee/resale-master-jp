@@ -134,7 +134,7 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
             <MetricCard
               label="库存数"
               value={inStockCount.toLocaleString()}

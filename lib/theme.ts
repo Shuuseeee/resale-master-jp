@@ -63,9 +63,9 @@ export const input = {
 export const layout = {
   // 桌面外壳里页面在内容卡片中滚动，不能再撑满一屏（否则每页都多出一截滚动）
   page: 'min-h-screen md:min-h-full text-[var(--color-text)]',
-  // 桌面：Loop 正文内边距 25px 40px；列表 / 表格 / 图表页铺满卡片
-  container: 'max-w-lg mx-auto px-4 py-6 md:max-w-none md:px-10 md:py-[25px]',
-  // 窄内容页（设置、表单、详情）的桌面部分：Loop 正文列最大 920 + 左右 40 = 1000，居中；手机端沿用各页原来的类
+  // 桌面：Loop 正文列最大 920 + 左右内边距 40 = 1000，居中，上下 25（列表 / 表格 / 图表页也一样，表格放不下时在表格内横向滚动）
+  container: 'max-w-lg mx-auto px-4 py-6 md:max-w-[1000px] md:px-10 md:py-[25px]',
+  // 手机端用各页自己的容器类、桌面同上的页面（设置、表单、详情）只取桌面部分
   narrowDesktop: 'md:max-w-[1000px] md:px-10 md:py-[25px]',
   section: 'mb-6',
 };

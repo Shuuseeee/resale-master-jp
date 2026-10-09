@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckSquare, Square } from 'lucide-react';
+import { CheckSquare, CircleHelp, History, List, Square, TrendingDown, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
@@ -25,9 +25,23 @@ import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import CopyableJan from '@/components/CopyableJan';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSectionDrawer } from '@/lib/section-drawer';
 
 type FilterMode = 'all' | 'missing' | 'stale' | 'profitable' | 'loss';
 type SortMode = 'stale' | 'expected_profit' | 'stock_value' | 'buyback_price' | 'name';
+
+// 桌面在分区抽屉里切换，手机在搜索框下方的下拉里切换
+const FILTER_MODES: { value: FilterMode; label: string; icon: ReactNode }[] = [
+  { value: 'all', label: '全部库存 JAN', icon: <List className="h-5 w-5" /> },
+  { value: 'missing', label: '未获取价格', icon: <CircleHelp className="h-5 w-5" /> },
+  { value: 'stale', label: '缓存过旧', icon: <History className="h-5 w-5" /> },
+  { value: 'profitable', label: '有利润', icon: <TrendingUp className="h-5 w-5" /> },
+  { value: 'loss', label: '亏损', icon: <TrendingDown className="h-5 w-5" /> },
+];
+
+function isFilterMode(value: string): value is FilterMode {
+  return FILTER_MODES.some(mode => mode.value === value);
+}
 
 interface TransactionWithPlatform extends Transaction {
   purchase_platform?: { id: string; name: string } | null;
@@ -271,6 +285,15 @@ function KaitorixPricesContent() {
       });
   }, [summaries, filterMode, searchTerm, sortMode]);
 
+  useSectionDrawer({
+    path: '/kaitorix-prices',
+    items: FILTER_MODES.map(mode => ({ id: mode.value, label: mode.label, icon: mode.icon })),
+    selected: filterMode,
+    onSelect: id => {
+      if (isFilterMode(id)) setFilterMode(id);
+    },
+  });
+
   const refreshOne = useCallback(async (jan: string) => {
     const target = summaries.find(item => item.jan === jan);
     const remainingText = usage ? `当前剩余 ${usage.remaining}/${usage.limit} 次` : '剩余次数暂未知';
@@ -349,7 +372,7 @@ function KaitorixPricesContent() {
   return (
     <div className={layout.page}>
       <div className={layout.container}>
-        <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="mb-5 flex flex-col gap-4">
           <div>
             <h1 className={heading.h1}>买取价格比较</h1>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">按 JAN 聚合库存商品，集中查看各店价格与官方 API 强刷</p>
@@ -394,7 +417,7 @@ function KaitorixPricesContent() {
           </div>
         )}
 
-        <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+        <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto]">
           <input
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -404,14 +427,8 @@ function KaitorixPricesContent() {
           <Select
             value={filterMode}
             onChange={v => setFilterMode(v as FilterMode)}
-            options={[
-              { value: 'all', label: '全部库存 JAN' },
-              { value: 'missing', label: '未获取价格' },
-              { value: 'stale', label: '缓存过旧' },
-              { value: 'profitable', label: '有利润' },
-              { value: 'loss', label: '亏损' },
-            ]}
-            className={input.base + ' lg:min-w-[150px]'}
+            options={FILTER_MODES.map(mode => ({ value: mode.value, label: mode.label }))}
+            className={input.base + ' md:hidden'}
           />
           <Select
             value={sortMode}

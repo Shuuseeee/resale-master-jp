@@ -1,7 +1,8 @@
 // app/transactions/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense, type ReactNode } from 'react';
+import { CircleCheck, List, Package, PackageOpen, Truck, Undo2, Wallet } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -40,6 +41,7 @@ import { usePlatforms } from '@/contexts/PlatformsContext';
 import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
 import { copyTextAsync } from '@/lib/utils/clipboard';
 import OfflineNoCache from '@/components/OfflineNoCache';
+import { useSectionDrawer } from '@/lib/section-drawer';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import PullToRefresh from '@/components/PullToRefresh';
 import {
@@ -84,6 +86,18 @@ type StatusFilterKey = 'active' | 'all' | 'pending' | 'in_stock' | 'awaiting_pay
 const STATUS_FILTER_KEYS: StatusFilterKey[] = ['active', 'all', 'pending', 'in_stock', 'awaiting_payment', 'sold', 'returned'];
 const DEFAULT_STATUS_FILTER: StatusFilterKey = 'active';
 const STATUS_FILTER_STORAGE_KEY = 'transactionListStatusFilter';
+
+type StatusCountKey = 'active' | 'total' | 'inStock' | 'pending' | 'awaitingPayment' | 'sold' | 'returned';
+// 桌面在分区抽屉里切换，手机在列表上方的标签栏里切换
+const STATUS_TABS: { key: StatusFilterKey; label: string; count: StatusCountKey; icon: ReactNode }[] = [
+  { key: 'active', label: '未售出', count: 'active', icon: <PackageOpen className="h-5 w-5" /> },
+  { key: 'all', label: '全部', count: 'total', icon: <List className="h-5 w-5" /> },
+  { key: 'in_stock', label: '库存中', count: 'inStock', icon: <Package className="h-5 w-5" /> },
+  { key: 'pending', label: '未到货', count: 'pending', icon: <Truck className="h-5 w-5" /> },
+  { key: 'awaiting_payment', label: '待入账', count: 'awaitingPayment', icon: <Wallet className="h-5 w-5" /> },
+  { key: 'sold', label: '已售出', count: 'sold', icon: <CircleCheck className="h-5 w-5" /> },
+  { key: 'returned', label: '已退货', count: 'returned', icon: <Undo2 className="h-5 w-5" /> },
+];
 
 function isStatusFilterKey(v: unknown): v is StatusFilterKey {
   return typeof v === 'string' && (STATUS_FILTER_KEYS as string[]).includes(v);
@@ -344,6 +358,15 @@ function TransactionsContent() {
       avgROI: totalActualCashSpent > 0 ? (totalProfit / totalActualCashSpent) * 100 : 0,
     };
   }, [transactions]);
+
+  useSectionDrawer({
+    path: '/transactions',
+    items: STATUS_TABS.map(tab => ({ id: tab.key, label: tab.label, icon: tab.icon, count: stats[tab.count] })),
+    selected: statusFilter,
+    onSelect: id => {
+      if (isStatusFilterKey(id)) selectStatusFilter(id);
+    },
+  });
 
   const handleApplyFilters = (filters: FilterValues) => {
     setActiveFilters(filters);
@@ -1006,12 +1029,12 @@ function TransactionsContent() {
     <div className={layout.page}>
       <div className={layout.container}>
         {/* 标题区域 */}
-        <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="mb-5 flex flex-col gap-4">
           <div>
             <h1 className={heading.h1}>交易列表</h1>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">库存、利润、买取价格与销售状态</p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1 xl:pb-0">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1">
               {/* 分组/平铺切换按钮 */}
               <button
                 onClick={() => setIsGrouped(v => !v)}
@@ -1177,17 +1200,9 @@ function TransactionsContent() {
           </div>
         </div>
 
-        {/* 状态标签栏 */}
-        <div className="mb-5 flex min-h-[42px] items-end gap-1 overflow-x-auto border-b border-[var(--color-border)]">
-          {([
-            { key: 'active', label: '未售出', count: stats.active, color: 'amber' },
-            { key: 'all', label: '全部', count: stats.total },
-            { key: 'in_stock', label: '库存中', count: stats.inStock, color: 'amber' },
-            { key: 'pending', label: '未到货', count: stats.pending, color: 'blue' },
-            { key: 'awaiting_payment', label: '待入账', count: stats.awaitingPayment, color: 'indigo' },
-            { key: 'sold', label: '已售出', count: stats.sold, color: 'emerald' },
-            { key: 'returned', label: '已退货', count: stats.returned, color: 'red' },
-          ] as const).map((tab) => (
+        {/* 状态标签栏（手机；桌面在分区抽屉里切换） */}
+        <div className="mb-5 flex min-h-[42px] items-end gap-1 overflow-x-auto border-b border-[var(--color-border)] md:hidden">
+          {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => selectStatusFilter(tab.key)}
@@ -1199,7 +1214,7 @@ function TransactionsContent() {
             >
               {tab.label}
               <span className="ml-1.5 text-xs opacity-75">
-                {tab.count}
+                {stats[tab.count]}
               </span>
             </button>
           ))}

@@ -1,10 +1,10 @@
 // app/supplies/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Ellipsis, List, Package, Pencil, Printer, Trash2, Truck } from 'lucide-react';
 import { getSuppliesCosts, deleteSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -15,6 +15,7 @@ import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { DataTable } from '@/components/DataTable';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
+import { useSectionDrawer } from '@/lib/section-drawer';
 
 const CATEGORY_LABELS: Record<string, string> = {
   '包装材料': '包装材料',
@@ -22,6 +23,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   '标签打印': '标签打印',
   '其他': '其他',
 };
+
+// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换
+const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
+  { id: 'all', label: '全部', icon: <List className="h-5 w-5" /> },
+  { id: '包装材料', label: CATEGORY_LABELS['包装材料'], icon: <Package className="h-5 w-5" /> },
+  { id: '运输耗材', label: CATEGORY_LABELS['运输耗材'], icon: <Truck className="h-5 w-5" /> },
+  { id: '标签打印', label: CATEGORY_LABELS['标签打印'], icon: <Printer className="h-5 w-5" /> },
+  { id: '其他', label: CATEGORY_LABELS['其他'], icon: <Ellipsis className="h-5 w-5" /> },
+];
 
 const columnHelper = createColumnHelper<SuppliesCost>();
 const NO_SUPPLIES: SuppliesCost[] = [];
@@ -114,6 +124,8 @@ export default function SuppliesPage() {
     }),
   ], [handleDelete]);
 
+  useSectionDrawer({ path: '/supplies', items: FILTER_ITEMS, selected: filter, onSelect: setFilter });
+
   const filteredSupplies = filter === 'all'
     ? supplies
     : supplies.filter(s => s.category === filter);
@@ -200,8 +212,8 @@ export default function SuppliesPage() {
           </div>
         </div>
 
-        {/* 筛选器 */}
-        <div className={card.primary + ' p-4 mb-6'}>
+        {/* 筛选器（手机；桌面在分区抽屉里切换） */}
+        <div className={card.primary + ' p-4 mb-6 md:hidden'}>
           <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => setFilter('all')}

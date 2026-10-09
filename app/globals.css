@@ -616,8 +616,8 @@
     height: 33px;
   }
 
-  /* ── 设置页分区抽屉（components/settings/SettingsDrawer.tsx；Loop 03-drawer.css + design-spec/dark.css、09-overlay-drawer.css） ── */
-  .settings-drawer {
+  /* ── 分区抽屉（components/shell/SectionDrawer.tsx；Loop 03-drawer.css + design-spec/dark.css、09-overlay-drawer.css） ── */
+  .section-drawer {
     display: flex;
     flex: none;
     flex-direction: column;
@@ -634,7 +634,7 @@
   }
 
   /* 768–1024：浮层（实测 top 53；左缘紧贴导航：折叠时 60、展开时 188；宽 299；1024×768 下高 699） */
-  .settings-drawer--overlay {
+  .section-drawer--overlay {
     position: fixed;
     z-index: 9000;
     top: 53px;
@@ -647,17 +647,25 @@
     box-shadow: var(--shadow64);
   }
 
-  :root[data-nav="collapsed"] .settings-drawer--overlay {
+  :root[data-nav="collapsed"] .section-drawer--overlay {
     left: 60px;
   }
 
-  .settings-drawer-backdrop {
+  .section-drawer-backdrop {
     position: fixed;
     inset: 0;
     z-index: 8990;
   }
 
-  .settings-drawer__header {
+  /* 一页的面板（标题 + 分区）；换页时整块播切换动画（Loop .drawer-panel） */
+  .section-drawer__panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .section-drawer__header {
     position: relative;
     z-index: 2;
     display: flex;
@@ -668,14 +676,14 @@
     padding: 2px 8px;
   }
 
-  .settings-drawer__header-row {
+  .section-drawer__header-row {
     display: flex;
     align-items: center;
     height: 40px;
     min-height: 32px;
   }
 
-  .settings-drawer__title {
+  .section-drawer__title {
     flex: 1 1 auto;
     min-width: 0;
     margin: 0 10px 0 8px;
@@ -688,7 +696,7 @@
     white-space: nowrap;
   }
 
-  .settings-drawer__body {
+  .section-drawer__body {
     position: relative;
     z-index: 1;
     display: flex;
@@ -700,14 +708,14 @@
     overflow: hidden;
   }
 
-  .settings-tree {
+  .section-tree {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 4px;
   }
 
-  .settings-tree__item {
+  .section-tree__item {
     position: relative;
     display: flex;
     align-items: center;
@@ -716,7 +724,7 @@
     color: var(--colorNeutralForeground2);
   }
 
-  .settings-tree__layout {
+  .section-tree__layout {
     position: relative;
     display: flex;
     flex: 1 1 auto;
@@ -733,7 +741,7 @@
   }
 
   /* 选中条：2×18，未选中时藏在左缘外 translateX(-6px)，0.35s 滑入 */
-  .settings-tree__layout::before {
+  .section-tree__layout::before {
     content: "";
     position: absolute;
     top: 11px;
@@ -747,7 +755,7 @@
   }
 
   /* svg 图标位：宽 26（图标左 4 右 2）+ 右内边距 4 */
-  .settings-tree__icon {
+  .section-tree__icon {
     display: flex;
     flex: none;
     align-items: center;
@@ -759,11 +767,11 @@
     color: var(--loop-tree-icon);
   }
 
-  .settings-tree__icon > svg {
+  .section-tree__icon > svg {
     margin: 0 2px 0 4px;
   }
 
-  .settings-tree__label {
+  .section-tree__label {
     flex: 1 1 auto;
     min-width: 0;
     padding: 0 4px;
@@ -772,41 +780,61 @@
     white-space: nowrap;
   }
 
-  .settings-tree__layout:hover {
+  /* 计数徽章：design-spec/components/11-badge.css .badge--count（树节点「3」：20×20、圆角 4、12/16/600、BrandBackground2 / BrandForeground2）；
+     多位数时的左右内边距、在树节点里的右边距待补测 */
+  .section-tree__count {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusMedium);
+    background: var(--colorBrandBackground2);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    color: var(--colorBrandForeground2);
+  }
+
+  .section-tree__layout:hover {
     background: var(--loop-tree-hover-bg);
   }
 
-  .settings-tree__layout:hover .settings-tree__icon {
+  .section-tree__layout:hover .section-tree__icon {
     color: var(--loop-tree-icon-hover);
   }
 
-  .settings-tree__layout:active {
+  .section-tree__layout:active {
     background: var(--loop-tree-pressed-bg);
     color: var(--colorNeutralForeground1);
   }
 
-  .settings-tree__layout[data-selected] {
+  .section-tree__layout[data-selected] {
     background: var(--loop-tree-selected-bg);
     color: var(--colorNeutralForeground1);
   }
 
-  .settings-tree__layout[data-selected]::before {
+  .section-tree__layout[data-selected]::before {
     transform: translateX(0);
   }
 
-  .settings-tree__layout[data-selected] .settings-tree__icon {
+  .section-tree__layout[data-selected] .section-tree__icon {
     color: var(--colorCompoundBrandForeground1);
   }
 
-  .settings-tree__layout[data-selected]:hover {
+  .section-tree__layout[data-selected]:hover {
     background: var(--loop-tree-selected-hover-bg);
   }
 
-  .settings-tree__layout[data-selected]:active .settings-tree__icon {
+  .section-tree__layout[data-selected]:active .section-tree__icon {
     color: var(--loop-tree-selected-pressed-icon);
   }
 
-  .settings-tree__layout:focus-visible {
+  .section-tree__layout:focus-visible {
     outline: 2px solid var(--colorStrokeFocus2);
     border-radius: var(--borderRadiusMedium);
   }

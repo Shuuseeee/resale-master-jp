@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CalendarDays } from 'lucide-react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   generateTaxReport,
@@ -20,6 +21,7 @@ import { loadJapaneseFont } from '@/lib/pdf-font-loader';
 import CopyableJan from '@/components/CopyableJan';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSectionDrawer } from '@/lib/section-drawer';
 
 const reportCardClass = 'sn-detail-card';
 const statLabelClass = 'text-sm text-[var(--color-text-muted)] mb-1';
@@ -45,6 +47,16 @@ export default function TaxReportPage() {
     queryFn: getAvailableYears,
   });
   const availableYears = yearsData ?? NO_YEARS;
+  // 年度列表尚未加载（或加载失败）时至少保证当前选中的年份可选
+  const yearOptions = availableYears.length > 0 ? availableYears : [selectedYear];
+
+  // 桌面在分区抽屉里切换年度，手机在标题旁的下拉里切换
+  useSectionDrawer({
+    path: '/tax-report',
+    items: yearOptions.map(year => ({ id: String(year), label: `${year}年`, icon: <CalendarDays className="h-5 w-5" /> })),
+    selected: String(selectedYear),
+    onSelect: id => setSelectedYear(Number(id)),
+  });
 
   // 当前年份没有数据时切到最近有数据的年份（与原行为一致）
   useEffect(() => {
@@ -462,12 +474,11 @@ export default function TaxReportPage() {
                 页面用于中文操作；导出的 Excel/PDF 使用日本报税资料语境的日文术语和文件名。
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 md:hidden">
               <Select
                 value={String(selectedYear)}
                 onChange={v => setSelectedYear(Number(v))}
-                // 年度列表尚未加载（或加载失败）时至少保证当前选中的年份可选
-                options={(availableYears.length > 0 ? availableYears : [selectedYear]).map(year => ({ value: String(year), label: `${year}年` }))}
+                options={yearOptions.map(year => ({ value: String(year), label: `${year}年` }))}
                 className={input.base + ' w-full sm:w-32'}
                 disabled={loading}
               />
