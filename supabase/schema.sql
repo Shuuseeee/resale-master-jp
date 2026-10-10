@@ -265,6 +265,7 @@ CREATE TABLE public.return_records (
   return_date date DEFAULT CURRENT_DATE NOT NULL,
   return_amount numeric(10,2) DEFAULT 0,
   points_deducted numeric(10,2) DEFAULT 0,
+  loss_amount numeric(10,2) DEFAULT 0 NOT NULL,
   return_reason text,
   notes text,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -789,8 +790,112 @@ BEGIN
 END;
 $function$;
 
+-- 利润算法（与买取X 一致，2026-10-10 实测核对）：
+--   单位成本 =（采购总价 − 网站积分 − 信用卡积分 − 其他积分）÷ 数量   （采购总价 = 单价 × 数量 + 运费；「使用积分」是付款方式，不减成本）
+--   每次出售：利润 = 售价 × 数量 − 平台手续费 − 运费 − 单位成本 × 数量；现金利润同式但成本不减积分
+--   每笔交易：利润 = 各次出售利润之和 − 退货损失额；利润率 = 利润 ÷（售出部分成本 + 退货损失额）× 100
+-- 网页与原生 App 写入的利润值都会被这里覆盖，算法只在数据库维护一份。
+
+-- 出售写入 / 修改时按所属交易计算利润（BEFORE INSERT OR UPDATE ON sales_records）
+CREATE OR REPLACE FUNCTION public.calc_sale_profit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  t record;
+  gross_unit numeric;
+  net_unit numeric;
+  revenue numeric;
+  fees numeric;
+  basis numeric;
+BEGIN
+  SELECT purchase_price_total, quantity, expected_platform_points, expected_card_points, extra_platform_points
+  INTO t FROM transactions WHERE id = NEW.transaction_id;
+  IF NOT FOUND OR COALESCE(t.quantity, 0) <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  gross_unit := COALESCE(t.purchase_price_total, 0) / t.quantity;
+  net_unit := (COALESCE(t.purchase_price_total, 0) - COALESCE(t.expected_platform_points, 0)
+    - COALESCE(t.expected_card_points, 0) - COALESCE(t.extra_platform_points, 0)) / t.quantity;
+  revenue := NEW.quantity_sold * NEW.selling_price_per_unit;
+  fees := COALESCE(NEW.platform_fee, 0) + COALESCE(NEW.shipping_fee, 0);
+  basis := net_unit * NEW.quantity_sold;
+
+  NEW.cash_profit := round(revenue - fees - gross_unit * NEW.quantity_sold, 2);
+  NEW.total_profit := round(revenue - fees - basis, 2);
+  NEW.actual_cash_spent := round(basis, 2);
+  NEW.roi := CASE WHEN basis > 0 THEN round((revenue - fees - basis) / basis * 100, 2) ELSE 0 END;
+  RETURN NEW;
+END;
+$function$;
+
+-- 交易的利润合计：每次写交易时从出售 / 退货重新汇总（BEFORE INSERT OR UPDATE ON transactions）
+CREATE OR REPLACE FUNCTION public.calc_transaction_profit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  n_sales integer;
+  sum_profit numeric;
+  sum_cash numeric;
+  sum_basis numeric;
+  loss numeric;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.cash_profit := NULL;
+    NEW.total_profit := NULL;
+    NEW.roi := NULL;
+    RETURN NEW;
+  END IF;
+
+  SELECT count(*), COALESCE(sum(total_profit), 0), COALESCE(sum(cash_profit), 0), COALESCE(sum(actual_cash_spent), 0)
+  INTO n_sales, sum_profit, sum_cash, sum_basis
+  FROM sales_records WHERE transaction_id = NEW.id;
+  SELECT COALESCE(sum(loss_amount), 0) INTO loss FROM return_records WHERE transaction_id = NEW.id;
+
+  IF n_sales = 0 AND loss = 0 THEN
+    NEW.cash_profit := NULL;
+    NEW.total_profit := NULL;
+    NEW.roi := NULL;
+  ELSE
+    NEW.total_profit := sum_profit - loss;
+    NEW.cash_profit := sum_cash - loss;
+    NEW.roi := CASE WHEN sum_basis + loss > 0 THEN round((sum_profit - loss) / (sum_basis + loss) * 100, 2) ELSE 0 END;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+-- 出售 / 退货变动后让所属交易重新汇总（AFTER ON sales_records / return_records）
+CREATE OR REPLACE FUNCTION public.touch_transaction_profit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  UPDATE transactions SET total_profit = total_profit
+  WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+  RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+
+-- 交易的成本相关字段改动后，重算它名下每次出售的利润（AFTER UPDATE ON transactions）
+CREATE OR REPLACE FUNCTION public.recalc_sales_on_cost_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF (NEW.purchase_price_total, NEW.quantity, NEW.expected_platform_points, NEW.expected_card_points, NEW.extra_platform_points)
+     IS DISTINCT FROM
+     (OLD.purchase_price_total, OLD.quantity, OLD.expected_platform_points, OLD.expected_card_points, OLD.extra_platform_points) THEN
+    UPDATE sales_records SET total_profit = total_profit WHERE transaction_id = NEW.id;
+  END IF;
+  RETURN NULL;
+END;
+$function$;
+
 -- 买取X 格式的整份导入（lib/api/order-import.ts 调用）：一个事务里写进货 / 出售 / 退货 / 经费，任何一步出错整份回滚。
--- 利润、积分平台、支付方式等由前端算好放进 payload；这里只负责去重、补建平台、写入与状态。
+-- 积分平台、支付方式等由前端放进 payload；这里负责去重、补建平台、写入与状态。利润由 calc_sale_profit / calc_transaction_profit 触发器计算。
 -- 去重：同一用户已有「日期 + 商品名 + 数量 + 单价 + 订单ID（为空时用 JAN）」相同的进货就整笔跳过（含它的出售 / 退货）。
 CREATE OR REPLACE FUNCTION public.import_order_data(p_purchases jsonb, p_expenses jsonb)
  RETURNS jsonb
@@ -847,7 +952,7 @@ BEGIN
       purchase_price_total, card_paid, point_paid, balance_paid, card_id,
       expected_platform_points, expected_card_points, extra_platform_points,
       platform_points_platform_id, card_points_platform_id, extra_platform_points_platform_id,
-      purchase_platform_id, order_number, notes, status, cash_profit, total_profit, roi
+      purchase_platform_id, order_number, notes, status
     ) VALUES (
       uid, (p->>'date')::date, p->>'product_name', NULLIF(p->>'jan_code', ''), (p->>'unit_price')::numeric,
       (p->>'quantity')::integer, COALESCE((p->>'shipping_fee')::numeric, 0),
@@ -857,8 +962,7 @@ BEGIN
       NULLIF(p->>'platform_points_platform_id', '')::uuid, NULLIF(p->>'card_points_platform_id', '')::uuid,
       NULLIF(p->>'extra_platform_points_platform_id', '')::uuid,
       pp_id, NULLIF(p->>'order_number', ''), NULLIF(p->>'notes', ''),
-      CASE WHEN (p->>'arrived')::boolean THEN 'in_stock' ELSE 'pending' END,
-      (p->>'cash_profit')::numeric, (p->>'total_profit')::numeric, (p->>'roi')::numeric
+      CASE WHEN (p->>'arrived')::boolean THEN 'in_stock' ELSE 'pending' END
     ) RETURNING id INTO tx_id;
     n_purchases := n_purchases + 1;
 
@@ -876,11 +980,10 @@ BEGIN
       END IF;
       INSERT INTO sales_records (
         transaction_id, user_id, quantity_sold, selling_price_per_unit, platform_fee, shipping_fee, sale_date,
-        cash_profit, total_profit, roi, actual_cash_spent, selling_platform_id, sale_order_number, notes
+        selling_platform_id, sale_order_number, notes
       ) VALUES (
         tx_id, uid, (s->>'quantity_sold')::integer, (s->>'selling_price_per_unit')::numeric, (s->>'platform_fee')::numeric, 0,
-        (s->>'sale_date')::date, (s->>'cash_profit')::numeric, (s->>'total_profit')::numeric, (s->>'roi')::numeric,
-        (s->>'actual_cash_spent')::numeric, sp_id, NULLIF(s->>'sale_order_number', ''), NULLIF(s->>'notes', '')
+        (s->>'sale_date')::date, sp_id, NULLIF(s->>'sale_order_number', ''), NULLIF(s->>'notes', '')
       );
       sold_qty := sold_qty + (s->>'quantity_sold')::integer;
       n_sales := n_sales + 1;
@@ -892,8 +995,9 @@ BEGIN
     END IF;
 
     FOR r IN SELECT * FROM jsonb_array_elements(COALESCE(p->'returns', '[]'::jsonb)) LOOP
-      INSERT INTO return_records (transaction_id, user_id, quantity_returned, return_date, return_amount, points_deducted, notes)
-      VALUES (tx_id, uid, (r->>'quantity_returned')::integer, (r->>'return_date')::date, (r->>'return_amount')::numeric, 0, NULLIF(r->>'notes', ''));
+      INSERT INTO return_records (transaction_id, user_id, quantity_returned, return_date, return_amount, points_deducted, loss_amount, notes)
+      VALUES (tx_id, uid, (r->>'quantity_returned')::integer, (r->>'return_date')::date, (r->>'return_amount')::numeric, 0,
+        COALESCE((r->>'loss_amount')::numeric, 0), NULLIF(r->>'notes', ''));
       n_returns := n_returns + 1;
     END LOOP;
   END LOOP;
@@ -1087,21 +1191,26 @@ CREATE TRIGGER set_updated_at_jan_thumbnail_queue BEFORE UPDATE ON public.jan_th
 CREATE TRIGGER set_updated_at_kaitorix_open_api_usage BEFORE UPDATE ON public.kaitorix_open_api_usage FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER trg_kaitorix_price_cache_updated BEFORE UPDATE ON public.kaitorix_price_cache FOR EACH ROW EXECUTE FUNCTION public.update_kaitorix_updated_at();
 CREATE TRIGGER trg_kaitorix_scrape_queue_updated BEFORE UPDATE ON public.kaitorix_scrape_queue FOR EACH ROW EXECUTE FUNCTION public.update_kaitorix_updated_at();
-CREATE TRIGGER set_user_id_payment_methods BEFORE INSERT ON public.payment_methods FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
 CREATE TRIGGER set_user_id_payment_method_store_rates BEFORE INSERT ON public.payment_method_store_rates FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
+CREATE TRIGGER set_user_id_payment_methods BEFORE INSERT ON public.payment_methods FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
 CREATE TRIGGER update_points_platforms_updated_at BEFORE UPDATE ON public.points_platforms FOR EACH ROW EXECUTE FUNCTION public.update_points_platforms_updated_at();
 CREATE TRIGGER update_purchase_platforms_updated_at BEFORE UPDATE ON public.purchase_platforms FOR EACH ROW EXECUTE FUNCTION public.update_purchase_platforms_updated_at();
+CREATE TRIGGER trg_touch_profit_on_return AFTER INSERT OR DELETE OR UPDATE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.touch_transaction_profit();
 CREATE TRIGGER trigger_update_quantity_returned_on_delete AFTER DELETE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_returned();
 CREATE TRIGGER trigger_update_quantity_returned_on_insert AFTER INSERT ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_returned();
 CREATE TRIGGER trigger_update_quantity_returned_on_update AFTER UPDATE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_returned();
 CREATE TRIGGER update_return_records_updated_at BEFORE UPDATE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.update_return_records_updated_at();
 CREATE TRIGGER set_user_id_sale_orders BEFORE INSERT ON public.sale_orders FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
+CREATE TRIGGER trg_calc_sale_profit BEFORE INSERT OR UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.calc_sale_profit();
+CREATE TRIGGER trg_touch_profit_on_sale AFTER INSERT OR DELETE OR UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.touch_transaction_profit();
 CREATE TRIGGER trigger_update_quantity_sold_on_delete AFTER DELETE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trigger_update_quantity_sold_on_insert AFTER INSERT ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trigger_update_quantity_sold_on_update AFTER UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trigger_update_status_on_sale AFTER INSERT OR DELETE OR UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_status();
 CREATE TRIGGER update_selling_platforms_updated_at BEFORE UPDATE ON public.selling_platforms FOR EACH ROW EXECUTE FUNCTION public.update_selling_platforms_updated_at();
 CREATE TRIGGER set_user_id_transactions BEFORE INSERT ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
+CREATE TRIGGER trg_calc_transaction_profit BEFORE INSERT OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.calc_transaction_profit();
+CREATE TRIGGER trg_recalc_sales_on_cost_change AFTER UPDATE OF purchase_price_total, quantity, expected_platform_points, expected_card_points, extra_platform_points ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.recalc_sales_on_cost_change();
 CREATE TRIGGER trg_transaction_history AFTER UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.record_transaction_change();
 
 

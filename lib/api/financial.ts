@@ -86,10 +86,36 @@ export async function confirmBatchPaymentReceived(ids: string[]): Promise<{ conf
   return { confirmed, skipped: ids.length - confirmed };
 }
 
+export interface ProfitBreakdown {
+  /** 各次出售的利润合计 */
+  salesProfit: number;
+  /** 退货损失额合计 */
+  returnLoss: number;
+  /** 经费（耗材）合计 */
+  expenses: number;
+}
+
+function breakdown(
+  sales: { total_profit: number | null }[],
+  returns: { loss_amount: number | null }[],
+  expenses: { amount: number | null }[],
+): ProfitBreakdown {
+  return {
+    salesProfit: sales.reduce((sum, s) => sum + (s.total_profit || 0), 0),
+    returnLoss: returns.reduce((sum, r) => sum + (r.loss_amount || 0), 0),
+    expenses: expenses.reduce((sum, e) => sum + (e.amount || 0), 0),
+  };
+}
+
+function netProfit(b: ProfitBreakdown): number {
+  return b.salesProfit - b.returnLoss - b.expenses;
+}
+
 /**
  * 获取仪表盘统计数据
  *
- * 只取两次（全部交易 + 全部销售记录，并行、各自分页取全），所有数字在内存里一次算出：
+ * 全部交易 / 销售 / 退货损失 / 经费并行、各自分页取全，所有数字在内存里一次算出：
+ * 确定利润与买取X 一致 = 销售利润 − 退货损失 − 经费（本月利润同理，按销售日 / 退货日 / 经费日落在本月）。
  * 原先是 5 组查询——在库数量、本月利润、本月销售件数各查一遍，KPI 再把交易和销售全表查一遍，
  * 而这三项本月 / 在库数字完全可以从 KPI 已经取回的行里算出来。
  * 求和类查询必须取全：超过单次行数上限被截断会让合计直接偏小且不报错（见 fetchAllRows）；
@@ -99,13 +125,15 @@ export async function getDashboardStats(): Promise<{
   inStockCount: number;
   monthlyProfit: number;
   monthlySalesCount: number;
+  monthlyBreakdown: ProfitBreakdown;
   totalInvestment: number;
   totalRecovered: number;
   confirmedProfit: number;
+  confirmedBreakdown: ProfitBreakdown;
   unrealizedStockCost: number;
   expectedPoints: number;
 }> {
-  const [transactions, sales] = await Promise.all([
+  const [transactions, sales, returns, expenses] = await Promise.all([
     fetchAllRows<{
       purchase_price_total: number | null;
       unit_price: number | null;
@@ -128,6 +156,20 @@ export async function getDashboardStats(): Promise<{
         .order('id')
         .range(from, to),
     ),
+    fetchAllRows<{ loss_amount: number | null; return_date: string | null }>((from, to, opts) =>
+      supabase
+        .from('return_records')
+        .select('loss_amount, return_date', opts)
+        .order('id')
+        .range(from, to),
+    ),
+    fetchAllRows<{ amount: number | null; purchase_date: string | null }>((from, to, opts) =>
+      supabase
+        .from('supplies_costs')
+        .select('amount, purchase_date', opts)
+        .order('id')
+        .range(from, to),
+    ),
   ]);
 
   // 当前在库数量（所有 in_stock 交易的 quantity_in_stock 之和）
@@ -140,14 +182,21 @@ export async function getDashboardStats(): Promise<{
   const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   const endOfMonthStr = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
-  const monthlySales = sales.filter(s => s.sale_date !== null && s.sale_date >= startOfMonth && s.sale_date <= endOfMonthStr);
-  const monthlyProfit = monthlySales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
+  const inMonth = (d: string | null) => d !== null && d >= startOfMonth && d <= endOfMonthStr;
+  const monthlySales = sales.filter(s => inMonth(s.sale_date));
+  const monthlyBreakdown = breakdown(
+    monthlySales,
+    returns.filter(r => inMonth(r.return_date)),
+    expenses.filter(e => inMonth(e.purchase_date)),
+  );
+  const monthlyProfit = netProfit(monthlyBreakdown);
   const monthlySalesCount = monthlySales.length;
 
   // KPI：总投资、回收、确定利益、未回收在库、期待ポイント
   const totalInvestment = transactions.reduce((sum, t) => sum + (t.purchase_price_total || 0), 0);
   const totalRecovered = sales.reduce((sum, s) => sum + (s.total_selling_price || 0), 0);
-  const confirmedProfit = sales.reduce((sum, s) => sum + (s.total_profit || 0), 0);
+  const confirmedBreakdown = breakdown(sales, returns, expenses);
+  const confirmedProfit = netProfit(confirmedBreakdown);
 
   const unrealizedStockCost = transactions.reduce((sum, t) => {
     if (t.status === 'awaiting_payment') {
@@ -168,9 +217,11 @@ export async function getDashboardStats(): Promise<{
     inStockCount,
     monthlyProfit,
     monthlySalesCount,
+    monthlyBreakdown,
     totalInvestment,
     totalRecovered,
     confirmedProfit,
+    confirmedBreakdown,
     unrealizedStockCost,
     expectedPoints,
   };

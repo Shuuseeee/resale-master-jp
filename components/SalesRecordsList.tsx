@@ -75,22 +75,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
     }
 
     try {
-      const { error } = await updateSalesRecord(
-        editingRecord.id,
-        editFormData,
-        {
-          purchase_price_total: transaction.purchase_price_total,
-          point_paid: transaction.point_paid,
-          quantity: transaction.quantity,
-          expected_platform_points: transaction.expected_platform_points,
-          expected_card_points: transaction.expected_card_points,
-          extra_platform_points: transaction.extra_platform_points,
-          platform_points_platform_id: transaction.platform_points_platform_id,
-          card_points_platform_id: transaction.card_points_platform_id,
-          extra_platform_points_platform_id: transaction.extra_platform_points_platform_id,
-          date: transaction.date,
-        }
-      );
+      const { error } = await updateSalesRecord(editingRecord.id, editFormData);
 
       if (error) throw error;
 

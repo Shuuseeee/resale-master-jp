@@ -75,7 +75,7 @@ export function formatCurrencyCompact(amount: number | null | undefined, currenc
     const val = abs / 10_000;
     return `${sign}${currency}${val % 1 === 0 ? val : val.toFixed(1)}万`;
   }
-  return `${sign}${currency}${abs.toLocaleString('ja-JP')}`;
+  return `${sign}${currency}${abs.toLocaleString('ja-JP', { maximumFractionDigits: 0 })}`;
 }
 
 /**

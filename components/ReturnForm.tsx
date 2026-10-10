@@ -24,6 +24,7 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, onDirtyCh
     return_date: getTodayString(),
     return_amount: 0,
     points_deducted: 0,
+    loss_amount: 0,
     return_reason: '',
     notes: '',
   });
@@ -40,6 +41,7 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, onDirtyCh
       returnData.return_date !== i.return_date ||
       returnData.return_amount !== i.return_amount ||
       returnData.points_deducted !== i.points_deducted ||
+      returnData.loss_amount !== i.loss_amount ||
       returnData.return_reason !== i.return_reason ||
       returnData.notes !== i.notes
     );
@@ -74,6 +76,7 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, onDirtyCh
         return_date: returnData.return_date,
         return_amount: returnData.return_amount,
         points_deducted: returnData.points_deducted,
+        loss_amount: returnData.loss_amount,
         return_reason: returnData.return_reason,
         notes: returnData.notes,
       });
@@ -149,6 +152,26 @@ export default function ReturnForm({ transaction, onSuccess, onCancel, onDirtyCh
             className={input.base + ' w-full'}
           />
         </div>
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+          损失额
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={returnData.loss_amount || ''}
+            onChange={(e) => setReturnData({ ...returnData, loss_amount: parseNumberInput(e.target.value, 0) })}
+            placeholder="0"
+            className={input.base + ' w-full pr-12'}
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>
+        </div>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+          这次退货实际亏掉的钱（退货运费、手续费、未退回的积分等），会从这笔交易的利润里减去
+        </p>
       </div>
 
       <div>

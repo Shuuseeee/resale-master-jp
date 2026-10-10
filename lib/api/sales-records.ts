@@ -5,7 +5,11 @@ import { supabase } from '@/lib/supabase/client';
 import type { SalesRecord, SalesRecordFormData } from '@/types/database.types';
 
 // ============================================================
-// 利润计算 helper（纯同步函数，供 create/update/批量售出共用）
+// 利润计算 helper（只用于表单里的实时预览）
+// 实际存库的利润由数据库触发器 calc_sale_profit / calc_transaction_profit 计算（supabase/schema.sql），
+// 两边公式必须一致（与买取X 相同）：
+//   单位成本 =（采购总价 − 网站积分 − 信用卡积分 − 其他积分）÷ 数量
+//   利润 = 售价 × 数量 − 平台手续费 − 运费 − 单位成本 × 数量；现金利润同式但成本不减积分
 // ============================================================
 
 export interface SaleMathInput {
@@ -18,12 +22,9 @@ export interface SaleMathInput {
 export interface SaleMathTxBasis {
   purchase_price_total: number;
   quantity: number;
-  expected_platform_points: number;
-  expected_card_points: number;
-  extra_platform_points: number;
-  platform_points_platform_id: string | null;
-  card_points_platform_id: string | null;
-  extra_platform_points_platform_id: string | null;
+  expected_platform_points: number | null;
+  expected_card_points: number | null;
+  extra_platform_points: number | null;
 }
 
 export interface SaleMathResult {
@@ -33,43 +34,31 @@ export interface SaleMathResult {
   actual_cash_spent: number;
 }
 
-/**
- * 计算单次售出的利润与ROI（纯同步，无副作用）
- * 积分当前按 1:1（1点=1円）计算，platformId 为 null 时积分价值为 0
- */
 export function computeSaleProfit(input: SaleMathInput, tx: SaleMathTxBasis): SaleMathResult {
-  const costPerUnit = tx.purchase_price_total / tx.quantity;
-  const totalCost = costPerUnit * input.quantity_sold;
-  const totalSellingPrice = input.selling_price_per_unit * input.quantity_sold;
-  const cashProfit = totalSellingPrice - totalCost - input.platform_fee - input.shipping_fee;
+  const quantity = tx.quantity || 1;
+  const points = (tx.expected_platform_points || 0) + (tx.expected_card_points || 0) + (tx.extra_platform_points || 0);
+  const grossUnit = tx.purchase_price_total / quantity;
+  const netUnit = (tx.purchase_price_total - points) / quantity;
+  const revenue = input.selling_price_per_unit * input.quantity_sold;
+  const fees = input.platform_fee + input.shipping_fee;
+  const basis = netUnit * input.quantity_sold;
+  const totalProfit = revenue - fees - basis;
 
-  const pointsRatio = input.quantity_sold / tx.quantity;
-
-  // All points are 1:1 (1 point = 1 yen); platformId null → 0
-  const platformPointsValue = (tx.expected_platform_points && tx.platform_points_platform_id)
-    ? tx.expected_platform_points * pointsRatio : 0;
-  const cardPointsValue = (tx.expected_card_points && tx.card_points_platform_id)
-    ? tx.expected_card_points * pointsRatio : 0;
-  const extraPointsValue = (tx.extra_platform_points && tx.extra_platform_points_platform_id)
-    ? tx.extra_platform_points * pointsRatio : 0;
-
-  const totalProfit = cashProfit + platformPointsValue + cardPointsValue + extraPointsValue;
-  const actualCashSpent = tx.purchase_price_total * pointsRatio;
-  const roi = actualCashSpent > 0 ? (totalProfit / actualCashSpent) * 100 : 0;
-
-  return { cash_profit: cashProfit, total_profit: totalProfit, roi, actual_cash_spent: actualCashSpent };
+  return {
+    cash_profit: revenue - fees - grossUnit * input.quantity_sold,
+    total_profit: totalProfit,
+    roi: basis > 0 ? (totalProfit / basis) * 100 : 0,
+    actual_cash_spent: basis,
+  };
 }
 
 /**
  * 创建销售记录
- * @param transactionId 交易ID
- * @param formData 销售记录表单数据
- * @param transaction 交易信息（用于计算利润和ROI）
+ * 利润由数据库触发器计算，交易上的利润合计也由触发器维护
  */
 export async function createSalesRecord(
   transactionId: string,
   formData: SalesRecordFormData,
-  transaction: SaleMathTxBasis & { point_paid: number; date: string }
 ): Promise<{ data: SalesRecord | null; error: any }> {
   try {
     // 获取当前用户
@@ -77,8 +66,6 @@ export async function createSalesRecord(
     if (!user) {
       return { data: null, error: { message: '未登录' } };
     }
-
-    const { cash_profit, total_profit, roi, actual_cash_spent } = computeSaleProfit(formData, transaction);
 
     // 插入销售记录
     const { data, error } = await supabase
@@ -91,21 +78,12 @@ export async function createSalesRecord(
         platform_fee: formData.platform_fee,
         shipping_fee: formData.shipping_fee,
         sale_date: formData.sale_date,
-        cash_profit,
-        total_profit,
-        roi,
-        actual_cash_spent,
         selling_platform_id: formData.selling_platform_id || null,
         sale_order_number: formData.sale_order_number || null,
         notes: formData.notes || null,
       })
       .select()
       .single();
-
-    // 更新 transaction 的聚合 ROI
-    if (data) {
-      await updateTransactionROI(transactionId);
-    }
 
     return { data, error };
   } catch (error) {
@@ -133,7 +111,7 @@ export async function getSalesRecords(transactionId: string): Promise<SalesRecor
 }
 
 /**
- * 更新销售记录（重新计算利润）
+ * 更新销售记录（利润由数据库触发器重算）
  */
 export async function updateSalesRecord(
   recordId: string,
@@ -145,11 +123,8 @@ export async function updateSalesRecord(
     shipping_fee: number;
     notes: string;
   },
-  transaction: SaleMathTxBasis & { point_paid: number; date: string }
 ): Promise<{ data: SalesRecord | null; error: any }> {
   try {
-    const { cash_profit, total_profit, roi, actual_cash_spent } = computeSaleProfit(formData, transaction);
-
     const { data, error } = await supabase
       .from('sales_records')
       .update({
@@ -159,19 +134,10 @@ export async function updateSalesRecord(
         platform_fee: formData.platform_fee,
         shipping_fee: formData.shipping_fee,
         notes: formData.notes || null,
-        cash_profit,
-        total_profit,
-        roi,
-        actual_cash_spent,
       })
       .eq('id', recordId)
       .select()
       .single();
-
-    // 更新 transaction 的聚合 ROI
-    if (data) {
-      await updateTransactionROI(data.transaction_id);
-    }
 
     return { data, error };
   } catch (error) {
@@ -184,13 +150,6 @@ export async function updateSalesRecord(
  * 删除销售记录
  */
 export async function deleteSalesRecord(recordId: string): Promise<boolean> {
-  // 删除前先查 transaction_id，以便删除后更新聚合 ROI
-  const { data: record } = await supabase
-    .from('sales_records')
-    .select('transaction_id')
-    .eq('id', recordId)
-    .single();
-
   const { error } = await supabase
     .from('sales_records')
     .delete()
@@ -201,36 +160,5 @@ export async function deleteSalesRecord(recordId: string): Promise<boolean> {
     return false;
   }
 
-  // 删除后更新 transaction 的聚合 ROI
-  if (record) {
-    await updateTransactionROI(record.transaction_id);
-  }
-
   return true;
-}
-
-/**
- * 从 sales_records 聚合利润和 ROI，写入 transactions 表
- */
-export async function updateTransactionROI(transactionId: string): Promise<void> {
-  const { data: records } = await supabase
-    .from('sales_records')
-    .select('total_profit, actual_cash_spent, cash_profit')
-    .eq('transaction_id', transactionId);
-
-  if (!records || records.length === 0) {
-    await supabase.from('transactions')
-      .update({ cash_profit: null, total_profit: null, roi: null })
-      .eq('id', transactionId);
-    return;
-  }
-
-  const totalProfit = records.reduce((sum, r) => sum + (r.total_profit || 0), 0);
-  const totalCashProfit = records.reduce((sum, r) => sum + (r.cash_profit || 0), 0);
-  const totalCashSpent = records.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
-  const roi = totalCashSpent > 0 ? (totalProfit / totalCashSpent) * 100 : 0;
-
-  await supabase.from('transactions')
-    .update({ cash_profit: totalCashProfit, total_profit: totalProfit, roi })
-    .eq('id', transactionId);
 }

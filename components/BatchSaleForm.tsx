@@ -115,22 +115,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
     setSubmitting(true);
 
     try {
-      const { data, error: apiError } = await createSalesRecord(
-        transaction.id,
-        formData,
-        {
-          purchase_price_total: transaction.purchase_price_total,
-          point_paid: transaction.point_paid,
-          quantity: transaction.quantity,
-          expected_platform_points: transaction.expected_platform_points,
-          expected_card_points: transaction.expected_card_points,
-          extra_platform_points: transaction.extra_platform_points,
-          platform_points_platform_id: transaction.platform_points_platform_id,
-          card_points_platform_id: transaction.card_points_platform_id,
-          extra_platform_points_platform_id: transaction.extra_platform_points_platform_id,
-          date: transaction.date, // 添加交易日期用于耗材成本分摊
-        }
-      );
+      const { data, error: apiError } = await createSalesRecord(transaction.id, formData);
 
       if (apiError) {
         setError(apiError.message || '保存失败');

@@ -113,9 +113,6 @@ export default function MultiItemSaleForm({
         expected_platform_points: tx.expected_platform_points,
         expected_card_points: tx.expected_card_points,
         extra_platform_points: tx.extra_platform_points,
-        platform_points_platform_id: tx.platform_points_platform_id,
-        card_points_platform_id: tx.card_points_platform_id,
-        extra_platform_points_platform_id: tx.extra_platform_points_platform_id,
       });
     }
     return result;
@@ -163,16 +160,6 @@ export default function MultiItemSaleForm({
         transaction_id: tx.id,
         quantity_in_stock: tx.quantity_in_stock,
         ...drafts[tx.id],
-        basis: {
-          purchase_price_total: tx.purchase_price_total,
-          quantity: tx.quantity,
-          expected_platform_points: tx.expected_platform_points,
-          expected_card_points: tx.expected_card_points,
-          extra_platform_points: tx.extra_platform_points,
-          platform_points_platform_id: tx.platform_points_platform_id,
-          card_points_platform_id: tx.card_points_platform_id,
-          extra_platform_points_platform_id: tx.extra_platform_points_platform_id,
-        },
       }));
 
       const { orderId, error: apiError } = await createSaleOrder(

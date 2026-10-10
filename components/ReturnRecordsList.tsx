@@ -90,6 +90,14 @@ export default function ReturnRecordsList({ transactionId, onUpdate }: ReturnRec
                 </span>
               </div>
             )}
+            {record.loss_amount > 0 && (
+              <div>
+                <span className="text-[var(--color-text-muted)]">损失额：</span>
+                <span className="text-[var(--color-danger)] font-medium">
+                  {formatCurrency(record.loss_amount)}
+                </span>
+              </div>
+            )}
             {record.points_deducted > 0 && (
               <div>
                 <span className="text-[var(--color-text-muted)]">扣除积分：</span>

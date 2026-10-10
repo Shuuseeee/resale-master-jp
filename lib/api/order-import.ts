@@ -1,14 +1,13 @@
 // lib/api/order-import.ts — 导入买取X 格式的数据（CSV 基本 / XLSX 导入模板 / XLSX 全部数据）
-// 流程：读文件 → lib/order-data/parse.ts 解析并完整校验（有错整份不导入）→ 前端算好金额、积分平台、利润
+// 流程：读文件 → lib/order-data/parse.ts 解析并完整校验（有错整份不导入）→ 前端算好金额、积分平台
 //      → 一次 RPC import_order_data 在数据库事务里写入（去重、补建平台、写进货 / 出售 / 退货 / 经费；出错整份回滚）
 // 金额口径（与买取X 一致）：
 // - 采购总价 = 进货单价 × 数量 + 运费；「使用积分」= 积分抵扣，其余计为信用卡 / 其他支付
 // - 买取X 的「优惠券」是已从单价里扣掉的折扣（不含在单价里、不影响原価），我们没有对应字段，写进备注
-// - 退货的「损失额」我们没有对应字段，写进退货备注
+// - 退货的「损失额」写进 return_records.loss_amount；利润由数据库触发器按买取X 公式计算
 // - 经费 → 耗材：分类对上 4 个固定分类就用，对不上归「其他」、原分类写进说明
 
 import { supabase } from '@/lib/supabase/client';
-import { computeSaleProfit, type SaleMathTxBasis } from '@/lib/api/sales-records';
 import { SUPPLY_CATEGORIES } from '@/lib/order-data/columns';
 import { parseCsvText, parseOrderData, type ParsedPurchase, type Table } from '@/lib/order-data/parse';
 
@@ -91,28 +90,6 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
     const card = p.account ? cards.get(p.account) : undefined;
     if (p.account && !card) unmatched.add(p.account);
     const total = p.unitPrice * p.quantity + p.shippingFee;
-    const platformIds = inferPointsPlatforms(p, card, pointsPlatforms as PointsPlatformRef[]);
-    const basis: SaleMathTxBasis = {
-      purchase_price_total: total,
-      quantity: p.quantity,
-      expected_platform_points: p.pointsSite,
-      expected_card_points: p.pointsCard,
-      extra_platform_points: p.pointsOther,
-      ...platformIds,
-    };
-    const sales = p.sales.map(s => ({
-      sale_date: s.date,
-      platform_name: s.target,
-      quantity_sold: s.qty,
-      selling_price_per_unit: s.price,
-      platform_fee: s.deduction,
-      sale_order_number: s.orderId,
-      notes: s.memo,
-      ...computeSaleProfit({ quantity_sold: s.qty, selling_price_per_unit: s.price, platform_fee: s.deduction, shipping_fee: 0 }, basis),
-    }));
-    // 交易上的利润 / ROI = 各次出售的合计（同 lib/api/sales-records.ts updateTransactionROI）
-    const cashSpent = sales.reduce((sum, s) => sum + s.actual_cash_spent, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + s.total_profit, 0);
     return {
       date: p.date,
       product_name: p.productName,
@@ -127,21 +104,27 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
       expected_platform_points: p.pointsSite,
       expected_card_points: p.pointsCard,
       extra_platform_points: p.pointsOther,
-      ...platformIds,
+      ...inferPointsPlatforms(p, card, pointsPlatforms as PointsPlatformRef[]),
       platform_name: p.source,
       order_number: p.orderId,
       notes: joinNotes(p.memo, p.coupon > 0 && `优惠券 ¥${p.coupon}（买取X 导入）`),
       arrived: p.received || p.sales.length > 0 || (p.arrivedQty > 0 && p.arrivedQty >= p.quantity),
       paid_all: p.sales.length > 0 && p.sales.every(s => s.paid),
-      cash_profit: sales.length ? sales.reduce((sum, s) => sum + s.cash_profit, 0) : null,
-      total_profit: sales.length ? totalProfit : null,
-      roi: sales.length ? (cashSpent > 0 ? (totalProfit / cashSpent) * 100 : 0) : null,
-      sales,
+      sales: p.sales.map(s => ({
+        sale_date: s.date,
+        platform_name: s.target,
+        quantity_sold: s.qty,
+        selling_price_per_unit: s.price,
+        platform_fee: s.deduction,
+        sale_order_number: s.orderId,
+        notes: s.memo,
+      })),
       returns: p.returns.map(r => ({
         return_date: r.date,
         quantity_returned: r.qty,
         return_amount: r.refund,
-        notes: joinNotes(r.memo, r.loss > 0 && `损失额 ¥${r.loss}（买取X 导入）`),
+        loss_amount: r.loss,
+        notes: r.memo,
       })),
     };
   });

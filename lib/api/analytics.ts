@@ -56,6 +56,10 @@ export interface CoreMetrics {
   totalShippingFees: number;
   totalSuppliesCosts: number;
   totalPointsValue: number;
+  /** 销售利润合计（未扣退货损失 / 经费） */
+  salesProfit: number;
+  /** 期间内的退货损失额（按退货日） */
+  totalReturnLoss: number;
 }
 
 /**
@@ -252,11 +256,52 @@ function fetchSalesRows(filters: AnalyticsFilters): Promise<any[]> {
 }
 
 /**
- * 计算核心指标（基于销售记录）
+ * 期间内的退货损失与经费（确定利润要扣掉它们，与买取X / 仪表盘一致）。
+ * 退货损失按退货日、经费按购买日落在期间内；选了支付方式时退货按其交易的支付方式筛选，经费不挂支付方式、不计入。
  */
-async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<string, any>): Promise<CoreMetrics> {
+async function fetchDeductions(start: Date, end: Date, paymentMethods?: string[]): Promise<{ returnLoss: number; expenses: number }> {
+  const from = formatDateToLocal(start);
+  const to = formatDateToLocal(end);
+  const filtered = !!paymentMethods && paymentMethods.length > 0;
+  const [returns, expenses] = await Promise.all([
+    fetchAllRows<any>((f, t, opts) =>
+      supabase
+        .from('return_records')
+        .select('loss_amount, transaction:transaction_id(card_id)', opts)
+        .gte('return_date', from)
+        .lte('return_date', to)
+        .order('id')
+        .range(f, t),
+    ),
+    filtered
+      ? Promise.resolve([])
+      : fetchAllRows<{ amount: number | null }>((f, t, opts) =>
+          supabase
+            .from('supplies_costs')
+            .select('amount', opts)
+            .gte('purchase_date', from)
+            .lte('purchase_date', to)
+            .order('id')
+            .range(f, t),
+        ),
+  ]);
+  return {
+    returnLoss: returns
+      .filter((r: any) => !filtered || paymentMethods!.includes(r.transaction?.card_id ?? ''))
+      .reduce((sum: number, r: any) => sum + (r.loss_amount || 0), 0),
+    expenses: expenses.reduce((sum, e) => sum + (e.amount || 0), 0),
+  };
+}
+
+/**
+ * 计算核心指标（基于销售记录）。利润口径与买取X 一致：
+ * 总利润 = 销售利润 − 退货损失 − 经费；平均 ROI = 总利润 ÷ 售出部分成本（扣积分后，即 actual_cash_spent 之和）；
+ * 积分回报 = 售出部分对应的全部积分（1 积分 = 1 円，不看积分平台）
+ */
+function calculateCoreMetrics(salesRecords: any[], deductions: { returnLoss: number; expenses: number }): CoreMetrics {
   const totalSales = salesRecords.reduce((sum, r) => sum + (r.total_selling_price || 0), 0);
-  const totalProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+  const salesProfit = salesRecords.reduce((sum, r) => sum + (r.total_profit || 0), 0);
+  const totalProfit = salesProfit - deductions.returnLoss - deductions.expenses;
 
   // 计算总成本（按比例分配）
   const totalCost = salesRecords.reduce((sum, r) => {
@@ -266,7 +311,6 @@ async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<stri
     return sum + (costPerUnit * r.quantity_sold);
   }, 0);
 
-  // 加权平均 ROI：sum(total_profit) / sum(actual_cash_spent)
   const totalActualCashSpent = salesRecords.reduce((sum, r) => sum + (r.actual_cash_spent || 0), 0);
   const avgROI = totalActualCashSpent > 0
     ? (totalProfit / totalActualCashSpent) * 100
@@ -277,36 +321,14 @@ async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<stri
 
   const totalPlatformFees = salesRecords.reduce((sum, r) => sum + (r.platform_fee || 0), 0);
   const totalShippingFees = salesRecords.reduce((sum, r) => sum + (r.shipping_fee || 0), 0);
-  const totalSuppliesCosts = 0; // 耗材成本已包含在销售记录的利润计算中
 
-  // 计算积分价值（按销售比例，使用各平台的 yen_conversion_rate）
   const totalPointsValue = salesRecords.reduce((sum, r) => {
     const transaction = r.transaction as any;
     if (!transaction) return sum;
-
-    const pointsRatio = r.quantity_sold / (transaction.quantity || 1);
-
-    let pointsValue = 0;
-
-    // 平台积分
-    if (transaction.expected_platform_points && transaction.platform_points_platform_id) {
-      const rate = platformsMap?.get(transaction.platform_points_platform_id)?.yen_conversion_rate ?? 1;
-      pointsValue += (transaction.expected_platform_points * pointsRatio * rate);
-    }
-
-    // 信用卡积分
-    if (transaction.expected_card_points && transaction.card_points_platform_id) {
-      const rate = platformsMap?.get(transaction.card_points_platform_id)?.yen_conversion_rate ?? 1;
-      pointsValue += (transaction.expected_card_points * pointsRatio * rate);
-    }
-
-    // 额外平台积分
-    if (transaction.extra_platform_points && transaction.extra_platform_points_platform_id) {
-      const rate = platformsMap?.get(transaction.extra_platform_points_platform_id)?.yen_conversion_rate ?? 1;
-      pointsValue += (transaction.extra_platform_points * pointsRatio * rate);
-    }
-
-    return sum + pointsValue;
+    const points = (transaction.expected_platform_points || 0)
+      + (transaction.expected_card_points || 0)
+      + (transaction.extra_platform_points || 0);
+    return sum + points * (r.quantity_sold / (transaction.quantity || 1));
   }, 0);
 
   return {
@@ -318,8 +340,10 @@ async function calculateCoreMetrics(salesRecords: any[], platformsMap?: Map<stri
     avgProfitPerTransaction,
     totalPlatformFees,
     totalShippingFees,
-    totalSuppliesCosts,
+    totalSuppliesCosts: deductions.expenses,
     totalPointsValue,
+    salesProfit,
+    totalReturnLoss: deductions.returnLoss,
   };
 }
 
@@ -407,11 +431,10 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
 
     const prevData = await fetchSalesRows(prevFilters);
 
-    // 获取积分平台转换率
-    const { data: platforms } = await supabase
-      .from('points_platforms')
-      .select('id, yen_conversion_rate');
-    const platformsMap = new Map((platforms || []).map((p: any) => [p.id, p]));
+    const [currentDeductions, previousDeductions] = await Promise.all([
+      fetchDeductions(start, end, filters.paymentMethods),
+      fetchDeductions(prevStart, prevEnd, filters.paymentMethods),
+    ]);
 
     // 应用支付方式筛选
     const filterByPaymentMethod = (records: any[]) => {
@@ -424,8 +447,8 @@ export async function getComparisonMetrics(filters: AnalyticsFilters): Promise<C
       });
     };
 
-    const current = await calculateCoreMetrics(filterByPaymentMethod(currentData || []), platformsMap);
-    const previous = await calculateCoreMetrics(filterByPaymentMethod(prevData || []), platformsMap);
+    const current = calculateCoreMetrics(filterByPaymentMethod(currentData || []), currentDeductions);
+    const previous = calculateCoreMetrics(filterByPaymentMethod(prevData || []), previousDeductions);
 
     const salesChange = previous.totalSales > 0
       ? ((current.totalSales - previous.totalSales) / previous.totalSales) * 100
@@ -678,7 +701,8 @@ export async function getCostStructure(filters: AnalyticsFilters): Promise<CostS
 
     const platformFees = filteredRecords.reduce((sum, r) => sum + (r.platform_fee || 0), 0);
     const shippingFees = filteredRecords.reduce((sum, r) => sum + (r.shipping_fee || 0), 0);
-    const suppliesCosts = 0; // 耗材成本已包含在销售记录的利润计算中
+    const { start, end } = getDateRange(filters.timeRange, filters.startDate, filters.endDate);
+    const { expenses: suppliesCosts } = await fetchDeductions(start, end, filters.paymentMethods);
 
     return {
       purchaseCost,

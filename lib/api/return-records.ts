@@ -26,6 +26,7 @@ export async function createReturnRecord(
         return_date: formData.return_date,
         return_amount: formData.return_amount || 0,
         points_deducted: formData.points_deducted || 0,
+        loss_amount: formData.loss_amount || 0,
         return_reason: formData.return_reason || null,
         notes: formData.notes || null,
       })

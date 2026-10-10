@@ -289,6 +289,13 @@ export default function AnalyticsPage() {
               <div className={statValueClass}>
                 {formatCurrency(comparison.current.totalProfit)}
               </div>
+              {(comparison.current.totalReturnLoss > 0 || comparison.current.totalSuppliesCosts > 0) && (
+                <div className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  销售 {formatCurrency(comparison.current.salesProfit)}
+                  {comparison.current.totalReturnLoss > 0 && ` · 退货损失 −${formatCurrency(comparison.current.totalReturnLoss)}`}
+                  {comparison.current.totalSuppliesCosts > 0 && ` · 经费 −${formatCurrency(comparison.current.totalSuppliesCosts)}`}
+                </div>
+              )}
             </div>
 
             <div className={statCardClass} data-testid="metric-avg-roi">

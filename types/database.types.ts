@@ -389,6 +389,8 @@ export interface ReturnRecord {
   return_date: string;
   return_amount: number;
   points_deducted: number;
+  /** 退货损失额（买取X「損失額」）：交易利润直接减去这个数 */
+  loss_amount: number;
   return_reason: string | null;
   notes: string | null;
   created_at: string;
@@ -401,6 +403,7 @@ export interface ReturnRecordFormData {
   return_date: string;
   return_amount?: number;
   points_deducted?: number;
+  loss_amount?: number;
   return_reason?: string;
   notes?: string;
 }

@@ -143,7 +143,7 @@ const GUIDE_ROWS: Row[] = [
   ['経費', '经费（本应用的耗材）'],
   ['■ 规则'],
   ['仕入参照キー', '进货与出售 / 退货的关联键，请勿修改'],
-  ['原価 / 確定利益 / 利益率', '计算列，导入时忽略。原価 =（仕入単価×数量 + 送料 − ポイント使用）÷ 数量'],
+  ['原価 / 確定利益 / 利益率', '计算列，导入时忽略。原価 =（仕入単価×数量 + 送料 − P(サイト) − P(カード) − P(他)）÷ 数量'],
   ['着荷', '1 = 已到货，空 = 未到货'],
   ['入金済み', '1 = 已入账，空 = 未入账'],
   ['日期', 'YYYY-MM-DD 或 YYYY/MM/DD'],
@@ -164,7 +164,8 @@ export async function exportOrdersXlsx(): Promise<void> {
 
   const purchaseRows: Row[] = transactions.map(tx => {
     const qty = tx.quantity || 1;
-    const cost = (unitPriceOf(tx) * qty + shippingOf(tx) - num(tx.point_paid)) / qty;
+    const points = num(tx.expected_platform_points) + num(tx.expected_card_points) + num(tx.extra_platform_points);
+    const cost = (unitPriceOf(tx) * qty + shippingOf(tx) - points) / qty;
     return [
       tx.id, tx.date, tx.product_name, tx.jan_code ?? '', unitPriceOf(tx), qty,
       tx.purchase_platform?.name ?? '', tx.order_number ?? '', shippingOf(tx), num(tx.point_paid), 0,
@@ -179,7 +180,7 @@ export async function exportOrdersXlsx(): Promise<void> {
     statusById.get(s.transaction_id) === 'sold' ? 1 : '',
   ]);
   const returnRows: Row[] = returns.map(r => [
-    r.transaction_id, r.quantity_returned, r.return_date, num(r.return_amount), 0,
+    r.transaction_id, r.quantity_returned, r.return_date, num(r.return_amount), num(r.loss_amount),
     [r.return_reason, r.notes].filter(Boolean).join('\n'),
   ]);
   const expenseRows: Row[] = supplies.map(s => [
