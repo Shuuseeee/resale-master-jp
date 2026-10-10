@@ -9,6 +9,7 @@
 - **混合支付录入**：支持信用卡、积分、余额拆分，并自动校验支付合计。
 - **JAN 录入体验**：支持条形码扫描、商品名自动补全（查每日同步的买取X 全量目录，查不到再走 search API 兜底，少量重试应对网络抖动）、Kaitorix 买取价格缓存与对比；店铺报价更新超过 7 天不再作为参考。
 - **离线只读**：交易列表的数据会按用户缓存到本机（IndexedDB），断网后仍可查看，顶部显示「离线中 · 更新于…」；离线时不能修改数据；登出会清空本机缓存。联网访问过的页面可离线打开（页面缓存保留 30 天），从主屏幕离线启动会进入交易列表。目前交易列表（含平台名）、仪表盘、耗材、数据分析（预设时间范围）、税务报表和买取价格页支持离线数据，设置页与各表单离线时只能打开外壳。
+- **仪表盘（复刻买取X）**：可按期间 / JAN / 进货来源 / 支付方式筛选的六张指标卡（投资额、回收额、确定利润、利润含预估、已售数量、库存），以及损益走势（ECharts，日线 / 周线 / 月线 K 线）。
 - **利润算法与买取X 一致**：利润由数据库触发器统一计算（网页与原生 App 同一口径），积分一律计入成本抵减，退货可填损失额，仪表盘 / 分析的确定利润扣除退货损失与经费。
 - **导入导出（买取X 格式）**：交易页导出 CSV（当前列表）/ XLSX（全部数据：进货・出售・退货・经费），设置页导入买取X 导出的文件或模板；有一处错整份不导入，重复的进货自动跳过。
 - **AI 分析数据导出**：交易详情页 / 列表多选可一键复制 JSON（交易 + 销售 + 退货 + 买取价缓存），结构与原生 App 一致，可直接贴给 AI 或 ResaleAssist 做分析。
@@ -33,7 +34,7 @@
 - **图标**：Fluent UI System Icons（`@fluentui/react-icons`，headless 版）
 - **数据库与认证**：Supabase Auth + PostgreSQL + Storage
 - **PWA**：Manifest + Workbox Service Worker
-- **图表与导出**：Recharts、jsPDF、jspdf-autotable、XLSX
+- **图表与导出**：ECharts（仪表盘）、Recharts（数据分析）、jsPDF、jspdf-autotable、XLSX
 - **表格**：`@tanstack/react-table`（headless）
 - **数据请求缓存**：`@tanstack/react-query`
 - **Service Worker**：Workbox（`InjectManifest`，源码 `lib/sw/sw-source.ts`）

@@ -472,6 +472,29 @@
     background: transparent;
   }
 
+  /* 切换按钮选中态（design-spec 07：toggle 选中 = SubtleBackgroundSelected，正文色） */
+  .fluent-btn--subtle[aria-pressed="true"] {
+    background: var(--colorSubtleBackgroundSelected);
+    color: var(--colorNeutralForeground1);
+  }
+
+  /* 小号按钮（design-spec 07 .btn--sm 实测 24 高），md 起生效；手机保留触控尺寸 */
+  @media (min-width: 768px) {
+    .fluent-btn--sm {
+      min-width: 0;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: var(--borderRadiusMedium);
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 400;
+    }
+
+    .fluent-btn--sm:focus-visible {
+      border-radius: var(--borderRadiusSmall);
+    }
+  }
+
   /* 手机端 subtle（返回等）保持原来的 36 高、padding 8px 16px */
   @media (max-width: 767px) {
     .fluent-btn--subtle {

@@ -13,10 +13,10 @@ const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   sale_orders: FINANCIAL,
   // 积分率 / 平台配置会影响利润与积分的换算
   points_platforms: [...FINANCIAL, 'platforms'],
-  purchase_platforms: ['platforms', 'analytics', 'transactions'],
-  selling_platforms: ['platforms', 'analytics', 'transactions'],
-  payment_methods: ['analytics', 'transactions', 'payment-methods'],
-  supplies_costs: ['supplies', 'analytics', 'tax-report'],
+  purchase_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],
+  selling_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],
+  payment_methods: ['analytics', 'transactions', 'payment-methods', 'dashboard'],
+  supplies_costs: ['supplies', 'analytics', 'tax-report', 'dashboard'],
   fixed_costs: ['supplies', 'analytics', 'tax-report'],
 };
 
