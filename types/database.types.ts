@@ -127,6 +127,9 @@ export interface Transaction {
   unit_price: number | null;
   purchase_platform_id: string | null;
   order_number: string | null;
+  // 进货运费：已计入 purchase_price_total（总价 = 单价×数量 + 运费），这里单独记录金额。
+  // 库里加列之前读到的是 undefined，读取处一律按 0 处理
+  shipping_fee?: number;
 
   // 凭证：用户手动上传的采购截图（per-transaction）。商品缩略图按 JAN 共享，见 JanThumbnailCache
   image_url: string | null;
@@ -306,6 +309,7 @@ export interface TransactionFormData {
   extra_platform_points_platform_id?: string; // 额外平台积分平台ID
   jan_code?: string;
   unit_price?: number;
+  shipping_fee?: number; // 运费（计入采购总价）
   purchase_platform_id?: string;
   order_number?: string;
   image_url?: string;

@@ -370,6 +370,7 @@ CREATE TABLE public.transactions (
   unit_price numeric(10,2),
   purchase_platform_id uuid,
   order_number text,
+  shipping_fee numeric(10,2) DEFAULT 0 NOT NULL,
   quantity_returned integer DEFAULT 0,
   quantity_in_stock integer GENERATED ALWAYS AS (((quantity - quantity_sold) - quantity_returned)) STORED
 );
@@ -760,7 +761,7 @@ CREATE OR REPLACE FUNCTION public.record_transaction_change()
 AS $function$
 DECLARE
   tracked_fields TEXT[] := ARRAY[
-    'product_name','date','purchase_price_total','unit_price','quantity',
+    'product_name','date','purchase_price_total','unit_price','shipping_fee','quantity',
     'card_paid','point_paid','balance_paid',
     'expected_platform_points','expected_card_points','extra_platform_points',
     'jan_code','order_number','notes','status','image_url',

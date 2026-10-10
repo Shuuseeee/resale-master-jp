@@ -7,6 +7,7 @@ import { comparePaymentMethods, paymentMethodDisplayName } from '@/lib/utils/pay
 
 interface PurchaseCostsSectionProps {
   totalPrice: number;
+  shippingFee: number;
   cardPaid: number;
   pointPaid: number;
   balancePaid: number;
@@ -15,12 +16,14 @@ interface PurchaseCostsSectionProps {
   errors: { purchase_price_total?: string; card_id?: string; payment?: string };
 
   onTotalPriceChange: (value: string) => void;
+  onShippingFeeChange: (value: string) => void;
   onInputChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onPaymentChange: (field: 'card_paid' | 'point_paid', value: string) => void;
 }
 
 export function PurchaseCostsSection({
   totalPrice,
+  shippingFee,
   cardPaid,
   pointPaid,
   balancePaid,
@@ -28,6 +31,7 @@ export function PurchaseCostsSection({
   paymentMethods,
   errors,
   onTotalPriceChange,
+  onShippingFeeChange,
   onInputChange,
   onPaymentChange,
 }: PurchaseCostsSectionProps) {
@@ -37,6 +41,24 @@ export function PurchaseCostsSection({
         <h2 className="sn-form-title">
           采购成本
         </h2>
+
+        {/* Shipping fee：计入采购总价 */}
+        <div>
+          <label className="sn-form-label">运费</label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="decimal"
+              name="shipping_fee"
+              value={shippingFee || ''}
+              onChange={(e) => onShippingFeeChange(e.target.value)}
+              placeholder="0"
+              className="w-full sn-form-input pr-12"
+            />
+            <span className="sn-form-addon">¥</span>
+          </div>
+          <p className="sn-form-muted">计入采购总价（单价×数量 + 运费）</p>
+        </div>
 
         {/* Total price */}
         <div>

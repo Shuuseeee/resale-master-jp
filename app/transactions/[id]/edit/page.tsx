@@ -65,6 +65,7 @@ export default function EditTransactionPage() {
         extra_platform_points_platform_id: data.extra_platform_points_platform_id || '',
         jan_code: data.jan_code || '',
         unit_price: data.unit_price || 0,
+        shipping_fee: data.shipping_fee ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         order_number: data.order_number || '',
         image_url: data.image_url || '',
@@ -102,6 +103,10 @@ export default function EditTransactionPage() {
         image_url: imageUrl,
         notes: fd.notes,
       };
+      // 运费只在有改动时提交（兼容「代码先部署、库还没加列」）
+      if ((fd.shipping_fee || 0) !== (dbTransaction?.shipping_fee ?? 0)) {
+        updateData.shipping_fee = fd.shipping_fee || 0;
+      }
 
       // Only toggle status if allowed (pending/in_stock + no sales)
       if (dbTransaction && (dbTransaction.status === 'pending' || dbTransaction.status === 'in_stock') && dbTransaction.quantity_sold === 0) {
@@ -198,6 +203,7 @@ export default function EditTransactionPage() {
             <div className="space-y-6">
               <PurchaseCostsSection
                 totalPrice={form.formData.purchase_price_total}
+                shippingFee={form.formData.shipping_fee || 0}
                 cardPaid={form.formData.card_paid}
                 pointPaid={form.formData.point_paid}
                 balancePaid={form.formData.balance_paid}
@@ -205,6 +211,7 @@ export default function EditTransactionPage() {
                 paymentMethods={form.paymentMethods}
                 errors={form.errors}
                 onTotalPriceChange={form.handleTotalPriceChange}
+                onShippingFeeChange={form.handleShippingFeeChange}
                 onInputChange={form.handleInputChange}
                 onPaymentChange={form.handlePaymentChange}
               />

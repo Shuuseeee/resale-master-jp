@@ -56,6 +56,7 @@ export function useTransactionForm({
     extra_platform_points_platform_id: '',
     jan_code: '',
     unit_price: 0,
+    shipping_fee: 0,
     purchase_platform_id: '',
     order_number: '',
     image_url: '',
@@ -226,7 +227,7 @@ export function useTransactionForm({
 
       if (mode === 'create' && name === 'purchase_platform_id' && value && amazonConfig?.auto_calc_enabled) {
         if (isAmazonPlatform(value) && prev.purchase_price_total > 0) {
-          Object.assign(next, computeAmazonPointUpdates(prev.purchase_price_total, amazonConfig, pointsPlatforms));
+          Object.assign(next, computeAmazonPointUpdates(prev.purchase_price_total - (prev.shipping_fee || 0), amazonConfig, pointsPlatforms));
         }
       }
 
@@ -287,12 +288,13 @@ export function useTransactionForm({
     const val = parseNumberInput(value, 0);
     setFormData(prev => {
       const qty = prev.quantity || 1;
-      const newTotal = Math.round(val * qty * 100) / 100;
+      const goods = Math.round(val * qty * 100) / 100;
+      const newTotal = goods + (prev.shipping_fee || 0);
       const balancePaid = calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid);
 
-      // Amazon auto-calc (create mode only)
-      const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && newTotal > 0)
-        ? computeAmazonPointUpdates(newTotal, amazonConfig, pointsPlatforms)
+      // Amazon auto-calc (create mode only)；积分只按商品金额算，不含运费
+      const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && goods > 0)
+        ? computeAmazonPointUpdates(goods, amazonConfig, pointsPlatforms)
         : {};
 
       return {
@@ -312,12 +314,13 @@ export function useTransactionForm({
       // 仅当有单价可乘时才重算总价；
       // unit_price 为 0（直接手填总价的模式）时只更新数量，保留手填总价，避免被清零。
       if (unitPrice > 0) {
-        const newTotal = Math.round(unitPrice * qty * 100) / 100;
+        const goods = Math.round(unitPrice * qty * 100) / 100;
+        const newTotal = goods + (prev.shipping_fee || 0);
         const balancePaid = calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid);
 
-        // Amazon auto-calc (create mode only)
-        const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && newTotal > 0)
-          ? computeAmazonPointUpdates(newTotal, amazonConfig, pointsPlatforms)
+        // Amazon auto-calc (create mode only)；积分只按商品金额算，不含运费
+        const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && goods > 0)
+          ? computeAmazonPointUpdates(goods, amazonConfig, pointsPlatforms)
           : {};
 
         return {
@@ -338,13 +341,27 @@ export function useTransactionForm({
       const balancePaid = calculateBalancePaid(total, prev.card_paid, prev.point_paid);
 
       // Amazon auto-calc (create mode only)
-      const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && total > 0)
-        ? computeAmazonPointUpdates(total, amazonConfig, pointsPlatforms)
+      const goods = total - (prev.shipping_fee || 0);
+      const amazonUpdates = (mode === 'create' && amazonConfig?.auto_calc_enabled && isAmazonPlatform(prev.purchase_platform_id) && goods > 0)
+        ? computeAmazonPointUpdates(goods, amazonConfig, pointsPlatforms)
         : {};
 
       return { ...prev, purchase_price_total: total, balance_paid: balancePaid, ...amazonUpdates };
     });
   }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+
+  // 运费计入采购总价：总价 = 单价×数量 + 运费（手填总价模式下按运费的增减调整总价）
+  const handleShippingFeeChange = useCallback((value: string) => {
+    const fee = parseNumberInput(value, 0);
+    setFormData(prev => {
+      const unitPrice = prev.unit_price ?? 0;
+      const newTotal = unitPrice > 0
+        ? Math.round(unitPrice * (prev.quantity || 1) * 100) / 100 + fee
+        : Math.max(0, prev.purchase_price_total - (prev.shipping_fee || 0) + fee);
+      const balancePaid = calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid);
+      return { ...prev, shipping_fee: fee, purchase_price_total: newTotal, balance_paid: balancePaid };
+    });
+  }, [calculateBalancePaid]);
 
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -509,6 +526,7 @@ export function useTransactionForm({
     handleUnitPriceChange,
     handleQuantityChange,
     handleTotalPriceChange,
+    handleShippingFeeChange,
     handleImageSelect,
     clearImage,
     handleAddPurchasePlatform,

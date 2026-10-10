@@ -21,6 +21,12 @@ import {
   NotesSection,
 } from '@/components/TransactionForm';
 
+/** 运费为 0 时不提交 shipping_fee 列（库默认 0），兼容「代码先部署、库还没加列」 */
+function withoutZeroShipping(fd: TransactionFormData) {
+  const { shipping_fee, ...rest } = fd;
+  return shipping_fee ? { ...rest, shipping_fee } : rest;
+}
+
 function AddTransactionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,6 +66,7 @@ function AddTransactionPageContent() {
         extra_platform_points_platform_id: data.extra_platform_points_platform_id || '',
         jan_code: data.jan_code || '',
         unit_price: data.unit_price || 0,
+        shipping_fee: data.shipping_fee ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         notes: data.notes || '',
       });
@@ -75,7 +82,7 @@ function AddTransactionPageContent() {
       const { data: newRecord, error } = await supabase
         .from('transactions')
         .insert([{
-          ...fd,
+          ...withoutZeroShipping(fd),
           status: isPending ? 'pending' : 'in_stock',
           image_url: imageUrl,
           card_id: fd.card_id || null,
@@ -176,6 +183,7 @@ function AddTransactionPageContent() {
             <div className="space-y-6">
               <PurchaseCostsSection
                 totalPrice={form.formData.purchase_price_total}
+                shippingFee={form.formData.shipping_fee || 0}
                 cardPaid={form.formData.card_paid}
                 pointPaid={form.formData.point_paid}
                 balancePaid={form.formData.balance_paid}
@@ -183,6 +191,7 @@ function AddTransactionPageContent() {
                 paymentMethods={form.paymentMethods}
                 errors={form.errors}
                 onTotalPriceChange={form.handleTotalPriceChange}
+                onShippingFeeChange={form.handleShippingFeeChange}
                 onInputChange={form.handleInputChange}
                 onPaymentChange={form.handlePaymentChange}
               />
