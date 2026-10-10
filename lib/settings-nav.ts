@@ -9,7 +9,7 @@ export const SETTINGS_SECTIONS = [
   { id: 'amazon', label: 'Amazon 积分' },
   { id: 'payment-methods', label: '支付方式' },
   { id: 'kaitorix', label: '买取价格检查' },
-  { id: 'csv-import', label: 'CSV 导入' },
+  { id: 'csv-import', label: '数据导入' },
 ] as const;
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]['id'];

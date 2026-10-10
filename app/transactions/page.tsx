@@ -15,6 +15,7 @@ import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-i
 import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
 import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import { DocumentBulletList20Filled, DocumentBulletList20Regular } from '@fluentui/react-icons/headless/svg/document-bullet-list';
+import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
 import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
 import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
 import { Stop20Filled, Stop20Regular } from '@fluentui/react-icons/headless/svg/stop';
@@ -49,7 +50,7 @@ import QuickCopyForm from '@/components/QuickCopyForm';
 import Toast from '@/components/Toast';
 import CopyableJan from '@/components/CopyableJan';
 import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
-import { exportTransactionsToCSV, downloadCSV } from '@/lib/api/export-csv';
+import { exportOrdersCsv, exportOrdersXlsx, downloadCsv } from '@/lib/api/order-export';
 import { getColumnPreferences, saveColumnPreferences } from '@/lib/api/user-preferences';
 import { DEFAULT_COLUMNS } from '@/lib/transactions/columns';
 import type { ColumnConfig } from '@/lib/transactions/columns';
@@ -780,16 +781,24 @@ function TransactionsContent() {
   const openQuickEdit = useCallback((id: string) => setEditModalId(id), []);
   const openQuickCopy = useCallback((id: string) => setCopyModalId(id), []);
 
+  // CSV（基本）= 当前列表（所见即所得）；XLSX = 全部数据（进货・出售・退货・经费），格式与买取X 一致
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const ids = filteredTransactions.map(t => t.id);
-      const csv = await exportTransactionsToCSV(ids);
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      downloadCSV(csv, `purchases_${dateStr}.csv`);
+      downloadCsv(await exportOrdersCsv(filteredTransactions.map(t => t.id)));
     } catch (error: any) {
       setToastMsg(error.message || 'CSV导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportXLSX = async () => {
+    setExporting(true);
+    try {
+      await exportOrdersXlsx();
+    } catch (error: any) {
+      setToastMsg(error.message || 'XLSX导出失败');
     } finally {
       setExporting(false);
     }
@@ -1074,6 +1083,14 @@ function TransactionsContent() {
       priority: 5,
     },
     {
+      id: 'xlsx',
+      label: exporting ? '导出中…' : '导出 XLSX（全部数据）',
+      icon: { regular: DocumentTable20Regular, filled: DocumentTable20Filled },
+      disabled: exporting,
+      onClick: handleExportXLSX,
+      priority: 5,
+    },
+    {
       id: 'columns',
       label: '自定义列',
       icon: { regular: TableSettings20Regular, filled: TableSettings20Filled },
@@ -1191,7 +1208,7 @@ function TransactionsContent() {
                   <span className="hidden sm:inline">JAN 列表</span>
                 </button>
               )}
-              {/* CSV 导出：固定导出当前列表（所见即所得），全量导出通过「全部」tab 达成 */}
+              {/* CSV 导出：当前列表（所见即所得）；XLSX：全部数据 */}
               <button
                 onClick={handleExportCSV}
                 disabled={exporting}
@@ -1207,6 +1224,14 @@ function TransactionsContent() {
                 <span className="hidden sm:inline">
                   {exporting ? '导出中...' : `CSV (${filteredTransactions.length})`}
                 </span>
+              </button>
+              <button
+                onClick={handleExportXLSX}
+                disabled={exporting}
+                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
+              >
+                <DocumentTable20Regular className="h-4 w-4" />
+                <span className="hidden sm:inline">XLSX</span>
               </button>
               {/* 列定制齿轮 — 仅桌面表格视图 */}
               <button

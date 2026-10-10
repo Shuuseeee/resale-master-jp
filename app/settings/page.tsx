@@ -8,7 +8,9 @@ import { Color20Filled, Color20Regular } from '@fluentui/react-icons/headless/sv
 import { DocumentArrowUp20Filled, DocumentArrowUp20Regular } from '@fluentui/react-icons/headless/svg/document-arrow-up';
 import { Payment20Filled, Payment20Regular } from '@fluentui/react-icons/headless/svg/payment';
 import DualIcon from '@/components/fluent/DualIcon';
-import { importCSV, type ImportResult } from '@/lib/api/import-csv';
+import { importOrderFile, OrderImportError, type OrderImportResult } from '@/lib/api/order-import';
+import { downloadImportTemplate } from '@/lib/api/order-export';
+import MessageBar from '@/components/fluent/MessageBar';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
 import { getKnownStores, loadKaitorixConfig, saveKaitorixConfig, type KaitorixConfig, type KaitorixStore } from '@/lib/kaitorix-config';
 import { getThemePreference, setThemePreference, THEME_PREFERENCE_EVENT, type ThemePreference } from '@/lib/theme-mode';
@@ -44,7 +46,9 @@ export default function SettingsPage() {
   const [kaitorixSaving, setKaitorixSaving] = useState(false);
   const [kaitorixSaveMessage, setKaitorixSaveMessage] = useState('');
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importResult, setImportResult] = useState<OrderImportResult | null>(null);
+  // 校验或写入失败：整份没有导入，列出全部原因
+  const [importErrors, setImportErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // 初始为默认值，effect 中读取本机保存的偏好（避免 SSR 水合不一致）
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
@@ -114,11 +118,11 @@ export default function SettingsPage() {
 
     setImporting(true);
     setImportResult(null);
+    setImportErrors([]);
     try {
-      const result = await importCSV(file);
-      setImportResult(result);
-    } catch (err: any) {
-      setImportResult({ success: 0, skipped: 0, errors: [err.message] });
+      setImportResult(await importOrderFile(file));
+    } catch (err) {
+      setImportErrors(err instanceof OrderImportError ? err.errors : [err instanceof Error ? err.message : String(err)]);
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -305,51 +309,60 @@ export default function SettingsPage() {
           {section === 'csv-import' && (
           <section className={card.primary + ' p-6'}>
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
-              CSV 导入
+              数据导入
             </h2>
-            <p className="mt-2 text-sm text-[var(--color-text-muted)]">从 purchases.csv 格式文件批量导入交易数据。</p>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              与买取X 的「数据导入」同一格式：XLSX = 全部数据（进货・出售・退货・经费），CSV = 进货・出售。买取X 导出的文件可以直接导入。
+            </p>
 
             <div className="mt-6 space-y-4">
+              <MessageBar intent="warning">
+                只追加：与已有进货的「日期 + 商品名 + 数量 + 单价 + 订单ID（为空时用 JAN）」相同的会跳过；有一条出错整份不导入。
+              </MessageBar>
+
               <div className="rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-8 text-center">
-                <svg className="mx-auto mb-3 h-12 w-12 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" id="csv-upload" />
+                <input ref={fileInputRef} type="file" accept=".xlsx,.csv" onChange={handleImport} className="hidden" id="order-upload" />
                 <label
-                  htmlFor="csv-upload"
-                  className={`${button.primary} inline-flex cursor-pointer items-center px-6 py-2 ${importing ? 'pointer-events-none opacity-50' : ''}`}
+                  htmlFor="order-upload"
+                  className={`${button.primary} inline-flex cursor-pointer items-center max-md:px-6 max-md:py-2 ${importing ? 'pointer-events-none opacity-50' : ''}`}
                 >
                   {importing ? (
                     <span className="flex items-center gap-2">
                       <Spinner />
                       导入中...
                     </span>
-                  ) : '选择 CSV 文件'}
+                  ) : '选择文件（.xlsx / .csv）'}
                 </label>
-                <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                  支持格式: 采购日、商品名、JAN、采购单价、数量、采购平台、订单 ID ...
-                </p>
+                <div className="mt-3">
+                  <button type="button" onClick={() => downloadImportTemplate()} className={button.link}>
+                    下载模板（.xlsx）
+                  </button>
+                </div>
               </div>
 
               {importResult && (
-                <div className={`rounded-[var(--radius-md)] border p-4 ${
-                  importResult.errors.length > 0
-                    ? 'bg-[var(--color-warning-subtle)] border-[var(--color-warning-border)]'
-                    : 'bg-[var(--color-primary-light)] border-[var(--color-primary-border)]'
-                }`}>
-                  <div className="mb-2 flex flex-wrap items-center gap-4">
-                    <span className="text-sm font-semibold text-[var(--color-success)]">成功: {importResult.success} 件</span>
-                    {importResult.skipped > 0 && <span className="text-sm text-[var(--color-text-muted)]">跳过: {importResult.skipped} 件</span>}
-                    {importResult.errors.length > 0 && <span className="text-sm text-[var(--color-danger)]">错误: {importResult.errors.length} 件</span>}
+                <MessageBar intent={importResult.unmatchedAccounts.length > 0 ? 'warning' : 'success'}>
+                  <div>
+                    导入完成：进货 {importResult.purchases} 笔、出售 {importResult.sales} 条、退货 {importResult.returns} 条、经费 {importResult.expenses} 条
+                    {importResult.skipped > 0 && `；已存在跳过 ${importResult.skipped} 笔`}
                   </div>
-                  {importResult.errors.length > 0 && (
-                    <div className="mt-2 max-h-32 overflow-y-auto">
-                      {importResult.errors.map((err, i) => (
-                        <div key={i} className="text-xs text-[var(--color-danger)]">{err}</div>
-                      ))}
+                  {importResult.unmatchedAccounts.length > 0 && (
+                    <div className="mt-1">
+                      这些账号在支付方式里找不到，对应进货没有关联支付方式：{importResult.unmatchedAccounts.join('、')}
                     </div>
                   )}
-                </div>
+                </MessageBar>
+              )}
+
+              {importErrors.length > 0 && (
+                <MessageBar intent="error" role="alert">
+                  <div className="font-semibold">没有导入任何数据（共 {importErrors.length} 处问题）</div>
+                  <ul className="mt-1 max-h-48 list-disc overflow-y-auto pl-5">
+                    {importErrors.map((err, i) => (
+                      <li key={i} className="whitespace-pre-wrap">{err}</li>
+                    ))}
+                  </ul>
+                </MessageBar>
               )}
             </div>
           </section>
