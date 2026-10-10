@@ -238,6 +238,20 @@ CREATE TABLE public.points_platforms (
   updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- 商品出货尺寸（出货方案求解用，按用户 × JAN）：体积（L/件，含缓冲）、最小箱型（三辺合計 cm）、分类（规则里「スマホ 3台以上」等按分类计数）
+CREATE TABLE public.product_shipping_meta (
+  user_id uuid DEFAULT auth.uid() NOT NULL,
+  jan text NOT NULL,
+  vol numeric(8,2) NOT NULL,
+  min_size integer DEFAULT 60 NOT NULL,
+  category text,
+  note text,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT product_shipping_meta_pkey PRIMARY KEY (user_id, jan),
+  CONSTRAINT product_shipping_meta_vol_check CHECK (vol > 0),
+  CONSTRAINT product_shipping_meta_min_size_check CHECK (min_size IN (60, 80, 100, 120, 140, 160))
+);
+
 CREATE TABLE public.purchase_platforms (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   user_id uuid,
@@ -1467,6 +1481,7 @@ COMMENT ON VIEW public.assistant_overview IS '每个用户的整体汇总：conf
 ALTER TABLE public.coupon_usage_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fixed_costs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_shipping_meta ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jan_thumbnail_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jan_thumbnail_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kaitorix_catalog ENABLE ROW LEVEL SECURITY;
@@ -1609,6 +1624,7 @@ CREATE POLICY "Users can update receipt images" ON storage.objects FOR UPDATE TO
 CREATE POLICY "Users can delete receipt images" ON storage.objects FOR DELETE TO authenticated USING ((bucket_id = 'receipts'::text));
 -- product-images 的写入由 scraper 使用 service_role 完成
 CREATE POLICY product_images_public_select ON storage.objects FOR SELECT USING ((bucket_id = 'product-images'::text));
+CREATE POLICY product_shipping_meta_own ON public.product_shipping_meta FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 
 -- ============================================================

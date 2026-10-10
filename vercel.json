@@ -1,5 +1,14 @@
 {
   "crons": [
-    { "path": "/api/kaitorix/catalog-sync", "schedule": "0 20 * * *" }
-  ]
+    {
+      "path": "/api/kaitorix/catalog-sync",
+      "schedule": "0 20 * * *"
+    }
+  ],
+  "functions": {
+    "api/solver.py": {
+      "includeFiles": "solver/**",
+      "maxDuration": 60
+    }
+  }
 }

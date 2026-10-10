@@ -1,0 +1,161 @@
+// lib/server/mcp-tools.ts — 自有 MCP（app/api/[transport]/route.ts）的三个工具的实现
+// 数据：只读视图 assistant_overview / assistant_purchases / assistant_buyback_prices + 商品尺寸表 product_shipping_meta，
+//      用 service role 读取，按环境变量 MCP_USER_ID 过滤（服务端权限能看到所有用户）。
+// 计算：出货方案与店铺规则交给 Vercel Python 函数 /api/solver（solver/service.py，规则与求解器来自原 ResaleAssist）。
+/* eslint-disable @typescript-eslint/no-explicit-any -- 视图行按列名取值 */
+
+import { createClient } from '@supabase/supabase-js';
+import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
+
+const DAY_MS = 86_400_000;
+
+function db() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
+}
+
+function userId(): string {
+  const id = process.env.MCP_USER_ID;
+  if (!id) throw new Error('服务端未配置 MCP_USER_ID');
+  return id;
+}
+
+/** JST 今天（YYYY-MM-DD） */
+function todayJst(): string {
+  return new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+}
+
+function solverUrl(): string {
+  if (process.env.SOLVER_URL) return process.env.SOLVER_URL;
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return host ? `https://${host}/api/solver` : 'http://localhost:3000/api/solver';
+}
+
+async function callSolver(body: Record<string, unknown>): Promise<any> {
+  const res = await fetch(solverUrl(), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-solver-secret': process.env.SOLVER_SECRET ?? '' },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`求解服务返回异常（HTTP ${res.status}）：${text.slice(0, 200)}`);
+  }
+}
+
+async function unsoldPurchases(includePending: boolean): Promise<any[]> {
+  const sb = db();
+  const rows = await fetchAllRows<any>((from, to, opts) =>
+    sb
+      .from('assistant_purchases')
+      .select('*', opts)
+      .eq('user_id', userId())
+      .gt('quantity_unsold', 0)
+      .order('purchase_date')
+      .order('id')
+      .range(from, to),
+  );
+  return rows.filter(r => r.status === 'in_stock' || (includePending && r.status === 'pending'));
+}
+
+/** 库存与利润概况：整体汇总 + 每笔未售进货（与网页 / 买取X 同口径） */
+export async function inventoryOverview(includeItems: boolean) {
+  const sb = db();
+  const { data: overview, error } = await sb.from('assistant_overview').select('*').eq('user_id', userId()).maybeSingle();
+  if (error) throw error;
+  const result: Record<string, unknown> = { as_of: todayJst(), overview };
+  if (includeItems) {
+    result.unsold = (await unsoldPurchases(true)).map(r => ({
+      purchase_date: r.purchase_date,
+      product_name: r.product_name,
+      jan: r.jan_code,
+      status: r.status_label,
+      qty_unsold: r.quantity_unsold,
+      unit_cost: Number(r.unit_cost),
+      best_price: r.best_price == null ? null : Number(r.best_price),
+      best_stores: r.best_stores,
+      best_price_updated_at: r.best_price_updated_at,
+      estimated_profit: r.estimated_profit == null ? null : Number(r.estimated_profit),
+      days_held: r.days_held,
+    }));
+  }
+  return result;
+}
+
+export async function storeRules() {
+  return callSolver({ action: 'rules', day: todayJst() });
+}
+
+interface PlanOptions {
+  excludeStores?: string[];
+  keepJans?: string[];
+  includePending?: boolean;
+  staleLimit?: number;
+}
+
+/** 出货方案：未售库存 × 各店报价 × 商品尺寸 → 全局最优分配（含运费、包邮条件、自检） */
+export async function planShipment(opts: PlanOptions) {
+  const sb = db();
+  const keep = new Set(opts.keepJans ?? []);
+  const unsold = await unsoldPurchases(!!opts.includePending);
+  const purchases = unsold.filter(r => r.jan_code && !keep.has(r.jan_code));
+  const noJan = unsold.filter(r => !r.jan_code).map(r => r.product_name);
+  if (!purchases.length) return { ok: false, error: '没有可分销的未售库存（需要有 JAN）', no_jan: noJan };
+
+  const jans = [...new Set(purchases.map(r => r.jan_code as string))];
+  const [metaRows, priceRows] = await Promise.all([
+    fetchAllByIds<any>(jans, (chunk, from, to, o) =>
+      sb.from('product_shipping_meta').select('jan, vol, min_size, category', o).eq('user_id', userId()).in('jan', chunk).order('jan').range(from, to),
+    ),
+    fetchAllByIds<any>(jans, (chunk, from, to, o) =>
+      sb.from('assistant_buyback_prices').select('jan, store, price, price_updated_at', o).in('jan', chunk).order('jan').order('store').range(from, to),
+    ),
+  ]);
+  const meta = new Map(metaRows.map(m => [m.jan, m]));
+  const now = Date.now();
+  const prices = new Map<string, Record<string, [number, number]>>();
+  for (const p of priceRows) {
+    const age = p.price_updated_at ? Math.max(0, Math.floor((now - Date.parse(p.price_updated_at)) / DAY_MS)) : 0;
+    const m = prices.get(p.jan) ?? prices.set(p.jan, {}).get(p.jan)!;
+    m[p.store] = [Number(p.price), age];
+  }
+
+  const missingMeta: { jan: string; product_name: string }[] = [];
+  const items = [];
+  for (const r of purchases) {
+    const m = meta.get(r.jan_code);
+    if (!m) {
+      if (!missingMeta.some(x => x.jan === r.jan_code)) missingMeta.push({ jan: r.jan_code, product_name: r.product_name });
+      continue;
+    }
+    items.push({
+      tid: r.id,
+      name: r.product_name,
+      jan: r.jan_code,
+      qty: r.quantity_unsold,
+      qty_full: r.quantity,
+      qty_sold: r.quantity_sold,
+      total: Number(r.purchase_price_total),
+      cp: Number(r.points_total),
+      pp: 0,
+      ex: 0,
+      vol: Number(m.vol),
+      mint: m.min_size,
+      cat: m.category,
+      prices: prices.get(r.jan_code) ?? {},
+    });
+  }
+  if (!items.length) return { ok: false, error: '未售商品都缺少尺寸数据（体积 / 最小箱型），无法排方案', missing_meta: missingMeta };
+
+  const result = await callSolver({
+    action: 'plan',
+    items,
+    exclude_stores: opts.excludeStores ?? [],
+    stale_limit: opts.staleLimit ?? 7,
+    day: todayJst(),
+  });
+  return { ...result, kept_jans: [...keep], missing_meta: missingMeta, no_jan: noJan };
+}

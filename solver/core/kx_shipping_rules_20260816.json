@@ -1,0 +1,342 @@
+{
+    "stores": {
+        "ichoume": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [
+                    {
+                        "any_of": [
+                            { "count": { "min": 5 } },
+                            { "count": { "min": 3, "categories": ["スマホ"] } }
+                        ]
+                    },
+                    { "amount": { "min": 100000 } }
+                ],
+                "scope": "box",
+                "carriers": ["ヤマト", "佐川"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "unmodeled": ["福岡店宛は元払いのみ", "複数個口は140/160サイズのみ", "セーフティ・運送保険を付けると対象外"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "tiers": [{ "amount_below": 10000, "fee": 300 }], "confidence": "high" }
+        },
+        "shouten": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 5 } }, { "amount": { "min": 100000 } }],
+                "scope": "box",
+                "unmet": { "type": "actual" },
+                "confidence": "medium",
+                "source": "公式サイトに記載なし。買取X の実取引で確認した条件（買取一丁目と同じ）",
+                "unmodeled": ["箱に対して商品が少ないと送料差引"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "tiers": [{ "amount_below": 10000, "fee": 300 }], "confidence": "high" }
+        },
+        "morimori": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [
+                    { "count": { "min": 5, "categories": ["スマホ", "PC・タブレット", "カメラ", "家電", "ゲーム", "オーディオ", "美容・健康", "工具・カー用品"] } },
+                    { "amount": { "min": 100000 } }
+                ],
+                "scope": "box",
+                "carriers": ["ヤマト"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "confidence": "medium",
+                "note": "条文は「電化製品 合計5点以上」。どこまでを電化製品と見るかは解釈。トレカ単体は買取3万円以上で別条件",
+                "unmodeled": ["ポケモンカード単体の3万円条件", "160サイズ未満の複数個口は差額請求"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "low", "note": "公式に記載を確認できず" }
+        },
+        "mobile_ichiban": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [
+                    { "any_of": [{ "count": { "min": 5 } }, { "count": { "min": 3, "categories": ["スマホ"] } }] },
+                    { "amount": { "min": 100000 } }
+                ],
+                "scope": "box",
+                "carriers": ["ヤマト", "佐川"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "unmodeled": ["航空便利用は対象外"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "原則当社負担だが商品により客負担の場合あり" }
+        },
+        "top_offer": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 5 } }, { "amount": { "min": 100000 } }],
+                "scope": "box",
+                "carriers": ["佐川"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "unmodeled": ["一部商品は対象外（品目の明示なし）"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "tiers": [{ "amount_below": 10000, "fee": 300 }], "confidence": "high" }
+        },
+        "wiki": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [
+                    { "any_of": [{ "count": { "min": 5 } }, { "count": { "min": 3, "categories": ["スマホ"] } }] },
+                    { "amount": { "min": 200000 } }
+                ],
+                "count_exclude_name_patterns": ["写ルンです"],
+                "count_exclude_name_rules": [
+                    {
+                        "strip": ["富士フイルム", "富士フィルム", "フジフイルム", "フジフィルム", "FUJIFILM", "FUJI FILM"],
+                        "all_of": [["フィルム", "フイルム"], ["チェキ", "instax", "インスタックス"]],
+                        "none_of": ["ケース", "カバー", "アルバム", "ホルダー", "ファイル", "帳", "収納", "スリーブ", "バインダー", "ストラップ", "プリンター", "クリーナー"]
+                    }
+                ],
+                "scope": "box",
+                "carriers": ["ヤマト"],
+                "max_size": 160,
+                "unmet": { "type": "fixed", "amount": 3000 },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "note": "相紙類（チェキ用フィルム・写ルンです）は点数に数えない。除外は「フィルム／フイルム」×「チェキ／instax」の合わせ技で判定する——単純な部分一致で書くとチェキ本体も、商品名に『富士フィルム』を含むだけの X-T5・X100VI まで数えなくなる（2026-08-16 修正。旧パターン ['チェキ','instax','インスタックス','写ルンです','フィルム'] は DB 実測 995 件中 936 件が誤除外だった）",
+                "unmodeled": ["送料3,000円超の大型は実費＋1,000円"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "銀行振込は無料。送金エラーの再送金2,000円" }
+        },
+        "kaitori_oku": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 3, "categories": ["スマホ"] } }, { "amount": { "min": 120000 } }],
+                "scope": "box",
+                "carriers": ["ヤマト"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "medium",
+                "note": "ポケモンカードは査定12万円以上で代替可（本モデルでは未実装）",
+                "unmodeled": ["予約承認当日の発送が必須", "1日に何度も小口予約は対象外"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "台数により客負担の場合あり" }
+        },
+        "dragon": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 5 } }],
+                "count_exclude_categories": ["ゲーム", "トレカ・ホビー"],
+                "count_exclude_name_patterns": ["アクションカメラ", "GoPro", "Osmo"],
+                "scope": "box",
+                "carriers": ["ヤマト", "ゆうパック", "佐川"],
+                "max_size": 160,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "low",
+                "note": "条文は「ゲーム機器・カード類・ゲームソフト・アクションカメラ関連は送料対象外」。点数に数えないのか箱ごと対象外なのかが読み取れず、点数に数えない側で実装",
+                "unmodeled": ["段ボールの半分以上に隙間があると対象外"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "mobile_mix": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 3, "categories": ["スマホ"], "include_name_patterns": ["iPhone", "Pixel"] } }],
+                "scope": "box",
+                "carriers": ["ヤマト", "佐川", "日本郵便"],
+                "max_size": 140,
+                "unmet": { "type": "fixed", "amount": 2000 },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "unmodeled": ["保険・速達便は不可", "20台以下は1箱のみ"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "medium" }
+        },
+        "guest": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [
+                    { "weighted_count": { "weights": { "スマホ": 0.2, "ゲーム": 0.2, "オーディオ": 0.1 }, "min": 1 } },
+                    { "count": { "min": 5 } }
+                ],
+                "scope": "box",
+                "carriers": ["ゆうパック"],
+                "unmet": { "type": "actual", "extra_fee": 1000 },
+                "confidence": "medium",
+                "note": "係数方式（携帯/ゲーム機=0.2、イヤホン等=0.1、合計が1を超えれば対象）。1梱包5台以上も必須。ゆうパック以外の着払いは送料＋事務手数料1,000円",
+                "unmodeled": ["箱数も係数で規定される"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "現金書留は買取5点未満だと2,000円差引" }
+        },
+        "mobaste": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 3, "categories": ["スマホ"], "include_name_patterns": ["iPhone"] } }],
+                "scope": "box",
+                "carriers": ["ヤマト"],
+                "max_size": 140,
+                "unmet": { "type": "actual" },
+                "confidence": "high",
+                "note": "買取Xは新品買取なので新品条件（iPhone新品3台以上）を採用。中古・ジャンクなら1点から無料",
+                "unmodeled": ["複数個口は各箱にiPhone新品3台以上が必要"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high", "note": "査定料・手数料はすべて0円" }
+        },
+        "keitai_space": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "count": { "min": 5 } }],
+                "scope": "box",
+                "carriers": ["ヤマト"],
+                "max_size": 140,
+                "unmet": { "type": "actual" },
+                "excluded_areas": ["沖縄", "離島"],
+                "confidence": "high",
+                "note": "未開封・未使用品は5台以上（中古は1点から）。送料無料は1口まで",
+                "unmodeled": ["140サイズ未満の複数個口は請求対象"],
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "kaitori_mirai": {
+            "free_ship": {
+                "kind": "conditional",
+                "all_of": [{ "amount": { "min": 50000 } }],
+                "scope": "box",
+                "carriers": ["ヤマト", "佐川"],
+                "unmet": { "type": "actual" },
+                "confidence": "high",
+                "note": "トレカは5箱以上でも可（本モデルでは未実装）",
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "keitai_god": {
+            "free_ship": {
+                "kind": "always",
+                "carriers": ["ヤマト", "ゆうパック"],
+                "confidence": "high",
+                "note": "点数・金額の条件なし。指定2社以外で送ると客負担",
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "rudeya": {
+            "free_ship": { "kind": "never", "confidence": "high", "note": "元払いのみ。着払いで送ると受取拒否", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "homura": {
+            "free_ship": { "kind": "never", "confidence": "high", "note": "着払いキャンペーン時を除く（2026-08-13 時点で開催なし）", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 300, "tiers": [{ "amount_at_least": 100000, "fee": 0 }], "confidence": "high" }
+        },
+        "kaden_ichiba": {
+            "free_ship": {
+                "kind": "never",
+                "confidence": "high",
+                "extra_penalty": { "when": { "count_below": 3 }, "amount": 500 },
+                "note": "郵送は3台から。3台未満は総額から500円差引",
+                "checked_at": "2026-08-13"
+            },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "keitai_rakuen": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "銀行振込は当社負担。50万円以上は振込限定" }
+        },
+        "somurie": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載なし。詳細は申込後のマイページ", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 300, "tiers": [{ "amount_at_least": 100000, "fee": 0 }], "confidence": "high" }
+        },
+        "toban": {
+            "free_ship": { "kind": "never", "confidence": "high", "note": "店舗は店頭買取のみで郵送不可", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 300, "tiers": [{ "amount_at_least": 100001, "fee": 0 }], "confidence": "high" }
+        },
+        "tojo": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "panda": {
+            "free_ship": { "kind": "never", "confidence": "high", "note": "無断の着払いは受取拒否", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "medium", "note": "買取台数により客負担の場合あり。50万円以上は送金手数料が発生" }
+        },
+        "aboutec": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "akiba": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "twinkle_mobile": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "kaitoristar": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "kaitorikensakukun": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "kaitoritatsujin": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "high" }
+        },
+        "newenoking": {
+            "free_ship": { "kind": "never", "confidence": "high", "checked_at": "2026-08-13" },
+            "transfer_fee": {
+                "default": 300,
+                "tiers": [{ "when": { "count_min": 3, "amount_min": 100000 }, "fee": 0 }],
+                "confidence": "medium",
+                "note": "3点以上かつ10万円以上なら全銀行で無料。満たさない場合は口座次第（適格→楽天銀行／非適格→住信SBI なら無料）"
+            }
+        },
+        "hachi": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載なし。申込時に個別案内", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "jptomiya": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "法人向け発注サイトのみ。要問い合わせ", "checked_at": "2026-08-13" },
+            "transfer_fee": { "default": 0, "confidence": "low" }
+        },
+        "kaitoriminato": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        },
+        "jcka": {
+            "free_ship": { "kind": "never", "confidence": "low", "note": "店頭・郵送とも送料は自己負担（大阪日本橋の実店舗のみ）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        },
+        "fastbuy": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        },
+        "kaitoribase": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        },
+        "shinsoku": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "郵送買取ページに送料の記載を確認できず（2026-08-16 実測）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        },
+        "kaitoriplus": {
+            "free_ship": { "kind": "unknown", "confidence": "low", "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）", "checked_at": "2026-08-16" },
+            "transfer_fee": { "unknown": true, "confidence": "low", "note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）" }
+        }
+    },
+    "surveyed_at": "2026-08-16"
+}

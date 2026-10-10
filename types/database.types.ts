@@ -523,3 +523,17 @@ export interface PushSubscription {
   auth: string;
   created_at: string;
 }
+
+// 商品出货尺寸（出货方案 MCP 求解用，按用户 × JAN）
+export interface ProductShippingMeta {
+  user_id: string;
+  jan: string;
+  /** 体积（L/件，含缓冲） */
+  vol: number;
+  /** 最小箱型（三辺合計 cm）：60 / 80 / 100 / 120 / 140 / 160 */
+  min_size: number;
+  /** 分类（スマホ / ゲーム / 家電 …），店铺规则按分类计数 */
+  category: string | null;
+  note: string | null;
+  updated_at: string;
+}

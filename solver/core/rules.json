@@ -1,0 +1,1135 @@
+{
+ "schema_version": 1,
+ "rules_version": "2026-08-27",
+ "note": "买取店免邮/运费/手数料规则的唯一真源。任何日期的分销计算都从这里读，不要再在 data_YYYYMMDD.py 里写死 FREE_SHIP 元组。规则说明见 core/README.md。 2026-08-24 起合并了 window.KX_SHIPPING_RULES 全量 dump（core/kx_shipping_rules_20260816.json），新增/补充规则见各店 kx_checked_at / confidence 字段。",
+ "boxes": {
+  "carrier": "ヤマト宅急便",
+  "pricing_basis": "官网割引シミュレータと同一算法（core/yamato.py）：税抜基礎運賃に支払方法の％割引を掛けて×1.1、その後 デジタル割-60／持込割-150／営業所受取-60 を減算。発着同一都道府県は別表(DT)。費率表 core/yamato_tariff_20260827.json",
+  "verified": "2026-08-27 官网 simulation_files/json/{TK,DT}.json ＋ result_01.min.js から抽出、DOM と逐値対拍",
+  "box_cost_included": false,
+  "box_cost_note": "箱代不计（复用原箱）",
+  "fill_factor": 1.0,
+  "fill_factor_note": "各商品的 vol 已在录入时含缓冲（例：PS5 CFI-2200B01 实测外箱 44x27x13=15.4L，录入 19.0L），故这里不再乘系数。若改为录入净体积，须把 fill_factor 调回 0.75。",
+  "sizing_note": "箱型判定按三辺合計，不能按体积拍系数；每件商品用 mint 字段声明其最小箱型（外寸约束），总体积再受 capacity_l 约束。",
+  "tiers": [
+   {
+    "size": 60,
+    "capacity_l": 6.8,
+    "inner_cm": [
+     27,
+     21,
+     12
+    ],
+    "fee": 613,
+    "base_fee": 850,
+    "weight_limit_kg": 2,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   },
+   {
+    "size": 80,
+    "capacity_l": 17.9,
+    "inner_cm": [
+     34,
+     25,
+     21
+    ],
+    "fee": 865,
+    "base_fee": 1110,
+    "weight_limit_kg": 5,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   },
+   {
+    "size": 100,
+    "capacity_l": 35.6,
+    "inner_cm": [
+     40,
+     33,
+     27
+    ],
+    "fee": 1135,
+    "base_fee": 1390,
+    "weight_limit_kg": 10,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   },
+   {
+    "size": 120,
+    "capacity_l": 62.5,
+    "inner_cm": [
+     47,
+     38,
+     35
+    ],
+    "fee": 1581,
+    "base_fee": 1850,
+    "weight_limit_kg": 15,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   },
+   {
+    "size": 140,
+    "capacity_l": 99.0,
+    "inner_cm": [
+     55,
+     45,
+     40
+    ],
+    "fee": 2103,
+    "base_fee": 2390,
+    "weight_limit_kg": 20,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   },
+   {
+    "size": 160,
+    "capacity_l": 148.0,
+    "inner_cm": [
+     62,
+     52,
+     46
+    ],
+    "fee": 2442,
+    "base_fee": 2740,
+    "weight_limit_kg": 25,
+    "base_fee_note": "税抜基礎運賃（TK.json）"
+   }
+  ],
+  "min_tier_reference": {
+   "PS5 CFI-2200B01": 100,
+   "Nikon COOLPIX P1100": 80
+  },
+  "profile": {
+   "carrier": "ヤマト宅急便",
+   "origin_region": "関東",
+   "default_dest_region": "関東",
+   "default_same_prefecture": false,
+   "payment": "nyanpay12",
+   "member": true,
+   "digital_invoice": true,
+   "drop_off": "depot",
+   "depot_receive": false,
+   "verified": "2026-08-27 官网割引シミュレータ実測（core/yamato.py の対拍テスト付き）",
+   "note": "tiers[].fee 是按本 profile + default_dest 算出的默认值；某店若有 ship_dest 覆盖，以 core.rules.tiers(rules, store) 现算的为准。改 profile 后跑 python3 core/tests.py。",
+   "unknown_dest_policy": "各店収货地の都道府県は未確認。保守側（高い方）の 関東→関東 を既定にし、実支払で確認できた店だけ ship_dest で下げる。"
+  }
+ },
+ "stores": {
+  "買取商店": {
+   "mail": true,
+   "verified": "2026-08-10 官网 news/62（2026-07-27 更新）",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "any_of": [
+       {
+        "count": {
+         "min": 5
+        }
+       },
+       {
+        "count": {
+         "min": 3,
+         "categories": [
+          "スマホ"
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "amount": {
+       "min": 100000
+      }
+     }
+    ],
+    "max_size": 160,
+    "min_fill_ratio": 0.5,
+    "min_fill_note": "箱が過大だと対象外（隙間が箱の半分以上はNG）",
+    "carriers": [
+     "ヤマト運輸",
+     "佐川急便"
+    ],
+    "payment": "着払いのみ",
+    "multi_box": "120サイズ以下は1箱にまとめる；2箱以上なら160サイズを満杯にしてから残りを小箱1つ（80x3個や120x5箱などは対象外）",
+    "unmet": {
+     "type": "actual"
+    },
+    "extra_conditions": "予約承認した当日に配送（伝票の集荷日が当日）；当日便等のオプションを付けると対象外で全額請求",
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "confidence": "medium",
+    "source": "公式サイトに記載なし。買取X の実取引で確認した条件（買取一丁目と同じ）",
+    "unmodeled": [
+     "箱に対して商品が少ないと送料差引"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [
+    {
+     "from": "2026-08-08",
+     "to": "2026-08-12",
+     "note": "予約申込 8/11 18:00 再開、承認・店頭 8/13 10:20 再開"
+    }
+   ],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13",
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 10000,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "買取一丁目": {
+   "mail": true,
+   "verified": "2026-08-10 官网 /mailPurchase（全国キャンペーン継続中）",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "any_of": [
+       {
+        "count": {
+         "min": 5
+        }
+       },
+       {
+        "count": {
+         "min": 3,
+         "categories": [
+          "スマホ"
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "amount": {
+       "min": 100000
+      }
+     }
+    ],
+    "max_size": 160,
+    "carriers": [
+     "ヤマト運輸",
+     "佐川急便"
+    ],
+    "multi_box": "複数個口は140/160サイズ限定（120サイズ未満の複数個口は対象外）",
+    "unmet": {
+     "type": "actual"
+    },
+    "extra_conditions": "予約時点で会員であること；適切なサイズの段ボール；発送予定日厳守；条件を満たすなら必ず着払いで発送（元払いで出しても返金なし）",
+    "excluded_regions": [
+     "沖縄",
+     "離島",
+     "九州エリア(着払終了・元払のみ)",
+     "福岡店宛は元払いのみ"
+    ],
+    "confidence": "high",
+    "unmodeled": [
+     "福岡店宛は元払いのみ",
+     "複数個口は140/160サイズのみ",
+     "セーフティ・運送保険を付けると対象外"
+    ],
+    "scope": "box",
+    "excluded_areas": [
+     "沖縄",
+     "離島"
+    ],
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [
+    {
+     "from": "2026-08-13",
+     "to": "2026-08-16",
+     "note": "休業前最終受取 8/12着分まで；休業中の発送は 8/17(月)到着指定。予約受付は 8/15 から再開"
+    }
+   ],
+   "weekly_closed": [
+    "sun"
+   ],
+   "weekly_closed_note": "日曜定休（日曜到着分は月曜受取）。19時までの予約は当日出荷、19時以降は翌日出荷で値段保証",
+   "kx_checked_at": "2026-08-13",
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 10000,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "森森買取": {
+   "mail": true,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 5
+      }
+     },
+     {
+      "amount": {
+       "min": 100000
+      }
+     }
+    ],
+    "unmet": {
+     "type": "actual"
+    },
+    "confidence": "medium",
+    "note": "条文は「電化製品 合計5点以上」。どこまでを電化製品と見るかは解釈。トレカ単体は買取3万円以上で別条件",
+    "unmodeled": [
+     "ポケモンカード単体の3万円条件",
+     "160サイズ未満の複数個口は差額請求"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "carriers": [
+     "ヤマト"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "holiday_note": "2026年夏季休業告知なし（ニュース最新 2026.08.03）。予備店として使えるが発送前に再確認推奨",
+   "kx_checked_at": "2026-08-13"
+  },
+  "モバイル一番": {
+   "mail": true,
+   "verified": "2026-08-02 用户确认",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "any_of": [
+       {
+        "count": {
+         "min": 5
+        }
+       },
+       {
+        "count": {
+         "min": 3,
+         "categories": [
+          "スマホ"
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "amount": {
+       "min": 100000
+      }
+     }
+    ],
+    "max_size": 160,
+    "carriers": [
+     "ヤマト運輸",
+     "佐川急便"
+    ],
+    "unmet": {
+     "type": "actual"
+    },
+    "excluded_regions": [
+     "沖縄",
+     "離島",
+     "航空便"
+    ],
+    "effective_from": "2025-11-01",
+    "confidence": "high",
+    "unmodeled": [
+     "航空便利用は対象外"
+    ],
+    "scope": "box",
+    "excluded_areas": [
+     "沖縄",
+     "離島"
+    ],
+    "checked_at": "2026-08-13"
+   },
+   "incentive": {
+    "kind": "per_amount_step",
+    "step": 100000,
+    "amount": 120,
+    "max_steps": 5,
+    "requires": "銀行振込（現金支払は対象外）",
+    "note": "買取奨励金。2026-08-01 起郵送も対象。伝票単位で合計計算",
+    "verified": "2026-08-02 用户确认"
+   },
+   "holidays": [
+    {
+     "from": "2026-08-12",
+     "to": "2026-08-16",
+     "note": "郵送は 8/11 到着分まで（8/11は店頭のみ）、再開 8/17。主要店の中で最も早く閉まる"
+    }
+   ],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13"
+  },
+  "携帯空間": {
+   "mail": true,
+   "verified": "2026-08-09 用户确认",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 5
+      }
+     }
+    ],
+    "carriers": [
+     "ヤマト運輸"
+    ],
+    "multi_box": "不可複数個口（140サイズ未満の複数個口＝最後1箱が140未満でも追加運賃を請求される）",
+    "unmet": {
+     "type": "actual"
+    },
+    "extra_conditions": "適切なサイズの段ボール；無断で着払い発送は受取拒否",
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "note": "金额门槛なし＝现时点で最も緩い条件",
+    "confidence": "high",
+    "unmodeled": [
+     "140サイズ未満の複数個口は請求対象"
+    ],
+    "scope": "box",
+    "excluded_areas": [
+     "沖縄",
+     "離島"
+    ],
+    "checked_at": "2026-08-13"
+   },
+   "address": "〒116-0013 東京都荒川区西日暮里2-17-10 アクセスキクヤビル5F 携帯空間 買取係 TEL 03-6806-7031",
+   "caveat": "KaitoriX が拾う携帯空間の報価は手機類の少数 JAN のみのことが多く、5点に届かないと元払い単件発送になりがち",
+   "holidays": [],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13"
+  },
+  "買取ホムラ": {
+   "mail": true,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "any_of": [
+       {
+        "count": {
+         "min": 3,
+         "include_name_patterns": [
+          "iPhone 16",
+          "iPhone16",
+          "iPhone 17",
+          "iPhone17"
+         ]
+        }
+       },
+       {
+        "count": {
+         "min": 5,
+         "include_name_patterns": [
+          "ポケモンカード",
+          "ワンピース"
+         ],
+         "exclude_name_patterns": [
+          "スペシャル"
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "max_size": 140,
+    "carriers": [
+     "ヤマト運輸"
+    ],
+    "target_only": true,
+    "target_only_note": "着払い対象は対象商品のみ。非対象商品（AirPods 等）は同批でも着払い不可、別途元払いで建模する必要がある",
+    "unmet": {
+     "type": "actual"
+    },
+    "extra_conditions": "HP申込限定（数量上限時を除く）；複数個口OK（対象商品に限る）",
+    "confidence": "high",
+    "note": "着払いキャンペーン時を除く（2026-08-13 時点で開催なし）",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "holiday_note": "2026年夏季休業告知なし（公式トップに告知なし）。発送前に再確認推奨",
+   "kx_checked_at": "2026-08-13",
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 100000,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "買取エノキング": {
+   "mail": true,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "never",
+    "note": "元払い（运费自付、无免邮）",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [
+    {
+     "from": "2026-08-08",
+     "to": "2026-08-18",
+     "note": "再開 8/19。盆休前後の両方の発送波を跨ぐため、この時期は実質使用不可"
+    }
+   ],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13",
+   "ship_dest": {
+    "same_prefecture": true,
+    "verified": "2026-08-26 実支払 1,910円（160サイズ）が DT表×にゃんPay と完全一致"
+   }
+  },
+  "PANDA買取": {
+   "mail": true,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "never",
+    "note": "元払い（运费自付、无免邮）",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13"
+  },
+  "買取Top Offer": {
+   "mail": true,
+   "verified": "2026-08-24 KX_SHIPPING_RULES(checked_at 2026-08-13) 订正为 conditional，此前旧记录 never 有误",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 5
+      }
+     },
+     {
+      "amount": {
+       "min": 100000
+      }
+     }
+    ],
+    "max_size": 160,
+    "carriers": [
+     "佐川"
+    ],
+    "unmet": {
+     "type": "actual"
+    },
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "confidence": "high",
+    "unmodeled": [
+     "一部商品は対象外（品目の明示なし）"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "note": "2026-08-24 用 window.KX_SHIPPING_RULES dump 订正：原先误判为 never，实为 5点以上且10万円以上免邮（同買取商店/一丁目）"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13",
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 10000,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "買取ルデヤ": {
+   "mail": true,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "never",
+    "note": "元払い（运费自付、无免邮）",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [
+    {
+     "from": "2026-08-13",
+     "to": "2026-08-16",
+     "note": "再開 8/17 10:00。8/12 19:00 までに承認された予約は当日中に最短着日指定で発送すること。振込は支払い待ち翌営業日から7営業日以内（夏休期間を除く）"
+    }
+   ],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13"
+  },
+  "ハチ買取": {
+   "mail": false,
+   "verified": "沿用既往确认",
+   "free_ship": {
+    "kind": "pickup_only",
+    "note": "仅店頭買取、郵送なし → 分销优化に一切参加させない（報価が高くても、報告での確認提示も不要）",
+    "confidence": "low",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "kx_checked_at": "2026-08-13"
+  },
+  "買取wiki": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "any_of": [
+       {
+        "count": {
+         "min": 5
+        }
+       },
+       {
+        "count": {
+         "min": 3,
+         "categories": [
+          "スマホ"
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "amount": {
+       "min": 200000
+      }
+     }
+    ],
+    "max_size": 160,
+    "unmet": {
+     "type": "fixed",
+     "amount": 3000
+    },
+    "count_exclude_name_patterns": [
+     "写ルンです"
+    ],
+    "count_exclude_name_rules": [
+     {
+      "strip": [
+       "富士フイルム",
+       "富士フィルム",
+       "フジフイルム",
+       "フジフィルム",
+       "FUJIFILM",
+       "FUJI FILM"
+      ],
+      "all_of": [
+       [
+        "フィルム",
+        "フイルム"
+       ],
+       [
+        "チェキ",
+        "instax",
+        "インスタックス"
+       ]
+      ],
+      "none_of": [
+       "ケース",
+       "カバー",
+       "アルバム",
+       "ホルダー",
+       "ファイル",
+       "帳",
+       "収納",
+       "スリーブ",
+       "バインダー",
+       "ストラップ",
+       "プリンター",
+       "クリーナー"
+      ]
+     }
+    ],
+    "confidence": "high",
+    "note": "相紙類（チェキ用フィルム・写ルンです）は点数に数えない。除外は「フィルム／フイルム」×「チェキ／instax」の合わせ技で判定する——単純な部分一致で書くとチェキ本体も、商品名に『富士フィルム』を含むだけの X-T5・X100VI まで数えなくなる（2026-08-16 修正。旧パターン ['チェキ','instax','インスタックス','写ルンです','フィルム'] は DB 実測 995 件中 936 件が誤除外だった）",
+    "unmodeled": [
+     "送料3,000円超の大型は実費＋1,000円"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "carriers": [
+     "ヤマト"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "銀行振込は無料。送金エラーの再送金2,000円"
+  },
+  "ドラゴンモバイル": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 5
+      }
+     }
+    ],
+    "max_size": 160,
+    "unmet": {
+     "type": "actual"
+    },
+    "count_exclude_categories": [
+     "ゲーム",
+     "トレカ・ホビー"
+    ],
+    "count_exclude_name_patterns": [
+     "アクションカメラ",
+     "GoPro",
+     "Osmo"
+    ],
+    "confidence": "low",
+    "note": "条文は「ゲーム機器・カード類・ゲームソフト・アクションカメラ関連は送料対象外」。点数に数えないのか箱ごと対象外なのかが読み取れず、点数に数えない側で実装",
+    "unmodeled": [
+     "段ボールの半分以上に隙間があると対象外"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "carriers": [
+     "ヤマト",
+     "ゆうパック",
+     "佐川"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "モバイルミックス": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 3,
+       "categories": [
+        "スマホ"
+       ],
+       "include_name_patterns": [
+        "iPhone",
+        "Pixel"
+       ]
+      }
+     }
+    ],
+    "max_size": 140,
+    "unmet": {
+     "type": "fixed",
+     "amount": 2000
+    },
+    "confidence": "high",
+    "unmodeled": [
+     "保険・速達便は不可",
+     "20台以下は1箱のみ"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "excluded_regions": [
+     "沖縄",
+     "離島"
+    ],
+    "carriers": [
+     "ヤマト",
+     "佐川",
+     "日本郵便"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "ゲストモバイル": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "weighted_count": {
+       "weights": {
+        "スマホ": 0.2,
+        "ゲーム": 0.2,
+        "オーディオ": 0.1
+       },
+       "min": 1
+      }
+     },
+     {
+      "count": {
+       "min": 5
+      }
+     }
+    ],
+    "unmet": {
+     "type": "actual",
+     "extra_fee": 1000
+    },
+    "confidence": "medium",
+    "note": "係数方式（携帯/ゲーム機=0.2、イヤホン等=0.1、合計が1を超えれば対象）。1梱包5台以上も必須。ゆうパック以外の着払いは送料＋事務手数料1,000円",
+    "unmodeled": [
+     "箱数も係数で規定される"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "carriers": [
+     "ゆうパック"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "現金書留は買取5点未満だと2,000円差引"
+  },
+  "モバステ": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "count": {
+       "min": 3,
+       "categories": [
+        "スマホ"
+       ],
+       "include_name_patterns": [
+        "iPhone"
+       ]
+      }
+     }
+    ],
+    "max_size": 140,
+    "unmet": {
+     "type": "actual"
+    },
+    "confidence": "high",
+    "note": "買取Xは新品買取なので新品条件（iPhone新品3台以上）を採用。中古・ジャンクなら1点から無料",
+    "unmodeled": [
+     "複数個口は各箱にiPhone新品3台以上が必要"
+    ],
+    "scope": "box",
+    "checked_at": "2026-08-13",
+    "carriers": [
+     "ヤマト"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "査定料・手数料はすべて0円"
+  },
+  "買取ミライ": {
+   "mail": true,
+   "verified": "2026-10-05 用户手动确认官网：着払い免邮门槛改为买取金额 80,000円以上（旧 50,000円）",
+   "free_ship": {
+    "kind": "conditional",
+    "all_of": [
+     {
+      "amount": {
+       "min": 80000
+      }
+     }
+    ],
+    "unmet": {
+     "type": "actual"
+    },
+    "confidence": "high",
+    "note": "トレカは5箱以上でも可（本モデルでは未実装）。2026-10-05 用户确认门槛由5万円改为8万円",
+    "scope": "box",
+    "checked_at": "2026-10-05",
+    "carriers": [
+     "ヤマト",
+     "佐川"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "ケータイゴッド": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "always",
+    "confidence": "high",
+    "note": "点数・金額の条件なし。指定2社以外で送ると客負担",
+    "checked_at": "2026-08-13",
+    "carriers": [
+     "ヤマト",
+     "ゆうパック"
+    ]
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "家電市場": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "note": "郵送は3台から。3台未満は総額から500円差引",
+    "checked_at": "2026-08-13",
+    "extra_penalty": {
+     "when": {
+      "count_below": 3
+     },
+     "amount": 500
+    }
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "買取楽園": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "銀行振込は当社負担。50万円以上は振込限定"
+  },
+  "買取ソムリエ": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "unknown",
+    "confidence": "low",
+    "note": "公式サイトに送料の記載なし。詳細は申込後のマイページ",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 100000,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "買取当番": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "note": "店舗は店頭買取のみで郵送不可",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee": {
+    "default": 300,
+    "tiers": [
+     {
+      "amount_at_least": 100001,
+      "fee": 0
+     }
+    ]
+   }
+  },
+  "買取TOJO": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "アバウテック": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "アキモバ": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "トゥインクルモバイル": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "買取スター": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "買取けんさく君": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "買取達人": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "high",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "TOMIYA富屋": {
+   "mail": true,
+   "verified": "2026-08-13 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "unknown",
+    "confidence": "low",
+    "note": "法人向け発注サイトのみ。要問い合わせ",
+    "checked_at": "2026-08-13"
+   },
+   "holidays": [],
+   "weekly_closed": []
+  },
+  "買取ミナト": {
+   "mail": true,
+   "verified": "2026-08-16 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "unknown",
+    "confidence": "low",
+    "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）",
+    "checked_at": "2026-08-16"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）"
+  },
+  "ジェーシカモバイル": {
+   "mail": true,
+   "verified": "2026-08-16 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "never",
+    "confidence": "low",
+    "note": "店頭・郵送とも送料は自己負担（大阪日本橋の実店舗のみ）",
+    "checked_at": "2026-08-16"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）"
+  },
+  "買取BASE": {
+   "mail": true,
+   "verified": "2026-08-16 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "unknown",
+    "confidence": "low",
+    "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）",
+    "checked_at": "2026-08-16"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）"
+  },
+  "買取Plus": {
+   "mail": true,
+   "verified": "2026-08-16 KX_SHIPPING_RULES(window.KX_SHIPPING_RULES) 全量核实",
+   "free_ship": {
+    "kind": "unknown",
+    "confidence": "low",
+    "note": "公式サイトに送料の記載を確認できず（2026-08-16 実測）",
+    "checked_at": "2026-08-16"
+   },
+   "holidays": [],
+   "weekly_closed": [],
+   "transfer_fee_note": "公式サイトに振込手数料の記載を確認できず（2026-08-16 実測）"
+  }
+ },
+ "unknown_stores_policy": {
+  "note": "規則未確認の店（ゲストモバイル/家電市場/買取ミライ/ドラゴンモバイル/買取当番/買取TOJO/買取wiki/買取楽園/買取達人/トゥインクルモバイル/TOMIYA富屋/ケータイゴッド/アバウテック/買取スター/買取けんさく君 等）は最適化に参加させない。ただし報価が既知店の最高値を上回る場合は報告で確認を促す。",
+  "examples": [
+   "ゲストモバイル",
+   "家電市場",
+   "買取ミライ",
+   "ドラゴンモバイル",
+   "買取当番",
+   "買取TOJO",
+   "買取wiki",
+   "買取楽園",
+   "買取達人",
+   "トゥインクルモバイル",
+   "TOMIYA富屋",
+   "ケータイゴッド",
+   "アバウテック",
+   "買取スター",
+   "買取けんさく君"
+  ]
+ }
+}
