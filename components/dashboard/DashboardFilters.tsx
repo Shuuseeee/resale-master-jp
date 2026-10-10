@@ -16,11 +16,11 @@ const PERIODS: { id: PeriodMode; label: string }[] = [
   { id: 'range', label: '期间' },
 ];
 
-function Toggle({ checked, onChange, label, tip }: { checked: boolean; onChange: (v: boolean) => void; label: string; tip: string }) {
+function Toggle({ checked, onChange, label, tip, disabled = false }: { checked: boolean; onChange: (v: boolean) => void; label: string; tip: string; disabled?: boolean }) {
   const tooltip = useTooltip(tip);
   return (
-    <label {...tooltip} className="inline-flex cursor-pointer items-center gap-2 text-sm text-[var(--color-text)]">
-      <Switch checked={checked} onClick={() => onChange(!checked)} label={label} />
+    <label {...tooltip} className={`inline-flex items-center gap-2 text-sm text-[var(--color-text)] ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+      <Switch checked={checked} onClick={() => !disabled && onChange(!checked)} label={label} />
       {label}
     </label>
   );
@@ -117,6 +117,13 @@ export default function DashboardFilters({ filters: f, onChange, onReset, option
           onChange={sellBasis => set({ sellBasis })}
           label="按售出日"
           tip="投资额、回收额、确定利润、已售数量按出售日期统计（投资额变成已售部分的原价）；关闭时按进货日。开启后不显示库存与含预估的卡片"
+        />
+        <Toggle
+          checked={f.sellBasis || f.sameDay}
+          disabled={f.sellBasis}
+          onChange={sameDay => set({ sameDay })}
+          label="同一天统计"
+          tip="月度趋势里回收额 / 确定利润和成本记在同一个月（按进货日时都记在进货月）。关闭 = 成本记在进货月、回收和利润记在卖出月（税务上的实际归属）。开启「按售出日」时本来就在同一个月，固定为开"
         />
         {active && (
           <button type="button" onClick={onReset} className="fluent-link text-sm">

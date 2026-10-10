@@ -3,19 +3,10 @@
 
 import { useState, type ReactNode } from 'react';
 import Switch from '@/components/Switch';
-import { useTooltip } from '@/components/fluent/Tooltip';
+import { InfoTip } from '@/components/dashboard/controls';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { card } from '@/lib/theme';
 import type { DashSummary } from '@/lib/dashboard/summary';
-
-function Info({ text }: { text: string }) {
-  const tip = useTooltip(text);
-  return (
-    <span {...tip} tabIndex={0} aria-label={text} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">
-      ?
-    </span>
-  );
-}
 
 function Card({ label, tip, extra, value, tone, children }: { label: ReactNode; tip: string; extra?: ReactNode; value: string; tone?: 'success' | 'danger'; children?: ReactNode }) {
   const toneClass = tone === 'success' ? 'text-[var(--color-success)]' : tone === 'danger' ? 'text-[var(--color-danger)]' : 'text-[var(--color-text)]';
@@ -24,7 +15,7 @@ function Card({ label, tip, extra, value, tone, children }: { label: ReactNode; 
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <span className="flex items-center gap-1 whitespace-nowrap text-xs font-medium text-[var(--color-text-muted)]">
           {label}
-          <Info text={tip} />
+          <InfoTip text={tip} />
         </span>
         {extra}
       </div>

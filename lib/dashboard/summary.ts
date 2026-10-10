@@ -25,6 +25,8 @@ export interface DashFilters {
   completedOnly: boolean;
   /** 按售出日：投资额 / 回收额 / 利润 / 已售数量按出售日期统计 */
   sellBasis: boolean;
+  /** 同一天统计：月度趋势里回收额 / 利润和成本记在同一个月（按进货日时都记在进货月） */
+  sameDay: boolean;
 }
 
 export function defaultFilters(today: string): DashFilters {
@@ -39,6 +41,7 @@ export function defaultFilters(today: string): DashFilters {
     card: '',
     completedOnly: false,
     sellBasis: false,
+    sameDay: false,
   };
 }
 

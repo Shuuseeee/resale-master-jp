@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import EChart, { useChartTheme, type ChartTheme, type EChartOption } from '@/components/charts/EChart';
-import { useTooltip } from '@/components/fluent/Tooltip';
+import { InfoTip, ToggleButton } from '@/components/dashboard/controls';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { card } from '@/lib/theme';
 import type { DashboardData } from '@/lib/dashboard/data';
@@ -70,23 +70,6 @@ function writeStored(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch {}
-}
-
-function ToggleButton({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" aria-pressed={pressed} onClick={onClick} className="fluent-btn fluent-btn--subtle fluent-btn--sm">
-      {children}
-    </button>
-  );
-}
-
-function InfoTip({ text }: { text: string }) {
-  const tip = useTooltip(text);
-  return (
-    <span {...tip} tabIndex={0} aria-label={text} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">
-      ?
-    </span>
-  );
 }
 
 interface Props {

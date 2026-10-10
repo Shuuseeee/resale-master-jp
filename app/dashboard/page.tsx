@@ -13,6 +13,9 @@ import PageHeader from '@/components/shell/PageHeader';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import SummaryCards from '@/components/dashboard/SummaryCards';
 import ProfitTrendChart from '@/components/dashboard/ProfitTrendChart';
+import MonthlyChart from '@/components/dashboard/MonthlyChart';
+import DistributionCharts from '@/components/dashboard/DistributionCharts';
+import { distributions, monthlyRows } from '@/lib/dashboard/charts';
 import { fetchDashboardData } from '@/lib/dashboard/data';
 import { bestPrices, computeSummary, defaultFilters, filterOptions, type DashFilters } from '@/lib/dashboard/summary';
 import { loadKaitorixConfig } from '@/lib/kaitorix-config';
@@ -59,8 +62,10 @@ export default function DashboardPage() {
   const best = useMemo(() => (data ? bestPrices(data, enabledStores) : new Map<string, { price: number; stores: string[] }>()), [data, enabledStores]);
   const summary = useMemo(() => (data ? computeSummary(data, filters, best) : null), [data, filters, best]);
   const options = useMemo(() => (data ? filterOptions(data) : null), [data]);
+  const monthly = useMemo(() => (data ? monthlyRows(data, filters, best) : []), [data, filters, best]);
+  const dists = useMemo(() => (data ? distributions(data, filters) : null), [data, filters]);
   const filtersActive =
-    filters.period !== 'all' || !!filters.jan || !!filters.source || !!filters.card || filters.completedOnly || filters.sellBasis;
+    filters.period !== 'all' || !!filters.jan || !!filters.source || !!filters.card || filters.completedOnly || filters.sellBasis || filters.sameDay;
 
   // isPending 而非 isLoading：离线缓存恢复期间查询被暂停，isLoading 为 false 但还没有数据
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
@@ -107,6 +112,16 @@ export default function DashboardPage() {
           <div className="mt-6">
             <ProfitTrendChart data={data} best={best} enabledStores={enabledStores} today={today} />
           </div>
+
+          <div className="mt-4">
+            <MonthlyChart rows={monthly} completedOnly={filters.completedOnly} today={today} />
+          </div>
+
+          {dists && (
+            <div className="mt-4">
+              <DistributionCharts d={dists} />
+            </div>
+          )}
         </div>
       </div>
     </PullToRefresh>
