@@ -2045,7 +2045,9 @@
     color: var(--colorNeutralForeground1);
     font-size: 12px;
     line-height: 16px;
-    white-space: nowrap;
+    /* 实测只有 max-width 240；长说明在宽度内换行（Fluent Tooltip 默认行为），短提示仍是一行 */
+    white-space: normal;
+    overflow-wrap: anywhere;
     pointer-events: none;
     filter: var(--loop-tooltip-shadow);
   }
@@ -2236,15 +2238,19 @@
     --label-info-fg: #005BA1;
     --label-platform-bg: #D8CCE7;
     --label-platform-fg: #401B6C;
-    /* 图表分类色：Fluent palette 各色相的 BorderActive，深色下自动换成深色值 */
-    --chart-1: var(--colorPaletteGreenBorderActive);
-    --chart-2: var(--colorPaletteBlueBorderActive);
-    --chart-3: var(--colorPaletteMarigoldBorderActive);
-    --chart-4: var(--colorPaletteRedBorderActive);
-    --chart-5: var(--colorPaletteLavenderBorderActive);
-    --chart-6: var(--colorPalettePinkBorderActive);
-    --chart-7: var(--colorPaletteTealBorderActive);
-    --chart-8: var(--colorPaletteForestBorderActive);
+    /* 图表色：Fluent 官方图表配色（DataViz palette，见 fluent-tokens.css 第 4 节）；涨 / 跌、盈 / 亏用语义色 */
+    --chart-1: var(--dataviz-1);
+    --chart-2: var(--dataviz-2);
+    --chart-3: var(--dataviz-3);
+    --chart-4: var(--dataviz-4);
+    --chart-5: var(--dataviz-5);
+    --chart-6: var(--dataviz-6);
+    --chart-7: var(--dataviz-7);
+    --chart-8: var(--dataviz-8);
+    --chart-9: var(--dataviz-9);
+    --chart-10: var(--dataviz-10);
+    --chart-up: var(--dataviz-success);
+    --chart-down: var(--dataviz-error);
     --shadow-sm: var(--shadow2);
     --shadow-md: var(--shadow4);
     --shadow-lg: var(--shadow16);

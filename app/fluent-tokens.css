@@ -1399,3 +1399,26 @@
   --loop-tree-selected-hover-bg: var(--colorNeutralBackground1Selected);
   --loop-tree-selected-pressed-icon: var(--colorNeutralForeground3);
 }
+
+/* ---- 4. Fluent 图表配色（DataViz palette）----
+   来源：@fluentui/react-charts 9.1.0 lib/utilities/colors.js（Fluent UI 官方图表配色），原样搬运。
+   定性色 1–10 浅色 / 深色同值；语义色 success / error 深色另有值。2026-10-11 用户决定图表改用此配色（Loop 本身没有图表）。 */
+:root {
+  --dataviz-1: #637cef;
+  --dataviz-2: #e3008c;
+  --dataviz-3: #2aa0a4;
+  --dataviz-4: #9373c0;
+  --dataviz-5: #13a10e;
+  --dataviz-6: #3a96dd;
+  --dataviz-7: #ca5010;
+  --dataviz-8: #57811b;
+  --dataviz-9: #b146c2;
+  --dataviz-10: #ae8c00;
+  --dataviz-success: #107c10;
+  --dataviz-error: #c50f1f;
+}
+
+:root[data-theme="dark"] {
+  --dataviz-success: #54b054;
+  --dataviz-error: #dc626d;
+}

@@ -213,8 +213,8 @@ function buildOption(t: ChartTheme, v: View, mode: Mode, unit: TrendUnit): EChar
   const main = MODES.find(m => m.id === mode)!.label;
   const ref = REFERENCE[mode];
   const changeLabel = UNITS.find(u => u.id === unit)!.change;
-  const line = t.palette[1];
-  const refColor = t.palette[2];
+  const line = t.palette[0];
+  const refColor = t.palette[9];
   const labels = v.buckets.map(b => (unit === 'month' ? b.key.slice(2) : b.key.slice(5).replace('-', '/')));
   const extremes = v.buckets.flatMap(b => [Math.abs(b.high), Math.abs(b.low)]);
   if (v.reference) for (const i of v.lastIndex) extremes.push(Math.abs(v.reference[i]));

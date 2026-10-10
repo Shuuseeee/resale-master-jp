@@ -5,6 +5,7 @@
 //   bottom-end   顶栏最右侧按钮（头像）、文档头最右侧按钮：下方 4px，右边缘对齐
 //   bottom       文档头按钮：下方 4px，水平居中
 //   放不下时翻转为另一侧对齐（超出右边 → 右边缘对齐，超出左边 → 左边缘对齐）
+//   下方放不下时改到目标上方 4px；仍超出左右时贴住视口边（留 4px），长说明不会被裁掉
 // 全页面共用一个 tooltip 节点（与 Loop 相同），样式见 globals.css .fluent-tooltip
 'use client';
 
@@ -31,6 +32,9 @@ function show(target: HTMLElement, text: string, placement: TooltipPlacement) {
   const tip = node();
   tip.textContent = text;
   tip.hidden = false;
+  // 先放到左上角再量：可换行后宽度会受上一次位置到视口右边的剩余空间影响
+  tip.style.left = '0px';
+  tip.style.top = '0px';
   const r = target.getBoundingClientRect();
   const t = tip.getBoundingClientRect();
   if (placement === 'right') {
@@ -38,13 +42,14 @@ function show(target: HTMLElement, text: string, placement: TooltipPlacement) {
     tip.style.top = `${r.top + r.height / 2 - t.height / 2}px`;
     return;
   }
-  tip.style.top = `${r.bottom + 4}px`;
+  tip.style.top = `${r.bottom + 4 + t.height > window.innerHeight ? r.top - 4 - t.height : r.bottom + 4}px`;
   const startLeft = r.left;
   const endLeft = r.right - t.width;
   let left = placement === 'bottom-start' ? startLeft : placement === 'bottom-end' ? endLeft : r.left + r.width / 2 - t.width / 2;
   // 超出视口时翻转对齐（实测：顶栏最右侧按钮左对齐会超出，于是改为右对齐；文档头最右侧按钮同理）
   if (left + t.width > window.innerWidth) left = endLeft;
   if (left < 0) left = startLeft;
+  left = Math.min(Math.max(left, 4), window.innerWidth - t.width - 4);
   tip.style.left = `${left}px`;
 }
 

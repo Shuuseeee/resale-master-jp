@@ -189,7 +189,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 
 ## 设计系统
 
-- UI 以 Microsoft Loop（Fluent 2）为蓝本，只有品牌紫一套配色。所有颜色一律走 CSS 变量 token：数值来自 `app/fluent-tokens.css`（Loop 实测的 Fluent token 浅色 / 深色全量），`app/globals.css` 的语义 token（`--color-*` / `--label-*` / `--chart-1..8`）只引用它们。
+- UI 以 Microsoft Loop（Fluent 2）为蓝本，只有品牌紫一套配色。所有颜色一律走 CSS 变量 token：数值来自 `app/fluent-tokens.css`（Loop 实测的 Fluent token 浅色 / 深色全量），`app/globals.css` 的语义 token（`--color-*` / `--label-*` / `--chart-*`）只引用它们；图表色用 Fluent 官方图表配色（DataViz palette）。
 - 深浅色支持浅色 / 深色 / 跟随系统：顶栏按钮快速切换，设置页「外观」可选跟随系统。
 - `lib/theme.ts` 提供常用卡片、按钮、输入框、布局和提示样式。
 - 图标统一使用 Fluent UI System Icons 的 headless 版本（按分组路径导入，如 `@fluentui/react-icons/headless/svg/home`），选中 / 悬停的实心态用 `components/fluent/DualIcon.tsx`；避免新增手写 SVG。

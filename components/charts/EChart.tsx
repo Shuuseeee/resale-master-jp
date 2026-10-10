@@ -44,7 +44,7 @@ export interface ChartTheme {
   border: string;
   surface: string;
   font: string;
-  /** --chart-1..8 */
+  /** --chart-1..10（Fluent DataViz 定性色） */
   palette: string[];
   up: string;
   down: string;
@@ -53,7 +53,7 @@ export interface ChartTheme {
 function readTheme(): ChartTheme {
   const css = getComputedStyle(document.documentElement);
   const v = (name: string) => css.getPropertyValue(name).trim();
-  const palette = Array.from({ length: 8 }, (_, i) => v(`--chart-${i + 1}`));
+  const palette = Array.from({ length: 10 }, (_, i) => v(`--chart-${i + 1}`));
   return {
     text: v('--color-text-secondary'),
     muted: v('--color-text-muted'),
@@ -61,8 +61,8 @@ function readTheme(): ChartTheme {
     surface: v('--color-bg-elevated'),
     font: v('--font-sans'),
     palette,
-    up: palette[0],
-    down: palette[3],
+    up: v('--chart-up'),
+    down: v('--chart-down'),
   };
 }
 

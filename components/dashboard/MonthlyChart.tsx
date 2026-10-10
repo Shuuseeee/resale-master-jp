@@ -30,7 +30,7 @@ export default function MonthlyChart({ rows, completedOnly, today }: { rows: Mon
 
   const option = useMemo((): EChartOption | null => {
     if (!theme || !months.length) return null;
-    const [investColor, revenueColor, profitColor, estimateColor] = [theme.palette[4], theme.palette[0], theme.palette[5], theme.palette[2]];
+    const [investColor, revenueColor, profitColor, estimateColor] = [theme.palette[0], theme.palette[4], theme.palette[1], theme.palette[9]];
     const series: Record<string, unknown>[] = [
       { name: '投资额', type: 'bar', data: months.map(m => m.investment), itemStyle: { color: investColor } },
       { name: '回收额', type: 'bar', data: months.map(m => m.revenue), itemStyle: { color: revenueColor } },
