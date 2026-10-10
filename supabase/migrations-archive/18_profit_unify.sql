@@ -251,6 +251,7 @@ CREATE TABLE IF NOT EXISTS backup.profit_20261010 AS
   SELECT 'sales_records'::text AS tbl, id, cash_profit, total_profit, roi, actual_cash_spent FROM public.sales_records
   UNION ALL
   SELECT 'transactions'::text, id, cash_profit, total_profit, roi, NULL::numeric FROM public.transactions;
+ALTER TABLE backup.profit_20261010 ENABLE ROW LEVEL SECURITY;
 
 -- 6) 按新公式重算现有数据（重算期间暂停状态触发器，避免顺带改动交易状态）
 BEGIN;
