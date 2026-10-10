@@ -14,6 +14,7 @@ export interface DashSale {
   /** 扣除额 = 平台手续费 + 运费（买取X「控除額」） */
   deduction: number;
   target: string | null;
+  orderId: string | null;
 }
 
 export interface DashReturn {
@@ -38,6 +39,7 @@ export interface DashPurchase {
   source: string | null;
   cardId: string | null;
   status: string;
+  notes: string | null;
   soldQty: number;
   returnedQty: number;
   /** 未到货数量（我们只有整笔到货：未到货状态时 = 未售数量） */
@@ -47,7 +49,9 @@ export interface DashPurchase {
 }
 
 export interface DashExpense {
+  id: string;
   date: string;
+  description: string | null;
   amount: number;
   category: string;
 }
@@ -91,7 +95,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       supabase
         .from('transactions')
         .select(
-          'id, date, jan_code, product_name, unit_price, quantity, purchase_price_total, shipping_fee, point_paid, expected_platform_points, expected_card_points, extra_platform_points, status, quantity_sold, quantity_returned, quantity_in_stock, card_id, purchase_platform:purchase_platforms(name)',
+          'id, date, jan_code, product_name, unit_price, quantity, purchase_price_total, shipping_fee, point_paid, expected_platform_points, expected_card_points, extra_platform_points, status, notes, quantity_sold, quantity_returned, quantity_in_stock, card_id, purchase_platform:purchase_platforms(name)',
           opts,
         )
         .order('date')
@@ -101,7 +105,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     fetchAllRows<any>((from, to, opts) =>
       supabase
         .from('sales_records')
-        .select('transaction_id, sale_date, quantity_sold, selling_price_per_unit, platform_fee, shipping_fee, selling_platform:selling_platforms(name)', opts)
+        .select('transaction_id, sale_date, quantity_sold, selling_price_per_unit, platform_fee, shipping_fee, sale_order_number, selling_platform:selling_platforms(name)', opts)
         .order('sale_date')
         .order('id')
         .range(from, to),
@@ -115,7 +119,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         .range(from, to),
     ),
     fetchAllRows<any>((from, to, opts) =>
-      supabase.from('supplies_costs').select('purchase_date, amount, category', opts).order('purchase_date').order('id').range(from, to),
+      supabase.from('supplies_costs').select('id, purchase_date, amount, category, description', opts).order('purchase_date').order('id').range(from, to),
     ),
     fetchAllRows<any>((from, to, opts) => supabase.from('payment_methods').select('*', opts).order('id').range(from, to)),
   ]);
@@ -129,6 +133,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       price: num(s.selling_price_per_unit),
       deduction: num(s.platform_fee) + num(s.shipping_fee),
       target: s.selling_platform?.name ?? null,
+      orderId: s.sale_order_number || null,
     });
     salesByTx.set(s.transaction_id, list);
   }
@@ -156,6 +161,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       source: t.purchase_platform?.name ?? null,
       cardId: t.card_id ?? null,
       status: t.status,
+      notes: t.notes || null,
       soldQty: num(t.quantity_sold),
       returnedQty: num(t.quantity_returned),
       notArrivedQty: t.status === 'pending' ? num(t.quantity_in_stock) : 0,
@@ -196,7 +202,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
   return {
     purchases,
-    expenses: expenseRows.map(e => ({ date: e.purchase_date, amount: num(e.amount), category: e.category })),
+    expenses: expenseRows.map(e => ({ id: e.id, date: e.purchase_date, description: e.description || null, amount: num(e.amount), category: e.category })),
     prices,
     priceHistory: historyRows
       .map(h => ({ jan: h.jan, store: normalizeStoreName(h.store), date: jstDate(h.observed_at), price: h.price == null ? null : num(h.price) }))

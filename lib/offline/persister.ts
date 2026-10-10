@@ -14,7 +14,7 @@ import { idbClear, idbDelete, idbGet, idbSet } from './idb';
  * 缓存版本号。持久化的数据结构（如 TransactionWithProfit 的字段）变化时手动 +1，
  * 旧版本缓存会在恢复时被丢弃，避免新代码读到旧结构。
  */
-export const OFFLINE_CACHE_BUSTER = 'v3';
+export const OFFLINE_CACHE_BUSTER = 'v4';
 
 /** 缓存最长保留时间。超过则恢复时丢弃（过旧的财务数据比没有更误导） */
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;

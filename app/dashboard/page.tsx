@@ -15,6 +15,7 @@ import SummaryCards from '@/components/dashboard/SummaryCards';
 import ProfitTrendChart from '@/components/dashboard/ProfitTrendChart';
 import MonthlyChart from '@/components/dashboard/MonthlyChart';
 import DistributionCharts from '@/components/dashboard/DistributionCharts';
+import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { distributions, monthlyRows } from '@/lib/dashboard/charts';
 import { fetchDashboardData } from '@/lib/dashboard/data';
 import { bestPrices, computeSummary, defaultFilters, filterOptions, type DashFilters } from '@/lib/dashboard/summary';
@@ -122,6 +123,10 @@ export default function DashboardPage() {
               <DistributionCharts d={dists} />
             </div>
           )}
+
+          <div className="mt-6">
+            <DashboardTabs data={data} filters={filters} best={best} enabledStores={enabledStores} today={today} />
+          </div>
         </div>
       </div>
     </PullToRefresh>
