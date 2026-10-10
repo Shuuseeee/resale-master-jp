@@ -1,12 +1,21 @@
-// app/api/mcp/[transport]/route.ts — 自有 MCP 服务（Streamable HTTP），地址 /api/mcp/mcp?key=<MCP_ACCESS_KEY>
+// app/api/mcp/[transport]/route.ts — 自有 MCP 服务（Streamable HTTP），地址 https://<域名>/api/mcp/mcp
+// 鉴权：OAuth 2.1（MCP 授权规范），授权服务器 = 本项目的 Supabase Auth（OAuth 2.1 Server）。
+//   没带令牌 → 401 + WWW-Authenticate 指向 /.well-known/oauth-protected-resource → 客户端去 Supabase 登录授权（授权页 /auth/consent）
+//   带令牌 → 向 Supabase Auth 校验并取得用户 → 工具用该用户的令牌查询（行级安全只给本人的数据）
 // 三个工具：库存与利润概况、店铺规则、出货方案。实现见 lib/server/mcp-tools.ts。
-// 鉴权：地址里的 key 必须等于环境变量 MCP_ACCESS_KEY（泄露就换一个）；/api/* 不经过登录中间件。
-import { timingSafeEqual } from 'node:crypto';
-import { createMcpHandler } from 'mcp-handler';
+import { createClient } from '@supabase/supabase-js';
+import { createMcpHandler, withMcpAuth } from 'mcp-handler';
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { z } from 'zod';
-import { inventoryOverview, planShipment, storeRules } from '@/lib/server/mcp-tools';
+import { inventoryOverview, planShipment, storeRules, type McpUser } from '@/lib/server/mcp-tools';
 
 const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(data) }] });
+
+function userOf(authInfo: AuthInfo | undefined): McpUser {
+  const userId = authInfo?.extra?.userId;
+  if (!authInfo || typeof userId !== 'string') throw new Error('未登录');
+  return { token: authInfo.token, userId };
+}
 
 const handler = createMcpHandler(
   server => {
@@ -19,7 +28,7 @@ const handler = createMcpHandler(
           'include_items=true 时附每笔未售进货（单件成本、最高价与店铺、报价时间、预估利润、持有天数）。预估利润未扣运费，不能据此直接排出货方案，请用 plan_shipment。',
         inputSchema: { include_items: z.boolean().optional().describe('是否附上每笔未售进货，默认 true') },
       },
-      async ({ include_items }) => json(await inventoryOverview(include_items ?? true)),
+      async ({ include_items }, extra) => json(await inventoryOverview(userOf(extra.authInfo), include_items ?? true)),
     );
 
     server.registerTool(
@@ -48,25 +57,33 @@ const handler = createMcpHandler(
           stale_limit: z.number().int().min(1).max(30).optional().describe('报价有效天数，默认 7'),
         },
       },
-      async ({ exclude_stores, keep_jans, include_pending, stale_limit }) =>
-        json(await planShipment({ excludeStores: exclude_stores, keepJans: keep_jans, includePending: include_pending, staleLimit: stale_limit })),
+      async ({ exclude_stores, keep_jans, include_pending, stale_limit }, extra) =>
+        json(
+          await planShipment(userOf(extra.authInfo), {
+            excludeStores: exclude_stores,
+            keepJans: keep_jans,
+            includePending: include_pending,
+            staleLimit: stale_limit,
+          }),
+        ),
     );
   },
   { serverInfo: { name: 'resale-master', version: '1.0.0' } },
   { basePath: '/api/mcp', maxDuration: 60, disableSse: true },
 );
 
-function authorized(req: Request): boolean {
-  const expected = process.env.MCP_ACCESS_KEY;
-  const given = new URL(req.url).searchParams.get('key') ?? '';
-  if (!expected || given.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+/** 校验 Supabase Auth（OAuth 2.1 Server）签发的访问令牌 */
+async function verifyToken(_req: Request, bearer?: string): Promise<AuthInfo | undefined> {
+  if (!bearer) return undefined;
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+  const { data, error } = await sb.auth.getUser(bearer);
+  if (error || !data.user) return undefined;
+  return { token: bearer, clientId: 'supabase', scopes: [], extra: { userId: data.user.id } };
 }
 
-async function guarded(req: Request) {
-  if (!authorized(req)) return new Response('Unauthorized', { status: 401 });
-  return handler(req);
-}
+const authed = withMcpAuth(handler, verifyToken, { required: true });
 
-export { guarded as GET, guarded as POST, guarded as DELETE };
+export { authed as GET, authed as POST, authed as DELETE };
 export const maxDuration = 60;

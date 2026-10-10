@@ -1,6 +1,6 @@
 // lib/server/mcp-tools.ts — 自有 MCP（app/api/[transport]/route.ts）的三个工具的实现
 // 数据：只读视图 assistant_overview / assistant_purchases / assistant_buyback_prices + 商品尺寸表 product_shipping_meta，
-//      用 service role 读取，按环境变量 MCP_USER_ID 过滤（服务端权限能看到所有用户）。
+//      用 OAuth 登录拿到的用户令牌查询（视图是 security_invoker，行级安全自动只给本人的数据）。
 // 计算：出货方案与店铺规则交给 Vercel Python 函数 /api/solver（solver/service.py，规则与求解器来自原 ResaleAssist）。
 /* eslint-disable @typescript-eslint/no-explicit-any -- 视图行按列名取值 */
 
@@ -9,16 +9,17 @@ import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 
 const DAY_MS = 86_400_000;
 
-function db() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
+/** MCP 请求的登录身份（app/api/mcp 校验 Bearer 令牌后传入） */
+export interface McpUser {
+  token: string;
+  userId: string;
 }
 
-function userId(): string {
-  const id = process.env.MCP_USER_ID;
-  if (!id) throw new Error('服务端未配置 MCP_USER_ID');
-  return id;
+function db(user: McpUser) {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${user.token}` } },
+  });
 }
 
 /** JST 今天（YYYY-MM-DD） */
@@ -46,13 +47,13 @@ async function callSolver(body: Record<string, unknown>): Promise<any> {
   }
 }
 
-async function unsoldPurchases(includePending: boolean): Promise<any[]> {
-  const sb = db();
+async function unsoldPurchases(user: McpUser, includePending: boolean): Promise<any[]> {
+  const sb = db(user);
   const rows = await fetchAllRows<any>((from, to, opts) =>
     sb
       .from('assistant_purchases')
       .select('*', opts)
-      .eq('user_id', userId())
+      .eq('user_id', user.userId)
       .gt('quantity_unsold', 0)
       .order('purchase_date')
       .order('id')
@@ -62,13 +63,13 @@ async function unsoldPurchases(includePending: boolean): Promise<any[]> {
 }
 
 /** 库存与利润概况：整体汇总 + 每笔未售进货（与网页 / 买取X 同口径） */
-export async function inventoryOverview(includeItems: boolean) {
-  const sb = db();
-  const { data: overview, error } = await sb.from('assistant_overview').select('*').eq('user_id', userId()).maybeSingle();
+export async function inventoryOverview(user: McpUser, includeItems: boolean) {
+  const sb = db(user);
+  const { data: overview, error } = await sb.from('assistant_overview').select('*').eq('user_id', user.userId).maybeSingle();
   if (error) throw error;
   const result: Record<string, unknown> = { as_of: todayJst(), overview };
   if (includeItems) {
-    result.unsold = (await unsoldPurchases(true)).map(r => ({
+    result.unsold = (await unsoldPurchases(user, true)).map(r => ({
       purchase_date: r.purchase_date,
       product_name: r.product_name,
       jan: r.jan_code,
@@ -97,10 +98,10 @@ interface PlanOptions {
 }
 
 /** 出货方案：未售库存 × 各店报价 × 商品尺寸 → 全局最优分配（含运费、包邮条件、自检） */
-export async function planShipment(opts: PlanOptions) {
-  const sb = db();
+export async function planShipment(user: McpUser, opts: PlanOptions) {
+  const sb = db(user);
   const keep = new Set(opts.keepJans ?? []);
-  const unsold = await unsoldPurchases(!!opts.includePending);
+  const unsold = await unsoldPurchases(user, !!opts.includePending);
   const purchases = unsold.filter(r => r.jan_code && !keep.has(r.jan_code));
   const noJan = unsold.filter(r => !r.jan_code).map(r => r.product_name);
   if (!purchases.length) return { ok: false, error: '没有可分销的未售库存（需要有 JAN）', no_jan: noJan };
@@ -108,7 +109,7 @@ export async function planShipment(opts: PlanOptions) {
   const jans = [...new Set(purchases.map(r => r.jan_code as string))];
   const [metaRows, priceRows] = await Promise.all([
     fetchAllByIds<any>(jans, (chunk, from, to, o) =>
-      sb.from('product_shipping_meta').select('jan, vol, min_size, category', o).eq('user_id', userId()).in('jan', chunk).order('jan').range(from, to),
+      sb.from('product_shipping_meta').select('jan, vol, min_size, category', o).eq('user_id', user.userId).in('jan', chunk).order('jan').range(from, to),
     ),
     fetchAllByIds<any>(jans, (chunk, from, to, o) =>
       sb.from('assistant_buyback_prices').select('jan, store, price, price_updated_at', o).in('jan', chunk).order('jan').order('store').range(from, to),

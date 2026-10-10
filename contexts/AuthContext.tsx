@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { clearOfflineCache } from '@/lib/offline/persister';
+import { NEXT_COOKIE, safeNext } from '@/lib/auth-redirect';
 
 interface AuthContextType {
   user: User | null;
@@ -73,8 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 等待一小段时间确保 session 被存储到 cookies
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 使用 window.location 而不是 router.push 来确保完整的页面刷新
-      window.location.href = '/';
+      // 使用 window.location 而不是 router.push 来确保完整的页面刷新；有 redirectedFrom 时回到原来的页面
+      window.location.href = safeNext(new URLSearchParams(window.location.search).get('redirectedFrom'));
 
       return { error: null };
     } catch (error) {
@@ -116,6 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      const next = safeNext(new URLSearchParams(window.location.search).get('redirectedFrom'));
+      document.cookie = `${NEXT_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

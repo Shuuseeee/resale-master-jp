@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { safeNext } from '@/lib/auth-redirect';
 
 export async function middleware(req: NextRequest) {
   let response = NextResponse.next({
@@ -62,21 +63,20 @@ export async function middleware(req: NextRequest) {
   // 定义公开路径（不需要登录）
   const publicPaths = ['/auth/login', '/auth/register', '/auth/callback'];
   const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path));
-  const isApiPath = req.nextUrl.pathname.startsWith('/api/');
+  // /api/* 各自鉴权；/.well-known/* 是给 MCP 客户端的公开元数据（OAuth 受保护资源说明）
+  const isApiPath = req.nextUrl.pathname.startsWith('/api/') || req.nextUrl.pathname.startsWith('/.well-known/');
 
   // 如果用户未登录且访问受保护的路径
   if (!session && !isPublicPath && !isApiPath) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/auth/login';
-    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
+    // 带上原来的路径和查询参数（如 MCP 授权页的 authorization_id），登录后回到这里
+    const redirectUrl = new URL('/auth/login', req.url);
+    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 
   // 如果用户已登录且访问登录/注册页面，重定向到首页
   if (session && isPublicPath) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/';
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL(safeNext(req.nextUrl.searchParams.get('redirectedFrom')), req.url));
   }
 
   return response;
