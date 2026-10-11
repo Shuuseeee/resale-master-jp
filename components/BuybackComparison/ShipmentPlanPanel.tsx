@@ -1,9 +1,12 @@
 // components/BuybackComparison/ShipmentPlanPanel.tsx — 比价弹层里的「最优出货方案（含运费）」
 // 按当前比较数量调 /api/shipment-plan（与 MCP plan_shipment 同一个求解器：全局最优分配，算运费、包邮条件、箱型、手续费，
 // 附自检）。缺尺寸的商品可就地补尺寸后重算；数量改了会提示重新计算。
+// 每家店：店名链到店铺首页，商品名链到该店的 JAN 搜索页（地址见 lib/server/mcp-tools.ts 的 attachStoreLinks），可复制单个 / 整箱 JAN。
 'use client';
 
 import { useState } from 'react';
+import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
+import { Copy16Regular } from '@fluentui/react-icons/headless/svg/copy';
 import MessageBar from '@/components/fluent/MessageBar';
 import Spinner from '@/components/fluent/Spinner';
 import ShippingMetaForm from '@/components/BuybackComparison/ShippingMetaForm';
@@ -28,7 +31,10 @@ interface PlanBox {
   transfer_fee: number;
   incentive: number;
   net: number;
-  items: { tid: string; name: string; jan: string; qty: number; unit_price: number; unit_cost: number }[];
+  /** 店铺首页（来自官方报价里的地址；没有则为 null） */
+  store_url?: string | null;
+  /** url：该店的 JAN 搜索页（店铺不支持搜索时为首页） */
+  items: { tid: string; name: string; jan: string; qty: number; unit_price: number; unit_cost: number; url?: string | null }[];
 }
 
 interface PlanResult {
@@ -120,7 +126,16 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
               <div key={box.store} className={card.primary + ' p-3'}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-semibold text-[var(--color-text)]">{box.store}</div>
+                    <div className="flex items-center gap-1.5">
+                      {box.store_url ? (
+                        <a href={box.store_url} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--color-primary)] hover:underline" title="打开店铺网站">
+                          {box.store}
+                        </a>
+                      ) : (
+                        <span className="font-semibold text-[var(--color-text)]">{box.store}</span>
+                      )}
+                      <CopyButton text={box.items.map(i => i.jan).join('\n')} label="复制本箱全部 JAN" />
+                    </div>
                     <div className="text-xs text-[var(--color-text-secondary)]">
                       {box.size} 尺寸 · {box.qty} 个 · {box.free_shipping ? '包邮' : `运费 ${formatCurrency(box.shipping)}`}
                     </div>
@@ -132,8 +147,23 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
                 </div>
                 <ul className="mt-2 space-y-1 text-sm">
                   {(openBoxes.has(box.store) ? box.items : box.items.slice(0, BOX_ITEM_LIMIT)).map(it => (
-                    <li key={it.tid} className="flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate text-[var(--color-text)]" title={it.name}>{it.name}</span>
+                    <li key={it.tid} className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-1">
+                        {it.url ? (
+                          <a
+                            href={it.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-w-0 truncate text-[var(--color-primary)] hover:underline"
+                            title={`在 ${box.store} 搜索 ${it.jan}`}
+                          >
+                            {it.name}
+                          </a>
+                        ) : (
+                          <span className="min-w-0 truncate text-[var(--color-text)]" title={it.name}>{it.name}</span>
+                        )}
+                        <CopyButton text={it.jan} label={`复制 JAN ${it.jan}`} />
+                      </span>
                       <span className="shrink-0 font-mono text-xs text-[var(--color-text-secondary)]">{formatCurrency(it.unit_price)} × {it.qty}</span>
                     </li>
                   ))}
@@ -210,5 +240,26 @@ function Stat({ label, value, strong, tone }: { label: string; value: string; st
       <div className="text-xs text-[var(--color-text-secondary)]">{label}</div>
       <div className={`font-mono ${strong ? 'text-lg font-semibold' : 'text-sm'} ${color}`}>{value}</div>
     </div>
+  );
+}
+
+/** 小号复制按钮：点后图标变成勾 1.5 秒（弹层里不再叠一层提示对话框） */
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard.writeText(text).then(() => {
+          setDone(true);
+          setTimeout(() => setDone(false), 1500);
+        });
+      }}
+      className={`shrink-0 rounded-[var(--radius-sm)] p-1 transition-colors hover:bg-[var(--color-bg-hover)] ${done ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
+      title={done ? '已复制' : label}
+      aria-label={label}
+    >
+      {done ? <Checkmark16Regular /> : <Copy16Regular />}
+    </button>
   );
 }

@@ -194,5 +194,44 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
     stale_limit: opts.staleLimit ?? 7,
     day: todayJst(),
   });
+  if (result?.ok && Array.isArray(result.boxes)) await attachStoreLinks(result.boxes, jans);
   return { ...result, missing_meta: missingMeta };
+}
+
+/**
+ * 给方案里的每家店 / 每件商品挂上链接：店名 → 店铺首页，商品 → 该店的 JAN 搜索页。
+ * 地址来自官方 API 价格缓存里每条报价的 url（买取X 给的：能搜的店是「站内搜索 + JAN」，不能搜的是首页；每日 CSV 不带地址）。
+ * 某个 JAN 没有该店的地址时，用同一家店别的 JAN（本次或最近 300 条缓存）的搜索地址换掉 JAN 作模板；再没有就退回首页。
+ */
+async function attachStoreLinks(boxes: any[], jans: string[]) {
+  const sb = serviceDb();
+  // 本次的 JAN（逐件地址）+ 最近的缓存（学各店的搜索模板与首页；价格缓存是公共数据，不分用户）
+  const [{ data: own }, { data: recent }] = await Promise.all([
+    sb.from('kaitorix_price_cache').select('jan, prices').in('jan', jans.slice(0, 200)),
+    sb.from('kaitorix_price_cache').select('jan, prices').order('fetched_at', { ascending: false }).limit(300),
+  ]);
+  const direct = new Map<string, string>();
+  const template = new Map<string, string>();
+  const home = new Map<string, string>();
+  for (const row of [...(own ?? []), ...(recent ?? [])]) {
+    for (const p of Array.isArray(row.prices) ? row.prices : []) {
+      const url = typeof p?.url === 'string' ? p.url : '';
+      if (!p?.store || !/^https?:\/\//.test(url)) continue;
+      direct.set(`${row.jan}\u0001${p.store}`, url);
+      if (url.includes(row.jan) && !template.has(p.store)) template.set(p.store, url.split(row.jan).join('{jan}'));
+      if (!home.has(p.store)) {
+        try {
+          home.set(p.store, new URL(url).origin + '/');
+        } catch {
+          // 地址格式不对就不给首页链接
+        }
+      }
+    }
+  }
+  for (const box of boxes) {
+    box.store_url = home.get(box.store) ?? null;
+    for (const it of box.items ?? []) {
+      it.url = direct.get(`${it.jan}\u0001${box.store}`) ?? template.get(box.store)?.split('{jan}').join(encodeURIComponent(it.jan)) ?? box.store_url;
+    }
+  }
 }
