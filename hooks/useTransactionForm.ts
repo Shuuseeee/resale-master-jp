@@ -413,8 +413,11 @@ export function useTransactionForm({
       newErrors.product_name = '请输入商品名称';
     }
 
-    if (mode === 'edit' && (!formData.quantity || formData.quantity < 1)) {
-      newErrors.quantity = '数量必须大于0';
+    if (!formData.quantity || formData.quantity < 1 || !Number.isInteger(formData.quantity)) {
+      newErrors.quantity = '数量必须是 1 以上的整数';
+    } else if (mode === 'edit' && transaction?.quantity_arrived != null && formData.quantity < transaction.quantity_arrived) {
+      // 分批到货：已记了到货明细时，数量不能少于已到货（库里也有同样的约束）
+      newErrors.quantity = `已到货 ${transaction.quantity_arrived} 件，数量不能少于 ${transaction.quantity_arrived}`;
     }
 
     if (formData.purchase_price_total <= 0) {
@@ -444,7 +447,7 @@ export function useTransactionForm({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, mode]);
+  }, [formData, mode, transaction]);
 
   // ──── Submit ────
   const handleSubmit = useCallback(async (e: React.FormEvent) => {

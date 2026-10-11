@@ -575,7 +575,7 @@ ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returne
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_platform_fee_check CHECK ((platform_fee >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_quantity_sold_check CHECK ((quantity_sold > 0));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_selling_price_per_unit_check CHECK ((selling_price_per_unit >= (0)::numeric));
-ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_arrived_check CHECK (((quantity_arrived IS NULL) OR (quantity_arrived >= 0)));
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_arrived_check CHECK (((quantity_arrived IS NULL) OR ((quantity_arrived >= 0) AND (quantity_arrived <= quantity))));
 ALTER TABLE public.transaction_arrivals ADD CONSTRAINT transaction_arrivals_quantity_check CHECK ((quantity > 0));
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_coupon_amount_check CHECK ((coupon_amount >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_shipping_fee_check CHECK ((shipping_fee >= (0)::numeric));
