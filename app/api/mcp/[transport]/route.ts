@@ -1,20 +1,20 @@
 // app/api/mcp/[transport]/route.ts — 自有 MCP 服务（Streamable HTTP），地址 https://<域名>/api/mcp/mcp
-// 鉴权：OAuth 2.1（MCP 授权规范），授权服务器 = 本项目的 Supabase Auth（OAuth 2.1 Server）。
-//   没带令牌 → 401 + WWW-Authenticate 指向 /.well-known/oauth-protected-resource → 客户端去 Supabase 登录授权（授权页 /auth/consent）
-//   带令牌 → 向 Supabase Auth 校验并取得用户 → 工具用该用户的令牌查询（行级安全只给本人的数据）
+// 鉴权：OAuth 2.1（MCP 授权规范），授权服务器 = 本站自己的（lib/server/oauth.ts，设计参考 Trek）。
+//   没带令牌 → 401 + WWW-Authenticate 指向 /.well-known/oauth-protected-resource → 客户端动态注册、去 /auth/consent 登录确认
+//   带令牌 → 查 oauth_tokens 取得用户 → 工具按该用户读取（令牌只对本 MCP 有效，工具全部只读）
 // 三个工具：库存与利润概况、店铺规则、出货方案。实现见 lib/server/mcp-tools.ts。
-import { createClient } from '@supabase/supabase-js';
 import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { z } from 'zod';
 import { inventoryOverview, planShipment, storeRules, type McpUser } from '@/lib/server/mcp-tools';
+import { MCP_SCOPE, verifyAccessToken } from '@/lib/server/oauth';
 
 const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(data) }] });
 
 function userOf(authInfo: AuthInfo | undefined): McpUser {
   const userId = authInfo?.extra?.userId;
   if (!authInfo || typeof userId !== 'string') throw new Error('未登录');
-  return { token: authInfo.token, userId };
+  return { userId };
 }
 
 const handler = createMcpHandler(
@@ -72,18 +72,15 @@ const handler = createMcpHandler(
   { basePath: '/api/mcp', maxDuration: 60, disableSse: true },
 );
 
-/** 校验 Supabase Auth（OAuth 2.1 Server）签发的访问令牌 */
+/** 校验本站 OAuth 服务器签发的访问令牌 */
 async function verifyToken(_req: Request, bearer?: string): Promise<AuthInfo | undefined> {
   if (!bearer) return undefined;
-  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: { persistSession: false },
-  });
-  const { data, error } = await sb.auth.getUser(bearer);
-  if (error || !data.user) return undefined;
-  return { token: bearer, clientId: 'supabase', scopes: [], extra: { userId: data.user.id } };
+  const t = await verifyAccessToken(bearer);
+  if (!t) return undefined;
+  return { token: bearer, clientId: t.clientId, scopes: t.scope.split(' '), extra: { userId: t.userId } };
 }
 
-const authed = withMcpAuth(handler, verifyToken, { required: true });
+const authed = withMcpAuth(handler, verifyToken, { required: true, requiredScopes: [MCP_SCOPE] });
 
 export { authed as GET, authed as POST, authed as DELETE };
 export const maxDuration = 60;

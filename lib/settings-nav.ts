@@ -10,6 +10,7 @@ export const SETTINGS_SECTIONS = [
   { id: 'payment-methods', label: '支付方式' },
   { id: 'kaitorix', label: '买取价格检查' },
   { id: 'csv-import', label: '数据导入' },
+  { id: 'connected-apps', label: '已连接的 AI' },
 ] as const;
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]['id'];

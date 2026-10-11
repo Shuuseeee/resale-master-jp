@@ -6,6 +6,7 @@ import { BuildingShop20Filled, BuildingShop20Regular } from '@fluentui/react-ico
 import { Cart20Filled, Cart20Regular } from '@fluentui/react-icons/headless/svg/cart';
 import { Color20Filled, Color20Regular } from '@fluentui/react-icons/headless/svg/color';
 import { DocumentArrowUp20Filled, DocumentArrowUp20Regular } from '@fluentui/react-icons/headless/svg/document-arrow-up';
+import { PlugConnected20Filled, PlugConnected20Regular } from '@fluentui/react-icons/headless/svg/plug-connected';
 import { Payment20Filled, Payment20Regular } from '@fluentui/react-icons/headless/svg/payment';
 import DualIcon from '@/components/fluent/DualIcon';
 import { importOrderFile, OrderImportError, type OrderImportResult } from '@/lib/api/order-import';
@@ -17,6 +18,7 @@ import { getThemePreference, setThemePreference, THEME_PREFERENCE_EVENT, type Th
 import { button, card, heading, input, layout } from '@/lib/theme';
 import Switch from '@/components/Switch';
 import Select from '@/components/Select';
+import ConnectedAppsSection from '@/components/settings/ConnectedAppsSection';
 import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 import TabList from '@/components/fluent/TabList';
 import { SETTINGS_SECTIONS, initSettingsSection, selectSettingsSection, useSettingsSection, type SettingsSectionId } from '@/lib/settings-nav';
@@ -31,6 +33,7 @@ const SECTION_ICONS: Record<SettingsSectionId, ReactNode> = {
   'payment-methods': <DualIcon regular={Payment20Regular} filled={Payment20Filled} />,
   kaitorix: <DualIcon regular={BuildingShop20Regular} filled={BuildingShop20Filled} />,
   'csv-import': <DualIcon regular={DocumentArrowUp20Regular} filled={DocumentArrowUp20Filled} />,
+  'connected-apps': <DualIcon regular={PlugConnected20Regular} filled={PlugConnected20Filled} />,
 };
 
 const DRAWER_ITEMS = SETTINGS_SECTIONS.map(item => ({ ...item, icon: SECTION_ICONS[item.id] }));
@@ -248,6 +251,8 @@ export default function SettingsPage() {
           )}
 
           {section === 'payment-methods' && <PaymentMethodsSection />}
+
+          {section === 'connected-apps' && <ConnectedAppsSection />}
 
           {section === 'kaitorix' && (
           <section className={card.primary + ' p-6'}>

@@ -1,26 +1,21 @@
 // lib/server/mcp-tools.ts — 自有 MCP（app/api/[transport]/route.ts）的三个工具的实现
 // 数据：只读视图 assistant_overview / assistant_purchases / assistant_buyback_prices + 商品尺寸表 product_shipping_meta，
-//      用 OAuth 登录拿到的用户令牌查询（视图是 security_invoker，行级安全自动只给本人的数据）。
+//      用 service role 读取、按令牌对应的用户过滤（令牌由本站 OAuth 服务器签发，见 lib/server/oauth.ts；工具全部只读）。
 // 计算：出货方案与店铺规则交给 Vercel Python 函数 /api/solver（solver/service.py，规则与求解器来自原 ResaleAssist）。
 /* eslint-disable @typescript-eslint/no-explicit-any -- 视图行按列名取值 */
 
-import { createClient } from '@supabase/supabase-js';
+import { serviceDb } from '@/lib/server/oauth';
 import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 
 const DAY_MS = 86_400_000;
 
 /** MCP 请求的登录身份（app/api/mcp 校验 Bearer 令牌后传入） */
 export interface McpUser {
-  token: string;
   userId: string;
 }
 
-function db(user: McpUser) {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${user.token}` } },
-  });
-}
+// service role 能看到所有用户：下面每个查询都必须带 .eq('user_id', user.userId)
+// （assistant_buyback_prices 是公共买取价，没有 user_id）
 
 /** JST 今天（YYYY-MM-DD） */
 function todayJst(): string {
@@ -48,7 +43,7 @@ async function callSolver(body: Record<string, unknown>): Promise<any> {
 }
 
 async function unsoldPurchases(user: McpUser, includePending: boolean): Promise<any[]> {
-  const sb = db(user);
+  const sb = serviceDb();
   const rows = await fetchAllRows<any>((from, to, opts) =>
     sb
       .from('assistant_purchases')
@@ -64,7 +59,7 @@ async function unsoldPurchases(user: McpUser, includePending: boolean): Promise<
 
 /** 库存与利润概况：整体汇总 + 每笔未售进货（与网页 / 买取X 同口径） */
 export async function inventoryOverview(user: McpUser, includeItems: boolean) {
-  const sb = db(user);
+  const sb = serviceDb();
   const { data: overview, error } = await sb.from('assistant_overview').select('*').eq('user_id', user.userId).maybeSingle();
   if (error) throw error;
   const result: Record<string, unknown> = { as_of: todayJst(), overview };
@@ -99,7 +94,7 @@ interface PlanOptions {
 
 /** 出货方案：未售库存 × 各店报价 × 商品尺寸 → 全局最优分配（含运费、包邮条件、自检） */
 export async function planShipment(user: McpUser, opts: PlanOptions) {
-  const sb = db(user);
+  const sb = serviceDb();
   const keep = new Set(opts.keepJans ?? []);
   const unsold = await unsoldPurchases(user, !!opts.includePending);
   const purchases = unsold.filter(r => r.jan_code && !keep.has(r.jan_code));

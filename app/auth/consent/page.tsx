@@ -1,80 +1,63 @@
-// app/auth/consent/page.tsx — OAuth 授权确认页（Supabase Auth OAuth 2.1 Server 的 Authorization Path）
-// AI 客户端（claude.ai 等）添加我们的 MCP 时，Supabase 会把用户带到这里：/auth/consent?authorization_id=...
-// 未登录时中间件先送去登录页，登录后带着原地址回来。允许 / 拒绝后跳到 Supabase 返回的 redirect_url。
+// app/auth/consent/page.tsx — OAuth 授权确认页（本站自有授权服务器，lib/server/oauth.ts）
+// AI 客户端连接 MCP 时，/api/oauth/authorize 校验后把用户送到这里：/auth/consent?request_id=...
+// 未登录时中间件先送去登录页，登录后带着原地址回来。允许 / 拒绝后跳到接口返回的客户端回调地址。
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
 import { BrandIcon } from '@/components/BrandIcon';
-import { useAuth } from '@/contexts/AuthContext';
 import Spinner from '@/components/fluent/Spinner';
 import { button } from '@/lib/theme';
 
 interface Details {
-  clientName: string;
-  clientUri: string;
+  client_name: string;
+  redirect_uri: string;
   email: string;
-  scopes: string[];
 }
 
-const SCOPE_LABELS: Record<string, string> = {
-  openid: '确认你的身份',
-  email: '读取你的邮箱地址',
-  profile: '读取你的基本资料',
-};
-
 function Consent() {
-  const params = useSearchParams();
-  const authorizationId = params.get('authorization_id');
-  const { user } = useAuth();
+  const requestId = useSearchParams().get('request_id');
   const [details, setDetails] = useState<Details | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<'approve' | 'deny' | null>(null);
 
   useEffect(() => {
-    if (!authorizationId) {
+    if (!requestId) {
       setError('缺少授权请求编号，请回到 AI 应用重新连接。');
       return;
     }
-    supabase.auth.oauth.getAuthorizationDetails(authorizationId).then(({ data, error: err }) => {
-      if (err || !data) {
-        setError(err?.message ?? '授权请求无效或已过期，请回到 AI 应用重新连接。');
-        return;
-      }
-      // 之前已经授权过：Supabase 直接给出回跳地址
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-        return;
-      }
-      setDetails({
-        clientName: data.client?.name || '未命名应用',
-        clientUri: data.client?.uri ?? '',
-        email: data.user?.email ?? '',
-        scopes: (data.scope ?? '').split(' ').filter(Boolean),
-      });
-    });
-  }, [authorizationId]);
+    fetch(`/api/oauth/requests/${encodeURIComponent(requestId)}`)
+      .then(async r => {
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.error ?? '授权请求无效');
+        setDetails(body);
+      })
+      .catch(e => setError(e.message));
+  }, [requestId]);
 
   const decide = async (approve: boolean) => {
-    if (!authorizationId) return;
+    if (!requestId) return;
     setBusy(approve ? 'approve' : 'deny');
-    const { data, error: err } = approve
-      ? await supabase.auth.oauth.approveAuthorization(authorizationId, { skipBrowserRedirect: true })
-      : await supabase.auth.oauth.denyAuthorization(authorizationId, { skipBrowserRedirect: true });
-    if (err || !data) {
+    try {
+      const r = await fetch(`/api/oauth/requests/${encodeURIComponent(requestId)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ approve }),
+      });
+      const body = await r.json();
+      if (!r.ok) throw new Error(body.error ?? '操作失败');
+      window.location.href = body.redirect_url;
+    } catch (e) {
       setBusy(null);
-      setError(err?.message ?? '操作失败，请重试。');
-      return;
+      setError(e instanceof Error ? e.message : '操作失败，请重试。');
     }
-    window.location.href = data.redirect_url;
   };
 
   const host = (() => {
     try {
-      return details?.clientUri ? new URL(details.clientUri).host : '';
+      return details ? new URL(details.redirect_uri).host || details.redirect_uri : '';
     } catch {
-      return details?.clientUri ?? '';
+      return details?.redirect_uri ?? '';
     }
   })();
 
@@ -89,24 +72,22 @@ function Consent() {
       ) : (
         <>
           <div>
-            <p className="text-base font-semibold">「{details.clientName}」请求访问你的 Resale Master 账户</p>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              {host && `${host} · `}将以 {details.email || user?.email} 的身份连接
-            </p>
+            <p className="text-base font-semibold">「{details.client_name}」请求连接你的 Resale Master 账户</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">以 {details.email} 的身份连接</p>
+          </div>
+          <div className="rounded-[var(--radius-md)] bg-[var(--color-bg-stat)] px-3 py-2 text-sm">
+            授权后将返回：<span className="font-semibold">{host}</span>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">请确认这是你正在使用的 AI 应用的网址（例如 claude.ai）。不认识就点「拒绝」。</p>
           </div>
           <div className="text-sm">
             <p className="mb-2 font-medium">它将可以：</p>
             <ul className="list-disc space-y-1 pl-5 text-[var(--color-text-secondary)]">
-              <li>通过 MCP 工具读取你的库存、利润概况和买取店规则</li>
-              <li>为你的未售库存计算出货方案（只计算，不修改任何数据）</li>
-              {details.scopes.filter(s => SCOPE_LABELS[s]).map(s => (
-                <li key={s}>{SCOPE_LABELS[s]}</li>
-              ))}
+              <li>读取你的库存、利润概况和买取店规则</li>
+              <li>为你的未售库存计算出货方案</li>
             </ul>
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">只能查询和计算，不能修改或删除任何数据。</p>
           </div>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            以后可以在 AI 应用里断开连接来撤销授权。
-          </p>
+          <p className="text-xs text-[var(--color-text-muted)]">以后可以在「设置 › 已连接的 AI」随时撤销。</p>
           <div className="flex gap-3">
             <button type="button" className={button.primary + ' flex-1'} disabled={!!busy} onClick={() => decide(true)}>
               {busy === 'approve' ? '授权中…' : '允许'}

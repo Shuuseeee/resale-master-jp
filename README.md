@@ -172,7 +172,7 @@ resale-master-jp/
 
 ## 认证与 PWA
 
-- Supabase Auth 支持邮箱密码与 Google OAuth。**「仅限受邀」靠 Supabase 控制台关闭「Allow new users to sign up」实现**（2026-10-11 用户关闭；关闭后注册页与 Google 登录都不能建新账号，新用户由控制台 Invite user 邀请）——代码里没有邀请码或名单检查，登录页的「需要使用受邀账户登录」只是提示文字。MCP 的 OAuth 客户端不开动态注册，claude.ai 等客户端在 Supabase 手动登记。
+- Supabase Auth 支持邮箱密码与 Google OAuth。**「仅限受邀」靠 Supabase 控制台关闭「Allow new users to sign up」实现**（2026-10-11 用户关闭；关闭后注册页与 Google 登录都不能建新账号，新用户由控制台 Invite user 邀请）——代码里没有邀请码或名单检查，登录页的「需要使用受邀账户登录」只是提示文字。MCP 用本站自有的 OAuth 服务器（AI 客户端自行动态注册），不用 Supabase 的 OAuth Server。
 - `middleware.ts` 保护业务页面，`/auth/*` 和 `/api/*` 为公开路径。
 - PWA 使用 `app/manifest.ts` 和 `public/sw.js`，支持 iOS 添加到主屏幕。
 
