@@ -48,18 +48,18 @@ export const STORAGE_BUCKETS = {
 } as const;
 
 /**
- * 上传图片到 Supabase Storage
- * @param file - 要上传的文件
- * @param bucket - 存储桶名称
+ * 上传交易收据图片到 receipts 桶
+ * 路径必须是 {user_id}/{随机名}：存储策略只许本人在自己的文件夹里上传 / 删除（与原生 App 相同，见 schema.sql 第 8 节）。
  * @returns 上传后的签名 URL（有效期1年）
  */
 export async function uploadImage(
   file: File,
   bucket: string = STORAGE_BUCKETS.RECEIPTS
 ): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('上传失败: 未登录');
   const fileExt = file.name.split('.').pop();
-  const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-  const filePath = `${fileName}`;
+  const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
 
   const { data, error } = await supabase.storage
     .from(bucket)
@@ -82,56 +82,4 @@ export async function uploadImage(
   }
 
   return signedUrlData.signedUrl;
-}
-
-/**
- * 为已存在的图片生成新的签名 URL
- * @param filePath - 文件路径或完整URL
- * @param bucket - 存储桶名称
- * @param expiresIn - 有效期（秒），默认1年
- * @returns 签名 URL
- */
-export async function getSignedImageUrl(
-  filePath: string,
-  bucket: string = STORAGE_BUCKETS.RECEIPTS,
-  expiresIn: number = 31536000
-): Promise<string> {
-  // 如果传入的是完整URL，提取文件路径
-  let path = filePath;
-  if (filePath.includes('/storage/v1/object/')) {
-    const urlParts = filePath.split('/');
-    path = urlParts[urlParts.length - 1].split('?')[0];
-  }
-
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, expiresIn);
-
-  if (error) {
-    throw new Error(`获取签名URL失败: ${error.message}`);
-  }
-
-  return data.signedUrl;
-}
-
-/**
- * 删除 Storage 中的图片
- * @param url - 图片的公共 URL 或签名 URL
- * @param bucket - 存储桶名称
- */
-export async function deleteImage(
-  url: string,
-  bucket: string = STORAGE_BUCKETS.RECEIPTS
-): Promise<void> {
-  // 从 URL 中提取文件路径
-  const urlParts = url.split('/');
-  const fileName = urlParts[urlParts.length - 1].split('?')[0]; // 移除查询参数
-
-  const { error } = await supabase.storage
-    .from(bucket)
-    .remove([fileName]);
-
-  if (error) {
-    throw new Error(`删除失败: ${error.message}`);
-  }
 }

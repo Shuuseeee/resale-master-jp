@@ -1781,10 +1781,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('receipts', 'receipts', true), ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "Public can view receipt images" ON storage.objects FOR SELECT USING ((bucket_id = 'receipts'::text));
-CREATE POLICY "Users can upload receipt images" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'receipts'::text));
-CREATE POLICY "Users can update receipt images" ON storage.objects FOR UPDATE TO authenticated USING ((bucket_id = 'receipts'::text)) WITH CHECK ((bucket_id = 'receipts'::text));
-CREATE POLICY "Users can delete receipt images" ON storage.objects FOR DELETE TO authenticated USING ((bucket_id = 'receipts'::text));
+-- 交易收据：桶保持公开（原生 App 存的是公开地址），但不许列目录；只许本人在 {user_id}/ 下上传，改 / 删只限自己的文件
+CREATE POLICY receipts_select_own ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'receipts' AND ((storage.foldername(name))[1] = auth.uid()::text OR owner_id = auth.uid()::text));
+CREATE POLICY receipts_insert_own ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'receipts' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY receipts_update_own ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'receipts' AND ((storage.foldername(name))[1] = auth.uid()::text OR owner_id = auth.uid()::text)) WITH CHECK (bucket_id = 'receipts' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY receipts_delete_own ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'receipts' AND ((storage.foldername(name))[1] = auth.uid()::text OR owner_id = auth.uid()::text));
 -- 经费凭证：私有桶，路径第一层 = 用户 id，只有本人能读 / 传 / 删（查看用签名地址）
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES ('expense-receipts', 'expense-receipts', false, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
