@@ -31,6 +31,8 @@ import { Archive20Filled, Archive20Regular } from '@fluentui/react-icons/headles
 import { Toolbox20Filled, Toolbox20Regular } from '@fluentui/react-icons/headless/svg/toolbox';
 import { ArrowRepeatAll20Filled, ArrowRepeatAll20Regular } from '@fluentui/react-icons/headless/svg/arrow-repeat-all';
 import RecurringExpensesPanel from '@/components/expenses/RecurringExpensesPanel';
+import { Attach16Regular } from '@fluentui/react-icons/headless/svg/attach';
+import { getAttachmentCounts, removeExpenseFiles } from '@/lib/api/expense-attachments';
 
 // 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分类与买取X 一致，见 lib/expenses/categories.ts）。
 // 最后一项「定期经费」不是分类，是规则管理视图（新建定期经费后跳到 ?view=recurring）。
@@ -51,6 +53,7 @@ const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
 
 const columnHelper = createColumnHelper<SuppliesCost>();
 const NO_SUPPLIES: SuppliesCost[] = [];
+const NO_COUNTS: Record<string, number> = {};
 
 export default function SuppliesPage() {
   const queryClient = useQueryClient();
@@ -73,6 +76,12 @@ export default function SuppliesPage() {
     queryFn: getSuppliesCosts,
   });
 
+  // 凭证件数单独查：库未升级时返回空表，不影响列表
+  const { data: attachmentCounts = NO_COUNTS } = useQuery({
+    queryKey: ['expense-attachment-counts'],
+    queryFn: getAttachmentCounts,
+  });
+
   useEffect(() => {
     const handler = () => queryClient.invalidateQueries({ queryKey: ['supplies'] });
     window.addEventListener('bfcache-restore', handler);
@@ -84,6 +93,12 @@ export default function SuppliesPage() {
       return;
     }
 
+    try {
+      await removeExpenseFiles(id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '删除凭证文件失败，请重试');
+      return;
+    }
     const success = await deleteSuppliesCost(id);
     if (success) {
       // 精准打补丁（同时清除写入事件留下的过期标记），不必为删一条重拉整张列表
@@ -116,6 +131,16 @@ export default function SuppliesPage() {
         <span className="inline-flex items-center gap-2">
           {info.getValue() || '-'}
           {info.row.original.recurring_id && <span className={badge.neutral}>定期</span>}
+          {attachmentCounts[info.row.original.id] > 0 && (
+            <Link
+              href={`/supplies/${info.row.original.id}/edit`}
+              className="inline-flex items-center gap-0.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]"
+              title={`${attachmentCounts[info.row.original.id]} 个凭证`}
+            >
+              <Attach16Regular />
+              {attachmentCounts[info.row.original.id]}
+            </Link>
+          )}
         </span>
       ),
       meta: { card: { slot: 'title' } },
@@ -152,7 +177,7 @@ export default function SuppliesPage() {
       ),
       meta: { align: 'right', card: { slot: 'actions' } },
     }),
-  ], [handleDelete]);
+  ], [handleDelete, attachmentCounts]);
 
   useSectionDrawer({ path: '/supplies', items: FILTER_ITEMS, selected: filter, onSelect: setFilter });
 

@@ -414,6 +414,18 @@ CREATE TABLE public.recurring_expenses (
   updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- 经费凭证附件元数据；文件在私有桶 expense-receipts 的 {user_id}/{expense_id}/ 下
+CREATE TABLE public.expense_attachments (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid DEFAULT auth.uid() NOT NULL,
+  expense_id uuid NOT NULL,
+  path text NOT NULL,
+  file_name text NOT NULL,
+  mime_type text NOT NULL,
+  size integer NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE public.transaction_history (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   transaction_id uuid NOT NULL,
@@ -509,6 +521,7 @@ ALTER TABLE public.return_records ADD CONSTRAINT return_records_pkey PRIMARY KEY
 ALTER TABLE public.sale_orders ADD CONSTRAINT sale_orders_pkey PRIMARY KEY (id);
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_pkey PRIMARY KEY (id);
 ALTER TABLE public.selling_platforms ADD CONSTRAINT selling_platforms_pkey PRIMARY KEY (id);
+ALTER TABLE public.expense_attachments ADD CONSTRAINT expense_attachments_pkey PRIMARY KEY (id);
 ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_pkey PRIMARY KEY (id);
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_pkey PRIMARY KEY (id);
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_pkey PRIMARY KEY (id);
@@ -517,6 +530,7 @@ ALTER TABLE public.user_line_links ADD CONSTRAINT user_line_links_pkey PRIMARY K
 ALTER TABLE public.user_preferences ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (user_id);
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_pkey PRIMARY KEY (id);
 
+ALTER TABLE public.expense_attachments ADD CONSTRAINT expense_attachments_path_key UNIQUE (path);
 ALTER TABLE public.kaitorix_open_api_usage ADD CONSTRAINT kaitorix_open_api_usage_usage_date_key UNIQUE (usage_date);
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_jan_key UNIQUE (jan);
 ALTER TABLE public.points_platforms ADD CONSTRAINT points_platforms_name_key UNIQUE (name);
@@ -570,6 +584,8 @@ ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_selling_platform_i
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.selling_platforms ADD CONSTRAINT selling_platforms_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.expense_attachments ADD CONSTRAINT expense_attachments_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.expense_attachments ADD CONSTRAINT expense_attachments_expense_id_fkey FOREIGN KEY (expense_id) REFERENCES public.supplies_costs(id) ON DELETE CASCADE;
 ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 -- 删规则时已记的经费保留（只断开关联）
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_recurring_id_fkey FOREIGN KEY (recurring_id) REFERENCES public.recurring_expenses(id) ON DELETE SET NULL;
@@ -632,6 +648,8 @@ CREATE INDEX idx_supplies_costs_purchase_date ON public.supplies_costs USING btr
 CREATE INDEX idx_supplies_costs_user_id ON public.supplies_costs USING btree (user_id);
 CREATE INDEX idx_supplies_costs_recurring_id ON public.supplies_costs USING btree (recurring_id) WHERE (recurring_id IS NOT NULL);
 CREATE INDEX idx_recurring_expenses_user_id ON public.recurring_expenses USING btree (user_id);
+CREATE INDEX idx_expense_attachments_expense_id ON public.expense_attachments USING btree (expense_id);
+CREATE INDEX idx_expense_attachments_user_id ON public.expense_attachments USING btree (user_id);
 CREATE INDEX idx_transaction_history_tx_id ON public.transaction_history USING btree (transaction_id, changed_at DESC);
 CREATE INDEX idx_transactions_card_points_platform ON public.transactions USING btree (card_points_platform_id);
 CREATE INDEX idx_transactions_extra_platform_points_platform ON public.transactions USING btree (extra_platform_points_platform_id);
@@ -1634,6 +1652,7 @@ ALTER TABLE public.return_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.selling_platforms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.recurring_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.supplies_costs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transaction_history ENABLE ROW LEVEL SECURITY;
@@ -1715,6 +1734,9 @@ CREATE POLICY "Users can insert their own selling platforms" ON public.selling_p
 CREATE POLICY "Users can update their own selling platforms" ON public.selling_platforms FOR UPDATE TO authenticated USING (((user_id = auth.uid()) AND (is_builtin = false)));
 CREATE POLICY "Users can view built-in and own selling platforms" ON public.selling_platforms FOR SELECT TO authenticated USING (((is_builtin = true) OR (user_id = auth.uid())));
 
+-- expense_attachments
+CREATE POLICY "Users manage their own expense attachments" ON public.expense_attachments FOR ALL USING ((auth.uid() = user_id)) WITH CHECK ((auth.uid() = user_id));
+
 -- recurring_expenses
 CREATE POLICY "Users manage their own recurring expenses" ON public.recurring_expenses FOR ALL USING ((auth.uid() = user_id)) WITH CHECK ((auth.uid() = user_id));
 
@@ -1752,7 +1774,7 @@ CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT TO aut
 
 
 -- ============================================================
--- 8. Storage（收据图片 + 商品缩略图）
+-- 8. Storage（收据图片 + 商品缩略图 + 经费凭证）
 -- ============================================================
 
 INSERT INTO storage.buckets (id, name, public)
@@ -1763,6 +1785,13 @@ CREATE POLICY "Public can view receipt images" ON storage.objects FOR SELECT USI
 CREATE POLICY "Users can upload receipt images" ON storage.objects FOR INSERT TO authenticated WITH CHECK ((bucket_id = 'receipts'::text));
 CREATE POLICY "Users can update receipt images" ON storage.objects FOR UPDATE TO authenticated USING ((bucket_id = 'receipts'::text)) WITH CHECK ((bucket_id = 'receipts'::text));
 CREATE POLICY "Users can delete receipt images" ON storage.objects FOR DELETE TO authenticated USING ((bucket_id = 'receipts'::text));
+-- 经费凭证：私有桶，路径第一层 = 用户 id，只有本人能读 / 传 / 删（查看用签名地址）
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('expense-receipts', 'expense-receipts', false, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+ON CONFLICT (id) DO NOTHING;
+CREATE POLICY expense_receipts_select_own ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'expense-receipts' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY expense_receipts_insert_own ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'expense-receipts' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY expense_receipts_delete_own ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'expense-receipts' AND (storage.foldername(name))[1] = auth.uid()::text);
 -- product-images 的写入由 scraper 使用 service_role 完成
 CREATE POLICY product_images_public_select ON storage.objects FOR SELECT USING ((bucket_id = 'product-images'::text));
 CREATE POLICY product_shipping_meta_own ON public.product_shipping_meta FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

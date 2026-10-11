@@ -11,6 +11,8 @@ import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { DEFAULT_EXPENSE_CATEGORY, EXPENSE_CATEGORIES } from '@/lib/expenses/categories';
+import ExpenseAttachments from '@/components/expenses/ExpenseAttachments';
+import { uploadAttachment } from '@/lib/api/expense-attachments';
 
 const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
 const REPEAT_OPTIONS = [{ value: 'none', label: '不重复' }, ...FREQUENCY_OPTIONS];
@@ -28,6 +30,8 @@ export default function AddSupplyPage() {
   const [repeatValue, setRepeat] = useState<RecurringFrequency | 'none'>('none');
   const repeat = repeatValue === 'none' ? null : repeatValue;
   const [endDate, setEndDate] = useState('');
+  // 凭证先暂存在本地，经费保存后再上传（要用新经费的 id 做存储路径）；定期经费不带凭证
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -78,8 +82,21 @@ export default function AddSupplyPage() {
         router.push('/supplies?view=recurring');
         return;
       }
-      const { error } = await createSuppliesCost(formData);
-      if (error) throw error;
+      const { data, error } = await createSuppliesCost(formData);
+      if (error || !data) throw error ?? new Error('保存失败');
+      const failed: string[] = [];
+      for (const f of pendingFiles) {
+        try {
+          await uploadAttachment(data.id, f);
+        } catch (e) {
+          failed.push(e instanceof Error ? e.message : f.name);
+        }
+      }
+      if (failed.length) {
+        alert(`经费已保存，但有 ${failed.length} 个凭证没传上去：\n${failed.join('\n')}\n\n可以在编辑页重新上传。`);
+        router.push(`/supplies/${data.id}/edit`);
+        return;
+      }
       router.push('/supplies');
     } catch (error: any) {
       setErrors(prev => ({ ...prev, submit: error.message || '保存失败，请重试' }));
@@ -177,6 +194,8 @@ export default function AddSupplyPage() {
               <textarea name="notes" value={formData.notes} onChange={handleInputChange} rows={3} className={field + ' resize-none'} placeholder="补充说明..." />
             </div>
           </section>
+
+          {!repeat && <ExpenseAttachments pending={pendingFiles} onPendingChange={setPendingFiles} />}
 
           {errors.submit && (
             <div className="rounded-[var(--radius-lg)] border border-[var(--color-danger-border)] bg-[var(--color-danger-subtle)] p-4 text-sm text-[var(--color-danger)]">

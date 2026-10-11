@@ -11,6 +11,8 @@ import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { DEFAULT_EXPENSE_CATEGORY, EXPENSE_CATEGORIES } from '@/lib/expenses/categories';
+import ExpenseAttachments from '@/components/expenses/ExpenseAttachments';
+import { removeExpenseFiles } from '@/lib/api/expense-attachments';
 
 const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
 
@@ -99,6 +101,7 @@ export default function EditSupplyPage() {
   const handleDelete = async () => {
     if (!confirm('确定要删除这条经费吗？此操作不可恢复。')) return;
     try {
+      await removeExpenseFiles(id);
       const { error } = await supabase.from('supplies_costs').delete().eq('id', id);
       if (error) throw error;
       router.push('/supplies');
@@ -183,10 +186,12 @@ export default function EditSupplyPage() {
             </div>
           </section>
 
+          <ExpenseAttachments expenseId={id} />
+
           {errors.submit && <div className="sn-form-alert-error">{errors.submit}</div>}
 
           <div className="flex gap-3">
-            <button type="submit" disabled={saving} className={button.primary + ' flex-1'}>{saving ? '更新中...' : '更新耗材记录'}</button>
+            <button type="submit" disabled={saving} className={button.primary + ' flex-1'}>{saving ? '保存中...' : '保存修改'}</button>
             <button type="button" onClick={() => router.back()} className={button.secondary}>取消</button>
             <button type="button" onClick={handleDelete} className={button.danger}>删除</button>
           </div>

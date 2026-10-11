@@ -186,6 +186,18 @@ export interface SuppliesCost {
   updated_at: string;
 }
 
+/** 经费凭证附件：文件在私有桶 expense-receipts 的 path，查看用签名地址 */
+export interface ExpenseAttachment {
+  id: string;
+  user_id: string;
+  expense_id: string;
+  path: string;
+  file_name: string;
+  mime_type: string;
+  size: number;
+  created_at: string;
+}
+
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly';
 
 /** 定期经费规则：到期的那几笔由 RPC generate_recurring_expenses 补记进 supplies_costs */
