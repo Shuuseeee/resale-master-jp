@@ -13,7 +13,6 @@ import DualIcon from '@/components/fluent/DualIcon';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
 import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
-import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import { DocumentBulletList20Filled, DocumentBulletList20Regular } from '@fluentui/react-icons/headless/svg/document-bullet-list';
 import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
 import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
@@ -198,7 +197,7 @@ function TransactionsContent() {
     const dateFrom = searchParams.get('df') || '';
     const dateTo = searchParams.get('dt') || '';
     const productName = searchParams.get('pn') || '';
-    // 兼容旧单值深链（如 kaitorix-prices 的 ?jan=xxx），逗号分隔即多选
+    // 兼容旧单值深链（?jan=xxx），逗号分隔即多选
     const includeJanCodes = (searchParams.get('jan') || '').split(',').filter(Boolean);
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
@@ -1095,7 +1094,6 @@ function TransactionsContent() {
       },
       priority: 6,
     },
-    { id: 'price-center', label: '价格中心', icon: { regular: BarcodeScanner20Regular, filled: BarcodeScanner20Filled }, href: '/kaitorix-prices', priority: 7 },
     ...(kaitorixEnabled && buybackPrices.size > 0 && !kaitorixLoading
       ? [{ id: 'jan-list', label: 'JAN 列表', icon: { regular: DocumentBulletList20Regular, filled: DocumentBulletList20Filled }, onClick: () => setShowJanList(true), priority: 8 }]
       : []),
@@ -1152,15 +1150,6 @@ function TransactionsContent() {
                 </svg>
                 <span className="hidden sm:inline">{compareMode ? `退出多选(${selectedIds.size})` : '多选'}</span>
               </button>
-              <Link
-                href="/kaitorix-prices"
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] whitespace-nowrap"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h5M5 7h14a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" />
-                </svg>
-                <span className="hidden sm:inline">价格中心</span>
-              </Link>
               {kaitorixEnabled && (
                 <button
                   onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
@@ -1693,6 +1682,7 @@ function TransactionsContent() {
         onClose={() => setShowComparison(false)}
         selectedTransactions={selectedTransactions}
         buybackMap={buybackPrices}
+        onForceRefresh={kaitorixState.forceRefresh}
       />
 
       <JanListSheet

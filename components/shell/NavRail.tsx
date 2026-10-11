@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
+import { BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import { Receipt20Filled, Receipt20Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
 import { DataBarVertical20Filled, DataBarVertical20Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
@@ -31,7 +31,6 @@ const NAV_GROUPS: { caption?: string; items: NavItem[] }[] = [
     items: [
       { name: '仪表盘', href: '/dashboard', icon: <DualIcon regular={Home20Regular} filled={Home20Filled} /> },
       { name: '交易列表', href: '/transactions', icon: <DualIcon regular={ClipboardTextLtr20Regular} filled={ClipboardTextLtr20Filled} /> },
-      { name: '买取价格', href: '/kaitorix-prices', icon: <DualIcon regular={BarcodeScanner20Regular} filled={BarcodeScanner20Filled} /> },
     ],
   },
   {

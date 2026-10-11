@@ -44,6 +44,8 @@ const nextConfig = {
     return [
       // 支付方式已并入设置页的一个区块（2026-10-09）；:path* 同时覆盖旧的 add、[id]/edit
       { source: '/settings/payment-methods/:path*', destination: '/settings#payment-methods', permanent: false },
+      // 买取价格页已删除（2026-10-11）：价格看仪表盘「库存 / JAN汇总」，官方强刷在比价弹层
+      { source: '/kaitorix-prices', destination: '/dashboard', permanent: false },
     ]
   },
 

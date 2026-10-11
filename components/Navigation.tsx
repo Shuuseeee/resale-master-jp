@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { FluentIcon } from '@fluentui/react-icons/headless';
 import { Add24Filled } from '@fluentui/react-icons/headless/svg/add';
-import { BarcodeScanner16Regular, BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
-import { Receipt16Regular, Receipt24Filled, Receipt24Regular } from '@fluentui/react-icons/headless/svg/receipt';
+import { BarcodeScanner16Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
+import { Receipt16Regular, Receipt20Filled, Receipt20Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr16Regular, ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
 import { DataBarVertical24Filled, DataBarVertical24Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
 import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
@@ -113,7 +113,6 @@ export default function Navigation() {
   // 移动端更多抽屉中的次要项目（当前页用实心图标）
   const moreItems: { name: string; href: string; icon: FluentIcon; activeIcon: FluentIcon }[] = [
     { name: '设置', href: '/settings', icon: Settings24Regular, activeIcon: Settings24Filled },
-    { name: '经费', href: '/supplies', icon: Receipt24Regular, activeIcon: Receipt24Filled },
     { name: '数据分析', href: '/analytics', icon: DataBarVertical24Regular, activeIcon: DataBarVertical24Filled },
     { name: '税务申报', href: '/tax-report', icon: DocumentText24Regular, activeIcon: DocumentText24Filled },
   ];
@@ -139,7 +138,7 @@ export default function Navigation() {
       {/* ── 桌面端左导航（grid 第二行第一列，padding-left 8） ── */}
       <aside className="app-shell__aside hidden md:flex">
         <NavRail onScanArrival={() => setShowScanArrival(true)} />
-        {/* 分区抽屉（交易列表 / 买取价格 / 税务申报 / 经费 / 设置）：≥1025 内嵌在导航右侧，768–1024 以浮层渲染到 body */}
+        {/* 分区抽屉（交易列表 / 税务申报 / 经费 / 设置）：≥1025 内嵌在导航右侧，768–1024 以浮层渲染到 body */}
         <SectionDrawer />
       </aside>
 
@@ -215,18 +214,18 @@ export default function Navigation() {
               </div>
 
               <Link
-                href="/kaitorix-prices"
+                href="/supplies"
                 onClick={() => triggerHaptic('light')}
             className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold transition-colors ${
-              isActive('/kaitorix-prices')
+              isActive('/supplies')
                 ? 'text-[var(--color-primary)]'
                 : 'text-[var(--color-text-muted)] active:bg-[var(--color-bg-pressed)]'
             }`}
               >
-            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/kaitorix-prices') ? 'bg-[var(--color-primary-light)]' : ''}`}>
-              {isActive('/kaitorix-prices') ? <BarcodeScanner20Filled /> : <BarcodeScanner20Regular />}
+            <span className={`flex h-8 w-10 items-center justify-center rounded-[var(--radius-md)] ${isActive('/supplies') ? 'bg-[var(--color-primary-light)]' : ''}`}>
+              {isActive('/supplies') ? <Receipt20Filled /> : <Receipt20Regular />}
             </span>
-            <span>买取价</span>
+            <span>经费</span>
               </Link>
 
               <button

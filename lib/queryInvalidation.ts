@@ -4,7 +4,7 @@
 // 键为 queryKey 的第一段（['dashboard', ...] 的 'dashboard'）。派生数据（仪表盘 / 分析 / 税务）
 // 依赖交易、销售、退货，所以这些表的写入会让它们全部失效。
 
-const FINANCIAL = ['transactions', 'dashboard', 'analytics', 'tax-report', 'kaitorix-prices'] as const;
+const FINANCIAL = ['transactions', 'dashboard', 'analytics', 'tax-report'] as const;
 
 const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   transactions: FINANCIAL,

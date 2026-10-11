@@ -1,6 +1,11 @@
+// components/BuybackComparisonModal.tsx — 买取价格比较弹层（交易页 / 仪表盘「まとめ比較」）
+// 传入 onForceRefresh 时，每个商品卡片有「官方强刷」（消耗 1 次 Kaitorix 官方 API 额度），顶部显示今天剩余配额。
+// 2026-10-11 买取价格页删除后，网页上的手动强刷只在这里。
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import Modal from '@/components/Modal';
+import MessageBar from '@/components/fluent/MessageBar';
 import { formatCurrency, getAvailableQty } from '@/lib/financial/calculator';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { TransactionForCompare } from '@/hooks/useBuybackComparison';
@@ -9,18 +14,59 @@ import ProductCompareCard from '@/components/BuybackComparison/ProductCompareCar
 import StoreRowDesktop from '@/components/BuybackComparison/StoreRowDesktop';
 import StoreRowMobile from '@/components/BuybackComparison/StoreRowMobile';
 
+export type ForceRefreshHandler = (jan: string) => Promise<{ ok: boolean; error?: string }>;
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   selectedTransactions: TransactionForCompare[];
   buybackMap: Map<string, BuybackInfo>;
+  /** 官方强刷一个 JAN，成功后由调用方更新 buybackMap */
+  onForceRefresh?: ForceRefreshHandler;
 }
 
-export default function BuybackComparisonModal({ isOpen, onClose, selectedTransactions, buybackMap }: Props) {
+interface Usage {
+  remaining: number;
+  limit: number;
+}
+
+async function fetchUsage(): Promise<Usage | null> {
+  try {
+    const res = await fetch('/api/kaitorix/open-usage');
+    if (!res.ok) return null;
+    const body = await res.json();
+    return { remaining: Number(body.remaining), limit: Number(body.limit) };
+  } catch {
+    return null;
+  }
+}
+
+export default function BuybackComparisonModal({ isOpen, onClose, selectedTransactions, buybackMap, onForceRefresh }: Props) {
   const {
     rows, products, bestPossibleRevenue, bestPossibleProfit,
     totalSelectedQty, quantities, updateQty
   } = useBuybackComparison({ selectedTransactions, buybackMap, isOpen });
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [refreshingJan, setRefreshingJan] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen || !onForceRefresh) return;
+    setRefreshError('');
+    fetchUsage().then(setUsage);
+  }, [isOpen, onForceRefresh]);
+
+  const forceRefresh = useCallback(async (jan: string, name: string) => {
+    if (!onForceRefresh || refreshingJan) return;
+    const left = usage ? `今天剩余 ${usage.remaining}/${usage.limit} 次` : '剩余次数暂未知';
+    if (!confirm(`用 1 次官方额度刷新「${name}」的买取价？\n${left}`)) return;
+    setRefreshingJan(jan);
+    setRefreshError('');
+    const result = await onForceRefresh(jan);
+    if (!result.ok) setRefreshError(result.error || '官方强刷失败');
+    setUsage(await fetchUsage());
+    setRefreshingJan(null);
+  }, [onForceRefresh, refreshingJan, usage]);
 
   if (!isOpen) return null;
 
@@ -35,6 +81,30 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
           <span>比较数量 <span className="font-semibold text-[var(--color-text)]">{totalSelectedQty}</span> 个</span>
           <span>·</span>
           <span><span className="font-semibold text-[var(--color-text)]">{rows.length}</span> 家店铺</span>
+          {onForceRefresh && usage && (
+            <span className="ml-auto">官方配额 <span className="font-semibold text-[var(--color-text)]">{usage.remaining}/{usage.limit}</span></span>
+          )}
+        </div>
+        {refreshError && <MessageBar intent="error">{refreshError}</MessageBar>}
+
+        {/* 商品卡片：没有报价时也显示（可官方强刷） */}
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="text-xs font-semibold text-[var(--color-text)]">比较数量</div>
+            <div className="text-xs text-[var(--color-text-muted)]">可临时调整，不会修改库存</div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {products.map(p => (
+              <ProductCompareCard
+                key={p.transactionId}
+                product={p}
+                onQtyChange={(v) => updateQty(p.transactionId, v)}
+                onForceRefresh={onForceRefresh && p.janCode ? () => forceRefresh(p.janCode!, p.productName) : undefined}
+                refreshing={!!p.janCode && refreshingJan === p.janCode}
+                refreshDisabled={!!refreshingJan}
+              />
+            ))}
+          </div>
         </div>
 
         {rows.length === 0 ? (
@@ -43,22 +113,6 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
           </div>
         ) : (
           <>
-            <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="text-xs font-semibold text-[var(--color-text)]">比较数量</div>
-                <div className="text-xs text-[var(--color-text-muted)]">可临时调整，不会修改库存</div>
-              </div>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                {products.map(p => (
-                  <ProductCompareCard
-                    key={p.transactionId}
-                    product={p}
-                    onQtyChange={(v) => updateQty(p.transactionId, v)}
-                  />
-                ))}
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3">
                 <div className="text-xs text-[var(--color-text-muted)]">整批最高店</div>

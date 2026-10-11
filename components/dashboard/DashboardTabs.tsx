@@ -1,9 +1,9 @@
 // components/dashboard/DashboardTabs.tsx — 仪表盘底部标签页（复刻买取X：库存 / 未到货 / 出售记录 / JAN 汇总 / 经费 + まとめ比較）
 // 数据来自仪表盘已取的原始数据（lib/dashboard/tabs.ts），跟随页面筛选；每个标签页另有自己的小筛选与 CSV 导出。
-// 「まとめ比較」= 勾选的库存 / 未到货商品打开本应用的买取比较（BuybackComparisonModal），价格用仪表盘已取的报价，不消耗官方 API 额度。
+// 「まとめ比較」= 勾选的库存 / 未到货商品打开本应用的买取比较（BuybackComparisonModal），价格用仪表盘已取的报价；弹层里的「官方强刷」才消耗官方 API 额度。
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table';
@@ -21,6 +21,7 @@ import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import { supabase } from '@/lib/supabase/client';
 import { markTransactionArrived } from '@/lib/api/arrivals';
 import { downloadCsv } from '@/lib/api/order-export';
+import { forceRefreshBuybackPrice } from '@/lib/api/kaitorix';
 import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { input } from '@/lib/theme';
@@ -201,6 +202,14 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
     setToast(ok ? '已标记为到货' : '操作失败，请重试');
     if (ok) refresh();
   };
+
+  // 比价弹层里的官方强刷：服务端写入价格缓存后重拉仪表盘数据（报价来自视图 assistant_buyback_prices）
+  const forceRefreshJan = useCallback(async (jan: string) => {
+    const result = await forceRefreshBuybackPrice(jan);
+    if (!result.data) return { ok: false, error: result.error };
+    await queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    return { ok: true };
+  }, [queryClient]);
 
   // まとめ比較：勾选的行 → 本应用的买取比较
   const compareRows = (tab === 'stock' ? stockShown : tab === 'pending' ? pendingShown : []).filter(r => selection[r.p.id]);
@@ -593,7 +602,13 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
         confirmText="确认到货"
         cancelText="取消"
       />
-      <BuybackComparisonModal isOpen={compareTxs.length > 0} onClose={() => setCompareTxs([])} selectedTransactions={compareTxs} buybackMap={compareMap} />
+      <BuybackComparisonModal
+        isOpen={compareTxs.length > 0}
+        onClose={() => setCompareTxs([])}
+        selectedTransactions={compareTxs}
+        buybackMap={compareMap}
+        onForceRefresh={forceRefreshJan}
+      />
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
     </section>
   );

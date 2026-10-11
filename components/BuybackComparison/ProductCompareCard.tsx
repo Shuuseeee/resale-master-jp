@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { Open16Regular } from '@fluentui/react-icons/headless/svg/open';
+import { ArrowSync16Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
+import Spinner from '@/components/fluent/Spinner';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { card } from '@/lib/theme';
 import type { ProductSummary } from '@/hooks/useBuybackComparison';
@@ -10,28 +10,34 @@ import QuantityStepper from './QuantityStepper';
 interface ProductCompareCardProps {
   product: ProductSummary;
   onQtyChange: (value: number) => void;
+  /** 官方强刷这个商品的买取价（有 JAN 且调用方支持时才传） */
+  onForceRefresh?: () => void;
+  refreshing?: boolean;
+  refreshDisabled?: boolean;
 }
 
 // 比较数量区的商品卡片：标题（名+JAN）→ 成本/步进器 → 最高买取价/预计利润
-export default function ProductCompareCard({ product, onQtyChange }: ProductCompareCardProps) {
+export default function ProductCompareCard({ product, onQtyChange, onForceRefresh, refreshing = false, refreshDisabled = false }: ProductCompareCardProps) {
   const { productName, janCode, maxQty, qty, unitCost, bestPrice, bestStore, bestProfit, hasData } = product;
 
   return (
     <div className={`${card.primary} p-3`}>
-      {/* 标题栏：商品名 + 比价中心链接 + 元数据 */}
+      {/* 标题栏：商品名 + 官方强刷 + 元数据 */}
       <div className="flex items-center gap-1.5">
-        <div className="min-w-0 truncate text-sm font-medium text-[var(--color-text)]" title={productName}>
+        <div className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text)]" title={productName}>
           {productName}
         </div>
-        {janCode && (
-          <Link
-            href={`/kaitorix-prices?jan=${encodeURIComponent(janCode)}`}
-            className="-m-2 flex-shrink-0 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
-            title="在比价中心查看"
-            aria-label="在比价中心查看"
+        {onForceRefresh && (
+          <button
+            type="button"
+            onClick={onForceRefresh}
+            disabled={refreshDisabled}
+            className="fluent-btn fluent-btn--subtle fluent-btn--sm shrink-0 gap-1"
+            title="消耗 1 次官方 API 额度，取最新买取价"
           >
-            <Open16Regular className="h-3.5 w-3.5" />
-          </Link>
+            {refreshing ? <Spinner /> : <ArrowSync16Regular />}
+            {refreshing ? '强刷中' : '官方强刷'}
+          </button>
         )}
       </div>
       <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">

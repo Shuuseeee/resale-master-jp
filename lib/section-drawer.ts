@@ -15,7 +15,6 @@ import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 /** 有分区抽屉的页面 → 抽屉标题（与导航上的名称一致） */
 export const SECTION_DRAWER_PAGES: Record<string, string> = {
   '/transactions': '交易列表',
-  '/kaitorix-prices': '买取价格',
   '/tax-report': '税务申报',
   '/supplies': '经费',
   '/settings': '设置',
