@@ -1122,8 +1122,9 @@ function TransactionsContent() {
           </div>
         </div>
 
-        {/* 统计卡片 */}
-        <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-4 lg:grid-cols-6">
+        {/* 统计卡片：3 列，内容区够宽（≥760）才 6 列——按内容区宽度（容器查询），分区抽屉开着时窗口宽内容区也可能很窄 */}
+        <div className="sn-cq mb-5">
+        <div className="sn-stats-3-6 grid gap-2 sm:gap-4">
           <div className={card.stat + ' !p-3 sm:!p-4'}>
             <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">总成本</div>
             <div className="truncate text-base font-bold text-[var(--color-text)] sm:text-xl">{formatCurrency(stats.totalCost)}</div>
@@ -1152,6 +1153,7 @@ function TransactionsContent() {
             <div className="mb-1 text-xs uppercase tracking-[0.04em] text-[var(--color-text-muted)]">已售出</div>
             <div className="truncate text-base font-bold text-[var(--color-success)] sm:text-xl">{stats.sold}</div>
           </div>
+        </div>
         </div>
 
         {/* 状态标签栏（手机，Fluent 横向 TabList；桌面在分区抽屉里切换） */}

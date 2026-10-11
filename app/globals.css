@@ -55,6 +55,19 @@
     @apply mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)];
   }
 
+  /* 通用：按内容区宽度切换列数的容器（分区抽屉开着时内容区比窗口窄得多，lg: / xl: 判断不准） */
+  .sn-cq {
+    container-type: inline-size;
+  }
+  .sn-stats-3-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @container (min-width: 760px) {
+    .sn-stats-3-6 {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
   /* 交易表单：同样按内容区宽度切两栏。单栏时栏容器 display: contents，卡片按 order 排成填写顺序 */
   .sn-form-layout {
     container-type: inline-size;

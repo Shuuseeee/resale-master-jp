@@ -276,7 +276,7 @@ export default function SuppliesPage() {
         {Object.keys(monthlyStats).length > 0 && (
           <div className={card.primary + ' p-6 mt-8'}>
             <h2 className={heading.h3 + ' mb-4'}>月度统计</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]">
               {Object.entries(monthlyStats)
                 .sort((a, b) => b[0].localeCompare(a[0]))
                 .map(([month, amount]) => (

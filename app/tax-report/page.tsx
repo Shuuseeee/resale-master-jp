@@ -36,6 +36,9 @@ const NO_YEARS: number[] = [];
 const NO_DETAILS: TaxReportDetail[] = [];
 const NO_INVENTORY: TaxInventoryItem[] = [];
 
+// 统计卡片行：按内容区实际宽度自动排列（每张至少 160），不按窗口宽度——分区抽屉开着时内容区会变窄
+const statGridClass = 'grid grid-cols-1 gap-4 md:grid-cols-[repeat(auto-fit,minmax(160px,1fr))]';
+
 export default function TaxReportPage() {
   const online = useOnlineStatus();
   const [exporting, setExporting] = useState(false);
@@ -523,7 +526,7 @@ export default function TaxReportPage() {
                 <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-primary)]">
                   收入
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={statGridClass}>
                   <div className={card.stat + ' border-[var(--color-primary-border)]'}>
                     <div className={statLabelClass}>
                       销售额（现金）
@@ -556,7 +559,7 @@ export default function TaxReportPage() {
                 <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-danger)]">
                   必要经费
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className={statGridClass}>
                   <div className={card.stat}>
                     <div className={statLabelClass}>
                       采购成本（售出按分）
@@ -605,7 +608,7 @@ export default function TaxReportPage() {
                 <h3 className="mb-4 text-[17px] font-semibold text-[var(--color-info)]">
                   所得金额
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className={statGridClass}>
                   <div className={card.stat + ' border-[var(--color-info-border)]'}>
                     <div className={statLabelClass}>
                       杂项所得估算（收入 - 经费）
