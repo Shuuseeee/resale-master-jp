@@ -29,8 +29,11 @@ import { EXPENSE_CATEGORIES, expenseCategoryLabel } from '@/lib/expenses/categor
 import { VehicleCar20Filled, VehicleCar20Regular } from '@fluentui/react-icons/headless/svg/vehicle-car';
 import { Archive20Filled, Archive20Regular } from '@fluentui/react-icons/headless/svg/archive';
 import { Toolbox20Filled, Toolbox20Regular } from '@fluentui/react-icons/headless/svg/toolbox';
+import { ArrowRepeatAll20Filled, ArrowRepeatAll20Regular } from '@fluentui/react-icons/headless/svg/arrow-repeat-all';
+import RecurringExpensesPanel from '@/components/expenses/RecurringExpensesPanel';
 
-// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分类与买取X 一致，见 lib/expenses/categories.ts）
+// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分类与买取X 一致，见 lib/expenses/categories.ts）。
+// 最后一项「定期经费」不是分类，是规则管理视图（新建定期经费后跳到 ?view=recurring）。
 const CATEGORY_ICONS: Record<string, ReactNode> = {
   送料: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} />,
   交通費: <DualIcon regular={VehicleCar20Regular} filled={VehicleCar20Filled} />,
@@ -39,9 +42,11 @@ const CATEGORY_ICONS: Record<string, ReactNode> = {
   消耗品: <DualIcon regular={Toolbox20Regular} filled={Toolbox20Filled} />,
   その他: <DualIcon regular={MoreHorizontal20Regular} filled={MoreHorizontal20Filled} />,
 };
+const RECURRING = 'recurring';
 const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
   { id: 'all', label: '全部', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
   ...EXPENSE_CATEGORIES.map(c => ({ id: c.value, label: c.label, icon: CATEGORY_ICONS[c.value] })),
+  { id: RECURRING, label: '定期经费', icon: <DualIcon regular={ArrowRepeatAll20Regular} filled={ArrowRepeatAll20Filled} /> },
 ];
 
 const columnHelper = createColumnHelper<SuppliesCost>();
@@ -51,6 +56,15 @@ export default function SuppliesPage() {
   const queryClient = useQueryClient();
   const online = useOnlineStatus();
   const [filter, setFilter] = useState<string>('all');
+
+  useEffect(() => {
+    // 新建定期经费后跳来时带 ?view=recurring：选中后把参数去掉，之后切换分类、刷新都不再被它拉回
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('view') !== RECURRING) return;
+    setFilter(RECURRING);
+    url.searchParams.delete('view');
+    window.history.replaceState(window.history.state, '', url);
+  }, []);
 
   // 读取走 useQuery：切页回来先用缓存，离线可看；新增 / 编辑 / 删除后的失效由
   // QueryInvalidationBridge 统一处理（supplies_costs → ['supplies']，见 lib/queryInvalidation.ts）
@@ -98,7 +112,12 @@ export default function SuppliesPage() {
     columnHelper.accessor('description', {
       header: '描述',
       enableSorting: false,
-      cell: info => info.getValue() || '-',
+      cell: info => (
+        <span className="inline-flex items-center gap-2">
+          {info.getValue() || '-'}
+          {info.row.original.recurring_id && <span className={badge.neutral}>定期</span>}
+        </span>
+      ),
       meta: { card: { slot: 'title' } },
     }),
     columnHelper.accessor('amount', {
@@ -184,6 +203,9 @@ export default function SuppliesPage() {
           </div>
         </div>
 
+        {/* 定期经费视图（手机的切换按钮在下面的筛选器里） */}
+        {filter === RECURRING && <MobileFilter filter={filter} onChange={setFilter} />}
+        {filter === RECURRING ? <RecurringExpensesPanel /> : (<>
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className={card.stat}>
@@ -212,34 +234,7 @@ export default function SuppliesPage() {
           </div>
         </div>
 
-        {/* 筛选器（手机；桌面在分区抽屉里切换） */}
-        <div className={card.primary + ' p-4 mb-6 md:hidden'}>
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-[var(--color-primary-bg)] text-white'
-                  : 'bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80'
-              }`}
-            >
-              全部
-            </button>
-            {EXPENSE_CATEGORIES.map(({ value: key, label }) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === key
-                    ? 'bg-[var(--color-primary-bg)] text-white'
-                    : 'bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <MobileFilter filter={filter} onChange={setFilter} />
 
         {/* 经费列表 */}
         {filteredSupplies.length === 0 ? (
@@ -284,8 +279,32 @@ export default function SuppliesPage() {
             </div>
           </div>
         )}
+        </>)}
       </div>
     </div>
     </PullToRefresh>
+  );
+}
+
+/** 手机端的分类 / 定期经费切换（桌面在分区抽屉里切换） */
+function MobileFilter({ filter, onChange }: { filter: string; onChange: (id: string) => void }) {
+  return (
+    <div className={card.primary + ' p-4 mb-6 md:hidden'}>
+      <div className="flex gap-3 flex-wrap">
+        {FILTER_ITEMS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => onChange(id)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === id
+                ? 'bg-[var(--color-primary-bg)] text-white'
+                : 'bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

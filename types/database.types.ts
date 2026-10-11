@@ -175,11 +175,33 @@ export interface FixedCost {
 export interface SuppliesCost {
   id: string;
   user_id: string;
-  category: string; // 包装材料、运输耗材、标签打印、其他
+  category: string; // 买取X 的日文分类（lib/expenses/categories.ts）；原生 App 改版前可能写入旧的中文分类
   amount: number;
   purchase_date: string;
   description: string | null;
   notes: string | null;
+  /** 由定期经费自动记入时指回规则（recurring_expenses.id）；库未升级时读不到该列 */
+  recurring_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly';
+
+/** 定期经费规则：到期的那几笔由 RPC generate_recurring_expenses 补记进 supplies_costs */
+export interface RecurringExpense {
+  id: string;
+  user_id: string;
+  category: string;
+  amount: number;
+  description: string | null;
+  notes: string | null;
+  frequency: RecurringFrequency;
+  start_date: string;
+  end_date: string | null;
+  active: boolean;
+  /** 已记入的笔数（第 k 笔日期 = start_date + k × 周期） */
+  generated_count: number;
   created_at: string;
   updated_at: string;
 }

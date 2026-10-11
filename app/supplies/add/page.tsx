@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSuppliesCost } from '@/lib/api/supplies';
-import type { SuppliesCostFormData } from '@/types/database.types';
+import type { RecurringFrequency, SuppliesCostFormData } from '@/types/database.types';
+import { createRecurringExpense, FREQUENCY_OPTIONS, frequencyText, generateRecurringExpenses } from '@/lib/api/recurring-expenses';
 import { button, card, heading, input, layout } from '@/lib/theme';
 import PageHeader from '@/components/shell/PageHeader';
 import Select from '@/components/Select';
@@ -12,6 +13,7 @@ import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/uti
 import { DEFAULT_EXPENSE_CATEGORY, EXPENSE_CATEGORIES } from '@/lib/expenses/categories';
 
 const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
+const REPEAT_OPTIONS = [{ value: 'none', label: '不重复' }, ...FREQUENCY_OPTIONS];
 
 export default function AddSupplyPage() {
   const router = useRouter();
@@ -22,6 +24,10 @@ export default function AddSupplyPage() {
     description: '',
     notes: '',
   });
+  // 重复：选了周期就登记为定期经费，由 generate_recurring_expenses 按日期记入（到今天为止的立即补记）
+  const [repeatValue, setRepeat] = useState<RecurringFrequency | 'none'>('none');
+  const repeat = repeatValue === 'none' ? null : repeatValue;
+  const [endDate, setEndDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,7 +52,8 @@ export default function AddSupplyPage() {
     const next: Record<string, string> = {};
     if (!formData.category) next.category = '请选择经费分类';
     if (formData.amount <= 0) next.amount = '金额必须大于 0';
-    if (!formData.purchase_date) next.purchase_date = '请选择采购日期';
+    if (!formData.purchase_date) next.purchase_date = repeat ? '请选择开始日期' : '请选择采购日期';
+    if (repeat && endDate && formData.purchase_date && endDate < formData.purchase_date) next.end_date = '结束日期不能早于开始日期';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -57,6 +64,20 @@ export default function AddSupplyPage() {
 
     setIsSubmitting(true);
     try {
+      if (repeat) {
+        await createRecurringExpense({
+          category: formData.category,
+          amount: formData.amount,
+          description: formData.description || null,
+          notes: formData.notes || null,
+          frequency: repeat,
+          start_date: formData.purchase_date,
+          end_date: endDate || null,
+        });
+        await generateRecurringExpenses();
+        router.push('/supplies?view=recurring');
+        return;
+      }
       const { error } = await createSuppliesCost(formData);
       if (error) throw error;
       router.push('/supplies');
@@ -102,7 +123,7 @@ export default function AddSupplyPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">采购日期 <span className="text-[var(--color-danger)]">*</span></label>
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">{repeat ? '开始日期' : '采购日期'} <span className="text-[var(--color-danger)]">*</span></label>
                 <DatePicker
                   selected={formData.purchase_date ? parseDateFromLocal(formData.purchase_date) : null}
                   onChange={date => setFormData(prev => ({ ...prev, purchase_date: date ? formatDateToLocal(date) : '' }))}
@@ -112,8 +133,33 @@ export default function AddSupplyPage() {
               </div>
             </div>
 
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">重复</label>
+                <Select value={repeatValue} onChange={v => setRepeat(v as RecurringFrequency | 'none')} options={REPEAT_OPTIONS} className={field} />
+              </div>
+              {repeat && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">结束日期</label>
+                  <DatePicker
+                    selected={endDate ? parseDateFromLocal(endDate) : null}
+                    onChange={date => setEndDate(date ? formatDateToLocal(date) : '')}
+                    className={field}
+                    placeholder="不结束"
+                    minDate={parseDateFromLocal(formData.purchase_date) ?? undefined}
+                  />
+                  {errors.end_date && <p className="mt-1 text-sm text-[var(--color-danger)]">{errors.end_date}</p>}
+                </div>
+              )}
+            </div>
+            {repeat && formData.purchase_date && (
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                {frequencyText(repeat, formData.purchase_date)}自动记一笔{endDate ? `，到 ${endDate} 为止` : ''}；开始日期到今天（含）为止的会立即记入。之后可在「经费 › 定期经费」暂停或修改。
+              </p>
+            )}
+
             <div className="mt-4">
-              <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">金额 <span className="text-[var(--color-danger)]">*</span></label>
+              <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">{repeat ? '每次金额' : '金额'} <span className="text-[var(--color-danger)]">*</span></label>
               <div className="relative">
                 <input type="number" name="amount" value={formData.amount || ''} onChange={handleNumberChange} className={field + ' pr-12'} min="0" step="0.01" />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">¥</span>

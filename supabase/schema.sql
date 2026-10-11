@@ -392,6 +392,24 @@ CREATE TABLE public.supplies_costs (
   purchase_date date DEFAULT CURRENT_DATE NOT NULL,
   description text,
   notes text,
+  recurring_id uuid,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+-- 定期经费规则：到期的那几笔由 generate_recurring_expenses() 补记进 supplies_costs（recurring_id 指回规则）
+CREATE TABLE public.recurring_expenses (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid DEFAULT auth.uid() NOT NULL,
+  category text NOT NULL,
+  amount numeric(10,2) NOT NULL,
+  description text,
+  notes text,
+  frequency text NOT NULL,
+  start_date date NOT NULL,
+  end_date date,
+  active boolean DEFAULT true NOT NULL,
+  generated_count integer DEFAULT 0 NOT NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -491,6 +509,7 @@ ALTER TABLE public.return_records ADD CONSTRAINT return_records_pkey PRIMARY KEY
 ALTER TABLE public.sale_orders ADD CONSTRAINT sale_orders_pkey PRIMARY KEY (id);
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_pkey PRIMARY KEY (id);
 ALTER TABLE public.selling_platforms ADD CONSTRAINT selling_platforms_pkey PRIMARY KEY (id);
+ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_pkey PRIMARY KEY (id);
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_pkey PRIMARY KEY (id);
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_pkey PRIMARY KEY (id);
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
@@ -508,6 +527,9 @@ ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_role_key UNIQUE 
 ALTER TABLE public.coupons ADD CONSTRAINT coupons_cashback_type_check CHECK (((cashback_type IS NULL) OR (cashback_type = ANY (ARRAY['instant'::text, 'points'::text, 'next_month'::text]))));
 ALTER TABLE public.coupons ADD CONSTRAINT coupons_discount_type_check CHECK ((discount_type = ANY (ARRAY['percentage'::text, 'fixed_amount'::text, 'point_multiply'::text, 'free_item'::text, 'bogo'::text, 'combo_deal'::text, 'cashback'::text])));
 ALTER TABLE public.coupons ADD CONSTRAINT coupons_redemption_method_check CHECK ((redemption_method = ANY (ARRAY['barcode'::text, 'qr_code'::text, 'coupon_code'::text, 'automatic'::text, 'manual'::text])));
+ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_amount_check CHECK ((amount > (0)::numeric));
+ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_frequency_check CHECK ((frequency = ANY (ARRAY['weekly'::text, 'monthly'::text, 'yearly'::text])));
+ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_end_date_check CHECK (((end_date IS NULL) OR (end_date >= start_date)));
 ALTER TABLE public.fixed_costs ADD CONSTRAINT fixed_costs_billing_cycle_check CHECK ((billing_cycle = ANY (ARRAY['monthly'::text, 'yearly'::text])));
 ALTER TABLE public.jan_thumbnail_queue ADD CONSTRAINT jan_thumbnail_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'completed'::text, 'failed'::text])));
 ALTER TABLE public.kaitorix_price_cache ADD CONSTRAINT kaitorix_price_cache_last_fetch_source_check CHECK ((last_fetch_source = ANY (ARRAY['scraper'::text, 'official'::text, 'cache'::text])));
@@ -548,6 +570,9 @@ ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_selling_platform_i
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.selling_platforms ADD CONSTRAINT selling_platforms_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+-- 删规则时已记的经费保留（只断开关联）
+ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_recurring_id_fkey FOREIGN KEY (recurring_id) REFERENCES public.recurring_expenses(id) ON DELETE SET NULL;
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
@@ -605,6 +630,8 @@ CREATE INDEX idx_selling_platforms_builtin ON public.selling_platforms USING btr
 CREATE INDEX idx_selling_platforms_user_id ON public.selling_platforms USING btree (user_id);
 CREATE INDEX idx_supplies_costs_purchase_date ON public.supplies_costs USING btree (purchase_date);
 CREATE INDEX idx_supplies_costs_user_id ON public.supplies_costs USING btree (user_id);
+CREATE INDEX idx_supplies_costs_recurring_id ON public.supplies_costs USING btree (recurring_id) WHERE (recurring_id IS NOT NULL);
+CREATE INDEX idx_recurring_expenses_user_id ON public.recurring_expenses USING btree (user_id);
 CREATE INDEX idx_transaction_history_tx_id ON public.transaction_history USING btree (transaction_id, changed_at DESC);
 CREATE INDEX idx_transactions_card_points_platform ON public.transactions USING btree (card_points_platform_id);
 CREATE INDEX idx_transactions_extra_platform_points_platform ON public.transactions USING btree (extra_platform_points_platform_id);
@@ -1083,6 +1110,53 @@ BEGIN
 END;
 $function$;
 
+-- 补记当前用户所有启用规则中到期（≤ 今天，日本时间）的经费，返回新记的笔数。
+-- SECURITY INVOKER：只能动自己的规则与经费（RLS）；FOR UPDATE 锁住规则行，两个标签页同时调用也不会重复记。
+CREATE OR REPLACE FUNCTION public.generate_recurring_expenses()
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY INVOKER
+ SET search_path = public
+AS $function$
+DECLARE
+  r public.recurring_expenses%ROWTYPE;
+  today date := (now() AT TIME ZONE 'Asia/Tokyo')::date;
+  step interval;
+  d date;
+  k integer;
+  total integer := 0;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN 0;
+  END IF;
+
+  FOR r IN
+    SELECT * FROM public.recurring_expenses
+    WHERE user_id = auth.uid() AND active AND start_date <= today
+    FOR UPDATE
+  LOOP
+    step := CASE r.frequency WHEN 'weekly' THEN interval '7 days' WHEN 'monthly' THEN interval '1 month' ELSE interval '1 year' END;
+    k := r.generated_count;
+    LOOP
+      d := (r.start_date + k * step)::date;
+      EXIT WHEN d > today OR (r.end_date IS NOT NULL AND d > r.end_date);
+      INSERT INTO public.supplies_costs (user_id, category, amount, purchase_date, description, notes, recurring_id)
+      VALUES (r.user_id, r.category, r.amount, d, r.description, r.notes, r.id);
+      k := k + 1;
+    END LOOP;
+    IF k > r.generated_count THEN
+      UPDATE public.recurring_expenses SET generated_count = k WHERE id = r.id;
+      total := total + (k - r.generated_count);
+    END IF;
+  END LOOP;
+
+  RETURN total;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.generate_recurring_expenses() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.generate_recurring_expenses() TO authenticated;
+
 -- Kaitorix 抓取队列：入队（同 JAN 去重）/ 原子出队 / 清理
 CREATE OR REPLACE FUNCTION public.enqueue_kaitorix_scrape(p_jan text, p_user_id uuid)
  RETURNS uuid
@@ -1255,6 +1329,7 @@ $function$;
 
 CREATE TRIGGER set_user_id_coupons BEFORE INSERT ON public.coupons FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
 CREATE TRIGGER trigger_update_coupon_used_status BEFORE UPDATE OF usage_count ON public.coupons FOR EACH ROW EXECUTE FUNCTION public.update_coupon_used_status();
+CREATE TRIGGER set_updated_at_recurring_expenses BEFORE UPDATE ON public.recurring_expenses FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER set_updated_at_jan_thumbnail_cache BEFORE UPDATE ON public.jan_thumbnail_cache FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER set_updated_at_jan_thumbnail_queue BEFORE UPDATE ON public.jan_thumbnail_queue FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER set_updated_at_kaitorix_open_api_usage BEFORE UPDATE ON public.kaitorix_open_api_usage FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
@@ -1559,6 +1634,7 @@ ALTER TABLE public.return_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sale_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.selling_platforms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recurring_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.supplies_costs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transaction_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
@@ -1638,6 +1714,9 @@ CREATE POLICY "Users can delete their own selling platforms" ON public.selling_p
 CREATE POLICY "Users can insert their own selling platforms" ON public.selling_platforms FOR INSERT TO authenticated WITH CHECK (((auth.uid() = user_id) AND (is_builtin = false)));
 CREATE POLICY "Users can update their own selling platforms" ON public.selling_platforms FOR UPDATE TO authenticated USING (((user_id = auth.uid()) AND (is_builtin = false)));
 CREATE POLICY "Users can view built-in and own selling platforms" ON public.selling_platforms FOR SELECT TO authenticated USING (((is_builtin = true) OR (user_id = auth.uid())));
+
+-- recurring_expenses
+CREATE POLICY "Users manage their own recurring expenses" ON public.recurring_expenses FOR ALL USING ((auth.uid() = user_id)) WITH CHECK ((auth.uid() = user_id));
 
 -- supplies_costs
 CREATE POLICY "Users can delete their own supplies costs" ON public.supplies_costs FOR DELETE USING ((auth.uid() = user_id));

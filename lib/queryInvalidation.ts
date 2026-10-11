@@ -17,6 +17,7 @@ const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   selling_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],
   payment_methods: ['analytics', 'transactions', 'payment-methods', 'dashboard'],
   supplies_costs: ['supplies', 'analytics', 'tax-report', 'dashboard'],
+  recurring_expenses: ['recurring-expenses'],
   fixed_costs: ['supplies', 'analytics', 'tax-report'],
 };
 

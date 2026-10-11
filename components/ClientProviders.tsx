@@ -10,6 +10,7 @@ import { ThemeSync } from '@/components/ThemeSync';
 import OfflineCacheProvider from '@/components/OfflineCacheProvider';
 import OfflineBanner from '@/components/OfflineBanner';
 import QueryInvalidationBridge from '@/components/QueryInvalidationBridge';
+import RecurringExpensesRunner from '@/components/RecurringExpensesRunner';
 import { OFFLINE_CACHE_MAX_AGE } from '@/lib/offline/persister';
 
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               <SWUpdatePrompt />
               <OfflineBanner />
               <QueryInvalidationBridge />
+              <RecurringExpensesRunner />
               {children}
             </PlatformsProvider>
           </OfflineCacheProvider>
