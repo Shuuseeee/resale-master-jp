@@ -46,17 +46,36 @@
     @apply flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-subtle)] transition-all hover:bg-[var(--color-bg-elevated)];
   }
 
+  /* 手机上卡片里常再套卡片（销售记录），内边距收到 16 */
   .sn-detail-card {
-    @apply rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6;
+    @apply rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 md:p-6;
   }
 
   .sn-detail-title {
     @apply mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)];
   }
 
-  .sn-detail-title-lg {
-    @apply mb-4 flex items-center gap-2 text-xl font-bold text-[var(--color-text)];
+  /* 详情页正文：按内容区宽度（容器查询）而不是窗口宽度切换列数——分区抽屉开着时，1100 宽的窗口内容区也只有 600 左右 */
+  .sn-detail-layout {
+    container-type: inline-size;
   }
+  .sn-detail-stats {
+    @apply grid grid-cols-2 gap-3;
+  }
+  .sn-detail-columns {
+    @apply grid grid-cols-1 items-start gap-6;
+  }
+  @container (min-width: 640px) {
+    .sn-detail-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @container (min-width: 720px) {
+    .sn-detail-columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
 
   .sn-detail-row {
     @apply flex items-center justify-between gap-4;

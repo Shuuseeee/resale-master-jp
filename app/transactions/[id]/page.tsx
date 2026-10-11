@@ -7,11 +7,13 @@ import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { confirmPaymentReceived } from '@/lib/api/financial';
-import { arrivedQty, isPartiallyArrived, notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
+import { notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
 import ArrivalsPanel from '@/components/transactions/ArrivalsPanel';
 import Image from 'next/image';
 import Link from 'next/link';
-import { button, heading, layout } from '@/lib/theme';
+import { button, card, heading, layout } from '@/lib/theme';
+import { TransactionStatusBadge } from '@/components/transactions/StatusBadge';
+import { Open16Regular } from '@fluentui/react-icons/headless/svg/open';
 import PageSkeleton from '@/components/Skeleton';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import SalesRecordsList from '@/components/SalesRecordsList';
@@ -86,6 +88,19 @@ function formatHistoryValue(field: string, value: unknown): string {
     return `¥${Number(value).toLocaleString()}`;
   }
   return String(value);
+}
+
+/** 详情卡片里的一行：左标签（可带小字说明），右数值 */
+function DetailRow({ label, value, hint, strong = false }: { label: string; value: string; hint?: string | null; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="min-w-0 text-[var(--color-text-secondary)]">
+        {label}
+        {hint && <span className="ml-1.5 text-xs text-[var(--color-text-muted)]">{hint}</span>}
+      </dt>
+      <dd className={`shrink-0 text-right tabular-nums text-[var(--color-text)] ${strong ? 'font-semibold' : ''}`}>{value}</dd>
+    </div>
+  );
 }
 
 export default function TransactionDetailPage() {
@@ -281,15 +296,60 @@ export default function TransactionDetailPage() {
     ...(primaryWorkflow ? [{ ...primaryWorkflow, primary: true, priority: 0 }] : []),
   ];
 
+  // 关键数字（与库里的利润口径一致：单位成本 =（采购总价 − 全部积分）÷ 数量）
+  const pointsTotal = (transaction.expected_platform_points || 0) + (transaction.expected_card_points || 0) + (transaction.extra_platform_points || 0);
+  const unitCost = transaction.quantity > 0 ? (transaction.purchase_price_total - pointsTotal) / transaction.quantity : 0;
+  const unitPrice = transaction.unit_price ?? Math.round((transaction.purchase_price_total - (transaction.shipping_fee || 0)) / Math.max(transaction.quantity, 1));
+  const showArrivals = (transaction.quantity > 1 || transaction.status === 'pending') && (transaction.status === 'pending' || transaction.status === 'in_stock');
+  const hasProgress = showArrivals || transaction.quantity_returned > 0 || !!transaction.notes;
+
+  // 订单历史链接（按采购平台）
+  const orderHistory = (() => {
+    const platform = transaction.purchase_platform?.name;
+    if (!transaction.order_number || !platform) return null;
+    if (platform === 'Amazon') return { url: `https://www.amazon.co.jp/gp/your-account/order-details?orderID=${transaction.order_number}`, label: 'Amazon' };
+    if (platform === '楽天市場') return { url: 'https://order.my.rakuten.co.jp/', label: '乐天市场' };
+    if (platform === 'Yahoo!ショッピング') return { url: 'https://odhistory.shopping.yahoo.co.jp/order-history/details', label: 'Yahoo!购物' };
+    return null;
+  })();
+
+  const purchaseDetail = (
+    <div className="sn-detail-card">
+      <h2 className="sn-detail-title">采购明细</h2>
+      <dl className="space-y-2.5 text-sm">
+        <DetailRow label="单价" value={formatCurrency(unitPrice)} />
+        <DetailRow label="数量" value={String(transaction.quantity)} />
+        {!!transaction.shipping_fee && <DetailRow label="运费" value={formatCurrency(transaction.shipping_fee)} />}
+        {!!transaction.coupon_amount && <DetailRow label="已用优惠券" hint="单价已扣" value={formatCurrency(transaction.coupon_amount)} />}
+        <div className="border-t border-[var(--color-border)] pt-2.5">
+          <DetailRow label="采购总价" value={formatCurrency(transaction.purchase_price_total)} strong />
+        </div>
+      </dl>
+      <h3 className="mb-2.5 mt-5 text-sm font-semibold text-[var(--color-text)]">支付</h3>
+      <dl className="space-y-2.5 text-sm">
+        {transaction.payment_method && (
+          <DetailRow
+            label="支付方式"
+            value={paymentMethodDisplayName(transaction.payment_method)}
+            hint={`返点 ${formatPointRate(transaction.payment_method.point_rate)}`}
+          />
+        )}
+        <DetailRow label="信用卡 / 其他支付" value={formatCurrency(transaction.card_paid)} />
+        <DetailRow label="积分抵扣" value={formatCurrency(transaction.point_paid)} />
+        <DetailRow label="余额支付" value={formatCurrency(transaction.balance_paid)} />
+      </dl>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen md:min-h-full text-[var(--color-text)]">
+    <div className={layout.page}>
       <PageHeader crumbs={[{ label: '交易列表', href: '/transactions' }, { label: transaction.product_name }]} actions={headerActions} />
-      <div className={"relative max-w-5xl mx-auto px-4 py-8 " + layout.narrowDesktop}>
-        {/* 标题栏（桌面的返回在文档头面包屑、操作在文档头工具栏） */}
-        <div className="mb-8">
+      <div className={'relative mx-auto max-w-lg px-4 py-6 ' + layout.narrowDesktop}>
+        {/* 标题（桌面的返回在文档头面包屑、操作在文档头工具栏） */}
+        <div className="mb-6 md:mb-0">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4 md:hidden"
+            className={button.ghost + ' mb-4 flex items-center gap-2 md:hidden'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -297,113 +357,66 @@ export default function TransactionDetailPage() {
             <span className="font-medium">返回</span>
           </button>
 
-          <div className="flex flex-col gap-4">
-            <div className="min-w-0">
-              <h1 className={'text-2xl sm:text-3xl font-bold text-[var(--color-text)] mb-2 line-clamp-3 sm:line-clamp-2 md:line-clamp-none break-cjk-normal leading-tight ' + heading.pageDesktop}>{transaction.product_name}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
-                {transaction.status === 'sold' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
-                    已售出
-                  </span>
-                ) : transaction.status === 'returned' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-danger-subtle)] text-[var(--color-danger)] border border-[var(--color-danger-border)] whitespace-nowrap">
-                    已退货
-                  </span>
-                ) : transaction.status === 'awaiting_payment' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
-                    待入账
-                  </span>
-                ) : transaction.status === 'pending' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] whitespace-nowrap">
-                    未到货
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border border-[var(--color-warning-border)] whitespace-nowrap">
-                    {isPartiallyArrived(transaction) ? `部分到货 ${arrivedQty(transaction)}/${transaction.quantity}` : '库存中'}
-                  </span>
-                )}
-                <span className="text-xs sm:text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                  {new Date(transaction.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
-              </div>
-            </div>
-
-            {/* 操作按钮（手机） */}
-            <div className="flex items-center gap-2 flex-wrap md:hidden">
-              {/* 记录销售按钮 */}
-              {canSell && (
-                <button
-                  onClick={() => setShowSaleForm(true)}
-                  className={button.primary + " gap-1.5 whitespace-nowrap"}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  记录销售
-                </button>
-              )}
-              {/* 退货按钮 - 有库存时显示 */}
-              {canReturn && (
-                <button
-                  onClick={() => setShowReturnForm(true)}
-                  className={button.danger + " gap-1.5 whitespace-nowrap"}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                  </svg>
-                  退货
-                </button>
-              )}
-              {/* 入金確認按钮 - 仅当status=awaiting_payment时显示 */}
-              {transaction.status === 'awaiting_payment' && (
-                <button
-                  onClick={confirmPayment}
-                  className={button.primary + " gap-1.5 whitespace-nowrap"}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  确认入账
-                </button>
-              )}
-              {canCancelSale && (
-                <button
-                  onClick={cancelSale}
-                  className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-warning-bg)] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-[1.08] active:brightness-[0.92] disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                  </svg>
-                  取消销售
-                </button>
-              )}
-              <Link
-                href={`/transactions/${id}/edit`}
-                className="sn-icon-button"
-                title="编辑"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </Link>
-              <Link
-                href={`/transactions/add?copy=${id}`}
-                className="sn-icon-button"
-                title="复制为新交易"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </Link>
+          <h1 className={heading.page + ' line-clamp-3 break-cjk-normal md:line-clamp-none md:!mb-3'}>{transaction.product_name}</h1>
+          {/* 一行概要：状态 · 进货日 · 采购平台 · JAN（点击复制） */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[var(--color-text-secondary)]">
+            <TransactionStatusBadge tx={transaction} />
+            <span className="whitespace-nowrap">{transaction.date.replace(/-/g, '/')}</span>
+            {transaction.purchase_platform && <span className="whitespace-nowrap">{transaction.purchase_platform.name}</span>}
+            {transaction.jan_code && (
               <button
-                onClick={deleteTransaction}
-                className="sn-icon-button text-[var(--color-danger)] hover:border-[var(--color-danger-border)] hover:bg-[var(--color-danger-subtle)]"
-                title="删除"
+                type="button"
+                onClick={() => copyToClipboard(transaction.jan_code!)}
+                className="font-mono hover:text-[var(--color-primary)]"
+                title="点击复制 JAN"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                JAN {transaction.jan_code}
               </button>
+            )}
+          </div>
+
+          {/* 操作按钮（手机；桌面在文档头工具栏） */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 md:hidden">
+            {canSell && (
+              <button onClick={() => setShowSaleForm(true)} className={button.primary + ' gap-1.5 whitespace-nowrap'}>
+                <ReceiptMoney20Regular />
+                记录销售
+              </button>
+            )}
+            {transaction.status === 'awaiting_payment' && (
+              <button onClick={confirmPayment} className={button.primary + ' gap-1.5 whitespace-nowrap'}>
+                <MoneyHand20Regular />
+                确认入账
+              </button>
+            )}
+            {canReturn && (
+              <button onClick={() => setShowReturnForm(true)} className={button.secondary + ' gap-1.5 whitespace-nowrap'}>
+                <ArrowUndo20Regular />
+                退货
+              </button>
+            )}
+            {canCancelSale && (
+              <button onClick={cancelSale} className={button.secondary + ' gap-1.5 whitespace-nowrap'}>
+                <ArrowCounterclockwise20Regular />
+                取消销售
+              </button>
+            )}
+            {/* 编辑 / 复制 / 删除放一组靠右，放不下时整组换行（不会只剩一个删除掉到下一行） */}
+            <div className="ml-auto flex items-center gap-2">
+            <Link href={`/transactions/${id}/edit`} className="sn-icon-button" title="编辑" aria-label="编辑">
+              <Edit20Regular />
+            </Link>
+            <Link href={`/transactions/add?copy=${id}`} className="sn-icon-button" title="复制为新交易" aria-label="复制为新交易">
+              <Copy20Regular />
+            </Link>
+            <button
+              onClick={deleteTransaction}
+              className="sn-icon-button text-[var(--color-danger)] hover:border-[var(--color-danger-border)] hover:bg-[var(--color-danger-subtle)]"
+              title="删除"
+              aria-label="删除"
+            >
+              <Delete20Regular />
+            </button>
             </div>
           </div>
         </div>
@@ -465,350 +478,182 @@ export default function TransactionDetailPage() {
           cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 左侧主要内容 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 成本信息 */}
-            <div className="sn-detail-card">
-              <h2 className="sn-detail-title-lg">
-                采购成本
-              </h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-[var(--color-border)]">
-                  <span className="text-[var(--color-text-muted)]">采购总价</span>
-                  <span className="text-2xl font-bold text-[var(--color-text)]">{formatCurrency(transaction.purchase_price_total)}</span>
-                </div>
-                <div className="space-y-2">
-                  {!!transaction.shipping_fee && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">其中运费</span>
-                      <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.shipping_fee)}</span>
-                    </div>
-                  )}
-                  {!!transaction.coupon_amount && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">已用优惠券（单价已扣）</span>
-                      <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.coupon_amount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-muted)]">信用卡 / 其他支付</span>
-                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.card_paid)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-muted)]">积分抵扣</span>
-                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.point_paid)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[var(--color-text-muted)]">余额支付</span>
-                    <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.balance_paid)}</span>
-                  </div>
-                </div>
+        {/* 正文按内容区宽度（不是窗口宽度）排版：分区抽屉开着时内容区可能只有 600 左右（globals.css .sn-detail-layout） */}
+        <div className="sn-detail-layout space-y-6">
+          {/* 关键数字 */}
+          <div className="sn-detail-stats">
+            <div className={card.stat}>
+              <div className="text-xs text-[var(--color-text-secondary)]">采购总价</div>
+              <div className="mt-1 text-xl font-semibold tabular-nums text-[var(--color-text)]">{formatCurrency(transaction.purchase_price_total)}</div>
+              <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                {formatCurrency(unitPrice)} × {transaction.quantity}
+                {!!transaction.shipping_fee && ` + 运费 ${formatCurrency(transaction.shipping_fee)}`}
               </div>
             </div>
+            <div className={card.stat}>
+              <div className="text-xs text-[var(--color-text-secondary)]">单位成本</div>
+              <div className="mt-1 text-xl font-semibold tabular-nums text-[var(--color-text)]">{formatCurrency(unitCost)}</div>
+              <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">已扣积分 {pointsTotal.toLocaleString('ja-JP')} P</div>
+            </div>
+            <div className={card.stat}>
+              <div className="text-xs text-[var(--color-text-secondary)]">确定利润</div>
+              {transaction.total_profit == null ? (
+                <>
+                  <div className="mt-1 text-xl font-semibold text-[var(--color-text-muted)]">—</div>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">尚未出售</div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="mt-1 text-xl font-semibold tabular-nums"
+                    style={{ color: transaction.total_profit >= 0 ? 'var(--chart-up)' : 'var(--chart-down)' }}
+                  >
+                    {transaction.total_profit >= 0 ? '+' : ''}{formatCurrency(transaction.total_profit)}
+                  </div>
+                  <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">利润率 {formatROI(transaction.roi)}</div>
+                </>
+              )}
+            </div>
+            <div className={card.stat}>
+              <div className="text-xs text-[var(--color-text-secondary)]">库存</div>
+              <div className="mt-1 text-xl font-semibold tabular-nums text-[var(--color-text)]">
+                {transaction.quantity_in_stock}
+                <span className="text-sm font-normal text-[var(--color-text-muted)]"> / {transaction.quantity}</span>
+              </div>
+              <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                已售 {transaction.quantity_sold}
+                {transaction.quantity_returned > 0 && ` · 退货 ${transaction.quantity_returned}`}
+                {notArrivedQty(transaction) > 0 && ` · 未到 ${notArrivedQty(transaction)}`}
+              </div>
+            </div>
+          </div>
 
-            {/* 采购信息 */}
-            {(transaction.jan_code || transaction.purchase_platform || transaction.order_number || transaction.unit_price) && (
+          {/* 销售记录是多列表格，放整宽 */}
+          {transaction.quantity_sold > 0 && (
+            <div className="sn-detail-card">
+              <h2 className="sn-detail-title">销售记录</h2>
+              <SalesRecordsList transactionId={transaction.id} transaction={transaction} onUpdate={loadTransaction} />
+            </div>
+          )}
+
+          <div className="sn-detail-columns">
+            {/* 左：这笔货的进展（到货 / 退货 / 备注） */}
+            <div className="space-y-6">
+              {showArrivals && (
+                <ArrivalsPanel transaction={transaction} onChange={loadTransaction} />
+              )}
+
+              {transaction.quantity_returned > 0 && (
+                <div className="sn-detail-card">
+                  <h2 className="sn-detail-title">退货记录</h2>
+                  <ReturnRecordsList transactionId={transaction.id} onUpdate={loadTransaction} />
+                </div>
+              )}
+
+              {transaction.notes && (
+                <div className="sn-detail-card">
+                  <h2 className="sn-detail-title">备注</h2>
+                  <p className="whitespace-pre-wrap text-sm text-[var(--color-text)]">{transaction.notes}</p>
+                </div>
+              )}
+
+              {/* 没有进展类内容时（单件、已到货、未出售）左列为空：采购明细放这里，避免一边空着 */}
+              {!hasProgress && purchaseDetail}
+            </div>
+
+            {/* 右：采购明细 / 预期积分 / 订单 / 凭证 */}
+            <div className="space-y-6">
+              {hasProgress && purchaseDetail}
+
               <div className="sn-detail-card">
-                <h2 className="sn-detail-title-lg">
-                  采购信息
-                </h2>
-                <div className="space-y-3">
-                  {transaction.purchase_platform && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">采购平台</span>
-                      <span className="text-[var(--color-text)] font-medium">{transaction.purchase_platform.name}</span>
-                    </div>
+                <h2 className="sn-detail-title">预期积分</h2>
+                <dl className="space-y-2.5 text-sm">
+                  <DetailRow label="平台积分" hint={transaction.platform_points_platform?.display_name} value={`${transaction.expected_platform_points.toLocaleString('ja-JP')} P`} />
+                  {transaction.extra_platform_points > 0 && (
+                    <DetailRow label="额外积分" hint={transaction.extra_platform_points_platform?.display_name} value={`${transaction.extra_platform_points.toLocaleString('ja-JP')} P`} />
                   )}
-                  {transaction.jan_code && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">JAN 码</span>
-                      <button
-                        onClick={() => copyToClipboard(transaction.jan_code!)}
-                        className="text-[var(--color-text)] font-mono hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                        title="点击复制"
-                      >
-                        {transaction.jan_code}
-                      </button>
-                    </div>
-                  )}
-                  {transaction.order_number && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">订单号</span>
-                      <button
-                        onClick={() => copyToClipboard(transaction.order_number!)}
-                        className="text-[var(--color-text)] font-mono hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-                        title="点击复制"
-                      >
-                        {transaction.order_number}
-                      </button>
-                    </div>
-                  )}
-                  {/* 订单历史链接 */}
-                  {transaction.order_number && transaction.purchase_platform && (() => {
-                    const platformName = transaction.purchase_platform?.name || '';
-                    const orderNum = transaction.order_number || '';
-                    let orderUrl: string | null = null;
-                    let platformLabel = platformName;
-                    if (platformName === 'Amazon') {
-                      orderUrl = `https://www.amazon.co.jp/gp/your-account/order-details?orderID=${orderNum}`;
-                    } else if (platformName === '楽天市場') {
-                      orderUrl = `https://order.my.rakuten.co.jp/`;
-                      platformLabel = '乐天市场';
-                    } else if (platformName === 'Yahoo!ショッピング') {
-                      orderUrl = `https://odhistory.shopping.yahoo.co.jp/order-history/details`;
-                      platformLabel = 'Yahoo!购物';
-                    }
-                    return orderUrl ? (
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--color-text-muted)]">订单历史</span>
-                        <a
-                          href={orderUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[var(--color-primary)] hover:underline text-sm flex items-center gap-1"
+                  <DetailRow label="支付返点" hint={transaction.card_points_platform?.display_name} value={`${transaction.expected_card_points.toLocaleString('ja-JP')} P`} />
+                  <div className="border-t border-[var(--color-border)] pt-2.5">
+                    <DetailRow label="合计" value={`${pointsTotal.toLocaleString('ja-JP')} P`} strong />
+                  </div>
+                </dl>
+              </div>
+
+              {transaction.order_number && (
+                <div className="sn-detail-card">
+                  <h2 className="sn-detail-title">订单</h2>
+                  <dl className="space-y-2.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-[var(--color-text-secondary)]">订单号</dt>
+                      <dd>
+                        <button
+                          onClick={() => copyToClipboard(transaction.order_number!)}
+                          className="break-all text-right font-mono text-[var(--color-text)] hover:text-[var(--color-primary)]"
+                          title="点击复制"
                         >
-                          在{platformLabel}查看
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                      </div>
-                    ) : null;
-                  })()}
-                  {transaction.unit_price && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-[var(--color-text-muted)]">单价</span>
-                      <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.unit_price)}</span>
+                          {transaction.order_number}
+                        </button>
+                      </dd>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 备注 */}
-            {transaction.notes && (
-              <div className="sn-detail-card">
-                <h2 className="sn-detail-title-lg">
-                  备注
-                </h2>
-                <p className="text-[var(--color-text)] whitespace-pre-wrap">{transaction.notes}</p>
-              </div>
-            )}
-          </div>
-
-          {/* 右侧边栏 */}
-          <div className="space-y-6">
-            {/* 到货管理：多件进货，或还没到货的 */}
-            {(transaction.quantity > 1 || transaction.status === 'pending') && (transaction.status === 'pending' || transaction.status === 'in_stock') && (
-              <ArrivalsPanel transaction={transaction} onChange={loadTransaction} />
-            )}
-
-            {/* 批量商品的库存信息 */}
-            {transaction.quantity > 1 && (
-              <div className="sn-detail-card">
-                <h3 className="sn-detail-title">库存信息</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">总数量</span>
-                    <span className="text-[var(--color-text)] font-medium">{transaction.quantity}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">已售出</span>
-                    <span className="text-[var(--color-primary)] font-medium">{transaction.quantity_sold}</span>
-                  </div>
-                  {transaction.quantity_returned > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--color-text-muted)]">已退货</span>
-                      <span className="text-[var(--color-danger)] font-medium">{transaction.quantity_returned}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">库存</span>
-                    <span className="text-[var(--color-primary)] font-bold text-lg">{transaction.quantity_in_stock}</span>
-                  </div>
-                  {notArrivedQty(transaction) > 0 && transaction.status !== 'pending' && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--color-text-muted)]">其中未到货</span>
-                      <span className="text-[var(--color-warning)] font-medium">{notArrivedQty(transaction)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 销售记录列表 */}
-            {transaction.quantity_sold > 0 && (
-              <div className="sn-detail-card">
-                <h3 className="sn-detail-title">销售记录</h3>
-                <SalesRecordsList
-                  transactionId={transaction.id}
-                  transaction={transaction}
-                  onUpdate={loadTransaction}
-                />
-              </div>
-            )}
-
-            {/* 退货记录列表 */}
-            {transaction.quantity_returned > 0 && (
-              <div className="sn-detail-card border-[var(--color-danger-border)]">
-                <h3 className="text-lg font-semibold text-[var(--color-danger)] mb-4">退货记录</h3>
-                <ReturnRecordsList
-                  transactionId={transaction.id}
-                  onUpdate={loadTransaction}
-                />
-              </div>
-            )}
-
-            {/* 凭证图片 */}
-            {transaction.image_url && (
-              <div className="sn-detail-card">
-                <h3 className="sn-detail-title">采购凭证</h3>
-                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[var(--color-bg-subtle)]">
-                  <Image
-                    src={transaction.image_url}
-                    alt="采购凭证"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              </div>
-            )}
-{/* 预期积分 */}
-            <div className="sn-detail-card">
-              <h2 className="sn-detail-title-lg">
-                预期积分
-              </h2>
-              <div className="space-y-3">
-                {/* 平台积分 */}
-                <div className="bg-[var(--color-warning-subtle)] rounded-xl p-4 border border-[var(--color-warning-border)]">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-[var(--color-warning)] text-sm mb-1">平台积分</div>
-                      <div className="text-2xl font-bold text-[var(--color-warning)]">{transaction.expected_platform_points} P</div>
-                    </div>
-                    {transaction.platform_points_platform && (
-                      <div className="text-right">
-                        <div className="text-xs text-[var(--color-warning)] opacity-90">{transaction.platform_points_platform.display_name}</div>
+                    {orderHistory && (
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-[var(--color-text-secondary)]">订单历史</dt>
+                        <dd>
+                          <a href={orderHistory.url} target="_blank" rel="noopener noreferrer" className="fluent-link inline-flex items-center gap-1">
+                            在{orderHistory.label}查看
+                            <Open16Regular />
+                          </a>
+                        </dd>
                       </div>
                     )}
-                  </div>
+                  </dl>
                 </div>
+              )}
 
-                {/* 额外平台积分 */}
-                {transaction.extra_platform_points > 0 && (
-                  <div className="bg-[var(--color-primary-light)] rounded-xl p-4 border border-[var(--color-primary-border)]">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-[var(--color-primary)] text-sm mb-1">额外积分</div>
-                        <div className="text-2xl font-bold text-[var(--color-primary)]">{transaction.extra_platform_points} P</div>
-                      </div>
-                      {transaction.extra_platform_points_platform && (
-                        <div className="text-right">
-                          <div className="text-xs text-[var(--color-primary)]">{transaction.extra_platform_points_platform.display_name}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 支付返点积分（信用卡或其他支付方式） */}
-                <div className="bg-[var(--color-primary-light)] rounded-xl p-4 border border-[var(--color-primary-border)]">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-[var(--color-primary)] text-sm mb-1">支付返点积分</div>
-                      <div className="text-2xl font-bold text-[var(--color-primary)]">{transaction.expected_card_points} P</div>
-                    </div>
-                    {transaction.card_points_platform && (
-                      <div className="text-right">
-                        <div className="text-xs text-[var(--color-primary)] opacity-70">{transaction.card_points_platform.display_name}</div>
-                      </div>
-                    )}
-                  </div>
+              {transaction.image_url && (
+                <div className="sn-detail-card">
+                  <h2 className="sn-detail-title">采购凭证</h2>
+                  <a href={transaction.image_url} target="_blank" rel="noopener noreferrer" className="relative block aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-bg-subtle)]">
+                    <Image src={transaction.image_url} alt="采购凭证" fill className="object-contain" />
+                  </a>
                 </div>
-              </div>
+              )}
             </div>
-            {/* 支付信息 */}
-            {transaction.payment_method && (
-              <div className="sn-detail-card">
-                <h3 className="sn-detail-title">支付方式</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">名称</span>
-                    <span className="text-[var(--color-text)] font-medium">{paymentMethodDisplayName(transaction.payment_method)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[var(--color-text-muted)]">返点率</span>
-                    <span className="text-[var(--color-primary)] font-medium">{formatPointRate(transaction.payment_method.point_rate)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 时间信息 */}
-            <div className="sn-detail-card">
-              <h3 className="sn-detail-title">时间信息</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-muted)]">创建时间</span>
-                  <span className="text-[var(--color-text)]">
-                    {new Date(transaction.created_at).toLocaleString('zh-CN')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--color-text-muted)]">更新时间</span>
-                  <span className="text-[var(--color-text)]">
-                    {new Date(transaction.updated_at).toLocaleString('zh-CN')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 编辑历史 */}
-            {history.length > 0 && (
-              <div className="sn-detail-card">
-                <h3 className="sn-detail-title">
-                  <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  编辑历史
-                </h3>
-                <div className="space-y-4">
-                  {history.map((entry) => {
-                    const changedFields = Object.keys(entry.new_values);
-                    return (
-                      <div key={entry.id} className="relative pl-5 border-l-2 border-[var(--color-border)]">
-                        <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-[var(--color-border)]" />
-                        <p className="text-xs text-[var(--color-text-muted)] mb-1.5">
-                          {new Date(entry.changed_at).toLocaleString('zh-CN', {
-                            month: 'numeric', day: 'numeric',
-                            hour: '2-digit', minute: '2-digit',
-                          })}
-                        </p>
-                        <div className="space-y-1">
-                          {changedFields.map((field) => (
-                            <div key={field} className="text-xs">
-                              <span className="text-[var(--color-text-muted)] font-medium">
-                                {FIELD_LABELS[field] || field}
-                              </span>
-                              <span className="text-[var(--color-text-muted)] mx-1">:</span>
-                              <span className="text-[var(--color-danger)] line-through">
-                                {formatHistoryValue(field, entry.old_values[field])}
-                              </span>
-                              <span className="text-[var(--color-text-muted)] mx-1">→</span>
-                              <span className="text-[var(--color-primary)]">
-                                {formatHistoryValue(field, entry.new_values[field])}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* 编辑历史 + 创建 / 更新时间 */}
+          {history.length > 0 && (
+            <div className="sn-detail-card">
+              <h2 className="sn-detail-title">编辑历史</h2>
+              <div className="space-y-4">
+                {history.map((entry) => {
+                  const changedFields = Object.keys(entry.new_values);
+                  return (
+                    <div key={entry.id} className="relative border-l-2 border-[var(--color-border)] pl-5">
+                      <div className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-[var(--color-border)]" />
+                      <p className="mb-1.5 text-xs text-[var(--color-text-muted)]">
+                        {new Date(entry.changed_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <div className="space-y-1">
+                        {changedFields.map((field) => (
+                          <div key={field} className="text-xs">
+                            <span className="font-medium text-[var(--color-text-muted)]">{FIELD_LABELS[field] || field}</span>
+                            <span className="mx-1 text-[var(--color-text-muted)]">:</span>
+                            <span className="text-[var(--color-danger)] line-through">{formatHistoryValue(field, entry.old_values[field])}</span>
+                            <span className="mx-1 text-[var(--color-text-muted)]">→</span>
+                            <span className="text-[var(--color-primary)]">{formatHistoryValue(field, entry.new_values[field])}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-[var(--color-text-muted)]">
+            创建于 {new Date(transaction.created_at).toLocaleString('zh-CN')} · 更新于 {new Date(transaction.updated_at).toLocaleString('zh-CN')}
+          </p>
         </div>
       </div>
       {showToast && <Toast message={toastText} onClose={() => setShowToast(false)} />}
