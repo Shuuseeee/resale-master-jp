@@ -3,6 +3,10 @@
     {
       "path": "/api/kaitorix/catalog-sync",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/thumbnail/process",
+      "schedule": "30 20 * * *"
     }
   ],
   "functions": {
