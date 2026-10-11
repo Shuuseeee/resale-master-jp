@@ -15,7 +15,6 @@ interface BasicInfoSectionProps {
   isPending: boolean;
   showPendingToggle: boolean;
   janLooking: boolean;
-  showJanField: boolean;
 
   onDateChange: (date: Date | null) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
@@ -36,7 +35,6 @@ export function BasicInfoSection({
   isPending,
   showPendingToggle,
   janLooking,
-  showJanField,
   onDateChange,
   onInputChange,
   onQuantityChange,
@@ -65,15 +63,13 @@ export function BasicInfoSection({
             />
           </div>
 
-          {/* JAN (add page) */}
-          {showJanField && (
-            <JanField
-              janCode={janCode}
-              janLooking={janLooking}
-              onInputChange={onInputChange}
-              onScanBarcode={onScanBarcode}
-            />
-          )}
+          {/* JAN（新增 / 编辑同一位置） */}
+          <JanField
+            janCode={janCode}
+            janLooking={janLooking}
+            onInputChange={onInputChange}
+            onScanBarcode={onScanBarcode}
+          />
 
           {/* Product name */}
           <div>
@@ -103,7 +99,7 @@ export function BasicInfoSection({
               type="text"
               inputMode="numeric"
               name="quantity"
-              value={quantity ?? ''}
+              value={quantity || ''}
               onChange={(e) => onQuantityChange(e.target.value)}
               placeholder="1"
               className="w-full sn-form-input"
@@ -117,7 +113,7 @@ export function BasicInfoSection({
               <p className="sn-form-error">{errors.quantity}</p>
             )}
             {quantityWarning && (
-              <p className="text-[var(--color-warning)] text-sm mt-1">{quantityWarning}</p>
+              <p className="sn-form-muted text-[var(--color-warning)]">{quantityWarning}</p>
             )}
           </div>
 

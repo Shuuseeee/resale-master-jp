@@ -5,3 +5,4 @@ export { ExpectedPointsSection } from './ExpectedPointsSection';
 export { ReceiptUploadSection } from './ReceiptUploadSection';
 export { NotesSection } from './NotesSection';
 export { JanField } from './JanField';
+export { TransactionFormFields } from './TransactionFormFields';

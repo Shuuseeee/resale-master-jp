@@ -6,6 +6,7 @@ import type { PaymentMethod } from '@/types/database.types';
 import { comparePaymentMethods, paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 interface PurchaseCostsSectionProps {
+  unitPrice: number | undefined;
   totalPrice: number;
   shippingFee: number;
   couponAmount: number;
@@ -16,6 +17,7 @@ interface PurchaseCostsSectionProps {
   paymentMethods: PaymentMethod[];
   errors: { purchase_price_total?: string; card_id?: string; payment?: string };
 
+  onUnitPriceChange: (value: string) => void;
   onTotalPriceChange: (value: string) => void;
   onShippingFeeChange: (value: string) => void;
   onCouponChange: (value: string) => void;
@@ -24,6 +26,7 @@ interface PurchaseCostsSectionProps {
 }
 
 export function PurchaseCostsSection({
+  unitPrice,
   totalPrice,
   shippingFee,
   couponAmount,
@@ -33,6 +36,7 @@ export function PurchaseCostsSection({
   cardId,
   paymentMethods,
   errors,
+  onUnitPriceChange,
   onTotalPriceChange,
   onShippingFeeChange,
   onCouponChange,
@@ -45,6 +49,24 @@ export function PurchaseCostsSection({
         <h2 className="sn-form-title">
           采购成本
         </h2>
+
+        {/* 单价 → 运费 / 优惠券 → 采购总价：同一串计算放在一起 */}
+        <div>
+          <label className="sn-form-label">单价</label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="decimal"
+              name="unit_price"
+              value={unitPrice || ''}
+              onChange={(e) => onUnitPriceChange(e.target.value)}
+              placeholder="0"
+              className="w-full sn-form-input pr-12"
+            />
+            <span className="sn-form-addon">¥</span>
+          </div>
+          <p className="sn-form-muted">填了单价，采购总价按「单价 × 数量 + 运费」自动计算</p>
+        </div>
 
         {/* Shipping fee：计入采购总价 */}
         <div>
@@ -61,7 +83,7 @@ export function PurchaseCostsSection({
             />
             <span className="sn-form-addon">¥</span>
           </div>
-          <p className="sn-form-muted">计入采购总价（单价×数量 + 运费）</p>
+          <p className="sn-form-muted">计入采购总价</p>
         </div>
 
         {/* 优惠券：单价已是扣后价，只做记录 */}
@@ -94,7 +116,7 @@ export function PurchaseCostsSection({
               name="purchase_price_total"
               value={totalPrice || ''}
               onChange={(e) => onTotalPriceChange(e.target.value)}
-              placeholder="0.00 或 3,000"
+              placeholder="0"
               className="w-full sn-form-input pr-12"
               required
             />
@@ -117,7 +139,7 @@ export function PurchaseCostsSection({
                     inputMode="decimal"
                     value={cardPaid || ''}
                     onChange={(e) => onPaymentChange('card_paid', e.target.value)}
-                    placeholder="0.00 或 3,000"
+                    placeholder="0"
                     className="w-full sn-form-input pr-12"
                   />
                   <span className="sn-form-addon">¥</span>
@@ -152,7 +174,7 @@ export function PurchaseCostsSection({
                 inputMode="decimal"
                 value={pointPaid || ''}
                 onChange={(e) => onPaymentChange('point_paid', e.target.value)}
-                placeholder="0.00 或 3,000"
+                placeholder="0"
                 className="w-full sn-form-input pr-12"
               />
               <span className="sn-form-addon">¥</span>
@@ -163,14 +185,15 @@ export function PurchaseCostsSection({
             <label className="sn-form-label">余额支付</label>
             <div className="relative">
               <input
-                type="number"
-                value={balancePaid || ''}
+                type="text"
+                value={balancePaid ? balancePaid.toLocaleString('ja-JP') : '0'}
                 readOnly
-                className="w-full px-4 py-3 pr-12 bg-[var(--color-bg-subtle)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-muted)] cursor-not-allowed"
+                tabIndex={-1}
+                className="w-full sn-form-input pr-12 cursor-default text-[var(--color-text-secondary)]"
               />
               <span className="sn-form-addon">¥</span>
             </div>
-            <p className="sn-form-muted">自动计算</p>
+            <p className="sn-form-muted">采购总价 − 信用卡 / 其他支付 − 积分抵扣，自动计算</p>
           </div>
 
           {errors.payment && (

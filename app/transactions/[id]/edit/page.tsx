@@ -8,25 +8,16 @@ import { layout, heading, button } from '@/lib/theme';
 import PageSkeleton from '@/components/Skeleton';
 import PageHeader from '@/components/shell/PageHeader';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { usePlatforms } from '@/contexts/PlatformsContext';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
 import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import Spinner from '@/components/fluent/Spinner';
 import { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
-import {
-  BasicInfoSection,
-  PurchaseInfoSection,
-  PurchaseCostsSection,
-  ExpectedPointsSection,
-  ReceiptUploadSection,
-  NotesSection,
-} from '@/components/TransactionForm';
+import { TransactionFormFields } from '@/components/TransactionForm';
 
 export default function EditTransactionPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { purchasePlatforms } = usePlatforms();
 
   const [loading, setLoading] = useState(true);
   const [dbTransaction, setDbTransaction] = useState<Transaction | null>(null);
@@ -149,7 +140,7 @@ export default function EditTransactionPage() {
   }
 
   return (
-    <div className="min-h-screen md:min-h-full text-[var(--color-text)]">
+    <div className={layout.page}>
       <PageHeader
         crumbs={[
           { label: '交易列表', href: '/transactions' },
@@ -159,10 +150,10 @@ export default function EditTransactionPage() {
       />
       <div className={"relative max-w-2xl mx-auto px-4 py-8 " + layout.narrowDesktop}>
         {/* Header（桌面用文档头的面包屑返回） */}
-        <div className="mb-8 md:mb-0">
+        <div className={layout.section + ' md:mb-0'}>
           <button
             onClick={() => leaveGuard.requestLeave(() => router.back())}
-            className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4 md:hidden"
+            className={button.ghost + ' flex items-center gap-2 mb-4 md:hidden'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -170,94 +161,19 @@ export default function EditTransactionPage() {
             <span className="font-medium">返回</span>
           </button>
 
-          <h1 className={'text-4xl font-bold text-[var(--color-text)] ' + heading.pageDesktop}>编辑交易</h1>
+          <h1 className={heading.page}>编辑交易</h1>
         </div>
 
         {/* Form */}
         <form ref={form.formRef} onSubmit={form.handleSubmit} className="space-y-6">
-          <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:space-y-0">
-            <div className="space-y-6">
-              <BasicInfoSection
-                date={form.formData.date}
-                productName={form.formData.product_name}
-                quantity={form.formData.quantity}
-                janCode={form.formData.jan_code || ''}
-                errors={form.errors}
-                isPending={form.isPending}
-                showPendingToggle={form.showPendingToggle}
-                janLooking={form.janLooking}
-                showJanField={false}
-                onDateChange={form.handleDateChange}
-                onInputChange={form.handleInputChange}
-                onQuantityChange={form.handleQuantityChange}
-                onScanBarcode={() => form.setShowScanner(true)}
-                onTogglePending={() => {
-                  // 改回未到货会清掉到货明细（库里触发器），记过到货的先确认
-                  if (!form.isPending && dbTransaction?.quantity_arrived) setConfirmPending(true);
-                  else form.setIsPending(!form.isPending);
-                }}
-                quantityDisabled={form.quantityLocked}
-                quantityWarning={form.quantityWarning}
-              />
-              <PurchaseInfoSection
-                orderNumber={form.formData.order_number || ''}
-                unitPrice={form.formData.unit_price}
-                purchasePlatformId={form.formData.purchase_platform_id || ''}
-                purchasePlatforms={purchasePlatforms}
-                newPlatformName={form.newPurchasePlatformName}
-                janCode={form.formData.jan_code || ''}
-                janLooking={form.janLooking}
-                onInputChange={form.handleInputChange}
-                onUnitPriceChange={form.handleUnitPriceChange}
-                onNewPlatformNameChange={form.setNewPurchasePlatformName}
-                onAddPlatform={form.handleAddPurchasePlatform}
-                onScanBarcode={() => form.setShowScanner(true)}
-              />
-            </div>
-            <div className="space-y-6">
-              <PurchaseCostsSection
-                totalPrice={form.formData.purchase_price_total}
-                shippingFee={form.formData.shipping_fee || 0}
-                couponAmount={form.formData.coupon_amount || 0}
-                cardPaid={form.formData.card_paid}
-                pointPaid={form.formData.point_paid}
-                balancePaid={form.formData.balance_paid}
-                cardId={form.formData.card_id}
-                paymentMethods={form.paymentMethods}
-                errors={form.errors}
-                onTotalPriceChange={form.handleTotalPriceChange}
-                onShippingFeeChange={form.handleShippingFeeChange}
-                onCouponChange={form.handleCouponChange}
-                onInputChange={form.handleInputChange}
-                onPaymentChange={form.handlePaymentChange}
-              />
-              <ExpectedPointsSection
-                expectedPlatformPoints={form.formData.expected_platform_points}
-                platformPointsPlatformId={form.formData.platform_points_platform_id || ''}
-                extraPlatformPoints={form.formData.extra_platform_points || 0}
-                extraPlatformPointsPlatformId={form.formData.extra_platform_points_platform_id || ''}
-                expectedCardPoints={form.formData.expected_card_points}
-                cardPointsPlatformId={form.formData.card_points_platform_id || ''}
-                cardId={form.formData.card_id}
-                pointsPlatforms={form.pointsPlatforms}
-                paymentMethods={form.paymentMethods}
-                errors={form.errors}
-                onInputChange={form.handleInputChange}
-                onNumberChange={form.handleNumberChange}
-                getCardPointRateLabel={form.getCardPointRateLabel}
-              />
-              <ReceiptUploadSection
-                imagePreview={form.imagePreview}
-                error={form.errors.image}
-                onImageSelect={form.handleImageSelect}
-                onClearImage={form.clearImage}
-              />
-              <NotesSection
-                notes={form.formData.notes || ''}
-                onInputChange={form.handleInputChange}
-              />
-            </div>
-          </div>
+          <TransactionFormFields
+            form={form}
+            onTogglePending={() => {
+              // 改回未到货会清掉到货明细（库里触发器），记过到货的先确认
+              if (!form.isPending && dbTransaction?.quantity_arrived) setConfirmPending(true);
+              else form.setIsPending(!form.isPending);
+            }}
+          />
 
           {/* Submit error */}
           {form.errors.submit && (
@@ -267,7 +183,7 @@ export default function EditTransactionPage() {
           )}
 
           {/* Submit buttons */}
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               type="submit"
               disabled={form.isSubmitting}

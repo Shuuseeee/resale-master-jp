@@ -1,41 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Add16Regular } from '@fluentui/react-icons/headless/svg/add';
 import Select from '@/components/Select';
 import type { PurchasePlatform } from '@/types/database.types';
-import { JanField } from './JanField';
 
 interface PurchaseInfoSectionProps {
   orderNumber: string;
-  unitPrice: number | undefined;
   purchasePlatformId: string;
   purchasePlatforms: PurchasePlatform[];
   newPlatformName: string;
-  janCode?: string;
-  janLooking?: boolean;
 
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onUnitPriceChange: (value: string) => void;
   onNewPlatformNameChange: (name: string) => void;
   onAddPlatform: () => void;
-  onScanBarcode?: () => void;
 }
 
 export function PurchaseInfoSection({
   orderNumber,
-  unitPrice,
   purchasePlatformId,
   purchasePlatforms,
   newPlatformName,
-  janCode,
-  janLooking,
   onInputChange,
-  onUnitPriceChange,
   onNewPlatformNameChange,
   onAddPlatform,
-  onScanBarcode,
 }: PurchaseInfoSectionProps) {
-  const showJan = janCode !== undefined;
+  // 新建平台不常用：默认收起，点「新增平台」再展开输入框
+  const [adding, setAdding] = useState(false);
 
   return (
     <div className="sn-form-card">
@@ -44,86 +35,73 @@ export function PurchaseInfoSection({
           采购信息
         </h2>
 
-        {/* JAN + Order number (edit: 2-col; add: order standalone) */}
-        {showJan ? (
-          <div className="grid grid-cols-2 gap-4">
-            <JanField janCode={janCode!} janLooking={janLooking!} onInputChange={onInputChange} onScanBarcode={onScanBarcode!} />
-            <div>
-              <label className="sn-form-label">订单号</label>
-              <input
-                type="text"
-                name="order_number"
-                value={orderNumber}
-                onChange={onInputChange}
-                placeholder="订单号"
-                className="w-full sn-form-input"
-              />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <label className="sn-form-label">订单号</label>
-            <input
-              type="text"
-              name="order_number"
-              value={orderNumber}
-              onChange={onInputChange}
-              placeholder="订单号"
-              className="w-full sn-form-input"
-            />
-          </div>
-        )}
-
-        {/* Unit price */}
         <div>
-          <label className="sn-form-label">单价 (¥)</label>
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="decimal"
-              name="unit_price"
-              value={unitPrice || ''}
-              onChange={(e) => onUnitPriceChange(e.target.value)}
-              placeholder="0.00"
-              className="w-full sn-form-input pr-12"
-            />
-            <span className="sn-form-addon">¥</span>
-          </div>
-          <p className="sn-form-muted">
-            {showJan ? '输入单价后会自动计算总价和余额支付金额' : '输入后采购总价将自动计算（单价 × 数量）'}
-          </p>
+          <label className="sn-form-label">订单号</label>
+          <input
+            type="text"
+            name="order_number"
+            value={orderNumber}
+            onChange={onInputChange}
+            placeholder="订单号"
+            className="w-full sn-form-input"
+          />
         </div>
 
-        {/* Purchase platform */}
         <div>
           <label className="sn-form-label">采购平台</label>
-          <div className="flex gap-2">
-            <Select
-              value={purchasePlatformId}
-              onChange={(v) => onInputChange({ target: { name: 'purchase_platform_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
-              options={purchasePlatforms.map((p) => ({ value: p.id, label: p.name }))}
-              placeholder="请选择"
-              clearable
-              className="flex-1 sn-form-input"
-            />
-          </div>
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={newPlatformName}
-              onChange={(e) => onNewPlatformNameChange(e.target.value)}
-              placeholder="添加新的采购平台..."
-              className="flex-1 sn-form-input py-2"
-            />
-            <button
-              type="button"
-              onClick={onAddPlatform}
-              disabled={!newPlatformName.trim()}
-              className="px-3 py-2 bg-[var(--color-primary-bg)] active:opacity-80 disabled:opacity-50 text-white text-sm rounded-lg transition-all disabled:cursor-not-allowed"
-            >
-              添加
+          <Select
+            value={purchasePlatformId}
+            onChange={(v) => onInputChange({ target: { name: 'purchase_platform_id', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
+            options={purchasePlatforms.map((p) => ({ value: p.id, label: p.name }))}
+            placeholder="请选择"
+            clearable
+            className="w-full sn-form-input"
+          />
+          {adding ? (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={newPlatformName}
+                onChange={(e) => onNewPlatformNameChange(e.target.value)}
+                onKeyDown={(e) => {
+                  // 回车只添加平台，不提交整张表单
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (newPlatformName.trim()) onAddPlatform();
+                  }
+                }}
+                placeholder="新平台名称"
+                className="flex-1 sn-form-input"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  await onAddPlatform();
+                  setAdding(false);
+                }}
+                disabled={!newPlatformName.trim()}
+                className="fluent-btn fluent-btn--primary shrink-0"
+              >
+                添加
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onNewPlatformNameChange('');
+                  setAdding(false);
+                }}
+                className="fluent-btn fluent-btn--subtle shrink-0"
+              >
+                取消
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAdding(true)} className="fluent-link mt-2 inline-flex items-center gap-1 text-sm">
+              <Add16Regular />
+              新增平台
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

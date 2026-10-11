@@ -54,7 +54,7 @@ export function ExpectedPointsSection({
         </h2>
 
         {/* Platform points */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="sn-form-label">平台积分数量</label>
             <div className="relative">
@@ -64,7 +64,7 @@ export function ExpectedPointsSection({
                 name="expected_platform_points"
                 value={expectedPlatformPoints || ''}
                 onChange={onNumberChange}
-                placeholder="0 或 1,000"
+                placeholder="0"
                 className="w-full sn-form-input pr-12"
               />
               <span className="sn-form-addon">P</span>
@@ -87,11 +87,11 @@ export function ExpectedPointsSection({
         </div>
 
         {/* Extra platform points */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="sn-form-label">
               额外积分数量
-              <span className="text-xs text-[var(--color-text-muted)] ml-2">(如d point)</span>
+              <span className="text-xs text-[var(--color-text-muted)] ml-2">（如 d 积分）</span>
             </label>
             <div className="relative">
               <input
@@ -100,7 +100,7 @@ export function ExpectedPointsSection({
                 name="extra_platform_points"
                 value={extraPlatformPoints || ''}
                 onChange={onNumberChange}
-                placeholder="0 或 1,000"
+                placeholder="0"
                 className="w-full sn-form-input pr-12"
               />
               <span className="sn-form-addon">P</span>
@@ -123,7 +123,7 @@ export function ExpectedPointsSection({
         </div>
 
         {/* Card points */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="sn-form-label">
               支付返点积分
@@ -138,7 +138,7 @@ export function ExpectedPointsSection({
                 name="expected_card_points"
                 value={expectedCardPoints || ''}
                 onChange={onNumberChange}
-                placeholder="0 或 1,000"
+                placeholder="0"
                 className="w-full sn-form-input pr-12"
               />
               <span className="sn-form-addon">P</span>

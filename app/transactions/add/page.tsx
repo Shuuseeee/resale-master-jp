@@ -8,21 +8,13 @@ import { layout, heading, button } from '@/lib/theme';
 import PageSkeleton from '@/components/Skeleton';
 import PageHeader from '@/components/shell/PageHeader';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig } from '@/lib/amazon-point-config';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
 import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import Spinner from '@/components/fluent/Spinner';
 import MessageBar from '@/components/fluent/MessageBar';
 import { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
-import {
-  BasicInfoSection,
-  PurchaseInfoSection,
-  PurchaseCostsSection,
-  ExpectedPointsSection,
-  ReceiptUploadSection,
-  NotesSection,
-} from '@/components/TransactionForm';
+import { TransactionFormFields } from '@/components/TransactionForm';
 
 /** 运费 / 优惠券为 0 时不提交该列（库默认 0），兼容「代码先部署、库还没加列」 */
 function withoutZeroShipping(fd: TransactionFormData) {
@@ -37,7 +29,6 @@ function AddTransactionPageContent() {
   const [copyData, setCopyData] = useState<Partial<TransactionFormData>>();
   // 复制源的读取状态：首次读取时显示骨架屏（避免先填的内容被随后到达的数据覆盖），失败时提示
   const [copyStatus, setCopyStatus] = useState<'idle' | 'loading' | 'error'>(copyId ? 'loading' : 'idle');
-  const { purchasePlatforms } = usePlatforms();
 
   // Stable Amazon config (read once from localStorage)
   const amazonConfig = useMemo(() => loadAmazonPointConfig(), []);
@@ -183,80 +174,7 @@ function AddTransactionPageContent() {
 
         {/* Form */}
         <form ref={form.formRef} onSubmit={form.handleSubmit} className="space-y-6">
-          <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:space-y-0">
-            <div className="space-y-6">
-              <BasicInfoSection
-                date={form.formData.date}
-                productName={form.formData.product_name}
-                quantity={form.formData.quantity}
-                janCode={form.formData.jan_code || ''}
-                errors={form.errors}
-                isPending={form.isPending}
-                showPendingToggle={form.showPendingToggle}
-                janLooking={form.janLooking}
-                showJanField={true}
-                onDateChange={form.handleDateChange}
-                onInputChange={form.handleInputChange}
-                onQuantityChange={form.handleQuantityChange}
-                onScanBarcode={() => form.setShowScanner(true)}
-                onTogglePending={() => form.setIsPending(!form.isPending)}
-              />
-              <PurchaseInfoSection
-                orderNumber={form.formData.order_number || ''}
-                unitPrice={form.formData.unit_price}
-                purchasePlatformId={form.formData.purchase_platform_id || ''}
-                purchasePlatforms={purchasePlatforms}
-                newPlatformName={form.newPurchasePlatformName}
-                onInputChange={form.handleInputChange}
-                onUnitPriceChange={form.handleUnitPriceChange}
-                onNewPlatformNameChange={form.setNewPurchasePlatformName}
-                onAddPlatform={form.handleAddPurchasePlatform}
-              />
-            </div>
-            <div className="space-y-6">
-              <PurchaseCostsSection
-                totalPrice={form.formData.purchase_price_total}
-                shippingFee={form.formData.shipping_fee || 0}
-                couponAmount={form.formData.coupon_amount || 0}
-                cardPaid={form.formData.card_paid}
-                pointPaid={form.formData.point_paid}
-                balancePaid={form.formData.balance_paid}
-                cardId={form.formData.card_id}
-                paymentMethods={form.paymentMethods}
-                errors={form.errors}
-                onTotalPriceChange={form.handleTotalPriceChange}
-                onShippingFeeChange={form.handleShippingFeeChange}
-                onCouponChange={form.handleCouponChange}
-                onInputChange={form.handleInputChange}
-                onPaymentChange={form.handlePaymentChange}
-              />
-              <ExpectedPointsSection
-                expectedPlatformPoints={form.formData.expected_platform_points}
-                platformPointsPlatformId={form.formData.platform_points_platform_id || ''}
-                extraPlatformPoints={form.formData.extra_platform_points || 0}
-                extraPlatformPointsPlatformId={form.formData.extra_platform_points_platform_id || ''}
-                expectedCardPoints={form.formData.expected_card_points}
-                cardPointsPlatformId={form.formData.card_points_platform_id || ''}
-                cardId={form.formData.card_id}
-                pointsPlatforms={form.pointsPlatforms}
-                paymentMethods={form.paymentMethods}
-                errors={form.errors}
-                onInputChange={form.handleInputChange}
-                onNumberChange={form.handleNumberChange}
-                getCardPointRateLabel={form.getCardPointRateLabel}
-              />
-              <ReceiptUploadSection
-                imagePreview={form.imagePreview}
-                error={form.errors.image}
-                onImageSelect={form.handleImageSelect}
-                onClearImage={form.clearImage}
-              />
-              <NotesSection
-                notes={form.formData.notes || ''}
-                onInputChange={form.handleInputChange}
-              />
-            </div>
-          </div>
+          <TransactionFormFields form={form} />
 
           {/* Submit error */}
           {form.errors.submit && (
@@ -295,6 +213,13 @@ function AddTransactionPageContent() {
               ) : (
                 '保存并继续添加'
               )}
+            </button>
+            <button
+              type="button"
+              onClick={() => leaveGuard.requestLeave(() => router.back())}
+              className={button.secondary + ' max-md:py-3'}
+            >
+              取消
             </button>
           </div>
         </form>

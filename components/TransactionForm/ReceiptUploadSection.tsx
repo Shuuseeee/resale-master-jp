@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { Dismiss20Regular } from '@fluentui/react-icons/headless/svg/dismiss';
+import { ImageAdd24Regular } from '@fluentui/react-icons/headless/svg/image-add';
 
 interface ReceiptUploadSectionProps {
   imagePreview: string;
@@ -27,7 +29,7 @@ export function ReceiptUploadSection({
           <label className="sn-form-label">采购截图</label>
 
           {imagePreview ? (
-            <div className="relative group">
+            <div className="relative">
               <div className="relative h-48 w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
                 <Image
                   src={imagePreview}
@@ -39,24 +41,18 @@ export function ReceiptUploadSection({
               <button
                 type="button"
                 onClick={onClearImage}
-                className="absolute top-2 right-2 p-2 bg-[var(--color-danger-bg)] active:opacity-80 rounded-lg transition-colors"
+                className="fluent-btn fluent-btn--default absolute right-2 top-2 px-2"
+                aria-label="删除截图"
+                title="删除截图"
               >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Dismiss20Regular />
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-[var(--color-border)] rounded-xl cursor-pointer bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-elevated)] transition-all">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <svg className="w-12 h-12 mb-3 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <p className="mb-2 text-sm text-[var(--color-text-muted)]">
-                  <span className="font-semibold">点击上传</span>
-                </p>
-                <p className="text-xs text-[var(--color-text-muted)]">PNG, JPG 或 WEBP (最大 5MB)</p>
-              </div>
+            <label className="flex h-48 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-[var(--color-bg-subtle)] transition-colors hover:bg-[var(--color-bg-hover)]">
+              <ImageAdd24Regular className="text-[var(--color-text-muted)]" />
+              <span className="text-sm font-semibold text-[var(--color-text)]">点击上传</span>
+              <span className="text-xs text-[var(--color-text-muted)]">支持 JPG、PNG、HEIC 等图片，上传前自动压缩</span>
               <input
                 type="file"
                 accept="image/*"

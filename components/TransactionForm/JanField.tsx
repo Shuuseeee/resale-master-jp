@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import Spinner from '@/components/fluent/Spinner';
 
 interface JanFieldProps {
@@ -17,6 +18,7 @@ export function JanField({ janCode, janLooking, onInputChange, onScanBarcode }: 
       <div className="flex items-center gap-2">
         <input
           type="text"
+          inputMode="numeric"
           name="jan_code"
           value={janCode}
           onChange={onInputChange}
@@ -29,18 +31,15 @@ export function JanField({ janCode, janLooking, onInputChange, onScanBarcode }: 
           <button
             type="button"
             onClick={onScanBarcode}
-            className="flex-shrink-0 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded-lg transition-colors"
+            className="fluent-btn fluent-btn--subtle shrink-0 px-2"
+            aria-label="扫描条形码"
             title="扫描条形码"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
+            <BarcodeScanner20Regular />
           </button>
         )}
       </div>
-      <p className="sn-form-muted">
-        输入JAN码后如果商品名称为空会自动补全（仅限部分常见商品）
-      </p>
+      <p className="sn-form-muted">商品名称为空时，按 JAN 自动补全（仅限部分常见商品）</p>
     </div>
   );
 }
