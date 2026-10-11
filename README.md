@@ -205,7 +205,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 
 `scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建，包含两个 worker：
 
-- **thumbnail-fetcher**：调 Kaitorix search API 获取商品缩略图并转存 Storage（写 `jan_thumbnail_cache`，不用 Playwright）。web 端在用。
+- 商品缩略图：2026-10-11 起由 Vercel 处理（`lib/server/jan-thumbnails.ts`），scraper 里只剩全量重置脚本 `src/reset-thumbnails.ts`。
 - **kaitorix-scraper**：监听 `kaitorix_scrape_queue`，用 Playwright 抓价格写回 `kaitorix_price_cache`。**web 端已改走官方 Open API，不再入队**；它只为原生 App 保留（原生的价格自动刷新仍通过 `enqueue_kaitorix_scrape` 入队）。原生端迁到 web 接口之前不要停它。
 
 详细启动方式见 `scraper/README.md`。

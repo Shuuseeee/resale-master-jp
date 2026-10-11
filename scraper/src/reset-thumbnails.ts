@@ -2,7 +2,8 @@
 //   1) 清空 product-images bucket（走 Storage API，不直接删 storage.objects，避免底层文件成孤儿）
 //   2) 清空 jan_thumbnail_cache / jan_thumbnail_queue
 //   3) batch_enqueue_jan_thumbnails() 从 transactions 全量 distinct JAN 重新入队
-// 之后由 thumbnail-fetcher worker 走 Kaitorix API 重抓。
+// 之后由 Vercel 重抓（lib/server/jan-thumbnails.ts：每日 Cron /api/thumbnail/process 每次最多 150 条；
+// 急的话带 CRON_SECRET 手动多调几次 /api/thumbnail/process）。
 //
 // 执行：cd scraper && npx tsx src/reset-thumbnails.ts
 

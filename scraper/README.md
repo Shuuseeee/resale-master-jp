@@ -17,15 +17,9 @@ Supabase の `kaitorix_scrape_queue` を監視し、JAN コードごとに kaito
 3. Playwright で kaitorix.app を開き、店舗別の買取価格を取得する。
 4. 結果を `kaitorix_price_cache`（`last_fetch_source = 'scraper'`）に保存する。
 
-## thumbnail-fetcher（商品サムネイル）
+## 商品サムネイル（2026-10-11 から Vercel 側）
 
-`src/thumbnail-fetcher.ts` は `jan_thumbnail_queue` を監視する別 worker（pm2 の `thumbnail-fetcher`、または `npm run thumbnail`）。
-
-1. Kaitorix の search API（`/api/search?q={jan}&limit=1`、`KAITORIX_API_TOKENS` 必須）から `image_url`（Amazon CDN）を取得する。JAN 完全一致のみ採用。
-2. 画像をダウンロードし sharp で 800×800 WebP（≤100KB）に圧縮する。
-3. Storage の `product-images/{jan}.webp` へアップロードし、`jan_thumbnail_cache` を upsert する（ホットリンクはしない）。
-
-Playwright は使わない（価格 scraper のみが使用）。全量リセットは `npx tsx src/reset-thumbnails.ts`（Storage・キャッシュ・キューを空にして `batch_enqueue_jan_thumbnails()` で再投入）。
+サムネイル取得は Vercel に移行済み（`lib/server/jan-thumbnails.ts`：`/api/thumbnail/enqueue` の after() で即時処理 + 毎日の Cron `/api/thumbnail/process`）。この scraper には全量リセット用の `src/reset-thumbnails.ts` だけが残る（Storage・キャッシュ・キューを空にして `batch_enqueue_jan_thumbnails()` で再投入。再取得は Vercel の Cron が 1 日最大 150 件ずつ処理し、急ぐ場合は `/api/thumbnail/process` を `CRON_SECRET` 付きで手動実行）。
 
 ## 初期セットアップ
 
@@ -34,7 +28,7 @@ Playwright は使わない（価格 scraper のみが使用）。全量リセッ
 ```bash
 cd scraper
 npm install
-npx playwright install chromium   # 価格 scraper のみ使用（thumbnail-fetcher には不要）
+npx playwright install chromium
 ```
 
 ### 2. 環境変数の設定
@@ -51,7 +45,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 KAITORIX_API_TOKENS=your-kaitorix-token
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` はキュー取得とキャッシュ更新に必要。ブラウザ向けの anon key は使わない。`KAITORIX_API_TOKENS` は thumbnail-fetcher が search API を叩くのに必要（PWA 側 `.env.local` と同じ値、カンマ区切りの場合は先頭のみ使用）。
+`SUPABASE_SERVICE_ROLE_KEY` はキュー取得とキャッシュ更新に必要。ブラウザ向けの anon key は使わない。
 
 ### 3. PM2 のインストール
 
