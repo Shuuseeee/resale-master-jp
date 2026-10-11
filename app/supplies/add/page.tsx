@@ -9,18 +9,14 @@ import PageHeader from '@/components/shell/PageHeader';
 import Select from '@/components/Select';
 import DatePicker from '@/components/DatePicker';
 import { formatDateToLocal, getTodayString, parseDateFromLocal } from '@/lib/utils/dateUtils';
+import { DEFAULT_EXPENSE_CATEGORY, EXPENSE_CATEGORIES } from '@/lib/expenses/categories';
 
-const CATEGORY_OPTIONS = [
-  { value: '包装材料', label: '包装材料' },
-  { value: '运输耗材', label: '运输耗材' },
-  { value: '标签打印', label: '标签打印' },
-  { value: '其他', label: '其他' },
-];
+const CATEGORY_OPTIONS = EXPENSE_CATEGORIES.map(c => ({ value: c.value, label: c.label }));
 
 export default function AddSupplyPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<SuppliesCostFormData>({
-    category: '包装材料',
+    category: DEFAULT_EXPENSE_CATEGORY as string,
     amount: 0,
     purchase_date: getTodayString(),
     description: '',
@@ -48,7 +44,7 @@ export default function AddSupplyPage() {
 
   const validateForm = () => {
     const next: Record<string, string> = {};
-    if (!formData.category) next.category = '请选择耗材分类';
+    if (!formData.category) next.category = '请选择经费分类';
     if (formData.amount <= 0) next.amount = '金额必须大于 0';
     if (!formData.purchase_date) next.purchase_date = '请选择采购日期';
     setErrors(next);
@@ -75,7 +71,7 @@ export default function AddSupplyPage() {
 
   return (
     <div className={layout.page}>
-      <PageHeader crumbs={[{ label: '耗材管理', href: '/supplies' }, { label: '新增耗材记录' }]} />
+      <PageHeader crumbs={[{ label: '经费', href: '/supplies' }, { label: '新增经费' }]} />
       <div className={'mx-auto max-w-3xl px-4 py-6 ' + layout.narrowDesktop}>
         <div className={layout.section + ' md:mb-0'}>
           <button onClick={() => router.back()} className={button.ghost + ' mb-4 inline-flex items-center gap-2 md:hidden'}>
@@ -84,18 +80,18 @@ export default function AddSupplyPage() {
             </svg>
             返回
           </button>
-          <h1 className={heading.page}>新增耗材记录</h1>
+          <h1 className={heading.page}>新增经费</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className={card.primary + ' p-6'}>
             <h2 className={heading.h3 + ' mb-5 flex items-center gap-2'}>
-              耗材信息
+              经费信息
             </h2>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">耗材分类 <span className="text-[var(--color-danger)]">*</span></label>
+                <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">分类 <span className="text-[var(--color-danger)]">*</span></label>
                 <Select
                   value={formData.category}
                   onChange={v => handleInputChange({ target: { name: 'category', value: v } } as unknown as React.ChangeEvent<HTMLSelectElement>)}
@@ -144,7 +140,7 @@ export default function AddSupplyPage() {
 
           <div className="flex gap-3">
             <button type="submit" disabled={isSubmitting} className={button.primary + ' flex-1'}>
-              {isSubmitting ? '保存中...' : '保存耗材记录'}
+              {isSubmitting ? '保存中...' : '保存经费'}
             </button>
             <button type="button" onClick={() => router.back()} className={button.secondary}>
               取消

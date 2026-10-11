@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
     { name: '采购成本', value: costStructure.purchaseCost },
     { name: '平台费用', value: costStructure.platformFees },
     { name: '运费', value: costStructure.shippingFees },
-    { name: '耗材成本', value: costStructure.suppliesCosts },
+    { name: '经费', value: costStructure.suppliesCosts },
   ].filter(item => item.value > 0) : [];
 
   return (

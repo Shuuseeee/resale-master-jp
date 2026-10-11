@@ -8,7 +8,6 @@ import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/bo
 import { Delete20Regular } from '@fluentui/react-icons/headless/svg/delete';
 import { Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
 import { MoreHorizontal20Filled, MoreHorizontal20Regular } from '@fluentui/react-icons/headless/svg/more-horizontal';
-import { Print20Filled, Print20Regular } from '@fluentui/react-icons/headless/svg/print';
 import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
 import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
 import DualIcon from '@/components/fluent/DualIcon';
@@ -26,21 +25,23 @@ import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { useSectionDrawer } from '@/lib/section-drawer';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import PageHeader from '@/components/shell/PageHeader';
+import { EXPENSE_CATEGORIES, expenseCategoryLabel } from '@/lib/expenses/categories';
+import { VehicleCar20Filled, VehicleCar20Regular } from '@fluentui/react-icons/headless/svg/vehicle-car';
+import { Archive20Filled, Archive20Regular } from '@fluentui/react-icons/headless/svg/archive';
+import { Toolbox20Filled, Toolbox20Regular } from '@fluentui/react-icons/headless/svg/toolbox';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  '包装材料': '包装材料',
-  '运输耗材': '运输耗材',
-  '标签打印': '标签打印',
-  '其他': '其他',
+// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分类与买取X 一致，见 lib/expenses/categories.ts）
+const CATEGORY_ICONS: Record<string, ReactNode> = {
+  送料: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} />,
+  交通費: <DualIcon regular={VehicleCar20Regular} filled={VehicleCar20Filled} />,
+  梱包材: <DualIcon regular={Box20Regular} filled={Box20Filled} />,
+  保管費: <DualIcon regular={Archive20Regular} filled={Archive20Filled} />,
+  消耗品: <DualIcon regular={Toolbox20Regular} filled={Toolbox20Filled} />,
+  その他: <DualIcon regular={MoreHorizontal20Regular} filled={MoreHorizontal20Filled} />,
 };
-
-// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换
 const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
   { id: 'all', label: '全部', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
-  { id: '包装材料', label: CATEGORY_LABELS['包装材料'], icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
-  { id: '运输耗材', label: CATEGORY_LABELS['运输耗材'], icon: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} /> },
-  { id: '标签打印', label: CATEGORY_LABELS['标签打印'], icon: <DualIcon regular={Print20Regular} filled={Print20Filled} /> },
-  { id: '其他', label: CATEGORY_LABELS['其他'], icon: <DualIcon regular={MoreHorizontal20Regular} filled={MoreHorizontal20Filled} /> },
+  ...EXPENSE_CATEGORIES.map(c => ({ id: c.value, label: c.label, icon: CATEGORY_ICONS[c.value] })),
 ];
 
 const columnHelper = createColumnHelper<SuppliesCost>();
@@ -65,7 +66,7 @@ export default function SuppliesPage() {
   }, [queryClient]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('确定要删除这条耗材记录吗？')) {
+    if (!confirm('确定要删除这条经费吗？')) {
       return;
     }
 
@@ -89,7 +90,7 @@ export default function SuppliesPage() {
       enableSorting: false,
       cell: info => (
         <span className={badge.info}>
-          {CATEGORY_LABELS[info.getValue()] || info.getValue()}
+          {expenseCategoryLabel(info.getValue())}
         </span>
       ),
       meta: { card: { slot: 'badge' } },
@@ -153,7 +154,7 @@ export default function SuppliesPage() {
   }, {} as Record<string, number>);
 
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
-  if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="耗材记录" />;
+  if (loading && fetchStatus === 'paused' && !online) return <OfflineNoCache what="经费" />;
 
   if (loading) {
     return <PageSkeleton />;
@@ -163,14 +164,14 @@ export default function SuppliesPage() {
     <PullToRefresh onRefresh={async () => { await refetch(); }}>
     <div className={layout.page}>
       <PageHeader
-        crumbs={[{ label: '耗材管理' }, { label: FILTER_ITEMS.find(item => item.id === filter)?.label ?? '' }]}
-        actions={[{ id: 'add', label: '添加耗材记录', icon: { regular: Add20Regular, filled: Add20Filled }, href: '/supplies/add', primary: true }]}
+        crumbs={[{ label: '经费' }, { label: FILTER_ITEMS.find(item => item.id === filter)?.label ?? '' }]}
+        actions={[{ id: 'add', label: '添加经费', icon: { regular: Add20Regular, filled: Add20Filled }, href: '/supplies/add', primary: true }]}
       />
       <div className={layout.container}>
         {/* 标题区域（桌面的「添加」在文档头工具栏里） */}
         <div className={layout.section + ' md:mb-0'}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:block">
-            <h1 className={heading.page}>耗材成本管理</h1>
+            <h1 className={heading.page}>经费</h1>
             <Link
               href="/supplies/add"
               className={button.primary + ' flex items-center gap-2 md:hidden'}
@@ -178,7 +179,7 @@ export default function SuppliesPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              添加耗材记录
+              添加经费
             </Link>
           </div>
         </div>
@@ -186,7 +187,7 @@ export default function SuppliesPage() {
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className={card.stat}>
-            <div className="text-[var(--color-text-muted)] text-sm mb-1">总耗材成本</div>
+            <div className="text-[var(--color-text-muted)] text-sm mb-1">经费合计</div>
             <div className="text-2xl font-bold text-[var(--color-text)]">
               {formatCurrency(totalCost)}
             </div>
@@ -198,7 +199,7 @@ export default function SuppliesPage() {
             </div>
           </div>
           <div className={card.stat}>
-            <div className="text-[var(--color-text-muted)] text-sm mb-1">本月耗材</div>
+            <div className="text-[var(--color-text-muted)] text-sm mb-1">本月经费</div>
             <div className="text-2xl font-bold text-[var(--color-text)]">
               {formatCurrency(monthlyStats[formatDateToLocal(new Date()).substring(0, 7)] || 0)}
             </div>
@@ -224,7 +225,7 @@ export default function SuppliesPage() {
             >
               全部
             </button>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            {EXPENSE_CATEGORIES.map(({ value: key, label }) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
@@ -240,13 +241,13 @@ export default function SuppliesPage() {
           </div>
         </div>
 
-        {/* 耗材列表 */}
+        {/* 经费列表 */}
         {filteredSupplies.length === 0 ? (
           <div className={card.primary + ' overflow-hidden p-12 text-center'}>
             <svg className="w-16 h-16 text-[var(--color-text-muted)] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <p className="text-[var(--color-text-muted)] text-lg">暂无耗材记录</p>
+            <p className="text-[var(--color-text-muted)] text-lg">暂无经费</p>
             <Link
               href="/supplies/add"
               className={button.primary + ' inline-block mt-4'}

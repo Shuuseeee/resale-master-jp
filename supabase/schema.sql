@@ -383,6 +383,7 @@ CREATE TABLE public.selling_platforms (
   updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- 经费（界面名「经费」，原「耗材」）：category 存买取X 的日文分类 送料 / 交通費 / 梱包材 / 保管費 / 消耗品 / その他（lib/expenses/categories.ts）
 CREATE TABLE public.supplies_costs (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   user_id uuid NOT NULL,

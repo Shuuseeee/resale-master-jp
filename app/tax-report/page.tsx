@@ -583,7 +583,7 @@ export default function TaxReportPage() {
                   </div>
                   <div className={card.stat}>
                     <div className={statLabelClass}>
-                      耗材成本
+                      经费
                     </div>
                     <div className={'text-xl ' + statValueClass}>
                       {formatCurrency(summary.suppliesCosts)}

@@ -1,6 +1,6 @@
 // lib/section-drawer.ts — 分区抽屉（Loop 工作区抽屉）的全局状态
 // Loop 的导航模型：导航 Tab 对应一个抽屉，抽屉列出这一块的分区，内容区只显示选中的那一个。
-// 用在交易列表（状态）、买取价格（视图）、税务申报（年度）、耗材管理（分类）、设置（分区）；数据分析、仪表盘、详情 / 表单页不用。
+// 用在交易列表（状态）、买取价格（视图）、税务申报（年度）、经费（分类）、设置（分区）；数据分析、仪表盘、详情 / 表单页不用。
 // 页面用 useSectionDrawer 注册自己的分区，抽屉本体在外壳里（components/shell/SectionDrawer.tsx）。
 // 行为照搬 Loop（design-spec/responsive.md #3）：
 // - 在这些页面上：抽屉打开 = 导航上对应的 Tab 选中；关掉后 Tab 取消选中，再点该 Tab 重新打开
@@ -17,7 +17,7 @@ export const SECTION_DRAWER_PAGES: Record<string, string> = {
   '/transactions': '交易列表',
   '/kaitorix-prices': '买取价格',
   '/tax-report': '税务申报',
-  '/supplies': '耗材管理',
+  '/supplies': '经费',
   '/settings': '设置',
 };
 

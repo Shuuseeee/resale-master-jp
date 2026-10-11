@@ -85,6 +85,3 @@ export const XLSX_HEADERS = {
   arrivals: ['仕入参照キー', '着荷日', '着荷数量', '着荷メモ'],
   expenses: ['カテゴリ', '金額', '経費日', '経費メモ'],
 } as const;
-
-/** 耗材分类（app/supplies 的固定 4 类）；经费导入时对不上的分类归「其他」，原分类写进说明 */
-export const SUPPLY_CATEGORIES = ['包装材料', '运输耗材', '标签打印', '其他'] as const;

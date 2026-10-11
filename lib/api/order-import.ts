@@ -5,10 +5,10 @@
 // - 采购总价 = 进货单价 × 数量 + 运费；「使用积分」= 积分抵扣，其余计为信用卡 / 其他支付
 // - 买取X 的「优惠券」是已从单价里扣掉的折扣（不含在单价里、不影响原価），我们没有对应字段，写进备注
 // - 退货的「损失额」写进 return_records.loss_amount；利润由数据库触发器按买取X 公式计算
-// - 经费 → 耗材：分类对上 4 个固定分类就用，对不上归「其他」、原分类写进说明
+// - 经费：分类与买取X 相同（送料 / 交通費 / 梱包材 / 保管費 / 消耗品 / その他），也认中文名；都对不上归「その他」、原分类写进说明
 
 import { supabase } from '@/lib/supabase/client';
-import { SUPPLY_CATEGORIES } from '@/lib/order-data/columns';
+import { EXPENSE_CATEGORIES, isExpenseCategory } from '@/lib/expenses/categories';
 import { parseCsvText, parseOrderData, type ParsedPurchase, type Table } from '@/lib/order-data/parse';
 
 export interface OrderImportResult {
@@ -130,9 +130,10 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
   });
 
   const expenses = parsed.expenses.map(e => {
-    const known = (SUPPLY_CATEGORIES as readonly string[]).includes(e.category);
+    const category = isExpenseCategory(e.category) ? e.category : EXPENSE_CATEGORIES.find(c => c.label === e.category)?.value;
+    const known = !!category;
     return {
-      category: known ? e.category : '其他',
+      category: category ?? 'その他',
       amount: e.amount,
       purchase_date: e.date,
       description: known ? e.memo : joinNotes(e.category, e.memo).replace('\n', ' · '),

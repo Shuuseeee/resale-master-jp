@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import type { FluentIcon } from '@fluentui/react-icons/headless';
 import { Add24Filled } from '@fluentui/react-icons/headless/svg/add';
 import { BarcodeScanner16Regular, BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
-import { Box16Regular, Box24Filled, Box24Regular } from '@fluentui/react-icons/headless/svg/box';
+import { Receipt16Regular, Receipt24Filled, Receipt24Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr16Regular, ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
 import { DataBarVertical24Filled, DataBarVertical24Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
 import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
@@ -113,7 +113,7 @@ export default function Navigation() {
   // 移动端更多抽屉中的次要项目（当前页用实心图标）
   const moreItems: { name: string; href: string; icon: FluentIcon; activeIcon: FluentIcon }[] = [
     { name: '设置', href: '/settings', icon: Settings24Regular, activeIcon: Settings24Filled },
-    { name: '耗材管理', href: '/supplies', icon: Box24Regular, activeIcon: Box24Filled },
+    { name: '经费', href: '/supplies', icon: Receipt24Regular, activeIcon: Receipt24Filled },
     { name: '数据分析', href: '/analytics', icon: DataBarVertical24Regular, activeIcon: DataBarVertical24Filled },
     { name: '税务申报', href: '/tax-report', icon: DocumentText24Regular, activeIcon: DocumentText24Filled },
   ];
@@ -139,7 +139,7 @@ export default function Navigation() {
       {/* ── 桌面端左导航（grid 第二行第一列，padding-left 8） ── */}
       <aside className="app-shell__aside hidden md:flex">
         <NavRail onScanArrival={() => setShowScanArrival(true)} />
-        {/* 分区抽屉（交易列表 / 买取价格 / 税务申报 / 耗材管理 / 设置）：≥1025 内嵌在导航右侧，768–1024 以浮层渲染到 body */}
+        {/* 分区抽屉（交易列表 / 买取价格 / 税务申报 / 经费 / 设置）：≥1025 内嵌在导航右侧，768–1024 以浮层渲染到 body */}
         <SectionDrawer />
       </aside>
 
@@ -268,10 +268,10 @@ export default function Navigation() {
               },
               {
                 href: '/supplies/add',
-                label: '新增耗材',
+                label: '新增经费',
                 iconBg: 'bg-[var(--color-info-subtle)]',
                 iconColor: 'text-[var(--color-info)]',
-                icon: <Box16Regular />,
+                icon: <Receipt16Regular />,
               },
             ].map((item, i, arr) => (
               <Link

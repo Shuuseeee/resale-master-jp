@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type Rea
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarcodeScanner20Filled, BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
-import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
+import { Receipt20Filled, Receipt20Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
 import { DataBarVertical20Filled, DataBarVertical20Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
 import { DocumentText20Filled, DocumentText20Regular } from '@fluentui/react-icons/headless/svg/document-text';
@@ -44,7 +44,7 @@ const NAV_GROUPS: { caption?: string; items: NavItem[] }[] = [
   {
     caption: '管理',
     items: [
-      { name: '耗材管理', href: '/supplies', icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
+      { name: '经费', href: '/supplies', icon: <DualIcon regular={Receipt20Regular} filled={Receipt20Filled} /> },
       { name: '设置', href: '/settings', icon: <DualIcon regular={Settings20Regular} filled={Settings20Filled} /> },
     ],
   },
@@ -197,8 +197,8 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
         <MenuItem icon={<ClipboardTextLtr20Regular />} onSelect={() => goTo('/transactions/add')}>
           新增交易
         </MenuItem>
-        <MenuItem icon={<Box20Regular />} onSelect={() => goTo('/supplies/add')}>
-          新增耗材
+        <MenuItem icon={<Receipt20Regular />} onSelect={() => goTo('/supplies/add')}>
+          新增经费
         </MenuItem>
         <MenuItem
           icon={<BarcodeScanner20Regular />}

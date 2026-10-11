@@ -23,6 +23,7 @@ import { downloadCsv } from '@/lib/api/order-export';
 import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { input } from '@/lib/theme';
+import { expenseCategoryLabel } from '@/lib/expenses/categories';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import type { TransactionForCompare } from '@/hooks/useBuybackComparison';
 import type { Transaction } from '@/types/database.types';
@@ -101,10 +102,10 @@ function Money({ value, color = false }: { value: number | null; color?: boolean
   return <span className={`whitespace-nowrap ${color ? signed(value) : ''}`}>{formatCurrency(value)}</span>;
 }
 
-function Options({ label, value, onChange, values }: { label: string; value: string; onChange: (v: string) => void; values: string[] }) {
+function Options({ label, value, onChange, values, labelOf = v => v }: { label: string; value: string; onChange: (v: string) => void; values: string[]; labelOf?: (v: string) => string }) {
   return (
     <div className="w-full md:w-40">
-      <Select value={value} onChange={onChange} placeholder={label} clearable className={input.base + ' w-full'} options={values.map(v => ({ value: v, label: v }))} />
+      <Select value={value} onChange={onChange} placeholder={label} clearable className={input.base + ' w-full'} options={values.map(v => ({ value: v, label: labelOf(v) }))} />
     </div>
   );
 }
@@ -269,7 +270,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
         name,
       );
     } else {
-      downloadCsv(toCsv(['经费日期', '分类', '金额', '说明'], expensesShown.map(e => [e.date, e.category, e.amount, e.description])), name);
+      downloadCsv(toCsv(['经费日期', '分类', '金额', '说明'], expensesShown.map(e => [e.date, expenseCategoryLabel(e.category), e.amount, e.description])), name);
     }
   };
 
@@ -411,7 +412,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   const expenseColumns = useMemo(
     (): ColumnDef<DashExpense>[] => [
       { id: 'date', header: '经费日期', accessorFn: e => e.date, cell: ({ getValue }) => <span className="whitespace-nowrap">{fmtDate(getValue() as string)}</span>, meta: { card: { slot: 'subtitle' } } },
-      { id: 'category', header: '分类', accessorFn: e => e.category, meta: { card: { slot: 'title' } } },
+      { id: 'category', header: '分类', accessorFn: e => expenseCategoryLabel(e.category), meta: { card: { slot: 'title' } } },
       { id: 'amount', header: '金额', accessorFn: e => e.amount, cell: ({ getValue }) => <Money value={getValue() as number} />, meta: { align: 'right' } },
       { id: 'description', header: '说明', accessorFn: e => e.description ?? '' },
       {
@@ -488,7 +489,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   } else {
     toolbar = (
       <>
-        <Options label="分类" value={f.category} onChange={category => setF({ category })} values={uniq(expenses.map(e => e.category))} />
+        <Options label="分类" value={f.category} onChange={category => setF({ category })} values={uniq(expenses.map(e => e.category))} labelOf={expenseCategoryLabel} />
         <Link href="/supplies/add" className="fluent-btn fluent-btn--default">
           添加经费
         </Link>
