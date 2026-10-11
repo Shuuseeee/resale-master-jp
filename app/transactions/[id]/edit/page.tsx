@@ -11,6 +11,7 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
 import Spinner from '@/components/fluent/Spinner';
+import { ConfirmModal } from '@/components/Modal';
 import {
   BasicInfoSection,
   PurchaseInfoSection,
@@ -30,6 +31,7 @@ export default function EditTransactionPage() {
   const [dbTransaction, setDbTransaction] = useState<Transaction | null>(null);
   const [initialData, setInitialData] = useState<Partial<TransactionFormData>>();
   const [initialIsPending, setInitialIsPending] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -185,7 +187,11 @@ export default function EditTransactionPage() {
                 onInputChange={form.handleInputChange}
                 onQuantityChange={form.handleQuantityChange}
                 onScanBarcode={() => form.setShowScanner(true)}
-                onTogglePending={() => form.setIsPending(!form.isPending)}
+                onTogglePending={() => {
+                  // 改回未到货会清掉到货明细（库里触发器），记过到货的先确认
+                  if (!form.isPending && dbTransaction?.quantity_arrived) setConfirmPending(true);
+                  else form.setIsPending(!form.isPending);
+                }}
                 quantityDisabled={form.quantityLocked}
                 quantityWarning={form.quantityWarning}
               />
@@ -282,6 +288,18 @@ export default function EditTransactionPage() {
           </div>
         </form>
       </div>
+      <ConfirmModal
+        isOpen={confirmPending}
+        onClose={() => setConfirmPending(false)}
+        onConfirm={() => {
+          form.setIsPending(true);
+          setConfirmPending(false);
+        }}
+        title="改为未到货？"
+        message={`已记录到货 ${dbTransaction?.quantity_arrived ?? 0} 件（共 ${dbTransaction?.quantity ?? 0} 件）。保存后所有到货记录都会删除。`}
+        confirmText="改为未到货"
+        confirmVariant="danger"
+      />
       {form.showScanner && (
         <BarcodeScanner
           onDetected={(code) => {
