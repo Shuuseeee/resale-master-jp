@@ -12,11 +12,9 @@ import { Wallet20Filled, Wallet20Regular } from '@fluentui/react-icons/headless/
 import DualIcon from '@/components/fluent/DualIcon';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
-import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
 import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
 import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
 import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
-import { Stop20Filled, Stop20Regular } from '@fluentui/react-icons/headless/svg/stop';
 import { TableSettings20Filled, TableSettings20Regular } from '@fluentui/react-icons/headless/svg/table-settings';
 import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
 import TabList from '@/components/fluent/TabList';
@@ -267,9 +265,7 @@ function TransactionsContent() {
     isLoading: kaitorixLoading,
     progress: kaitorixProgress,
     enabled: kaitorixEnabled,
-    refresh: refreshKaitorix,
     refreshMissing: refreshMissingKaitorix,
-    stop: stopKaitorix,
   } = kaitorixState;
 
   useEffect(() => {
@@ -1019,19 +1015,6 @@ function TransactionsContent() {
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
   // 桌面文档头的操作（手机端仍是标题下方那排按钮）；priority 越大越先收进「…」
   const headerActions: PageAction[] = [
-    ...(kaitorixEnabled
-      ? [
-          {
-            id: 'kaitorix',
-            label: kaitorixLoading
-              ? `停止获取买取价格${kaitorixProgress ? `（${kaitorixProgress.completed}/${kaitorixProgress.total}）` : ''}`
-              : '获取买取价格',
-            icon: kaitorixLoading ? { regular: Stop20Regular, filled: Stop20Filled } : { regular: ArrowSync20Regular, filled: ArrowSync20Filled },
-            onClick: kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions),
-            priority: 1,
-          },
-        ]
-      : []),
     {
       id: 'group',
       label: '分组显示',
@@ -1130,37 +1113,6 @@ function TransactionsContent() {
                 </svg>
                 <span className="hidden sm:inline">{compareMode ? `退出多选(${selectedIds.size})` : '多选'}</span>
               </button>
-              {kaitorixEnabled && (
-                <button
-                  onClick={kaitorixLoading ? stopKaitorix : () => refreshKaitorix(filteredTransactions)}
-                  className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold transition-all whitespace-nowrap ${
-                    kaitorixLoading
-                      ? 'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-border)]'
-                      : buybackPrices.size > 0
-                        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-[var(--color-primary-border)]'
-                        : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)]'
-                  }`}
-                >
-                  {kaitorixLoading ? (
-                    <>
-                      <Spinner />
-                      <span className="hidden sm:inline">
-                        {kaitorixProgress
-                          ? `${kaitorixProgress.completed}/${kaitorixProgress.total}`
-                          : '加载中...'}
-                      </span>
-                      <span className="hidden sm:inline text-xs opacity-70">停止</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span className="hidden sm:inline">获取买取价格</span>
-                    </>
-                  )}
-                </button>
-              )}
               {/* CSV 导出：当前列表（所见即所得）；XLSX：全部数据 */}
               <button
                 onClick={handleExportCSV}
