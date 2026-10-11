@@ -10,7 +10,8 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, typ
 import { createPortal } from 'react-dom';
 import { Dismiss20Filled, Dismiss20Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import DualIcon from '@/components/fluent/DualIcon';
-import { SECTION_DRAWER_INLINE_QUERY, closeSectionDrawer, useSectionDrawerState } from '@/lib/section-drawer';
+import { usePathname, useRouter } from 'next/navigation';
+import { SECTION_DRAWER_INLINE_QUERY, closeSectionDrawer, syncSectionRoute, useSectionDrawerState } from '@/lib/section-drawer';
 
 function useMediaQuery(query: string) {
   return useSyncExternalStore(
@@ -34,6 +35,12 @@ const ON: Keyframe = { opacity: 1, transform: 'translate3d(0px, 0px, 0px)' };
 
 export default function SectionDrawer() {
   const { open: wantOpen, panel } = useSectionDrawerState();
+  const pathname = usePathname();
+  const router = useRouter();
+  // 列表页的子页面（详情 / 新增 / 编辑）也显示这一块的抽屉
+  useEffect(() => {
+    syncSectionRoute(pathname, href => router.push(href));
+  }, [pathname, router]);
   const inline = useMediaQuery(SECTION_DRAWER_INLINE_QUERY);
   // 手机外壳（<768）不用抽屉，各页在页面里切换分区
   const desktopShell = useMediaQuery('(min-width: 768px)');

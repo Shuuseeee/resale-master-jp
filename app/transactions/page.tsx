@@ -1,15 +1,8 @@
 // app/transactions/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, Suspense, type ReactNode } from 'react';
-import { ArrowUndo20Filled, ArrowUndo20Regular } from '@fluentui/react-icons/headless/svg/arrow-undo';
-import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
-import { BoxMultiple20Filled, BoxMultiple20Regular } from '@fluentui/react-icons/headless/svg/box-multiple';
-import { CheckmarkCircle20Filled, CheckmarkCircle20Regular } from '@fluentui/react-icons/headless/svg/checkmark-circle';
-import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
-import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
-import { Wallet20Filled, Wallet20Regular } from '@fluentui/react-icons/headless/svg/wallet';
-import DualIcon from '@/components/fluent/DualIcon';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { DEFAULT_STATUS_FILTER, TRANSACTION_SECTIONS, isStatusFilterKey, readStoredStatusFilter, storeStatusFilter, type StatusFilterKey } from '@/lib/section-items';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
 import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
@@ -105,45 +98,12 @@ type SortOrder = 'asc' | 'desc';
 type DateSortMode = 'purchase' | 'sale'; // 日期排序模式
 type ProfitSortMode = 'actual' | 'expected'; // 利润排序模式
 
-// 状态标签：active = 未售出（未到货 + 库存中），其余与 transactions.status 一一对应
-type StatusFilterKey = 'active' | 'all' | 'pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned';
-const STATUS_FILTER_KEYS: StatusFilterKey[] = ['active', 'all', 'pending', 'in_stock', 'awaiting_payment', 'sold', 'returned'];
-const DEFAULT_STATUS_FILTER: StatusFilterKey = 'active';
-const STATUS_FILTER_STORAGE_KEY = 'transactionListStatusFilter';
-
 type StatusCountKey = 'active' | 'total' | 'inStock' | 'pending' | 'awaitingPayment' | 'sold' | 'returned';
-// 桌面在分区抽屉里切换，手机在列表上方的标签栏里切换
-const STATUS_TABS: { key: StatusFilterKey; label: string; count: StatusCountKey; icon: ReactNode }[] = [
-  { key: 'active', label: '未售出', count: 'active', icon: <DualIcon regular={BoxMultiple20Regular} filled={BoxMultiple20Filled} /> },
-  { key: 'all', label: '全部', count: 'total', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
-  { key: 'in_stock', label: '库存中', count: 'inStock', icon: <DualIcon regular={Box20Regular} filled={Box20Filled} /> },
-  { key: 'pending', label: '未到货', count: 'pending', icon: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} /> },
-  { key: 'awaiting_payment', label: '待入账', count: 'awaitingPayment', icon: <DualIcon regular={Wallet20Regular} filled={Wallet20Filled} /> },
-  { key: 'sold', label: '已售出', count: 'sold', icon: <DualIcon regular={CheckmarkCircle20Regular} filled={CheckmarkCircle20Filled} /> },
-  { key: 'returned', label: '已退货', count: 'returned', icon: <DualIcon regular={ArrowUndo20Regular} filled={ArrowUndo20Filled} /> },
-];
-
-function isStatusFilterKey(v: unknown): v is StatusFilterKey {
-  return typeof v === 'string' && (STATUS_FILTER_KEYS as string[]).includes(v);
-}
-
-// 记住用户上次选的状态标签（仅本机；隐私模式/禁用存储时静默回落默认值）
-function readStoredStatusFilter(): StatusFilterKey | null {
-  try {
-    const v = window.localStorage.getItem(STATUS_FILTER_STORAGE_KEY);
-    return isStatusFilterKey(v) ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-function storeStatusFilter(key: StatusFilterKey) {
-  try {
-    window.localStorage.setItem(STATUS_FILTER_STORAGE_KEY, key);
-  } catch {
-    // 存储不可用时忽略，仅失去「记住选择」
-  }
-}
+const STATUS_COUNT_KEY: Record<StatusFilterKey, StatusCountKey> = {
+  active: 'active', all: 'total', in_stock: 'inStock', pending: 'pending', awaiting_payment: 'awaitingPayment', sold: 'sold', returned: 'returned',
+};
+// 桌面在分区抽屉里切换，手机在列表上方的标签栏里切换（分区定义与详情等子页面的抽屉共用，见 lib/section-items.tsx）
+const STATUS_TABS = TRANSACTION_SECTIONS.map(s => ({ key: s.id, label: s.label, icon: s.icon, count: STATUS_COUNT_KEY[s.id] }));
 
 interface PaymentMethodBasic {
   id: string;

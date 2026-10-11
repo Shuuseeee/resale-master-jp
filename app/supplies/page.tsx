@@ -1,16 +1,11 @@
 // app/supplies/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper } from '@tanstack/react-table';
-import { Box20Filled, Box20Regular } from '@fluentui/react-icons/headless/svg/box';
 import { Delete20Regular } from '@fluentui/react-icons/headless/svg/delete';
 import { Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
-import { MoreHorizontal20Filled, MoreHorizontal20Regular } from '@fluentui/react-icons/headless/svg/more-horizontal';
-import { TextBulletListLtr20Filled, TextBulletListLtr20Regular } from '@fluentui/react-icons/headless/svg/text-bullet-list-ltr';
-import { VehicleTruckProfile20Filled, VehicleTruckProfile20Regular } from '@fluentui/react-icons/headless/svg/vehicle-truck-profile';
-import DualIcon from '@/components/fluent/DualIcon';
 import { getSuppliesCosts, deleteSuppliesCost } from '@/lib/api/supplies';
 import type { SuppliesCost } from '@/types/database.types';
 import { formatCurrency } from '@/lib/financial/calculator';
@@ -22,34 +17,19 @@ import OfflineNoCache from '@/components/OfflineNoCache';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { DataTable } from '@/components/DataTable';
 import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
-import { useSectionDrawer } from '@/lib/section-drawer';
+import { lastSectionSelected, useSectionDrawer } from '@/lib/section-drawer';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import PageHeader from '@/components/shell/PageHeader';
-import { EXPENSE_CATEGORIES, expenseCategoryLabel } from '@/lib/expenses/categories';
-import { VehicleCar20Filled, VehicleCar20Regular } from '@fluentui/react-icons/headless/svg/vehicle-car';
-import { Archive20Filled, Archive20Regular } from '@fluentui/react-icons/headless/svg/archive';
-import { Toolbox20Filled, Toolbox20Regular } from '@fluentui/react-icons/headless/svg/toolbox';
-import { ArrowRepeatAll20Filled, ArrowRepeatAll20Regular } from '@fluentui/react-icons/headless/svg/arrow-repeat-all';
+import { expenseCategoryLabel } from '@/lib/expenses/categories';
+import { EXPENSE_RECURRING, EXPENSE_SECTIONS, isExpenseSection } from '@/lib/section-items';
 import RecurringExpensesPanel from '@/components/expenses/RecurringExpensesPanel';
 import { Attach16Regular } from '@fluentui/react-icons/headless/svg/attach';
 import { getAttachmentCounts, removeExpenseFiles } from '@/lib/api/expense-attachments';
 
-// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分类与买取X 一致，见 lib/expenses/categories.ts）。
-// 最后一项「定期经费」不是分类，是规则管理视图（新建定期经费后跳到 ?view=recurring）。
-const CATEGORY_ICONS: Record<string, ReactNode> = {
-  送料: <DualIcon regular={VehicleTruckProfile20Regular} filled={VehicleTruckProfile20Filled} />,
-  交通費: <DualIcon regular={VehicleCar20Regular} filled={VehicleCar20Filled} />,
-  梱包材: <DualIcon regular={Box20Regular} filled={Box20Filled} />,
-  保管費: <DualIcon regular={Archive20Regular} filled={Archive20Filled} />,
-  消耗品: <DualIcon regular={Toolbox20Regular} filled={Toolbox20Filled} />,
-  その他: <DualIcon regular={MoreHorizontal20Regular} filled={MoreHorizontal20Filled} />,
-};
-const RECURRING = 'recurring';
-const FILTER_ITEMS: { id: string; label: string; icon: ReactNode }[] = [
-  { id: 'all', label: '全部', icon: <DualIcon regular={TextBulletListLtr20Regular} filled={TextBulletListLtr20Filled} /> },
-  ...EXPENSE_CATEGORIES.map(c => ({ id: c.value, label: c.label, icon: CATEGORY_ICONS[c.value] })),
-  { id: RECURRING, label: '定期经费', icon: <DualIcon regular={ArrowRepeatAll20Regular} filled={ArrowRepeatAll20Filled} /> },
-];
+// 桌面在分区抽屉里切换分类，手机在统计卡片下方的按钮组里切换（分区定义与新增 / 编辑页的抽屉共用，见 lib/section-items.tsx）。
+// 最后一项「定期经费」不是分类，是规则管理视图（新建定期经费后跳到 ?section=recurring）。
+const FILTER_ITEMS = EXPENSE_SECTIONS;
+const RECURRING = EXPENSE_RECURRING;
 
 const columnHelper = createColumnHelper<SuppliesCost>();
 const NO_SUPPLIES: SuppliesCost[] = [];
@@ -58,14 +38,22 @@ const NO_COUNTS: Record<string, number> = {};
 export default function SuppliesPage() {
   const queryClient = useQueryClient();
   const online = useOnlineStatus();
-  const [filter, setFilter] = useState<string>('all');
+  // 选中的分类：网址 ?section=（详情等子页面的抽屉点分类、新建定期经费后跳来）> 本次会话上次选的 > 全部。
+  // 之前每次进来都是「全部」，从新增 / 编辑页返回会丢掉原来的分类。
+  // 在初始值里读（不放 effect：抽屉注册的 effect 会先把「全部」记成上次选的）；首屏是骨架屏，不依赖该值，不会有 hydration 不一致
+  const [filter, setFilter] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'all';
+    const fromUrl = new URL(window.location.href).searchParams.get('section');
+    if (isExpenseSection(fromUrl)) return fromUrl;
+    const last = lastSectionSelected('/supplies');
+    return isExpenseSection(last) ? last : 'all';
+  });
 
   useEffect(() => {
-    // 新建定期经费后跳来时带 ?view=recurring：选中后把参数去掉，之后切换分类、刷新都不再被它拉回
+    // 读完把 ?section= 去掉，之后切换分类、刷新都不再被它拉回
     const url = new URL(window.location.href);
-    if (url.searchParams.get('view') !== RECURRING) return;
-    setFilter(RECURRING);
-    url.searchParams.delete('view');
+    if (!url.searchParams.has('section')) return;
+    url.searchParams.delete('section');
     window.history.replaceState(window.history.state, '', url);
   }, []);
 

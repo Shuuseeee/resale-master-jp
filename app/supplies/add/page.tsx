@@ -79,7 +79,7 @@ export default function AddSupplyPage() {
           end_date: endDate || null,
         });
         await generateRecurringExpenses();
-        router.push('/supplies?view=recurring');
+        router.push('/supplies?section=recurring');
         return;
       }
       const { data, error } = await createSuppliesCost(formData);

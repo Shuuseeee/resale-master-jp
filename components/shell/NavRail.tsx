@@ -16,7 +16,7 @@ import DualIcon from '@/components/fluent/DualIcon';
 import { Menu, MenuItem } from '@/components/fluent/Menu';
 import { hideTooltipNow, useTooltip } from '@/components/fluent/Tooltip';
 import { NAV_AUTO_COLLAPSE_QUERY, applyNavCollapsed, hasStoredNavMode, isNavCollapsed, setNavCollapsed } from '@/lib/nav-mode';
-import { hasSectionDrawer, requestSectionDrawer, useSectionDrawerState } from '@/lib/section-drawer';
+import { requestSectionDrawer, sectionBaseOf, useSectionDrawerState } from '@/lib/section-drawer';
 
 interface NavItem {
   name: string;
@@ -101,10 +101,10 @@ export default function NavRail({ onScanArrival }: { onScanArrival: () => void }
   // 点击当下就切换选中（Loop 实测如此），不等路由切换完成；路由到位后以实际路径为准
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const routeHref = activeHrefOf(pathname);
-  // 有分区抽屉的页面：Tab 选中 = 抽屉打开（Loop：关掉抽屉 Tab 取消选中）；详情 / 表单等子页面没有抽屉，照常选中
+  // 有分区抽屉的页面（含它的详情 / 表单等子页面）：Tab 选中 = 抽屉打开（Loop：关掉抽屉 Tab 取消选中）
   const drawer = useSectionDrawerState();
   const candidateHref = pendingHref ?? routeHref;
-  const onDrawerPage = hasSectionDrawer(pendingHref ?? pathname);
+  const onDrawerPage = sectionBaseOf(pendingHref ?? pathname) !== null;
   const drawerShown = drawer.open && drawer.panel?.path === candidateHref;
   const activeHref = onDrawerPage && !drawerShown ? null : candidateHref;
 
