@@ -1,10 +1,9 @@
 // lib/api/supplies.ts
-// 耗材成本管理API
+// 经费（supplies_costs）API
 
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllRows } from '@/lib/api/fetchAll';
 import type { SuppliesCost, SuppliesCostFormData } from '@/types/database.types';
-import { formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 
 /**
  * 获取所有耗材成本记录
@@ -20,46 +19,6 @@ export async function getSuppliesCosts(): Promise<SuppliesCost[]> {
       .order('id')
       .range(from, to),
   );
-}
-
-/**
- * 获取指定时间范围的耗材成本
- */
-export async function getSuppliesCostsByDateRange(
-  startDate: string,
-  endDate: string
-): Promise<SuppliesCost[]> {
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .select('*')
-    .gte('purchase_date', startDate)
-    .lte('purchase_date', endDate)
-    .order('purchase_date', { ascending: false });
-
-  if (error) {
-    console.error('获取耗材成本失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
- * 获取单个耗材成本记录
- */
-export async function getSuppliesCost(id: string): Promise<SuppliesCost | null> {
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('获取耗材成本失败:', error);
-    return null;
-  }
-
-  return data;
 }
 
 /**
@@ -109,28 +68,6 @@ export async function createSuppliesCost(
 }
 
 /**
- * 更新耗材成本记录
- */
-export async function updateSuppliesCost(
-  id: string,
-  formData: SuppliesCostFormData
-): Promise<{ data: SuppliesCost | null; error: any }> {
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .update(formData)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('更新耗材成本失败:', error);
-    return { data: null, error };
-  }
-
-  return { data, error: null };
-}
-
-/**
  * 删除耗材成本记录
  */
 export async function deleteSuppliesCost(id: string): Promise<boolean> {
@@ -145,57 +82,4 @@ export async function deleteSuppliesCost(id: string): Promise<boolean> {
   }
 
   return true;
-}
-
-/**
- * 计算指定月份的耗材成本总额
- */
-export async function getMonthlySuppliesCost(year: number, month: number): Promise<number> {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = formatDateToLocal(new Date(year, month, 0));
-
-  const { data, error } = await supabase
-    .from('supplies_costs')
-    .select('amount')
-    .gte('purchase_date', startDate)
-    .lte('purchase_date', endDate);
-
-  if (error) {
-    console.error('获取月度耗材成本失败:', error);
-    return 0;
-  }
-
-  return data?.reduce((sum, item) => sum + item.amount, 0) || 0;
-}
-
-/**
- * 计算耗材成本分摊（按交易数量分摊）
- */
-export async function calculateSuppliesCostAllocation(
-  transactionDate: string,
-  transactionCount: number = 1
-): Promise<number> {
-  const date = parseDateFromLocal(transactionDate) ?? new Date();
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-
-  // 获取当月耗材总成本
-  const monthlyCost = await getMonthlySuppliesCost(year, month);
-
-  // 获取当月交易总数
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = formatDateToLocal(new Date(year, month, 0));
-
-  const { count, error } = await supabase
-    .from('transactions')
-    .select('*', { count: 'exact', head: true })
-    .gte('date', startDate)
-    .lte('date', endDate);
-
-  if (error || !count || count === 0) {
-    return 0;
-  }
-
-  // 按交易数量平均分摊
-  return monthlyCost / count;
 }

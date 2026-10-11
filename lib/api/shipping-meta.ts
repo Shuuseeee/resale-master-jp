@@ -2,7 +2,7 @@
 // 出货方案求解用：体积（L/件，含缓冲）、最小箱型（三边合计 60–160 cm）、分类（规则里「スマホ 3台以上」等按分类计数）。
 // 缺尺寸的商品不参与出货方案（列在 missing_meta）。RLS 只许本人读写。
 import { supabase } from '@/lib/supabase/client';
-import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
+import { fetchAllRows } from '@/lib/api/fetchAll';
 
 export interface ShippingMeta {
   jan: string;
@@ -26,13 +26,6 @@ export async function getAllShippingMeta(): Promise<ShippingMeta[]> {
   return fetchAllRows<ShippingMeta>((from, to, opts) =>
     supabase.from('product_shipping_meta').select('jan, vol, min_size, category, note', opts).order('jan').range(from, to),
   );
-}
-
-export async function getShippingMeta(jans: string[]): Promise<Map<string, ShippingMeta>> {
-  const rows = await fetchAllByIds<ShippingMeta>(jans, (chunk, from, to, opts) =>
-    supabase.from('product_shipping_meta').select('jan, vol, min_size, category, note', opts).in('jan', chunk).order('jan').range(from, to),
-  );
-  return new Map(rows.map(r => [r.jan, r]));
 }
 
 export async function saveShippingMeta(meta: ShippingMeta): Promise<void> {

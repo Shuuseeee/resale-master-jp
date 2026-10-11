@@ -164,30 +164,6 @@ export default function Modal({
     : null;
 }
 
-// 带页脚的 Modal 变体
-interface ModalWithFooterProps extends ModalProps {
-  footer?: React.ReactNode;
-}
-
-export function ModalWithFooter({
-  footer,
-  children,
-  ...props
-}: ModalWithFooterProps) {
-  return (
-    <Modal {...props}>
-      <div className="flex flex-col">
-        <div className="flex-1">{children}</div>
-        {footer && (
-          <div className="sticky bottom-0 left-0 right-0 bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] px-4 md:px-6 py-4 mt-6 -mx-4 md:-mx-6 -mb-4 md:-mb-6">
-            {footer}
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
-}
-
 // 确认对话框 Modal
 interface ConfirmModalProps {
   isOpen: boolean;

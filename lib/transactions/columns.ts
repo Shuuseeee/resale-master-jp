@@ -55,9 +55,3 @@ export function effectiveColumns(cfg: ColumnConfig[]): ColumnConfig[] {
   }
   return cfg;
 }
-
-export function visibleColumnKeys(cfg: ColumnConfig[]): TransactionColumnKey[] {
-  return effectiveColumns(cfg)
-    .filter(c => c.visible)
-    .map(c => c.key);
-}

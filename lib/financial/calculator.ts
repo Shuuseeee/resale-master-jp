@@ -26,25 +26,6 @@ export function getAvailableQty(t: {
 }
 
 /**
- * 计算现金利润
- * @param sellingPrice 销售价格
- * @param platformFee 平台费用
- * @param shippingFee 运费
- * @param purchaseCost 采购成本
- * @param suppliesCost 耗材成本（可选）
- * @returns 现金利润
- */
-export function calculateCashProfit(
-  sellingPrice: number,
-  platformFee: number = 0,
-  shippingFee: number = 0,
-  purchaseCost: number,
-  suppliesCost: number = 0
-): number {
-  return sellingPrice - platformFee - shippingFee - purchaseCost - suppliesCost;
-}
-
-/**
  * 格式化金额
  * @param amount 金额
  * @param currency 货币符号
@@ -89,32 +70,4 @@ export function formatROI(roi: number | null | undefined): string {
   }
   const sign = roi >= 0 ? '+' : '';
   return `${sign}${roi.toFixed(2)}%`;
-}
-
-/**
- * 计算财务安全水位线
- * @param totalBalance 总余额
- * @param upcomingPayments 即将到期的支付
- * @returns 安全水位百分比 (0-100)
- */
-export function calculateWaterLevel(
-  totalBalance: number,
-  upcomingPayments: number
-): number {
-  if (totalBalance <= 0) return 0;
-  if (upcomingPayments <= 0) return 100;
-  
-  const ratio = (totalBalance - upcomingPayments) / totalBalance;
-  return Math.max(0, Math.min(100, ratio * 100));
-}
-
-/**
- * 获取水位线状态
- * @param waterLevel 水位百分比
- * @returns 状态: 'safe' | 'warning' | 'danger'
- */
-export function getWaterLevelStatus(waterLevel: number): 'safe' | 'warning' | 'danger' {
-  if (waterLevel >= 50) return 'safe';
-  if (waterLevel >= 20) return 'warning';
-  return 'danger';
 }

@@ -5,25 +5,6 @@ import { supabase } from '@/lib/supabase/client';
 import type { PurchasePlatform, SellingPlatform } from '@/types/database.types';
 
 /**
- * 获取购入平台列表（内置 + 用户自定义，仅 active）
- */
-export async function getPurchasePlatforms(): Promise<PurchasePlatform[]> {
-  const { data, error } = await supabase
-    .from('purchase_platforms')
-    .select('*')
-    .eq('is_active', true)
-    .order('is_builtin', { ascending: false })
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('获取购入平台失败:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
  * 创建用户自定义购入平台
  */
 export async function createPurchasePlatform(name: string): Promise<PurchasePlatform | null> {

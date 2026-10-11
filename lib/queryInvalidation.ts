@@ -21,7 +21,6 @@ const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   supplies_costs: ['supplies', 'tax-report', 'dashboard', 'expense-attachment-counts'],
   expense_attachments: ['expense-attachment-counts', 'expense-attachments'],
   recurring_expenses: ['recurring-expenses'],
-  fixed_costs: ['supplies', 'tax-report'],
 };
 
 /** 所有已登记的根键：RPC 等无法判断影响范围的写入，保守地让它们全部失效 */

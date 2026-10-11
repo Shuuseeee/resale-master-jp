@@ -54,11 +54,6 @@ export async function addArrival(
   return data;
 }
 
-export async function updateArrival(id: string, patch: Pick<TransactionArrival, 'quantity' | 'arrived_date' | 'notes'>): Promise<void> {
-  const { error } = await supabase.from('transaction_arrivals').update(patch).eq('id', id);
-  if (error) throw error;
-}
-
 export async function deleteArrivals(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const { error } = await supabase.from('transaction_arrivals').delete().in('id', ids);

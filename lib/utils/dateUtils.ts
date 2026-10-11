@@ -37,16 +37,3 @@ export function parseDateFromLocal(dateString: string | null | undefined): Date 
 export function getTodayString(): string {
   return formatDateToLocal(new Date());
 }
-
-/**
- * 计算两个日期之间的天数差
- */
-export function daysBetween(date1: Date | string, date2: Date | string): number {
-  const d1 = typeof date1 === 'string' ? parseDateFromLocal(date1) : date1;
-  const d2 = typeof date2 === 'string' ? parseDateFromLocal(date2) : date2;
-
-  if (!d1 || !d2) return 0;
-
-  const diffTime = d2.getTime() - d1.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
