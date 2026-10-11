@@ -1,15 +1,32 @@
-// components/ScanArrivalModal.tsx
+// components/ScanArrivalModal.tsx — 扫码到货（对齐买取X /orders/scan）
+// 扫一个 JAN → 列出这个 JAN 还有未到件数的进货（未到货 + 只到了一部分）：每笔可「N 个全部标记到货」或「只到部分」选数量；
+// 底部「全部标记到货」一次记完所有笔。标记后可撤销（删掉刚记的到货明细），再「继续扫描」。到货明细与状态同步见 lib/api/arrivals.ts。
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { BarcodeDetector } from 'barcode-detector';
-import { getTransactionsByJanCode, markTransactionArrived, type PendingArrivalTransaction } from '@/lib/api/financial';
+import { addArrival, deleteArrivals, findArrivalCandidates, type ArrivalTransaction } from '@/lib/api/arrivals';
+import { arrivedQty, notArrivedQty } from '@/lib/utils/arrivals';
+import { formatCurrency } from '@/lib/financial/calculator';
+import { button } from '@/lib/theme';
 
 interface ScanArrivalModalProps {
   onClose: () => void;
 }
 
-type Phase = 'scanning' | 'results' | 'confirming';
+type Phase = 'scanning' | 'results';
+
+interface ScanResult {
+  jan: string;
+  open: ArrivalTransaction[];
+  arrivedCount: number;
+  productName: string | null;
+}
+
+interface LastDone {
+  arrivalIds: string[];
+  message: string;
+}
 
 export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -27,39 +44,45 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
   const [manualInput, setManualInput] = useState('');
 
   const [phase, setPhase] = useState<Phase>('scanning');
-  const [matches, setMatches] = useState<PendingArrivalTransaction[]>([]);
-  const [selected, setSelected] = useState<PendingArrivalTransaction | null>(null);
-  const [qty, setQty] = useState(1);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [partialQty, setPartialQty] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [lastDone, setLastDone] = useState<LastDone | null>(null);
+  const [error, setError] = useState('');
   const [successCount, setSuccessCount] = useState(0);
   const [flashSuccess, setFlashSuccess] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
+  const load = useCallback(async (jan: string) => {
+    const r = await findArrivalCandidates(jan);
+    setResult({ jan, ...r });
+    setPartialQty({});
+    return r;
+  }, []);
+
   const lookupJanCode = useCallback(async (code: string) => {
     cooldownRef.current = true;
-    const txs = await getTransactionsByJanCode(code);
-
-    if (txs.length === 0) {
-      setNotFound(true);
-      setTimeout(() => {
-        setNotFound(false);
-        cooldownRef.current = false;
-      }, 2000);
-      navigator.vibrate?.([50, 50, 50]);
-      return;
-    }
-
-    setMatches(txs);
-    if (txs.length === 1) {
-      setSelected(txs[0]);
-      setQty(txs[0].quantity);
-      setPhase('confirming');
-    } else {
+    setError('');
+    setLastDone(null);
+    try {
+      const r = await load(code);
+      if (r.open.length === 0 && r.arrivedCount === 0) {
+        setNotFound(true);
+        navigator.vibrate?.([50, 50, 50]);
+        setTimeout(() => {
+          setNotFound(false);
+          cooldownRef.current = false;
+        }, 2000);
+        return;
+      }
       setPhase('results');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '查询失败，请检查网络连接');
+      cooldownRef.current = false;
     }
-  }, []);
+  }, [load]);
 
   handleDetectedRef.current = (code: string) => {
     if (cooldownRef.current || phaseRef.current !== 'scanning') return;
@@ -104,8 +127,8 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         if (!activeRef.current) return;
         setCameraError(
           err.name === 'NotAllowedError'
-            ? 'カメラのアクセスが拒否されました。設定から許可してください。'
-            : 'カメラを起動できませんでした。'
+            ? '相机权限被拒绝，请在浏览器设置里允许使用相机。'
+            : '无法启动相机，请确认没有其他应用正在占用相机。'
         );
       }
     };
@@ -136,39 +159,58 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
     lookupJanCode(code);
   }, [manualInput, lookupJanCode]);
 
-  const handleSelectTransaction = useCallback((tx: PendingArrivalTransaction) => {
-    setSelected(tx);
-    setQty(tx.quantity);
-    setPhase('confirming');
-  }, []);
-
-  const handleConfirm = useCallback(async () => {
-    if (!selected || saving) return;
+  /** 给若干笔记到货：[交易, 数量][] */
+  const mark = useCallback(async (items: [ArrivalTransaction, number][]) => {
+    if (!result || saving || items.length === 0) return;
     setSaving(true);
-    const ok = await markTransactionArrived(selected.id);
-    setSaving(false);
-
-    if (ok) {
+    setError('');
+    const ids: string[] = [];
+    let failed = 0;
+    for (const [tx, qty] of items) {
+      try {
+        ids.push((await addArrival(tx.id, qty)).id);
+      } catch {
+        failed++;
+      }
+    }
+    const total = items.reduce((sum, [, q]) => sum + q, 0);
+    if (ids.length > 0) {
       navigator.vibrate?.(120);
       setFlashSuccess(true);
       setTimeout(() => setFlashSuccess(false), 500);
       setSuccessCount(c => c + 1);
-    } else {
-      alert('着荷確認に失敗しました。もう一度試してください。');
+      setLastDone({ arrivalIds: ids, message: `已标记到货${failed ? '' : ` ${total} 个`}` });
     }
+    if (failed) setError(`${failed} 笔更新失败`);
+    await load(result.jan).catch(() => undefined);
+    setSaving(false);
+  }, [result, saving, load]);
 
-    cooldownRef.current = false;
-    setSelected(null);
-    setMatches([]);
-    setPhase('scanning');
-  }, [selected, saving]);
+  const undo = useCallback(async () => {
+    if (!lastDone || !result || saving) return;
+    setSaving(true);
+    try {
+      await deleteArrivals(lastDone.arrivalIds);
+      setLastDone(null);
+      setSuccessCount(c => Math.max(0, c - 1));
+      await load(result.jan);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '撤销失败');
+    } finally {
+      setSaving(false);
+    }
+  }, [lastDone, result, saving, load]);
 
-  const handleBack = useCallback(() => {
+  const scanNext = useCallback(() => {
     cooldownRef.current = false;
-    setSelected(null);
-    setMatches([]);
+    setResult(null);
+    setLastDone(null);
+    setError('');
     setPhase('scanning');
   }, []);
+
+  const open = result?.open ?? [];
+  const totalOpenQty = open.reduce((sum, t) => sum + notArrivedQty(t), 0);
 
   return (
     <div className="fixed inset-0 z-[10002] bg-black flex flex-col">
@@ -189,7 +231,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
             <button
               onClick={toggleTorch}
               className={`p-2 rounded-lg transition-colors ${torchOn ? 'text-[var(--color-warning)]' : 'text-white/50 hover:text-white'}`}
-              aria-label="フラッシュ"
+              aria-label="手电筒"
             >
               <svg className="w-6 h-6" fill={torchOn ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -200,7 +242,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
           <button
             onClick={() => setManualMode(m => !m)}
             className={`p-2 rounded-lg transition-colors ${manualMode ? 'text-[var(--color-primary)]' : 'text-white/50 hover:text-white'}`}
-            aria-label="手動入力"
+            aria-label="手动输入 JAN"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -209,14 +251,14 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         </div>
 
         <p className="text-white text-sm font-medium">
-          {phase === 'scanning' ? 'バーコードをスキャン' : phase === 'results' ? '取引を選択' : '着荷確認'}
+          扫码到货
         </p>
 
         <div className="flex items-center gap-2">
           {successCount > 0 && (
-            <span className="text-[var(--color-primary)] text-sm font-semibold">{successCount}件✓</span>
+            <span className="text-[var(--color-primary)] text-sm font-semibold">已到货 {successCount} 次</span>
           )}
-          <button onClick={onClose} className="p-2 text-white/60 hover:text-white" aria-label="閉じる">
+          <button onClick={onClose} className="p-2 text-white/60 hover:text-white" aria-label="关闭">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -233,7 +275,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
             value={manualInput}
             onChange={e => setManualInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
-            placeholder="JANコードを入力..."
+            placeholder="JAN 条码（条码读不出来时）"
             autoFocus
             className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none focus:border-[var(--color-primary)]"
           />
@@ -241,7 +283,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
             onClick={handleManualSubmit}
             className="px-4 py-2 bg-[var(--color-primary-bg)] hover:bg-[var(--color-primary-bg-hover)] text-[var(--color-text-inverted)] rounded-lg text-sm font-medium transition-colors"
           >
-            検索
+            查询
           </button>
         </div>
       )}
@@ -266,7 +308,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
               <div className="absolute inset-x-4 top-1/2 h-0.5 bg-[var(--color-primary-fill)] animate-pulse" />
             </div>
             <p className="absolute bottom-[calc(50%-80px)] text-white/50 text-xs">
-              バーコードを枠に合わせてください
+              请将商品条码对准取景框
             </p>
           </div>
         )}
@@ -275,7 +317,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         {notFound && (
           <div className="absolute inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex justify-center pointer-events-none">
             <div className="bg-[var(--color-danger-bg)] backdrop-blur-sm text-white text-sm px-5 py-2.5 rounded-full shadow-lg">
-              未着荷の商品が見つかりませんでした
+              没有这个 JAN 的未到货进货
             </div>
           </div>
         )}
@@ -293,82 +335,91 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
         )}
       </div>
 
-      {/* Results bottom sheet */}
-      {phase === 'results' && (
-        <div className="bg-[var(--color-bg-elevated)] rounded-t-2xl shadow-[var(--shadow-lg)] flex flex-col max-h-[55vh] flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--color-border)]">
-            <h3 className="font-semibold text-[var(--color-text)] text-sm">取引を選択</h3>
-            <button onClick={handleBack} className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      {/* 扫描结果 */}
+      {phase === 'results' && result && (
+        <div className="bg-[var(--color-bg-elevated)] rounded-t-2xl shadow-[var(--shadow-lg)] flex flex-col max-h-[75vh] flex-shrink-0 pb-[env(safe-area-inset-bottom,0px)]">
+          <div className="px-4 pt-4 pb-3 border-b border-[var(--color-border)]">
+            <p className="font-semibold text-[var(--color-text)] text-sm line-clamp-2">
+              {result.productName ?? '（无商品名）'}
+            </p>
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] font-mono">{result.jan}</p>
+            {open.length > 0 ? (
+              <p className="mt-2 text-sm text-[var(--color-text)]">
+                <span className="inline-flex items-center h-[22px] px-1.5 mr-2 rounded-[var(--radius-sm)] text-sm bg-[var(--label-warning-bg)] text-[var(--label-warning-fg)]">未到货</span>
+                进货 {open.length} 笔 / 未到货 {totalOpenQty} 个
+              </p>
+            ) : (
+              <div className="mt-2">
+                <p className="text-sm font-semibold text-[var(--color-text)]">全部已到货</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">此 JAN 的 {result.arrivedCount} 笔进货已全部记录为到货。</p>
+              </div>
+            )}
+            {lastDone && (
+              <div className="mt-3 flex items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-success-subtle)] px-3 py-2 text-sm text-[var(--color-success)]">
+                <span>{lastDone.message}</span>
+                <button onClick={undo} disabled={saving} className="font-semibold underline">撤销</button>
+              </div>
+            )}
+            {error && <p className="mt-2 text-sm text-[var(--color-danger)]">{error}</p>}
           </div>
-          <div className="overflow-y-auto flex-1">
-            {matches.map((tx, i) => (
-              <button
-                key={tx.id}
-                onClick={() => handleSelectTransaction(tx)}
-                className={`w-full px-4 py-3.5 flex flex-col gap-1 text-left active:bg-[var(--color-primary-light)] transition-colors ${i < matches.length - 1 ? 'border-b border-[var(--color-border-light)]' : ''}`}
-              >
-                <span className="font-medium text-[var(--color-text)] text-sm">{tx.product_name}</span>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
-                  <span className="bg-[var(--color-bg-subtle)] px-1.5 py-0.5 rounded">{tx.purchase_platforms?.name ?? '—'}</span>
-                  <span>{tx.order_number ?? '注文番号なし'}</span>
-                  <span>{tx.date}</span>
-                  <span className="text-[var(--color-text)] font-medium">{tx.quantity}個</span>
+
+          <div className="overflow-y-auto flex-1 px-4 py-3 space-y-3">
+            {open.map(tx => {
+              const remaining = notArrivedQty(tx);
+              const arrived = arrivedQty(tx);
+              const partial = Math.min(partialQty[tx.id] ?? 1, remaining);
+              return (
+                <div key={tx.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] p-3 space-y-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-text-secondary)]">
+                    <span>{tx.date}</span>
+                    <span>{tx.purchase_platforms?.name ?? '—'}</span>
+                    {tx.payment_methods?.name && <span>{tx.payment_methods.name}</span>}
+                    <span className="font-mono">{tx.order_number || '无订单号'}</span>
+                  </div>
+                  <p className="text-sm text-[var(--color-text)]">
+                    {tx.unit_price != null && <span className="font-mono">{formatCurrency(tx.unit_price)} × {tx.quantity}</span>}
+                    <span className="ml-2 text-[var(--color-warning)] font-semibold">未到货 {remaining} 个</span>
+                    {arrived > 0 && <span className="ml-2 text-[var(--color-text-secondary)]">已到货 {arrived} 个</span>}
+                  </p>
+                  <button onClick={() => mark([[tx, remaining]])} disabled={saving} className={button.primary + ' w-full'}>
+                    {remaining} 个全部标记到货
+                  </button>
+                  {remaining > 1 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-[var(--color-text-secondary)] shrink-0">只到部分</span>
+                      <button
+                        onClick={() => setPartialQty(m => ({ ...m, [tx.id]: Math.max(1, partial - 1) }))}
+                        className={button.secondary + ' px-3'}
+                        aria-label="减少数量"
+                      >−</button>
+                      <span className="w-8 text-center tabular-nums font-semibold text-[var(--color-text)]">{partial}</span>
+                      <button
+                        onClick={() => setPartialQty(m => ({ ...m, [tx.id]: Math.min(remaining - 1, partial + 1) }))}
+                        className={button.secondary + ' px-3'}
+                        aria-label="增加数量"
+                      >+</button>
+                      <button onClick={() => mark([[tx, partial]])} disabled={saving || partial >= remaining} className={button.secondary + ' flex-1'}>
+                        到货
+                      </button>
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+
+          <div className="px-4 pt-2 pb-4 space-y-2 border-t border-[var(--color-border)]">
+            {open.length > 1 && (
+              <button
+                onClick={() => mark(open.map(t => [t, notArrivedQty(t)] as [ArrivalTransaction, number]))}
+                disabled={saving}
+                className={button.primary + ' w-full'}
+              >
+                全部标记到货（{totalOpenQty} 个）
               </button>
-            ))}
+            )}
+            <button onClick={scanNext} disabled={saving} className={button.secondary + ' w-full'}>继续扫描</button>
           </div>
-        </div>
-      )}
-
-      {/* Confirming bottom sheet */}
-      {phase === 'confirming' && selected && (
-        <div className="bg-[var(--color-bg-elevated)] rounded-t-2xl shadow-[var(--shadow-lg)] px-4 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-[var(--color-text)] text-sm">着荷確認</h3>
-            <button onClick={handleBack} className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Transaction info */}
-          <div className="mb-4 bg-[var(--color-bg-subtle)] rounded-xl px-4 py-3">
-            <p className="font-medium text-[var(--color-text)] text-sm mb-1">{selected.product_name}</p>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--color-text-muted)]">
-              <span className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] px-1.5 py-0.5 rounded">{selected.purchase_platforms?.name ?? '—'}</span>
-              <span>{selected.order_number ?? '注文番号なし'}</span>
-              <span>{selected.date}</span>
-            </div>
-          </div>
-
-          {/* Quantity stepper */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-[var(--color-text-muted)]">到着数量</span>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setQty(q => Math.max(1, q - 1))}
-                className="w-9 h-9 rounded-full bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-text)] text-xl font-light active:scale-90 transition-transform"
-              >−</button>
-              <span className="text-xl font-semibold text-[var(--color-text)] w-6 text-center tabular-nums">{qty}</span>
-              <button
-                onClick={() => setQty(q => Math.min(selected.quantity, q + 1))}
-                className="w-9 h-9 rounded-full bg-[var(--color-bg-subtle)] flex items-center justify-center text-[var(--color-text)] text-xl font-light active:scale-90 transition-transform"
-              >＋</button>
-            </div>
-          </div>
-
-          <button
-            onClick={handleConfirm}
-            disabled={saving}
-            className="w-full py-3.5 bg-[var(--color-primary-bg)] hover:bg-[var(--color-primary-bg-hover)] active:opacity-90 disabled:opacity-60 text-[var(--color-text-inverted)] font-semibold rounded-xl transition-colors active:scale-[0.98] text-sm"
-          >
-            {saving ? '処理中...' : '着荷確認する'}
-          </button>
         </div>
       )}
     </div>

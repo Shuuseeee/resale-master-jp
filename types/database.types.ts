@@ -98,6 +98,8 @@ export interface Transaction {
   quantity_sold: number; // 已售出数量
   quantity_returned: number; // 返品済数量
   quantity_in_stock: number; // 库存数量（计算字段: quantity - quantity_sold - quantity_returned）
+  /** 已到货数量（transaction_arrivals 合计）；NULL / undefined = 没有到货明细，按状态推断，见 lib/utils/arrivals.ts */
+  quantity_arrived?: number | null;
 
   // 成本端
   purchase_price_total: number;
@@ -197,6 +199,17 @@ export interface ExpenseAttachment {
   file_name: string;
   mime_type: string;
   size: number;
+  created_at: string;
+}
+
+/** 分批到货明细（对齐买取X「着荷」），一次到货一行 */
+export interface TransactionArrival {
+  id: string;
+  transaction_id: string;
+  user_id: string;
+  arrived_date: string;
+  quantity: number;
+  notes: string | null;
   created_at: string;
 }
 

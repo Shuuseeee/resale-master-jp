@@ -18,7 +18,7 @@ import { ProductImage } from '@/components/OptimizedImage';
 import Toast from '@/components/Toast';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import { supabase } from '@/lib/supabase/client';
-import { markTransactionArrived } from '@/lib/api/financial';
+import { markTransactionArrived } from '@/lib/api/arrivals';
 import { downloadCsv } from '@/lib/api/order-export';
 import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
 import { formatCurrency } from '@/lib/financial/calculator';

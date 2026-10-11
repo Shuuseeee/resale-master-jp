@@ -473,8 +473,21 @@ CREATE TABLE public.transactions (
   shipping_fee numeric(10,2) DEFAULT 0 NOT NULL,
   -- 进货时用掉的优惠券金额（买取X「クーポン」）：单价已是扣后价，不进成本 / 利润，只做记录
   coupon_amount numeric(10,2) DEFAULT 0 NOT NULL,
+  -- 已到货数量 = transaction_arrivals 合计（触发器维护）；NULL = 没有到货明细，按状态推断（pending = 0，其余 = 全部到齐；老数据与原生 App 都是这种）
+  quantity_arrived integer,
   quantity_returned integer DEFAULT 0,
   quantity_in_stock integer GENERATED ALWAYS AS (((quantity - quantity_sold) - quantity_returned)) STORED
+);
+
+-- 分批到货明细（对齐买取X「着荷」）：一次到货一行；合计写进 transactions.quantity_arrived
+CREATE TABLE public.transaction_arrivals (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  transaction_id uuid NOT NULL,
+  user_id uuid DEFAULT auth.uid() NOT NULL,
+  arrived_date date DEFAULT ((now() AT TIME ZONE 'Asia/Tokyo'::text))::date NOT NULL,
+  quantity integer NOT NULL,
+  notes text,
+  created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE public.user_line_links (
@@ -527,6 +540,7 @@ ALTER TABLE public.expense_attachments ADD CONSTRAINT expense_attachments_pkey P
 ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_pkey PRIMARY KEY (id);
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_pkey PRIMARY KEY (id);
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_pkey PRIMARY KEY (id);
+ALTER TABLE public.transaction_arrivals ADD CONSTRAINT transaction_arrivals_pkey PRIMARY KEY (id);
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
 ALTER TABLE public.user_line_links ADD CONSTRAINT user_line_links_pkey PRIMARY KEY (user_id);
 ALTER TABLE public.user_preferences ADD CONSTRAINT user_preferences_pkey PRIMARY KEY (user_id);
@@ -561,6 +575,8 @@ ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returne
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_platform_fee_check CHECK ((platform_fee >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_quantity_sold_check CHECK ((quantity_sold > 0));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_selling_price_per_unit_check CHECK ((selling_price_per_unit >= (0)::numeric));
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_arrived_check CHECK (((quantity_arrived IS NULL) OR (quantity_arrived >= 0)));
+ALTER TABLE public.transaction_arrivals ADD CONSTRAINT transaction_arrivals_quantity_check CHECK ((quantity > 0));
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_coupon_amount_check CHECK ((coupon_amount >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_shipping_fee_check CHECK ((shipping_fee >= (0)::numeric));
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_check CHECK ((quantity > 0));
@@ -593,6 +609,8 @@ ALTER TABLE public.recurring_expenses ADD CONSTRAINT recurring_expenses_user_id_
 -- 删规则时已记的经费保留（只断开关联）
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_recurring_id_fkey FOREIGN KEY (recurring_id) REFERENCES public.recurring_expenses(id) ON DELETE SET NULL;
 ALTER TABLE public.supplies_costs ADD CONSTRAINT supplies_costs_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.transaction_arrivals ADD CONSTRAINT transaction_arrivals_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
+ALTER TABLE public.transaction_arrivals ADD CONSTRAINT transaction_arrivals_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON DELETE CASCADE;
 ALTER TABLE public.transaction_history ADD CONSTRAINT transaction_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id);
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_card_id_fkey FOREIGN KEY (card_id) REFERENCES public.payment_methods(id);
@@ -653,6 +671,8 @@ CREATE INDEX idx_supplies_costs_recurring_id ON public.supplies_costs USING btre
 CREATE INDEX idx_recurring_expenses_user_id ON public.recurring_expenses USING btree (user_id);
 CREATE INDEX idx_expense_attachments_expense_id ON public.expense_attachments USING btree (expense_id);
 CREATE INDEX idx_expense_attachments_user_id ON public.expense_attachments USING btree (user_id);
+CREATE INDEX idx_transaction_arrivals_transaction_id ON public.transaction_arrivals USING btree (transaction_id);
+CREATE INDEX idx_transaction_arrivals_user_id ON public.transaction_arrivals USING btree (user_id);
 CREATE INDEX idx_transaction_history_tx_id ON public.transaction_history USING btree (transaction_id, changed_at DESC);
 CREATE INDEX idx_transactions_card_points_platform ON public.transactions USING btree (card_points_platform_id);
 CREATE INDEX idx_transactions_extra_platform_points_platform ON public.transactions USING btree (extra_platform_points_platform_id);
@@ -871,6 +891,72 @@ BEGIN
 END;
 $function$;
 
+-- 分批到货：到货明细变化后，重算 transactions.quantity_arrived 并同步状态
+--   合计 > 0 且未到货 → 库存中；删光且没卖过 → 未到货。合计不能超过进货数量、不能少于已售数量
+CREATE OR REPLACE FUNCTION public.sync_transaction_arrivals()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  tx_id uuid := COALESCE(NEW.transaction_id, OLD.transaction_id);
+  n integer;
+  total integer;
+  q integer;
+  sold integer;
+BEGIN
+  SELECT quantity, COALESCE(quantity_sold, 0) INTO q, sold FROM transactions WHERE id = tx_id;
+  IF q IS NULL THEN
+    RETURN NULL; -- 交易已删除（级联删除到货明细时）
+  END IF;
+  SELECT count(*), COALESCE(sum(quantity), 0) INTO n, total FROM transaction_arrivals WHERE transaction_id = tx_id;
+  IF total > q THEN
+    RAISE EXCEPTION '到货数量合计（%）超过进货数量（%）', total, q;
+  END IF;
+  IF total < sold THEN
+    RAISE EXCEPTION '到货数量合计（%）不能少于已售数量（%）', total, sold;
+  END IF;
+  UPDATE transactions SET
+    quantity_arrived = CASE WHEN n = 0 THEN NULL ELSE total END,
+    status = CASE
+      WHEN status = 'pending' AND total > 0 THEN 'in_stock'
+      WHEN status = 'in_stock' AND total = 0 AND sold = 0 THEN 'pending'
+      ELSE status END
+  WHERE id = tx_id;
+  RETURN NULL;
+END;
+$function$;
+
+-- 交易被改回「未到货」（网页的重置、原生 App 改状态）时清掉到货明细，免得明细与状态对不上
+CREATE OR REPLACE FUNCTION public.clear_arrivals_on_pending()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  DELETE FROM transaction_arrivals WHERE transaction_id = NEW.id;
+  RETURN NULL;
+END;
+$function$;
+
+-- 只能出售已到货的数量（对齐买取X）。已到货 = quantity_arrived；没有明细时按状态：未到货 = 0，其余 = 全部
+CREATE OR REPLACE FUNCTION public.check_sale_within_arrived()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  arrived integer;
+  other_sold integer;
+BEGIN
+  SELECT COALESCE(quantity_arrived, CASE WHEN status = 'pending' THEN 0 ELSE quantity END) INTO arrived
+  FROM transactions WHERE id = NEW.transaction_id;
+  SELECT COALESCE(sum(quantity_sold), 0) INTO other_sold
+  FROM sales_records WHERE transaction_id = NEW.transaction_id AND id IS DISTINCT FROM NEW.id;
+  IF other_sold + NEW.quantity_sold > arrived THEN
+    RAISE EXCEPTION '只能出售已到货的数量（已到货 % 个，已售 % 个）', arrived, other_sold;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
 -- 交易编辑历史：只记录被追踪字段的 diff
 CREATE OR REPLACE FUNCTION public.record_transaction_change()
  RETURNS trigger
@@ -1025,6 +1111,7 @@ DECLARE
   s jsonb;
   r jsonb;
   e jsonb;
+  a jsonb;
   tx_id uuid;
   pp_id uuid;
   sp_id uuid;
@@ -1034,6 +1121,7 @@ DECLARE
   n_sales integer := 0;
   n_returns integer := 0;
   n_expenses integer := 0;
+  n_arrivals integer := 0;
 BEGIN
   IF uid IS NULL THEN
     RAISE EXCEPTION '未登录';
@@ -1081,6 +1169,13 @@ BEGIN
       pp_id, NULLIF(p->>'order_number', ''), NULLIF(p->>'notes', ''),
       CASE WHEN (p->>'arrived')::boolean THEN 'in_stock' ELSE 'pending' END
     ) RETURNING id INTO tx_id;
+
+    -- 到货明细先于出售写入：出售受「只能卖已到货」约束
+    FOR a IN SELECT * FROM jsonb_array_elements(COALESCE(p->'arrivals', '[]'::jsonb)) LOOP
+      INSERT INTO transaction_arrivals (transaction_id, user_id, arrived_date, quantity, notes)
+      VALUES (tx_id, uid, COALESCE((a->>'arrived_date')::date, (p->>'date')::date), (a->>'quantity')::integer, NULLIF(a->>'notes', ''));
+      n_arrivals := n_arrivals + 1;
+    END LOOP;
     n_purchases := n_purchases + 1;
 
     sold_qty := 0;
@@ -1126,7 +1221,7 @@ BEGIN
   END LOOP;
 
   RETURN jsonb_build_object(
-    'purchases', n_purchases, 'skipped', n_skipped, 'sales', n_sales, 'returns', n_returns, 'expenses', n_expenses
+    'purchases', n_purchases, 'skipped', n_skipped, 'sales', n_sales, 'returns', n_returns, 'expenses', n_expenses, 'arrivals', n_arrivals
   );
 END;
 $function$;
@@ -1371,6 +1466,9 @@ CREATE TRIGGER trg_touch_profit_on_sale AFTER INSERT OR DELETE OR UPDATE ON publ
 CREATE TRIGGER trigger_update_quantity_sold_on_delete AFTER DELETE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trigger_update_quantity_sold_on_insert AFTER INSERT ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trigger_update_quantity_sold_on_update AFTER UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
+CREATE TRIGGER trg_check_sale_within_arrived BEFORE INSERT OR UPDATE OF quantity_sold, transaction_id ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.check_sale_within_arrived();
+CREATE TRIGGER trg_sync_transaction_arrivals AFTER INSERT OR DELETE OR UPDATE ON public.transaction_arrivals FOR EACH ROW EXECUTE FUNCTION public.sync_transaction_arrivals();
+CREATE TRIGGER trg_clear_arrivals_on_pending AFTER UPDATE OF status ON public.transactions FOR EACH ROW WHEN (((new.status = 'pending'::text) AND (old.status <> 'pending'::text))) EXECUTE FUNCTION public.clear_arrivals_on_pending();
 CREATE TRIGGER trigger_update_status_on_sale AFTER INSERT OR DELETE OR UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_status();
 CREATE TRIGGER update_selling_platforms_updated_at BEFORE UPDATE ON public.selling_platforms FOR EACH ROW EXECUTE FUNCTION public.update_selling_platforms_updated_at();
 CREATE TRIGGER set_user_id_transactions BEFORE INSERT ON public.transactions FOR EACH ROW EXECUTE FUNCTION public.set_user_id();
@@ -1565,7 +1663,10 @@ SELECT
   CASE WHEN b.best_price IS NOT NULL AND t.quantity_in_stock > 0 AND t.unit_cost_raw > 0
     THEN round((b.best_price - t.unit_cost_raw) / t.unit_cost_raw * 100, 2) END AS estimated_profit_rate,
   CURRENT_DATE - t.date AS days_held,
-  s.last_sale_date
+  s.last_sale_date,
+  GREATEST(LEAST(t.quantity_in_stock,
+    COALESCE(t.quantity_arrived, CASE WHEN t.status = 'pending' THEN 0 ELSE t.quantity END)
+      - COALESCE(t.quantity_sold, 0) - COALESCE(t.quantity_returned, 0)), 0) AS quantity_arrived_unsold
 FROM base t
 LEFT JOIN s ON s.transaction_id = t.id
 LEFT JOIN r ON r.transaction_id = t.id
@@ -1658,6 +1759,7 @@ ALTER TABLE public.selling_platforms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expense_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.recurring_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.supplies_costs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transaction_arrivals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transaction_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_line_links ENABLE ROW LEVEL SECURITY;
@@ -1748,6 +1850,9 @@ CREATE POLICY "Users can delete their own supplies costs" ON public.supplies_cos
 CREATE POLICY "Users can insert their own supplies costs" ON public.supplies_costs FOR INSERT WITH CHECK ((auth.uid() = user_id));
 CREATE POLICY "Users can update their own supplies costs" ON public.supplies_costs FOR UPDATE USING ((auth.uid() = user_id));
 CREATE POLICY "Users can view their own supplies costs" ON public.supplies_costs FOR SELECT USING ((auth.uid() = user_id));
+
+-- transaction_arrivals
+CREATE POLICY "Users manage their own arrivals" ON public.transaction_arrivals FOR ALL USING ((auth.uid() = user_id)) WITH CHECK ((auth.uid() = user_id));
 
 -- transaction_history
 CREATE POLICY "users insert own history" ON public.transaction_history FOR INSERT WITH CHECK ((user_id = auth.uid()));

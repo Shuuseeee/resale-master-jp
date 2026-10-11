@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 import { normalizeStoreName } from '@/lib/kaitorix-config';
 import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
+import { notArrivedQty } from '@/lib/utils/arrivals';
 
 export interface DashSale {
   date: string;
@@ -95,7 +96,8 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       supabase
         .from('transactions')
         .select(
-          'id, date, jan_code, product_name, unit_price, quantity, purchase_price_total, shipping_fee, point_paid, expected_platform_points, expected_card_points, extra_platform_points, status, notes, quantity_sold, quantity_returned, quantity_in_stock, card_id, purchase_platform:purchase_platforms(name)',
+          // '*'：库还没加 quantity_arrived（分批到货）列时也能读
+          '*, purchase_platform:purchase_platforms(name)',
           opts,
         )
         .order('date')
@@ -164,7 +166,8 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       notes: t.notes || null,
       soldQty: num(t.quantity_sold),
       returnedQty: num(t.quantity_returned),
-      notArrivedQty: t.status === 'pending' ? num(t.quantity_in_stock) : 0,
+      // 未到的件数（未到货 + 分批到货还没到的），最多到未售数为止
+      notArrivedQty: Math.min(num(t.quantity_in_stock), notArrivedQty(t)),
       sales: salesByTx.get(t.id) ?? [],
       returns: returnsByTx.get(t.id) ?? [],
     };

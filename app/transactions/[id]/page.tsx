@@ -6,7 +6,10 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { markTransactionArrived, confirmPaymentReceived } from '@/lib/api/financial';
+import { confirmPaymentReceived } from '@/lib/api/financial';
+import { markTransactionArrived } from '@/lib/api/arrivals';
+import { arrivedQty, isPartiallyArrived, notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
+import ArrivalsPanel from '@/components/transactions/ArrivalsPanel';
 import Image from 'next/image';
 import Link from 'next/link';
 import { button, heading, layout } from '@/lib/theme';
@@ -266,7 +269,7 @@ export default function TransactionDetailPage() {
     if (!transaction) return;
     const success = await markTransactionArrived(transaction.id);
     if (success) {
-      setTransaction({ ...transaction, status: 'in_stock' });
+      await loadTransaction();
     } else {
       alert('到货处理失败');
     }
@@ -290,15 +293,15 @@ export default function TransactionDetailPage() {
     return null;
   }
 
-  const canSell =
-    !showSaleForm &&
-    ((transaction.quantity > 1 && transaction.quantity_in_stock > 0) || (transaction.quantity === 1 && transaction.status === 'in_stock'));
+  // 只能出售已到货的数量（分批到货，lib/utils/arrivals.ts）
+  const canSell = !showSaleForm && sellableQty(transaction) > 0;
+  const canArrive = (transaction.status === 'pending' || transaction.status === 'in_stock') && notArrivedQty(transaction) > 0;
   const canReturn = transaction.quantity_in_stock > 0 && !showReturnForm;
   const canCancelSale = transaction.status === 'sold' || transaction.status === 'awaiting_payment';
   // 桌面文档头：流程操作里第一个适用的做品牌主按钮（Loop 工具栏最多一个），其余与编辑 / 复制 / 删除等为图标按钮
   const workflowActions: PageAction[] = [
-    ...(transaction.status === 'pending'
-      ? [{ id: 'arrive', label: '确认到货', icon: { regular: BoxCheckmark20Regular, filled: BoxCheckmark20Filled }, onClick: confirmArrival }]
+    ...(canArrive
+      ? [{ id: 'arrive', label: transaction.status === 'pending' ? '确认到货' : '剩余全部到货', icon: { regular: BoxCheckmark20Regular, filled: BoxCheckmark20Filled }, onClick: confirmArrival }]
       : []),
     ...(transaction.status === 'awaiting_payment'
       ? [{ id: 'paid', label: '确认入账', icon: { regular: MoneyHand20Regular, filled: MoneyHand20Filled }, onClick: confirmPayment }]
@@ -357,7 +360,7 @@ export default function TransactionDetailPage() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border border-[var(--color-warning-border)] whitespace-nowrap">
-                    库存中
+                    {isPartiallyArrived(transaction) ? `部分到货 ${arrivedQty(transaction)}/${transaction.quantity}` : '库存中'}
                   </span>
                 )}
                 <span className="text-xs sm:text-sm text-[var(--color-text-muted)] whitespace-nowrap">
@@ -368,8 +371,8 @@ export default function TransactionDetailPage() {
 
             {/* 操作按钮（手机） */}
             <div className="flex items-center gap-2 flex-wrap md:hidden">
-              {/* 着荷按钮 - 仅当status=pending时显示 */}
-              {transaction.status === 'pending' && (
+              {/* 到货按钮：还有没到的件数时显示（未到货 / 只到了一部分） */}
+              {canArrive && (
                 <button
                   onClick={confirmArrival}
                   className={button.primary + " gap-1.5 whitespace-nowrap"}
@@ -377,7 +380,7 @@ export default function TransactionDetailPage() {
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  确认到货
+                  {transaction.status === 'pending' ? '确认到货' : '剩余全部到货'}
                 </button>
               )}
               {/* 记录销售按钮 */}
@@ -658,6 +661,11 @@ export default function TransactionDetailPage() {
 
           {/* 右侧边栏 */}
           <div className="space-y-6">
+            {/* 到货管理：多件进货，或还没到货的 */}
+            {(transaction.quantity > 1 || transaction.status === 'pending') && (transaction.status === 'pending' || transaction.status === 'in_stock') && (
+              <ArrivalsPanel transaction={transaction} onChange={loadTransaction} />
+            )}
+
             {/* 批量商品的库存信息 */}
             {transaction.quantity > 1 && (
               <div className="sn-detail-card">
@@ -681,6 +689,12 @@ export default function TransactionDetailPage() {
                     <span className="text-[var(--color-text-muted)]">库存</span>
                     <span className="text-[var(--color-primary)] font-bold text-lg">{transaction.quantity_in_stock}</span>
                   </div>
+                  {notArrivedQty(transaction) > 0 && transaction.status !== 'pending' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)]">其中未到货</span>
+                      <span className="text-[var(--color-warning)] font-medium">{notArrivedQty(transaction)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

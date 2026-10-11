@@ -18,6 +18,8 @@ export interface OrderImportResult {
   sales: number;
   returns: number;
   expenses: number;
+  /** 到货明细条数（库没升级时 RPC 不返回） */
+  arrivals?: number;
   /** 文件里的「账号」在支付方式里找不到的名字（这些进货不挂支付方式） */
   unmatchedAccounts: string[];
 }
@@ -109,7 +111,9 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
       order_number: p.orderId,
       coupon_amount: p.coupon,
       notes: p.memo,
-      arrived: p.received || p.sales.length > 0 || (p.arrivedQty > 0 && p.arrivedQty >= p.quantity),
+      // 有着荷明细时按明细写（数据库触发器据此定状态）；没有时，有出售或「着荷」= 1 视为全部到货
+      arrived: p.arrivals.length === 0 && (p.received || p.sales.length > 0),
+      arrivals: p.arrivals.map(a => ({ arrived_date: a.date || null, quantity: a.qty, notes: a.memo })),
       paid_all: p.sales.length > 0 && p.sales.every(s => s.paid),
       sales: p.sales.map(s => ({
         sale_date: s.date,

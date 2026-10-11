@@ -13,6 +13,7 @@ import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
+import { sellableQty } from '@/lib/utils/arrivals';
 
 function getInitialFormData(): SalesRecordFormData {
   return {
@@ -97,8 +98,8 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
     setError('');
 
     // 验证
-    if (formData.quantity_sold > transaction.quantity_in_stock) {
-      setError(`销售数量不能超过库存数量 (${transaction.quantity_in_stock})`);
+    if (formData.quantity_sold > sellableQty(transaction)) {
+      setError(`销售数量不能超过已到货的库存 (${sellableQty(transaction)})`);
       return;
     }
 
@@ -157,7 +158,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-primary-border)] bg-[var(--color-primary-light)] p-4">
         <p className="text-sm text-[var(--color-primary)]">
-          当前库存：<span className="font-bold">{transaction.quantity_in_stock}</span> / {transaction.quantity}
+          可出售（已到货）：<span className="font-bold">{sellableQty(transaction)}</span> / {transaction.quantity}
         </p>
       </div>
 

@@ -54,7 +54,16 @@ async function unsoldPurchases(user: McpUser, includePending: boolean): Promise<
       .order('id')
       .range(from, to),
   );
-  return rows.filter(r => r.status === 'in_stock' || (includePending && r.status === 'pending'));
+  // 可出货件数：只算已到货未售（分批到货，视图列 quantity_arrived_unsold；库没升级时按状态）；include_pending 时含未到的
+  return rows
+    .filter(r => r.status === 'in_stock' || r.status === 'pending')
+    .map(r => ({
+      ...r,
+      shippable: includePending
+        ? r.quantity_unsold
+        : (r.quantity_arrived_unsold ?? (r.status === 'in_stock' ? r.quantity_unsold : 0)),
+    }))
+    .filter(r => r.shippable > 0);
 }
 
 /** 库存与利润概况：整体汇总 + 每笔未售进货（与网页 / 买取X 同口径） */
@@ -70,6 +79,7 @@ export async function inventoryOverview(user: McpUser, includeItems: boolean) {
       jan: r.jan_code,
       status: r.status_label,
       qty_unsold: r.quantity_unsold,
+      qty_arrived_unsold: r.quantity_arrived_unsold ?? (r.status === 'in_stock' ? r.quantity_unsold : 0),
       unit_cost: Number(r.unit_cost),
       best_price: r.best_price == null ? null : Number(r.best_price),
       best_stores: r.best_stores,
@@ -131,7 +141,7 @@ export async function planShipment(user: McpUser, opts: PlanOptions) {
       tid: r.id,
       name: r.product_name,
       jan: r.jan_code,
-      qty: r.quantity_unsold,
+      qty: r.shippable,
       qty_full: r.quantity,
       qty_sold: r.quantity_sold,
       total: Number(r.purchase_price_total),

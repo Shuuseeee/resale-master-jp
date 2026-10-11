@@ -53,8 +53,10 @@ function cumulative(deltas: Float64Array): Float64Array {
 function holdingDeltas(p: DashPurchase, includePending: boolean, start: number, n: number): [number, number][] {
   const qty = p.quantity || 1;
   const idx = (date: string) => clamp(dayIndex(start, date), n);
-  if (!includePending && p.status === 'pending') return [];
-  const arrivals: [number, number][] = [[idx(p.date), qty]];
+  // 不含未到货时只算已到的件数（分批到货）
+  const counted = includePending ? qty : qty - p.notArrivedQty;
+  if (counted <= 0) return [];
+  const arrivals: [number, number][] = [[idx(p.date), counted]];
   const first = arrivals[0][0];
   const outs: [number, number][] = [
     ...p.sales.map(s => [Math.max(idx(s.date), first), -s.qty] as [number, number]),

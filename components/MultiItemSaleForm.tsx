@@ -13,6 +13,7 @@ import DatePicker from '@/components/DatePicker';
 import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/utils/dateUtils';
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
+import { sellableQty } from '@/lib/utils/arrivals';
 
 interface PerItemDraft {
   quantity_sold: number;
@@ -23,7 +24,7 @@ interface PerItemDraft {
 
 function getDefaultDraft(tx: Transaction): PerItemDraft {
   return {
-    quantity_sold: tx.quantity_in_stock,
+    quantity_sold: sellableQty(tx),
     selling_price_per_unit: 0,
     platform_fee: 0,
     shipping_fee: 0,
@@ -136,9 +137,9 @@ export default function MultiItemSaleForm({
     for (const tx of transactions) {
       const d = drafts[tx.id];
       if (!d) continue;
-      const inStock = tx.quantity_in_stock;
+      const inStock = sellableQty(tx);
       if (d.quantity_sold <= 0) return `「${tx.product_name}」销售数量必须大于 0`;
-      if (d.quantity_sold > inStock) return `「${tx.product_name}」销售数量不能超过库存 (${inStock})`;
+      if (d.quantity_sold > inStock) return `「${tx.product_name}」销售数量不能超过已到货的库存 (${inStock})`;
       if (d.selling_price_per_unit <= 0) return `「${tx.product_name}」单价必须大于 0`;
     }
     return null;
@@ -158,7 +159,7 @@ export default function MultiItemSaleForm({
     try {
       const items = transactions.map(tx => ({
         transaction_id: tx.id,
-        quantity_in_stock: tx.quantity_in_stock,
+        quantity_in_stock: sellableQty(tx),
         ...drafts[tx.id],
       }));
 
@@ -278,7 +279,7 @@ export default function MultiItemSaleForm({
         <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">逐件录入</p>
         {transactions.map((tx) => {
           const d = drafts[tx.id] ?? getDefaultDraft(tx);
-          const inStock = tx.quantity_in_stock;
+          const inStock = sellableQty(tx);
           const preview = profitPreviews[tx.id];
           const totalSell = d.quantity_sold * d.selling_price_per_unit;
 

@@ -3,7 +3,7 @@
 // 规则（与买取X 一致）：
 // - 一张表的格式里，进货列完全相同的连续 / 不连续行合并成一笔进货，各行的出售分别建记录
 //   （买取X 导出时一笔多次出售会重复进货列；我们旧版导出把第 2 条以后的出售行的进货列留空，也兼容）
-// - 有出售的进货自动视为已到货；「着荷」表到货数量合计 ≥ 数量也视为已到货（分批到货的明细暂不保存）
+// - 「着荷」表 = 分批到货明细，原样导入（只能卖已到货的：出售数量不能超过到货合计）；没有着荷明细时，有出售或「着荷」= 1 视为全部到货
 // - 校验出任何错误就整份不导入，错误全部列出
 
 import { SHEETS, headerKey } from './columns';
@@ -48,9 +48,15 @@ export interface ParsedPurchase {
   pointsOther: number;
   received: boolean;
   memo: string;
-  arrivedQty: number;
+  arrivals: ParsedArrival[];
   sales: ParsedSale[];
   returns: ParsedReturn[];
+}
+
+export interface ParsedArrival {
+  date: string;
+  qty: number;
+  memo: string;
 }
 
 export interface ParsedExpense {
@@ -186,7 +192,7 @@ function readPurchase(r: RowReader): ParsedPurchase {
     pointsOther: r.num('pointsOther', '积分(其他)'),
     received: truthy(r.text('received')),
     memo: r.text('memo'),
-    arrivedQty: 0,
+    arrivals: [],
     sales: [],
     returns: [],
   };
@@ -308,8 +314,11 @@ function parseWorkbook(tables: Table[], errors: string[]): { purchases: ParsedPu
     }),
   );
   attach(SHEETS.arrivals, (p, r) => {
-    r.date('arrivalDate', '着荷日', false);
-    p.arrivedQty += r.num('arrivalQty', '着荷数量', { min: 1, integer: true, fallback: 0 });
+    p.arrivals.push({
+      date: r.date('arrivalDate', '着荷日', false),
+      qty: r.num('arrivalQty', '着荷数量', { min: 1, integer: true, fallback: 1 }),
+      memo: r.text('arrivalMemo'),
+    });
   });
 
   const expenses: ParsedExpense[] = [];
@@ -337,6 +346,11 @@ function checkQuantities(purchases: ParsedPurchase[], errors: string[]) {
     const returned = p.returns.reduce((s, x) => s + x.qty, 0);
     if (sold + returned > p.quantity) {
       errors.push(`${p.where}：出售 ${sold} + 退货 ${returned} 超过进货数量 ${p.quantity}（${p.productName}）`);
+    }
+    if (p.arrivals.length) {
+      const arrived = p.arrivals.reduce((s, x) => s + x.qty, 0);
+      if (arrived > p.quantity) errors.push(`${p.where}：到货合计 ${arrived} 超过进货数量 ${p.quantity}（${p.productName}）`);
+      else if (sold > arrived) errors.push(`${p.where}：出售 ${sold} 超过到货合计 ${arrived}，只能出售已到货的数量（${p.productName}）`);
     }
   }
 }

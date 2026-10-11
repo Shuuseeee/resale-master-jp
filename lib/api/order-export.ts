@@ -7,6 +7,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 import { CSV_HEADERS, SHEETS, XLSX_HEADERS } from '@/lib/order-data/columns';
+import { arrivedQty } from '@/lib/utils/arrivals';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- 读取带关联的行，按列名取值 */
 
@@ -41,7 +42,7 @@ async function fetchTransactions(ids?: string[]): Promise<any[]> {
 }
 
 /** 出售 / 退货：指定交易时分块按交易 ID 取，全量时直接取全部（RLS 只返回自己的） */
-async function fetchChildren(table: 'sales_records' | 'return_records', select: string, order: string, ids?: string[]): Promise<any[]> {
+async function fetchChildren(table: 'sales_records' | 'return_records' | 'transaction_arrivals', select: string, order: string, ids?: string[]): Promise<any[]> {
   return ids && ids.length > 0
     ? fetchAllByIds<any>(ids, (chunk, from, to, opts) =>
         supabase.from(table).select(select, opts).in('transaction_id', chunk).order(order).order('id').range(from, to),
@@ -63,7 +64,8 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
 const shippingOf = (tx: any) => num(tx.shipping_fee);
 const unitPriceOf = (tx: any) =>
   tx.unit_price != null ? num(tx.unit_price) : Math.round((num(tx.purchase_price_total) - shippingOf(tx)) / (tx.quantity || 1));
-const arrived = (tx: any) => tx.status !== 'pending';
+/** 全部到齐才算「着荷」= 1（分批到货只到一部分的记 0，明细在「着荷」表） */
+const arrived = (tx: any) => arrivedQty(tx) >= (tx.quantity || 1);
 
 // ──── CSV（基本） ────
 
@@ -139,12 +141,12 @@ const GUIDE_ROWS: Row[] = [
   ['仕入', '进货'],
   ['売却', '出售（用「仕入参照キー」对应进货）'],
   ['返品', '退货（用「仕入参照キー」对应进货）'],
-  ['着荷', '分批到货明细（本应用暂不记录，导出为空）'],
+  ['着荷', '分批到货明细（每次到货一行：着荷日 / 着荷数量 / 着荷メモ，用「仕入参照キー」对应进货）'],
   ['経費', '经费（分类与买取X 相同：送料 / 交通費 / 梱包材 / 保管費 / 消耗品 / その他）'],
   ['■ 规则'],
   ['仕入参照キー', '进货与出售 / 退货的关联键，请勿修改'],
   ['原価 / 確定利益 / 利益率', '计算列，导入时忽略。原価 =（仕入単価×数量 + 送料 − P(サイト) − P(カード) − P(他)）÷ 数量'],
-  ['着荷', '1 = 已到货，空 = 未到货'],
+  ['着荷', '1 = 全部到货，空 = 未到货或只到了一部分（只能出售已到货的数量）'],
   ['入金済み', '1 = 已入账，空 = 未入账'],
   ['日期', 'YYYY-MM-DD 或 YYYY/MM/DD'],
   ['导入', '只追加；与已有进货的「日期 + 商品名 + 数量 + 单价 + 订单ID（为空时用 JAN）」相同的跳过。有一条出错整份不导入。'],
@@ -152,9 +154,14 @@ const GUIDE_ROWS: Row[] = [
 
 export async function exportOrdersXlsx(): Promise<void> {
   const transactions = await fetchTransactions();
-  const [sales, returns, supplies] = await Promise.all([
+  const [sales, returns, arrivals, supplies] = await Promise.all([
     fetchChildren('sales_records', SALE_SELECT, 'sale_date'),
     fetchChildren('return_records', '*', 'return_date'),
+    // 库还没建到货表时按没有明细处理
+    fetchChildren('transaction_arrivals', '*', 'arrived_date').catch(e => {
+      if (/transaction_arrivals|42P01|PGRST205/.test(`${e?.code ?? ''} ${e?.message ?? ''}`)) return [];
+      throw e;
+    }),
     fetchAllRows<any>((from, to, opts) =>
       supabase.from('supplies_costs').select('*', opts).order('purchase_date').order('id').range(from, to),
     ),
@@ -170,7 +177,7 @@ export async function exportOrdersXlsx(): Promise<void> {
       tx.id, tx.date, tx.product_name, tx.jan_code ?? '', unitPriceOf(tx), qty,
       tx.purchase_platform?.name ?? '', tx.order_number ?? '', shippingOf(tx), num(tx.point_paid), num(tx.coupon_amount),
       num(tx.expected_platform_points), num(tx.expected_card_points), num(tx.extra_platform_points),
-      arrived(tx) ? 1 : '', tx.notes ?? '', tx.id, tx.payment_method?.name ?? '', '', 'manual', arrived(tx) ? qty : 0,
+      arrived(tx) ? 1 : '', tx.notes ?? '', tx.id, tx.payment_method?.name ?? '', '', 'manual', arrivedQty(tx),
       Math.round(cost), Math.round(num(tx.total_profit)), `${num(tx.roi).toFixed(1)}%`,
     ];
   });
@@ -194,7 +201,7 @@ export async function exportOrdersXlsx(): Promise<void> {
   add(SHEETS.purchases, XLSX_HEADERS.purchases, purchaseRows);
   add(SHEETS.sales, XLSX_HEADERS.sales, saleRows);
   add(SHEETS.returns, XLSX_HEADERS.returns, returnRows);
-  add(SHEETS.arrivals, XLSX_HEADERS.arrivals, []);
+  add(SHEETS.arrivals, XLSX_HEADERS.arrivals, arrivals.map(a => [a.transaction_id, a.arrived_date, a.quantity, a.notes ?? '']));
   add(SHEETS.expenses, XLSX_HEADERS.expenses, expenseRows);
   add(SHEETS.guide, null, GUIDE_ROWS);
   XLSX.writeFile(workbook, `order_manager_all_${today()}.xlsx`);

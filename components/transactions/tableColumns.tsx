@@ -19,6 +19,7 @@ import { SELECT_COLUMN_ID } from '@/components/DataTable';
 import CopyableJan from '@/components/CopyableJan';
 import Toast from '@/components/Toast';
 import { ProductImage } from '@/components/OptimizedImage';
+import { arrivedQty, isPartiallyArrived, sellableQty } from '@/lib/utils/arrivals';
 
 export type TxRowItem =
   | { kind: 'group'; group: TransactionGroup; children: TxRowItem[] }
@@ -86,6 +87,10 @@ function statusBadge(tx: TransactionWithProfit) {
     case 'pending':
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">未到货</span>;
     case 'in_stock':
+      // 分批到货只到了一部分：与买取X 一样显示「到货 已到/总数」
+      if (isPartiallyArrived(tx)) {
+        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">到货 {arrivedQty(tx)}/{tx.quantity}</span>;
+      }
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-light)] rounded whitespace-nowrap">库存{remainingQty}</span>;
     case 'awaiting_payment':
       return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">待入账</span>;
@@ -489,7 +494,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
               {tx.status !== 'awaiting_payment' && (
                 <button
                   onClick={(e) => { e.stopPropagation(); deps.onQuickSale(tx.id); }}
-                  disabled={tx.quantity_in_stock <= 0}
+                  disabled={sellableQty(tx) <= 0}
                   className="flex-1 px-1 py-0.5 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] rounded text-center cursor-pointer transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   出售

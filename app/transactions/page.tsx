@@ -26,7 +26,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calculator';
-import { markTransactionArrived, confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
+import { confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
+import { markTransactionArrived } from '@/lib/api/arrivals';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
 import PageSkeleton from '@/components/Skeleton';
@@ -72,6 +73,7 @@ import {
 import type { QuickEditPayload } from '@/lib/api/transactions';
 import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 import Spinner from '@/components/fluent/Spinner';
+import { notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
 
 // 页面内部沿用 TransactionWithPayment 名称，与缓存模块类型等价
 type TransactionWithPayment = TransactionWithProfit;
@@ -593,13 +595,9 @@ function TransactionsContent() {
     [filteredTransactions, selectedIds]
   );
 
-  // 多选中"可售"子集：库存>0 且不是未到货/已退货
+  // 多选中"可售"子集：有已到货的库存（分批到货只算到了的），且不是已退货
   const sellableSelected = useMemo(
-    () => selectedTransactions.filter(t =>
-      (t.quantity_in_stock ?? 0) > 0 &&
-      t.status !== 'pending' &&
-      t.status !== 'returned'
-    ),
+    () => selectedTransactions.filter(t => sellableQty(t) > 0 && t.status !== 'returned'),
     [selectedTransactions]
   );
 
@@ -612,12 +610,9 @@ function TransactionsContent() {
 
     txs.forEach(tx => {
       totalQuantity += tx.quantity;
-      // pending（未着）不计入在库，单独统计
-      if (tx.status === 'pending') {
-        totalPending += tx.quantity;
-      } else {
-        totalInStock += tx.quantity_in_stock ?? Math.max(0, tx.quantity - (tx.quantity_sold ?? 0) - (tx.quantity_returned ?? 0));
-      }
+      // 未到的件数（未到货 + 分批到货还没到的）单独统计，不计入在库
+      totalPending += notArrivedQty(tx);
+      totalInStock += sellableQty(tx);
       totalSold += tx.quantity_sold ?? 0;
       totalPurchasePrice += tx.purchase_price_total;
       if (tx.aggregated_profit != null) {

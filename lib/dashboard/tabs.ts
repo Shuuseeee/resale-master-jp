@@ -91,8 +91,8 @@ function stockRow(p: DashPurchase, qty: number, best: Map<string, PriceInfo>, di
 export function inStockRows(data: DashboardData, f: DashFilters, best: Map<string, PriceInfo>, diffs: Map<string, number>): StockRow[] {
   if (f.completedOnly) return [];
   return filteredPurchases(data, f)
-    .filter(p => p.status !== 'pending' && unsoldOf(p) > 0)
-    .map(p => stockRow(p, unsoldOf(p), best, diffs))
+    .filter(p => unsoldOf(p) - p.notArrivedQty > 0)
+    .map(p => stockRow(p, unsoldOf(p) - p.notArrivedQty, best, diffs))
     .sort((a, b) => b.p.date.localeCompare(a.p.date));
 }
 
@@ -100,8 +100,8 @@ export function inStockRows(data: DashboardData, f: DashFilters, best: Map<strin
 export function pendingRows(data: DashboardData, f: DashFilters, best: Map<string, PriceInfo>, diffs: Map<string, number>): StockRow[] {
   if (f.completedOnly) return [];
   return filteredPurchases(data, f)
-    .filter(p => p.status === 'pending' && unsoldOf(p) > 0)
-    .map(p => stockRow(p, unsoldOf(p), best, diffs))
+    .filter(p => p.notArrivedQty > 0)
+    .map(p => stockRow(p, p.notArrivedQty, best, diffs))
     .sort((a, b) => b.p.date.localeCompare(a.p.date));
 }
 
@@ -156,8 +156,8 @@ export function janRows(data: DashboardData, f: DashFilters, best: Map<string, P
     const unsold = unsoldOf(p);
     r.totalQty += p.quantity;
     r.soldQty += p.soldQty;
-    if (p.status === 'pending') r.pendingQty += unsold;
-    else r.stockQty += unsold;
+    r.pendingQty += p.notArrivedQty;
+    r.stockQty += unsold - p.notArrivedQty;
     r.investment += p.unitPrice * p.quantity;
     r.soldCost += Math.round(unitCost(p) * p.soldQty);
     for (const s of p.sales) {

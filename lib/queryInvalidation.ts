@@ -11,6 +11,8 @@ const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   sales_records: FINANCIAL,
   return_records: FINANCIAL,
   sale_orders: FINANCIAL,
+  // 分批到货明细：触发器会改交易的已到货数量与状态
+  transaction_arrivals: FINANCIAL,
   // 积分率 / 平台配置会影响利润与积分的换算
   points_platforms: [...FINANCIAL, 'platforms'],
   purchase_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],

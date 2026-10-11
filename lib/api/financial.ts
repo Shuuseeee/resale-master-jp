@@ -3,50 +3,6 @@
 
 import { supabase } from '@/lib/supabase/client';
 
-export interface PendingArrivalTransaction {
-  id: string;
-  product_name: string;
-  date: string;
-  quantity: number;
-  order_number: string | null;
-  purchase_platforms: { name: string } | null;
-}
-
-/**
- * 根据 JAN 码查找未着荷的交易
- */
-export async function getTransactionsByJanCode(janCode: string): Promise<PendingArrivalTransaction[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('id, product_name, date, quantity, order_number, purchase_platforms!purchase_platform_id(name)')
-    .eq('jan_code', janCode)
-    .eq('status', 'pending')
-    .order('date', { ascending: false });
-
-  if (error) {
-    console.error('JAN码查询失败:', error);
-    return [];
-  }
-  return (data ?? []) as unknown as PendingArrivalTransaction[];
-}
-
-/**
- * 标记交易为已到着（pending → in_stock）
- */
-export async function markTransactionArrived(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('transactions')
-    .update({ status: 'in_stock' })
-    .eq('id', id)
-    .eq('status', 'pending');
-
-  if (error) {
-    console.error('标记到着失败:', error);
-    return false;
-  }
-  return true;
-}
-
 /**
  * 确认入金（awaiting_payment → sold）
  */

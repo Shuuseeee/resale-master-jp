@@ -348,7 +348,7 @@ export default function SettingsPage() {
               {importResult && (
                 <MessageBar intent={importResult.unmatchedAccounts.length > 0 ? 'warning' : 'success'}>
                   <div>
-                    导入完成：进货 {importResult.purchases} 笔、出售 {importResult.sales} 条、退货 {importResult.returns} 条、经费 {importResult.expenses} 条
+                    导入完成：进货 {importResult.purchases} 笔、出售 {importResult.sales} 条、退货 {importResult.returns} 条、{importResult.arrivals ? `到货 ${importResult.arrivals} 条、` : ''}经费 {importResult.expenses} 条
                     {importResult.skipped > 0 && `；已存在跳过 ${importResult.skipped} 笔`}
                   </div>
                   {importResult.unmatchedAccounts.length > 0 && (
