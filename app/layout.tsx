@@ -5,6 +5,7 @@ import './globals.css'
 import AppShell from '@/components/shell/AppShell'
 import { ClientProviders } from '@/components/ClientProviders'
 import Script from 'next/script'
+import { BRAND_ICONS } from '@/lib/brand-icons'
 
 export const metadata: Metadata = {
   title: '账务管理',
@@ -14,17 +15,17 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: '账务管理',
-    startupImage: '/icons/app-icon-512.png',
+    startupImage: BRAND_ICONS.app512,
   },
-  // 图标由 scripts/generate-icons.py 从 assets/branding/app-icon.png 生成
+  // 图标由 scripts/generate-icons.py 生成（地址集中在 lib/brand-icons.ts）
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icons/app-icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/app-icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: BRAND_ICONS.app192, sizes: '192x192', type: 'image/png' },
+      { url: BRAND_ICONS.app512, sizes: '512x512', type: 'image/png' },
     ],
     shortcut: '/favicon.ico',
-    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    apple: [{ url: BRAND_ICONS.appleTouch, sizes: '180x180', type: 'image/png' }],
   },
 }
 

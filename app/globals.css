@@ -1275,10 +1275,11 @@
     transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
   }
 
+  /* 品牌标志是横向的「買取」字（宽约为高的 2 倍），按高度定尺寸 */
   .shell-brand__logo {
-    width: 28px;
-    height: 28px;
-    margin-right: 6px;
+    width: auto;
+    height: 20px;
+    margin-right: 8px;
   }
 
   .shell-brand__text {

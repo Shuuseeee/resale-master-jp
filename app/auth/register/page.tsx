@@ -75,7 +75,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[380px]">
         {/* Header */}
         <div className="mb-6 text-center">
-          <BrandIcon className="mx-auto mb-4 h-14 w-14 shadow-[var(--shadow-md)]" />
+          <BrandIcon className="mx-auto mb-5 h-12" />
           <h1 className="text-[28px] font-bold tracking-tight text-[var(--color-text)]">
             Resale Master JP
           </h1>

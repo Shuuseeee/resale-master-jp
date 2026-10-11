@@ -147,7 +147,7 @@ export default function Navigation() {
       >
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <BrandIcon className="h-8 w-8" />
+            <BrandIcon className="h-6" />
             <div className="leading-tight">
               <div className="text-sm font-bold text-[var(--color-text)]">Resale Master</div>
               <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--color-primary)]">财务控制台</div>

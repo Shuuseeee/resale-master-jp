@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { BRAND_ICONS } from '@/lib/brand-icons';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -13,10 +14,10 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     // any：保留透明圆角；maskable：满铺 + 内容缩进，安卓自适应图标裁成圆形 / 圆角方形也不会切到文字
     icons: [
-      { src: '/icons/app-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icons/app-icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-      { src: '/icons/app-icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: BRAND_ICONS.app192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: BRAND_ICONS.app512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: BRAND_ICONS.maskable192, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: BRAND_ICONS.maskable512, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   };
 }

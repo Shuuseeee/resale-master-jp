@@ -9,6 +9,7 @@ import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { inventoryOverview, planShipment, searchTransactions, storeRules, type McpUser } from '@/lib/server/mcp-tools';
 import { MCP_SCOPE, verifyAccessToken } from '@/lib/server/oauth';
+import { BRAND_ICONS } from '@/lib/brand-icons';
 
 // 客户端（claude.ai 等）显示的名称与图标（MCP serverInfo.icons）。图标必须是绝对地址，用正式域名；本地开发时退回 localhost
 const SITE = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000';
@@ -19,8 +20,8 @@ const SERVER_INFO: Implementation = {
   description: '二手转卖账本：库存与利润概况、买取店规则、全局最优出货方案',
   websiteUrl: SITE,
   icons: [
-    { src: `${SITE}/icons/app-icon-192.png`, mimeType: 'image/png', sizes: ['192x192'] },
-    { src: `${SITE}/icons/app-icon-512.png`, mimeType: 'image/png', sizes: ['512x512'] },
+    { src: `${SITE}${BRAND_ICONS.app192}`, mimeType: 'image/png', sizes: ['192x192'] },
+    { src: `${SITE}${BRAND_ICONS.app512}`, mimeType: 'image/png', sizes: ['512x512'] },
   ],
 };
 
