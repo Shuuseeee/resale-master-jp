@@ -110,7 +110,7 @@ export default function Modal({
         aria-labelledby={title ? 'modal-title' : undefined}
         className={`
           modal-surface relative w-full ${sizeClasses[size]}
-          max-md:max-h-[min(calc(90vh-5rem),calc(100vh-5.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))]
+          max-md:max-h-[min(calc(90vh-5rem),calc(100vh-5.75rem-var(--app-top-inset)-env(safe-area-inset-bottom,0px)))]
           max-md:bg-[var(--color-bg-elevated)]
           max-md:border max-md:border-[var(--color-border)]
           max-md:rounded-t-[20px]
@@ -149,7 +149,7 @@ export default function Modal({
         {/* 内容区域 */}
         <div
           data-modal-scroll
-          className="modal-content overflow-y-auto max-md:max-h-[min(calc(90vh-9rem),calc(100vh-9.75rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] max-md:px-4 max-md:py-4 overscroll-contain text-[var(--color-text)]"
+          className="modal-content overflow-y-auto max-md:max-h-[min(calc(90vh-9rem),calc(100vh-9.75rem-var(--app-top-inset)-env(safe-area-inset-bottom,0px)))] max-md:px-4 max-md:py-4 overscroll-contain text-[var(--color-text)]"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}

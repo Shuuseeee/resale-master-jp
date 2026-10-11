@@ -224,7 +224,7 @@ export default function ScanArrivalModal({ onClose }: ScanArrivalModalProps) {
       )}
 
       {/* Top bar：pt 叠加 safe-area，避免 PWA 全屏下按钮被刘海遮挡 */}
-      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-black/70 z-20 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(var(--app-top-inset)+0.75rem)] bg-black/70 z-20 flex-shrink-0">
         <div className="flex items-center gap-1">
           {/* Torch */}
           {torchSupported && (

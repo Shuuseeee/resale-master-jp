@@ -25,7 +25,7 @@ export default function OfflineBanner() {
     : null;
 
   return (
-    <div className="pointer-events-none fixed left-1/2 top-[calc(63px+env(safe-area-inset-top,0px))] z-[8500] w-max max-w-[calc(100vw-24px)] -translate-x-1/2 md:top-[70px]">
+    <div className="pointer-events-none fixed left-1/2 top-[calc(63px+var(--app-top-inset))] z-[8500] w-max max-w-[calc(100vw-24px)] -translate-x-1/2 md:top-[70px]">
       <MessageBar intent="warning" icon={<WifiOff20Regular />}>
         <span className="block truncate">
           离线中 · 仅可查看已缓存的数据{updatedText ? ` · 更新于 ${updatedText}` : ''}

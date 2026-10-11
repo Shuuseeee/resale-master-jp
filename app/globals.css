@@ -2262,6 +2262,18 @@
     --table-cell-py: 12px;
     /* 正文字体 = Loop 实测的系统字体栈（Segoe UI Variable Text → Apple / Android 系统字体），不再加载网页字体；标题用 --loop-font-display */
     --font-sans: var(--loop-font-text);
+    /* 顶部安全区：固定顶栏 / 全屏浮层一律用它而不是直接写 env(safe-area-inset-top)。
+       iOS 27 起主屏幕 PWA（black-translucent + viewport-fit=cover）的状态栏下方会叠一层系统画的渐变模糊（约 38–40pt），
+       CSS / meta 都关不掉，只能把内容挪出这条带子：仅 iPhone 主屏幕打开、竖屏时多留 2.5rem，Safari / 桌面 / 横屏不变 */
+    --app-top-inset: env(safe-area-inset-top, 0px);
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    @media (display-mode: standalone) and (orientation: portrait) and (max-width: 767px) {
+      :root {
+        --app-top-inset: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+      }
+    }
   }
 
   /* 触摸优化 - 移动端交互体验提升 */

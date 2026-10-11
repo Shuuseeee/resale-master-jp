@@ -145,7 +145,7 @@ export default function Navigation() {
       {/* ── 移动端顶部栏：SNUtils compact header ── */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-[9999] app-bg"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ paddingTop: 'var(--app-top-inset)' }}
       >
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export default function Navigation() {
       </div>
 
       {/* 移动端顶部占位 */}
-      <div className="md:hidden h-[calc(56px+env(safe-area-inset-top,0px))]" />
+      <div className="md:hidden h-[calc(56px+var(--app-top-inset))]" />
 
       {/* ── 移动端底部导航栏：SNUtils touch adaptation ── */}
       <div

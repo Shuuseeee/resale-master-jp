@@ -78,7 +78,7 @@ export default function BarcodeScanner({ onDetected, onClose }: BarcodeScannerPr
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* ヘッダー：pt に safe-area を加算し、PWA 全画面時にノッチと重ならないようにする */}
-      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] bg-black/70">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(var(--app-top-inset)+0.75rem)] bg-black/70">
         <p className="text-white text-sm font-medium">
           {error ? '' : 'バーコードをカメラに向けてください'}
         </p>
