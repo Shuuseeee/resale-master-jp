@@ -3,7 +3,7 @@
 //      → 一次 RPC import_order_data 在数据库事务里写入（去重、补建平台、写进货 / 出售 / 退货 / 经费；出错整份回滚）
 // 金额口径（与买取X 一致）：
 // - 采购总价 = 进货单价 × 数量 + 运费；「使用积分」= 积分抵扣，其余计为信用卡 / 其他支付
-// - 买取X 的「优惠券」是已从单价里扣掉的折扣（不含在单价里、不影响原価），我们没有对应字段，写进备注
+// - 买取X 的「优惠券」是已从单价里扣掉的折扣（不影响原価），存进 transactions.coupon_amount，只做记录
 // - 退货的「损失额」写进 return_records.loss_amount；利润由数据库触发器按买取X 公式计算
 // - 经费：分类与买取X 相同（送料 / 交通費 / 梱包材 / 保管費 / 消耗品 / その他），也认中文名；都对不上归「その他」、原分类写进说明
 
@@ -107,7 +107,8 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
       ...inferPointsPlatforms(p, card, pointsPlatforms as PointsPlatformRef[]),
       platform_name: p.source,
       order_number: p.orderId,
-      notes: joinNotes(p.memo, p.coupon > 0 && `优惠券 ¥${p.coupon}（买取X 导入）`),
+      coupon_amount: p.coupon,
+      notes: p.memo,
       arrived: p.received || p.sales.length > 0 || (p.arrivedQty > 0 && p.arrivedQty >= p.quantity),
       paid_all: p.sales.length > 0 && p.sales.every(s => s.paid),
       sales: p.sales.map(s => ({

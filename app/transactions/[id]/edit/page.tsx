@@ -66,6 +66,7 @@ export default function EditTransactionPage() {
         jan_code: data.jan_code || '',
         unit_price: data.unit_price || 0,
         shipping_fee: data.shipping_fee ?? 0,
+        coupon_amount: data.coupon_amount ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         order_number: data.order_number || '',
         image_url: data.image_url || '',
@@ -106,6 +107,9 @@ export default function EditTransactionPage() {
       // 运费只在有改动时提交（兼容「代码先部署、库还没加列」）
       if ((fd.shipping_fee || 0) !== (dbTransaction?.shipping_fee ?? 0)) {
         updateData.shipping_fee = fd.shipping_fee || 0;
+      }
+      if ((fd.coupon_amount || 0) !== (dbTransaction?.coupon_amount ?? 0)) {
+        updateData.coupon_amount = fd.coupon_amount || 0;
       }
 
       // Only toggle status if allowed (pending/in_stock + no sales)
@@ -204,6 +208,7 @@ export default function EditTransactionPage() {
               <PurchaseCostsSection
                 totalPrice={form.formData.purchase_price_total}
                 shippingFee={form.formData.shipping_fee || 0}
+                couponAmount={form.formData.coupon_amount || 0}
                 cardPaid={form.formData.card_paid}
                 pointPaid={form.formData.point_paid}
                 balancePaid={form.formData.balance_paid}
@@ -212,6 +217,7 @@ export default function EditTransactionPage() {
                 errors={form.errors}
                 onTotalPriceChange={form.handleTotalPriceChange}
                 onShippingFeeChange={form.handleShippingFeeChange}
+                onCouponChange={form.handleCouponChange}
                 onInputChange={form.handleInputChange}
                 onPaymentChange={form.handlePaymentChange}
               />

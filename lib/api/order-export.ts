@@ -91,7 +91,7 @@ export async function exportOrdersCsv(transactionIds?: string[]): Promise<string
       tx.payment_method?.name ?? '',
       shippingOf(tx),
       num(tx.point_paid),
-      0,
+      num(tx.coupon_amount),
       num(tx.expected_platform_points),
       num(tx.expected_card_points),
       num(tx.extra_platform_points),
@@ -168,7 +168,7 @@ export async function exportOrdersXlsx(): Promise<void> {
     const cost = (unitPriceOf(tx) * qty + shippingOf(tx) - points) / qty;
     return [
       tx.id, tx.date, tx.product_name, tx.jan_code ?? '', unitPriceOf(tx), qty,
-      tx.purchase_platform?.name ?? '', tx.order_number ?? '', shippingOf(tx), num(tx.point_paid), 0,
+      tx.purchase_platform?.name ?? '', tx.order_number ?? '', shippingOf(tx), num(tx.point_paid), num(tx.coupon_amount),
       num(tx.expected_platform_points), num(tx.expected_card_points), num(tx.extra_platform_points),
       arrived(tx) ? 1 : '', tx.notes ?? '', tx.id, tx.payment_method?.name ?? '', '', 'manual', arrived(tx) ? qty : 0,
       Math.round(cost), Math.round(num(tx.total_profit)), `${num(tx.roi).toFixed(1)}%`,
@@ -216,7 +216,7 @@ export async function downloadImportTemplate(): Promise<void> {
     ['账号', '支付方式名称（与设置里的支付方式一致才会关联）'],
     ['运费', '计入采购总价'],
     ['使用积分', '积分抵扣的金额'],
-    ['优惠券', '已从单价扣掉的折扣，只记入备注'],
+    ['优惠券', '已从单价扣掉的折扣，只做记录，不影响成本和利润'],
     ['到货 / 已入账', '1 / true / 是'],
     ['扣除额', '出售时的手续费等'],
     ['规则', '进货列完全相同的多行合并为一笔进货、各行出售分别记录；出售列留空只导入进货；有出售的自动视为已到货'],

@@ -471,6 +471,8 @@ CREATE TABLE public.transactions (
   purchase_platform_id uuid,
   order_number text,
   shipping_fee numeric(10,2) DEFAULT 0 NOT NULL,
+  -- 进货时用掉的优惠券金额（买取X「クーポン」）：单价已是扣后价，不进成本 / 利润，只做记录
+  coupon_amount numeric(10,2) DEFAULT 0 NOT NULL,
   quantity_returned integer DEFAULT 0,
   quantity_in_stock integer GENERATED ALWAYS AS (((quantity - quantity_sold) - quantity_returned)) STORED
 );
@@ -559,6 +561,7 @@ ALTER TABLE public.return_records ADD CONSTRAINT return_records_quantity_returne
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_platform_fee_check CHECK ((platform_fee >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_quantity_sold_check CHECK ((quantity_sold > 0));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_selling_price_per_unit_check CHECK ((selling_price_per_unit >= (0)::numeric));
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_coupon_amount_check CHECK ((coupon_amount >= (0)::numeric));
 ALTER TABLE public.sales_records ADD CONSTRAINT sales_records_shipping_fee_check CHECK ((shipping_fee >= (0)::numeric));
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_check CHECK ((quantity > 0));
 ALTER TABLE public.transactions ADD CONSTRAINT transactions_quantity_returned_check CHECK ((quantity_returned >= 0));
@@ -876,7 +879,7 @@ CREATE OR REPLACE FUNCTION public.record_transaction_change()
 AS $function$
 DECLARE
   tracked_fields TEXT[] := ARRAY[
-    'product_name','date','purchase_price_total','unit_price','shipping_fee','quantity',
+    'product_name','date','purchase_price_total','unit_price','shipping_fee','coupon_amount','quantity',
     'card_paid','point_paid','balance_paid',
     'expected_platform_points','expected_card_points','extra_platform_points',
     'jan_code','order_number','notes','status','image_url',
@@ -1062,14 +1065,14 @@ BEGIN
     END IF;
 
     INSERT INTO transactions (
-      user_id, date, product_name, jan_code, unit_price, quantity, shipping_fee,
+      user_id, date, product_name, jan_code, unit_price, quantity, shipping_fee, coupon_amount,
       purchase_price_total, card_paid, point_paid, balance_paid, card_id,
       expected_platform_points, expected_card_points, extra_platform_points,
       platform_points_platform_id, card_points_platform_id, extra_platform_points_platform_id,
       purchase_platform_id, order_number, notes, status
     ) VALUES (
       uid, (p->>'date')::date, p->>'product_name', NULLIF(p->>'jan_code', ''), (p->>'unit_price')::numeric,
-      (p->>'quantity')::integer, COALESCE((p->>'shipping_fee')::numeric, 0),
+      (p->>'quantity')::integer, COALESCE((p->>'shipping_fee')::numeric, 0), COALESCE((p->>'coupon_amount')::numeric, 0),
       (p->>'purchase_price_total')::numeric, (p->>'card_paid')::numeric, (p->>'point_paid')::numeric, 0,
       NULLIF(p->>'card_id', '')::uuid,
       (p->>'expected_platform_points')::numeric, (p->>'expected_card_points')::numeric, (p->>'extra_platform_points')::numeric,

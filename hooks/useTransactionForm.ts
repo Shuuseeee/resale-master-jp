@@ -57,6 +57,7 @@ export function useTransactionForm({
     jan_code: '',
     unit_price: 0,
     shipping_fee: 0,
+    coupon_amount: 0,
     purchase_platform_id: '',
     order_number: '',
     image_url: '',
@@ -363,6 +364,12 @@ export function useTransactionForm({
     });
   }, [calculateBalancePaid]);
 
+  // 优惠券只做记录：单价已是扣后价，不改总价 / 支付
+  const handleCouponChange = useCallback((value: string) => {
+    const amount = parseNumberInput(value, 0);
+    setFormData(prev => ({ ...prev, coupon_amount: amount }));
+  }, []);
+
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -527,6 +534,7 @@ export function useTransactionForm({
     handleQuantityChange,
     handleTotalPriceChange,
     handleShippingFeeChange,
+    handleCouponChange,
     handleImageSelect,
     clearImage,
     handleAddPurchasePlatform,

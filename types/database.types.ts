@@ -130,6 +130,8 @@ export interface Transaction {
   // 进货运费：已计入 purchase_price_total（总价 = 单价×数量 + 运费），这里单独记录金额。
   // 库里加列之前读到的是 undefined，读取处一律按 0 处理
   shipping_fee?: number;
+  // 进货时用掉的优惠券金额（对齐买取X「クーポン」）：单价已是扣后价，不影响成本与利润，只做记录 / 导入导出。库里加列之前为 undefined
+  coupon_amount?: number;
 
   // 凭证：用户手动上传的采购截图（per-transaction）。商品缩略图按 JAN 共享，见 JanThumbnailCache
   image_url: string | null;
@@ -344,6 +346,7 @@ export interface TransactionFormData {
   jan_code?: string;
   unit_price?: number;
   shipping_fee?: number; // 运费（计入采购总价）
+  coupon_amount?: number; // 优惠券金额（单价已扣，不影响成本）
   purchase_platform_id?: string;
   order_number?: string;
   image_url?: string;

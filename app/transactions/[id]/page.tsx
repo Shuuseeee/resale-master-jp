@@ -54,6 +54,7 @@ const FIELD_LABELS: Record<string, string> = {
   purchase_price_total: '合计金额',
   unit_price: '单价',
   shipping_fee: '运费',
+  coupon_amount: '优惠券',
   quantity: '数量',
   card_paid: '信用卡 / 其他支付',
   point_paid: '积分抵扣',
@@ -83,7 +84,7 @@ function formatHistoryValue(field: string, value: unknown): string {
   if (field === 'status') return STATUS_LABELS[String(value)] || String(value);
   if (field === 'image_url') return '(图片)';
   if (['purchase_platform_id', 'card_id'].includes(field)) return '(已变更)';
-  if (['purchase_price_total', 'unit_price', 'shipping_fee', 'card_paid', 'point_paid', 'balance_paid',
+  if (['purchase_price_total', 'unit_price', 'shipping_fee', 'coupon_amount', 'card_paid', 'point_paid', 'balance_paid',
     'expected_platform_points', 'expected_card_points', 'extra_platform_points'].includes(field)) {
     return `¥${Number(value).toLocaleString()}`;
   }
@@ -541,6 +542,12 @@ export default function TransactionDetailPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-[var(--color-text-muted)]">其中运费</span>
                       <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.shipping_fee)}</span>
+                    </div>
+                  )}
+                  {!!transaction.coupon_amount && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-[var(--color-text-muted)]">已用优惠券（单价已扣）</span>
+                      <span className="text-[var(--color-text)] font-mono">{formatCurrency(transaction.coupon_amount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center">

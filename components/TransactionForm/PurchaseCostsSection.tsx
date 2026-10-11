@@ -8,6 +8,7 @@ import { comparePaymentMethods, paymentMethodDisplayName } from '@/lib/utils/pay
 interface PurchaseCostsSectionProps {
   totalPrice: number;
   shippingFee: number;
+  couponAmount: number;
   cardPaid: number;
   pointPaid: number;
   balancePaid: number;
@@ -17,6 +18,7 @@ interface PurchaseCostsSectionProps {
 
   onTotalPriceChange: (value: string) => void;
   onShippingFeeChange: (value: string) => void;
+  onCouponChange: (value: string) => void;
   onInputChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onPaymentChange: (field: 'card_paid' | 'point_paid', value: string) => void;
 }
@@ -24,6 +26,7 @@ interface PurchaseCostsSectionProps {
 export function PurchaseCostsSection({
   totalPrice,
   shippingFee,
+  couponAmount,
   cardPaid,
   pointPaid,
   balancePaid,
@@ -32,6 +35,7 @@ export function PurchaseCostsSection({
   errors,
   onTotalPriceChange,
   onShippingFeeChange,
+  onCouponChange,
   onInputChange,
   onPaymentChange,
 }: PurchaseCostsSectionProps) {
@@ -58,6 +62,24 @@ export function PurchaseCostsSection({
             <span className="sn-form-addon">¥</span>
           </div>
           <p className="sn-form-muted">计入采购总价（单价×数量 + 运费）</p>
+        </div>
+
+        {/* 优惠券：单价已是扣后价，只做记录 */}
+        <div>
+          <label className="sn-form-label">优惠券</label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="decimal"
+              name="coupon_amount"
+              value={couponAmount || ''}
+              onChange={(e) => onCouponChange(e.target.value)}
+              placeholder="0"
+              className="w-full sn-form-input pr-12"
+            />
+            <span className="sn-form-addon">¥</span>
+          </div>
+          <p className="sn-form-muted">这笔用掉的优惠券金额。单价填扣完优惠后的价格，这里只做记录，不影响成本和利润</p>
         </div>
 
         {/* Total price */}

@@ -21,10 +21,10 @@ import {
   NotesSection,
 } from '@/components/TransactionForm';
 
-/** 运费为 0 时不提交 shipping_fee 列（库默认 0），兼容「代码先部署、库还没加列」 */
+/** 运费 / 优惠券为 0 时不提交该列（库默认 0），兼容「代码先部署、库还没加列」 */
 function withoutZeroShipping(fd: TransactionFormData) {
-  const { shipping_fee, ...rest } = fd;
-  return shipping_fee ? { ...rest, shipping_fee } : rest;
+  const { shipping_fee, coupon_amount, ...rest } = fd;
+  return { ...rest, ...(shipping_fee ? { shipping_fee } : {}), ...(coupon_amount ? { coupon_amount } : {}) };
 }
 
 function AddTransactionPageContent() {
@@ -184,6 +184,7 @@ function AddTransactionPageContent() {
               <PurchaseCostsSection
                 totalPrice={form.formData.purchase_price_total}
                 shippingFee={form.formData.shipping_fee || 0}
+                couponAmount={form.formData.coupon_amount || 0}
                 cardPaid={form.formData.card_paid}
                 pointPaid={form.formData.point_paid}
                 balancePaid={form.formData.balance_paid}
@@ -192,6 +193,7 @@ function AddTransactionPageContent() {
                 errors={form.errors}
                 onTotalPriceChange={form.handleTotalPriceChange}
                 onShippingFeeChange={form.handleShippingFeeChange}
+                onCouponChange={form.handleCouponChange}
                 onInputChange={form.handleInputChange}
                 onPaymentChange={form.handlePaymentChange}
               />
