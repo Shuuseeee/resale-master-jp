@@ -53,7 +53,8 @@ export default function QuickCopyForm({ source, onSuccess, onCancel, onDirtyChan
     onCancel();
   };
 
-  const newTotal = formData.unit_price * formData.quantity;
+  const shippingFee = source.shipping_fee ?? 0;
+  const newTotal = formData.unit_price * formData.quantity + shippingFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,8 +161,11 @@ export default function QuickCopyForm({ source, onSuccess, onCancel, onDirtyChan
           <span className="text-[var(--color-text-muted)]">合计</span>
           <span className="font-medium">{formatCurrency(newTotal)}</span>
         </div>
+        {shippingFee > 0 && (
+          <div className="mt-1 text-right text-xs text-[var(--color-text-muted)]">含运费 {formatCurrency(shippingFee)}</div>
+        )}
         <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-          其他字段(JAN、商品名、平台、积分、备注)从原交易复制。如需调整,请用{' '}
+          其他字段(JAN、商品名、平台、积分、运费、优惠券、备注)从原交易复制。如需调整,请用{' '}
           <Link href={`/transactions/add?copy=${source.id}`} className="text-[var(--color-primary)] hover:underline">
             完整新建
           </Link>

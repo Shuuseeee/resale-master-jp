@@ -67,6 +67,7 @@ function AddTransactionPageContent() {
         jan_code: data.jan_code || '',
         unit_price: data.unit_price || 0,
         shipping_fee: data.shipping_fee ?? 0,
+        coupon_amount: data.coupon_amount ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         notes: data.notes || '',
       });

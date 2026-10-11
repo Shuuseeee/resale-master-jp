@@ -53,7 +53,9 @@ export async function quickCopyTransaction(
   source: Transaction,
   overrides: QuickCopyOverrides
 ): Promise<{ data: Transaction | null; error: any }> {
-  const newTotal = overrides.unit_price * overrides.quantity;
+  // 运费 / 优惠券按订单原样带过去（与买取X 的复制一致）；采购总价 = 单价 × 数量 + 运费
+  const shippingFee = source.shipping_fee ?? 0;
+  const newTotal = overrides.unit_price * overrides.quantity + shippingFee;
   const sourceTotal = source.purchase_price_total || 0;
   const moneyRatio = sourceTotal > 0 ? newTotal / sourceTotal : 1;
   const qtyRatio = source.quantity > 0 ? overrides.quantity / source.quantity : 1;
@@ -75,6 +77,8 @@ export async function quickCopyTransaction(
     extra_platform_points_platform_id: source.extra_platform_points_platform_id || null,
     jan_code: source.jan_code || null,
     unit_price: overrides.unit_price,
+    shipping_fee: shippingFee,
+    coupon_amount: source.coupon_amount ?? 0,
     purchase_platform_id: source.purchase_platform_id || null,
     order_number: overrides.order_number || null,
     image_url: null,
