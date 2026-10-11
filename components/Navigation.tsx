@@ -9,7 +9,6 @@ import { Add24Filled } from '@fluentui/react-icons/headless/svg/add';
 import { BarcodeScanner16Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import { Receipt16Regular, Receipt20Filled, Receipt20Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr16Regular, ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
-import { DataBarVertical24Filled, DataBarVertical24Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
 import { Dismiss16Regular } from '@fluentui/react-icons/headless/svg/dismiss';
 import { DocumentText24Filled, DocumentText24Regular } from '@fluentui/react-icons/headless/svg/document-text';
 import { Home20Filled, Home20Regular } from '@fluentui/react-icons/headless/svg/home';
@@ -113,7 +112,6 @@ export default function Navigation() {
   // 移动端更多抽屉中的次要项目（当前页用实心图标）
   const moreItems: { name: string; href: string; icon: FluentIcon; activeIcon: FluentIcon }[] = [
     { name: '设置', href: '/settings', icon: Settings24Regular, activeIcon: Settings24Filled },
-    { name: '数据分析', href: '/analytics', icon: DataBarVertical24Regular, activeIcon: DataBarVertical24Filled },
     { name: '税务申报', href: '/tax-report', icon: DocumentText24Regular, activeIcon: DocumentText24Filled },
   ];
 

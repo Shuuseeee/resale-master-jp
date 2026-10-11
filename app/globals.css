@@ -2481,12 +2481,6 @@
   }
 }
 
-/* 消除 Recharts 图表点击时的 focus 轮廓 */
-.recharts-wrapper:focus,
-.recharts-wrapper svg:focus {
-  outline: none;
-}
-
 /* 全局样式
    应用背景 = Loop 外壳的底色 + 4 层渐变，固定在视口上（Loop 的外壳本身就是一屏高）；
    页面容器不再铺底色，透明露出这层背景 */

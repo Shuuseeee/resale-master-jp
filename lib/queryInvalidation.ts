@@ -4,7 +4,7 @@
 // 键为 queryKey 的第一段（['dashboard', ...] 的 'dashboard'）。派生数据（仪表盘 / 分析 / 税务）
 // 依赖交易、销售、退货，所以这些表的写入会让它们全部失效。
 
-const FINANCIAL = ['transactions', 'dashboard', 'analytics', 'tax-report'] as const;
+const FINANCIAL = ['transactions', 'dashboard', 'tax-report'] as const;
 
 const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   transactions: FINANCIAL,
@@ -15,13 +15,13 @@ const KEYS_BY_TABLE: Record<string, readonly string[]> = {
   transaction_arrivals: FINANCIAL,
   // 积分率 / 平台配置会影响利润与积分的换算
   points_platforms: [...FINANCIAL, 'platforms'],
-  purchase_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],
-  selling_platforms: ['platforms', 'analytics', 'transactions', 'dashboard'],
-  payment_methods: ['analytics', 'transactions', 'payment-methods', 'dashboard'],
-  supplies_costs: ['supplies', 'analytics', 'tax-report', 'dashboard', 'expense-attachment-counts'],
+  purchase_platforms: ['platforms', 'transactions', 'dashboard'],
+  selling_platforms: ['platforms', 'transactions', 'dashboard'],
+  payment_methods: ['transactions', 'payment-methods', 'dashboard'],
+  supplies_costs: ['supplies', 'tax-report', 'dashboard', 'expense-attachment-counts'],
   expense_attachments: ['expense-attachment-counts', 'expense-attachments'],
   recurring_expenses: ['recurring-expenses'],
-  fixed_costs: ['supplies', 'analytics', 'tax-report'],
+  fixed_costs: ['supplies', 'tax-report'],
 };
 
 /** 所有已登记的根键：RPC 等无法判断影响范围的写入，保守地让它们全部失效 */

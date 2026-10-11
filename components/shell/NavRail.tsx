@@ -8,7 +8,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { BarcodeScanner20Regular } from '@fluentui/react-icons/headless/svg/barcode-scanner';
 import { Receipt20Filled, Receipt20Regular } from '@fluentui/react-icons/headless/svg/receipt';
 import { ClipboardTextLtr20Filled, ClipboardTextLtr20Regular } from '@fluentui/react-icons/headless/svg/clipboard-text-ltr';
-import { DataBarVertical20Filled, DataBarVertical20Regular } from '@fluentui/react-icons/headless/svg/data-bar-vertical';
 import { DocumentText20Filled, DocumentText20Regular } from '@fluentui/react-icons/headless/svg/document-text';
 import { Home20Filled, Home20Regular } from '@fluentui/react-icons/headless/svg/home';
 import { PanelLeftContract20Filled, PanelLeftContract20Regular } from '@fluentui/react-icons/headless/svg/panel-left-contract';
@@ -36,7 +35,6 @@ const NAV_GROUPS: { caption?: string; items: NavItem[] }[] = [
   {
     caption: '报表',
     items: [
-      { name: '数据分析', href: '/analytics', icon: <DualIcon regular={DataBarVertical20Regular} filled={DataBarVertical20Filled} /> },
       { name: '税务申报', href: '/tax-report', icon: <DualIcon regular={DocumentText20Regular} filled={DocumentText20Filled} /> },
     ],
   },

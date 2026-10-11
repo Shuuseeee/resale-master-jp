@@ -14,25 +14,19 @@ import { idbClear, idbDelete, idbGet, idbSet } from './idb';
  * 缓存版本号。持久化的数据结构（如 TransactionWithProfit 的字段）变化时手动 +1，
  * 旧版本缓存会在恢复时被丢弃，避免新代码读到旧结构。
  */
-export const OFFLINE_CACHE_BUSTER = 'v4';
+export const OFFLINE_CACHE_BUSTER = 'v5';
 
 /** 缓存最长保留时间。超过则恢复时丢弃（过旧的财务数据比没有更误导） */
 export const OFFLINE_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 /** 需要离线可用的查询（取 queryKey 第一段）。新增离线页面时在此登记 */
-export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies', 'analytics', 'payment-methods', 'tax-report']);
+export const PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set(['transactions', 'platforms', 'dashboard', 'supplies', 'payment-methods', 'tax-report']);
 
 export function shouldPersistQuery(query: Query): boolean {
   if (query.state.status !== 'success') return false;
   const root = String(query.queryKey[0]);
   if (!PERSISTED_QUERY_KEYS.has(root)) return false;
 
-  // 分析页按筛选条件分键（['analytics', 'report', filters]）：只持久化「预设时间范围 + 不限支付方式」，
-  // 自定义区间 / 组合筛选会产生无限多个键，全存会让缓存无限膨胀
-  if (root === 'analytics') {
-    const filters = query.queryKey[2] as { timeRange?: string; paymentMethods?: unknown[] } | undefined;
-    return !!filters && filters.timeRange !== 'custom' && !filters.paymentMethods?.length;
-  }
   return true;
 }
 

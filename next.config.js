@@ -46,6 +46,8 @@ const nextConfig = {
       { source: '/settings/payment-methods/:path*', destination: '/settings#payment-methods', permanent: false },
       // 买取价格页已删除（2026-10-11）：价格看仪表盘「库存 / JAN汇总」，官方强刷在比价弹层
       { source: '/kaitorix-prices', destination: '/dashboard', permanent: false },
+      // 数据分析页已删除（2026-10-11）：内容并入仪表盘（分布图、月度趋势「利润率 · 笔数」）
+      { source: '/analytics', destination: '/dashboard', permanent: false },
     ]
   },
 
