@@ -12,6 +12,7 @@ import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig } from '@/lib/amazon-point-config';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
 import Spinner from '@/components/fluent/Spinner';
+import MessageBar from '@/components/fluent/MessageBar';
 import {
   BasicInfoSection,
   PurchaseInfoSection,
@@ -32,6 +33,8 @@ function AddTransactionPageContent() {
   const searchParams = useSearchParams();
   const copyId = searchParams.get('copy');
   const [copyData, setCopyData] = useState<Partial<TransactionFormData>>();
+  // 复制源的读取状态：首次读取时显示骨架屏（避免先填的内容被随后到达的数据覆盖），失败时提示
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'loading' | 'error'>(copyId ? 'loading' : 'idle');
   const { purchasePlatforms } = usePlatforms();
 
   // Stable Amazon config (read once from localStorage)
@@ -41,6 +44,7 @@ function AddTransactionPageContent() {
   useEffect(() => {
     if (!copyId) return;
 
+    setCopyStatus('loading');
     (async () => {
       const { data, error } = await supabase
         .from('transactions')
@@ -48,8 +52,13 @@ function AddTransactionPageContent() {
         .eq('id', copyId)
         .single();
 
-      if (error || !data) return;
+      if (error || !data) {
+        setCopyStatus('error');
+        return;
+      }
 
+      setCopyStatus('idle');
+      // 不复制：日期（直接打开 = 今天，「保存并继续添加」= 沿用上一笔）、订单号、收据（新的一笔各自不同）
       setCopyData({
         product_name: data.product_name,
         quantity: data.quantity,
@@ -70,6 +79,8 @@ function AddTransactionPageContent() {
         coupon_amount: data.coupon_amount ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         notes: data.notes || '',
+        order_number: '',
+        image_url: '',
       });
     })();
   }, [copyId]);
@@ -130,6 +141,16 @@ function AddTransactionPageContent() {
     },
   });
 
+  // 「保存并继续添加」时页面不会重新挂载：上一笔选的收据图片要清掉，免得被上传到下一笔
+  const { clearImage } = form;
+  useEffect(() => {
+    if (copyId) clearImage();
+  }, [copyId, clearImage]);
+
+  if (copyStatus === 'loading' && !copyData) {
+    return <PageSkeleton />;
+  }
+
   return (
     <div className={layout.page}>
       <PageHeader crumbs={[{ label: '交易列表', href: '/transactions' }, { label: '记录新交易' }]} />
@@ -148,6 +169,12 @@ function AddTransactionPageContent() {
 
           <h1 className={heading.page}>记录新交易</h1>
         </div>
+
+        {copyStatus === 'error' && (
+          <div className="mb-6">
+            <MessageBar intent="warning">读取要复制的交易失败，已打开空白表单。</MessageBar>
+          </div>
+        )}
 
         {/* Form */}
         <form ref={form.formRef} onSubmit={form.handleSubmit} className="space-y-6">
