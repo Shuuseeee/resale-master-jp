@@ -19,7 +19,8 @@ import { SELECT_COLUMN_ID } from '@/components/DataTable';
 import CopyableJan from '@/components/CopyableJan';
 import Toast from '@/components/Toast';
 import { ProductImage } from '@/components/OptimizedImage';
-import { arrivedQty, isPartiallyArrived, sellableQty } from '@/lib/utils/arrivals';
+import { sellableQty } from '@/lib/utils/arrivals';
+import { TransactionStatusBadge } from '@/components/transactions/StatusBadge';
 
 export type TxRowItem =
   | { kind: 'group'; group: TransactionGroup; children: TxRowItem[] }
@@ -79,28 +80,6 @@ function CopyableText({ text, className = '' }: { text: string; className?: stri
       {showToast && <Toast message="已复制到剪贴板" onClose={() => setShowToast(false)} />}
     </>
   );
-}
-
-function statusBadge(tx: TransactionWithProfit) {
-  const remainingQty = tx.quantity - (tx.quantity_sold || 0);
-  switch (tx.status) {
-    case 'pending':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">未到货</span>;
-    case 'in_stock':
-      // 分批到货只到了一部分：与买取X 一样显示「到货 已到/总数」
-      if (isPartiallyArrived(tx)) {
-        return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">到货 {arrivedQty(tx)}/{tx.quantity}</span>;
-      }
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-primary)] bg-[var(--color-primary-light)] rounded whitespace-nowrap">库存{remainingQty}</span>;
-    case 'awaiting_payment':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-warning)] bg-[var(--color-warning-subtle)] rounded whitespace-nowrap">待入账</span>;
-    case 'sold':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-success)] bg-[var(--color-primary-light)] rounded whitespace-nowrap">已完成</span>;
-    case 'returned':
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-danger)] bg-[var(--color-danger-subtle)] rounded whitespace-nowrap">已退货</span>;
-    default:
-      return <span className="inline-block px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-subtle)] rounded whitespace-nowrap">-</span>;
-  }
 }
 
 export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<TxRowItem>[] {
@@ -335,7 +314,7 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
             </div>
           );
         }
-        return statusBadge(row.original.tx);
+        return <TransactionStatusBadge tx={row.original.tx} showStock />;
       },
     },
     {

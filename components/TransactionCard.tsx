@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/financial/calculator';
 import type { Transaction, PaymentMethod } from '@/types/database.types';
 import { ProductImage } from '@/components/OptimizedImage';
 import Toast from '@/components/Toast';
+import { TransactionStatusBadge } from '@/components/transactions/StatusBadge';
 
 interface TransactionWithPayment extends Transaction {
   payment_method?: PaymentMethod;
@@ -128,22 +129,6 @@ const TransactionCard = memo(function TransactionCard({
       : '未售出'
     : new Date(transaction.date).toLocaleDateString('ja-JP');
 
-  const getStatusBadge = () => {
-    switch (transaction.status) {
-      case 'pending':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">未到货</span>;
-      case 'in_stock':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)]">库存{remainingQty}</span>;
-      case 'awaiting_payment':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-warning-subtle)] text-[var(--color-warning)]">待入账</span>;
-      case 'sold':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-primary-light)] text-[var(--color-success)]">已完成</span>;
-      case 'returned':
-        return <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--color-danger-subtle)] text-[var(--color-danger)]">已退货</span>;
-      default:
-        return null;
-    }
-  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (compareMode) {
@@ -213,7 +198,7 @@ const TransactionCard = memo(function TransactionCard({
             </button>
           )}
           <div className="flex items-center gap-2 mt-1">
-            {getStatusBadge()}
+            <TransactionStatusBadge tx={transaction} showStock />
             {transaction.status === 'pending' && onMarkArrived && (
               <button
                 onClick={(e) => {
