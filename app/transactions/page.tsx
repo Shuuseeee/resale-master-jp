@@ -13,7 +13,6 @@ import DualIcon from '@/components/fluent/DualIcon';
 import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/add';
 import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
 import { ArrowSync20Filled, ArrowSync20Regular } from '@fluentui/react-icons/headless/svg/arrow-sync';
-import { DocumentBulletList20Filled, DocumentBulletList20Regular } from '@fluentui/react-icons/headless/svg/document-bullet-list';
 import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
 import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
 import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
@@ -24,7 +23,7 @@ import TabList from '@/components/fluent/TabList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { formatCurrency, formatROI, getAvailableQty } from '@/lib/financial/calculator';
+import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import { markTransactionArrived } from '@/lib/api/arrivals';
 import Link from 'next/link';
@@ -54,7 +53,6 @@ import ReturnForm from '@/components/ReturnForm';
 import QuickEditForm from '@/components/QuickEditForm';
 import QuickCopyForm from '@/components/QuickCopyForm';
 import Toast from '@/components/Toast';
-import CopyableJan from '@/components/CopyableJan';
 import { deleteTransaction as deleteTransactionApi } from '@/lib/api/transactions';
 import { exportOrdersCsv, exportOrdersXlsx, downloadCsv } from '@/lib/api/order-export';
 import { getColumnPreferences, saveColumnPreferences } from '@/lib/api/user-preferences';
@@ -73,7 +71,6 @@ import {
   fetchTransactionsWithProfit,
   fetchSingleTransaction,
 } from '@/lib/api/transactions-cache';
-import type { QuickEditPayload } from '@/lib/api/transactions';
 import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 import Spinner from '@/components/fluent/Spinner';
 import { notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
@@ -219,7 +216,6 @@ function TransactionsContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showComparison, setShowComparison] = useState(false);
-  const [showJanList, setShowJanList] = useState(false);
   const [isGrouped, setIsGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -1081,9 +1077,6 @@ function TransactionsContent() {
       },
       priority: 6,
     },
-    ...(kaitorixEnabled && buybackPrices.size > 0 && !kaitorixLoading
-      ? [{ id: 'jan-list', label: 'JAN 列表', icon: { regular: DocumentBulletList20Regular, filled: DocumentBulletList20Filled }, onClick: () => setShowJanList(true), priority: 8 }]
-      : []),
     { id: 'new', label: '记录新交易', icon: { regular: Add20Regular, filled: Add20Filled }, href: '/transactions/add', primary: true, priority: 4 },
   ];
 
@@ -1166,17 +1159,6 @@ function TransactionsContent() {
                       <span className="hidden sm:inline">获取买取价格</span>
                     </>
                   )}
-                </button>
-              )}
-              {kaitorixEnabled && buybackPrices.size > 0 && !kaitorixLoading && (
-                <button
-                  onClick={() => setShowJanList(true)}
-                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-sm font-semibold text-[var(--color-text-muted)] transition-all hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text)] whitespace-nowrap"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  <span className="hidden sm:inline">JAN 列表</span>
                 </button>
               )}
               {/* CSV 导出：当前列表（所见即所得）；XLSX：全部数据 */}
@@ -1610,13 +1592,6 @@ function TransactionsContent() {
         onForceRefresh={kaitorixState.forceRefresh}
       />
 
-      <JanListSheet
-        isOpen={showJanList}
-        onClose={() => setShowJanList(false)}
-        transactions={compareMode && selectedIds.size > 0 ? selectedTransactions : filteredTransactions}
-        buybackMap={buybackPrices}
-      />
-
       {/* 同一订单售出 Modal */}
       <Modal
         isOpen={multiSaleModalOpen}
@@ -1891,160 +1866,6 @@ function TransactionsContent() {
       {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>
     </PullToRefresh>
-  );
-}
-
-// ─── JAN List Sheet ──────────────────────────────────────────────────────────
-
-interface JanListSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  transactions: TransactionWithPayment[];
-  buybackMap: Map<string, { maxPrice: number; maxStore: string; expectedProfit?: number; allPrices?: Array<{ store: string; price: number; url: string }> }>;
-}
-
-function JanListSheet({ isOpen, onClose, transactions, buybackMap }: JanListSheetProps) {
-  const [copied, setCopied] = useState(false);
-
-  // 找出所有商品价格合计最高的那家店，列表统一用该店的 URL
-  const { bestStore, bestStoreTotal, items, missingCount } = useMemo(() => {
-    // Step 1: 按 JAN 去重，收集每个 JAN 的所有店铺报价，并累加当前库存数量
-    const janMap = new Map<string, { name: string; qty: number; allPrices: Array<{ store: string; price: number; url: string }> }>();
-    for (const tx of transactions) {
-      if (!tx.jan_code) continue;
-      const bb = buybackMap.get(tx.id);
-      const existing = janMap.get(tx.jan_code);
-      if (!existing) {
-        janMap.set(tx.jan_code, { name: tx.product_name || tx.jan_code, qty: getAvailableQty(tx), allPrices: bb?.allPrices ?? [] });
-      } else {
-        existing.qty += getAvailableQty(tx);
-        if (bb?.allPrices?.length && !existing.allPrices.length) {
-          existing.allPrices = bb.allPrices;
-        }
-      }
-    }
-
-    // Step 2: 按店铺累加所有 JAN 的报价，找总额最高的店
-    const storeTotals = new Map<string, { total: number; janData: Map<string, { url: string; price: number }> }>();
-    for (const [jan, info] of janMap.entries()) {
-      for (const p of info.allPrices) {
-        if (!storeTotals.has(p.store)) storeTotals.set(p.store, { total: 0, janData: new Map() });
-        const st = storeTotals.get(p.store)!;
-        st.total += p.price;
-        st.janData.set(jan, { url: p.url, price: p.price });
-      }
-    }
-
-    let bestStore = '';
-    let bestStoreTotal = 0;
-    for (const [store, data] of storeTotals.entries()) {
-      if (data.total > bestStoreTotal) { bestStoreTotal = data.total; bestStore = store; }
-    }
-
-    // Step 3: 用最高总价店铺的 URL 构建列表
-    const bestData = bestStore ? storeTotals.get(bestStore) : null;
-    let missingCount = 0;
-    const items = Array.from(janMap.entries()).map(([jan, info]) => {
-      const d = bestData?.janData.get(jan);
-      if (!d) missingCount++;
-      return { jan, name: info.name, qty: info.qty, price: d?.price ?? 0, storeUrl: d?.url ?? '' };
-    }).sort((a, b) => b.price - a.price);
-
-    return { bestStore, bestStoreTotal, items, missingCount };
-  }, [transactions, buybackMap]);
-
-  const copyAll = async () => {
-    const text = items.map(item => item.jan).join('\n');
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[10020] flex flex-col app-bg">
-      {/* Header */}
-      <div className="text-[var(--color-text)]">
-        <div className="flex items-center justify-between px-4 pt-12 pb-3">
-        <div>
-          <h2 className="text-lg font-bold">JAN 买取列表</h2>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            {items.length} 个商品
-            {bestStore ? (
-              <span className="ml-1.5 text-[var(--color-primary)] font-semibold">
-                · 最优店：{bestStore}（合计 ¥{bestStoreTotal.toLocaleString()}）
-              </span>
-            ) : null}
-            {missingCount > 0 && (
-              <span className="ml-1.5 text-[var(--color-warning)]">· {missingCount} 件该店无报价</span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={copyAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-70"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            {copied ? '已复制' : '复制 JAN'}
-          </button>
-          <button onClick={onClose} className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)]" aria-label="关闭">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        </div>
-      </div>
-
-      {/* List */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-[var(--color-text-muted)] text-sm">
-            没有带 JAN 码的商品
-          </div>
-        ) : (
-          items.map(item => {
-            const href = item.storeUrl || undefined;
-            const Tag = href ? 'a' : 'div';
-            return (
-              <Tag
-                key={item.jan}
-                {...(href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="flex items-center gap-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-lg)] border border-[var(--color-border)] px-4 py-3 shadow-[var(--shadow-sm)] active:opacity-70"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[var(--color-text)] truncate min-w-0">{item.name}</p>
-                    <span className="flex-shrink-0 text-xs bg-[var(--color-primary-bg)] text-white px-1.5 py-0.5 rounded-full font-semibold">
-                      ×{item.qty}
-                    </span>
-                  </div>
-                  <CopyableJan jan={item.jan} className="block mt-0.5 text-xs text-[var(--color-text-muted)]" />
-                </div>
-                <div className="text-right flex-shrink-0">
-                  {item.price > 0 ? (
-                    <p className="text-base font-bold text-[var(--color-success)]">
-                      ¥{item.price.toLocaleString()}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-[var(--color-warning)]">无报价</p>
-                  )}
-                  {href && (
-                    <svg className="w-4 h-4 text-[var(--color-text-muted)] mt-1 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  )}
-                </div>
-              </Tag>
-            );
-          })
-        )}
-      </div>
-    </div>
   );
 }
 
