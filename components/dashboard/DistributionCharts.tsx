@@ -1,4 +1,5 @@
-// components/dashboard/DistributionCharts.tsx — 四个分布图（复刻买取X：投资额按进货来源、回收额按出售渠道、利润按进货来源 / 出售渠道）
+// components/dashboard/DistributionCharts.tsx — 分布图：复刻买取X 的四个（投资额按进货来源、回收额按出售渠道、利润按进货来源 / 出售渠道），
+// 加上从数据分析页搬来的三个（投资额 / 利润按支付方式、获得积分按积分平台）
 // 饼图（环形）/ 柱状图可切换：金额两张共用一个开关、利润两张共用一个开关；利润饼图不显示亏损项（切到柱状图看全部）
 'use client';
 
@@ -104,7 +105,7 @@ function barOption(t: ChartTheme, slices: Slice[]): EChartOption {
   };
 }
 
-function ChartCard({ title, tip, kind, onKind, slices, note }: { title: string; tip: string; kind: Kind; onKind: (k: Kind) => void; slices: Slice[]; note?: string }) {
+function ChartCard({ title, tip, kind, onKind, slices, note, className = '' }: { title: string; tip: string; kind: Kind; onKind: (k: Kind) => void; slices: Slice[]; note?: string; className?: string }) {
   const theme = useChartTheme();
   const narrow = useNarrow();
   const shown = kind === 'pie' ? slices.filter(s => s.value > 0) : slices;
@@ -113,7 +114,7 @@ function ChartCard({ title, tip, kind, onKind, slices, note }: { title: string; 
     [theme, shown, kind, narrow],
   );
   return (
-    <section className={card.primary + ' flex flex-col p-4'}>
+    <section className={card.primary + ' flex flex-col p-4 ' + className}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <h2 className="text-sm font-semibold text-[var(--color-text)]">{title}</h2>
@@ -144,6 +145,16 @@ export default function DistributionCharts({ d }: { d: Distributions }) {
       <ChartCard title="回收额分布（出售渠道）" tip="按出售渠道（买取店等）统计回收额，看在哪些渠道卖得多。" kind={amountKind} onKind={setAmountKind} slices={d.revenueByTarget} />
       <ChartCard title="利润分布（进货来源）" tip="按进货店铺统计已售部分的利润（售价 − 扣除 − 成本），看从哪里买的商品在赚钱。" kind={profitKind} onKind={setProfitKind} slices={d.profitBySource} note={lossNote} />
       <ChartCard title="利润分布（出售渠道）" tip="按出售渠道统计已售部分的利润，看哪个渠道最赚。" kind={profitKind} onKind={setProfitKind} slices={d.profitByTarget} note={lossNote} />
+      <ChartCard title="投资额分布（支付方式）" tip="按付款用的支付方式（信用卡等）统计投资额，看钱主要从哪张卡出去。" kind={amountKind} onKind={setAmountKind} slices={d.investByCard} />
+      <ChartCard title="利润分布（支付方式）" tip="按支付方式统计已售部分的利润（成本已减去返点积分），看用哪张卡买最划算。" kind={profitKind} onKind={setProfitKind} slices={d.profitByCard} note={lossNote} />
+      <ChartCard
+        title="获得积分分布（积分平台）"
+        tip="按积分平台（Amazon ポイント、d ポイント、楽天ポイント 等）统计获得的积分（网站积分 + 信用卡返点 + 其他）。按售出日时只算已售部分。"
+        kind={amountKind}
+        onKind={setAmountKind}
+        slices={d.pointsByPlatform}
+        className="md:col-span-2"
+      />
     </div>
   );
 }

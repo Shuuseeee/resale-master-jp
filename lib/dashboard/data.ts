@@ -35,6 +35,8 @@ export interface DashPurchase {
   shippingFee: number;
   /** 获得积分（网站 + 信用卡 + 其他） */
   pointsEarned: number;
+  /** 获得积分按积分平台拆开：[积分平台 id（未设置为 null）, 积分] */
+  pointsByPlatform: [string | null, number][];
   /** 使用积分（付款方式，不减成本） */
   pointsUsed: number;
   source: string | null;
@@ -81,6 +83,8 @@ export interface DashboardData {
   /** 买取价变动历史（每日 CSV 同步只记变动，2026-10-08 起） */
   priceHistory: DashPriceChange[];
   paymentMethods: { id: string; name: string }[];
+  /** 积分平台（Amazon ポイント、d ポイント 等） */
+  pointsPlatforms: { id: string; name: string }[];
 }
 
 const num = (v: unknown) => Number(v) || 0;
@@ -91,7 +95,7 @@ function jstDate(iso: string): string {
 }
 
 export async function fetchDashboardData(): Promise<DashboardData> {
-  const [txRows, saleRows, returnRows, expenseRows, pmRows] = await Promise.all([
+  const [txRows, saleRows, returnRows, expenseRows, pmRows, ppRows] = await Promise.all([
     fetchAllRows<any>((from, to, opts) =>
       supabase
         .from('transactions')
@@ -124,6 +128,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       supabase.from('supplies_costs').select('id, purchase_date, amount, category, description', opts).order('purchase_date').order('id').range(from, to),
     ),
     fetchAllRows<any>((from, to, opts) => supabase.from('payment_methods').select('*', opts).order('id').range(from, to)),
+    fetchAllRows<any>((from, to, opts) => supabase.from('points_platforms').select('id, display_name', opts).order('id').range(from, to)),
   ]);
 
   const salesByTx = new Map<string, DashSale[]>();
@@ -159,6 +164,13 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       quantity,
       shippingFee,
       pointsEarned: num(t.expected_platform_points) + num(t.expected_card_points) + num(t.extra_platform_points),
+      pointsByPlatform: (
+        [
+          [t.platform_points_platform_id ?? null, num(t.expected_platform_points)],
+          [t.card_points_platform_id ?? null, num(t.expected_card_points)],
+          [t.extra_platform_points_platform_id ?? null, num(t.extra_platform_points)],
+        ] as [string | null, number][]
+      ).filter(([, v]) => v > 0),
       pointsUsed: num(t.point_paid),
       source: t.purchase_platform?.name ?? null,
       cardId: t.card_id ?? null,
@@ -211,5 +223,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       .map(h => ({ jan: h.jan, store: normalizeStoreName(h.store), date: jstDate(h.observed_at), price: h.price == null ? null : num(h.price) }))
       .sort((a, b) => a.date.localeCompare(b.date)),
     paymentMethods: pmRows.map(pm => ({ id: pm.id, name: paymentMethodDisplayName(pm) })),
+    pointsPlatforms: ppRows.map(pp => ({ id: pp.id, name: pp.display_name })),
   };
 }

@@ -1,5 +1,6 @@
 // lib/dashboard/charts.ts — 月度趋势与四个分布图的数据（复刻买取X DashboardView 的 Px / us / fs / Mi / Di）
 // 都跟随页面筛选。分布图的利润 = 售价 × 数量 − 扣除 − 单件成本 × 数量（不含退货损失与经费，与买取X 一致）。
+// 另加三个（2026-10-11 从删除的数据分析页搬来）：投资额 / 利润按支付方式、获得积分按积分平台；月度利润率与笔数（monthlyRates）。
 
 import type { DashboardData } from './data';
 import { filteredPurchases, filteredSales, holdingUnitCost, unitCost, type DashFilters } from './summary';
@@ -83,6 +84,12 @@ export interface Distributions {
   profitBySource: Slice[];
   /** 利润按出售渠道 */
   profitByTarget: Slice[];
+  /** 投资额按支付方式 */
+  investByCard: Slice[];
+  /** 利润按支付方式 */
+  profitByCard: Slice[];
+  /** 获得积分按积分平台 */
+  pointsByPlatform: Slice[];
 }
 
 const UNKNOWN = '未设置';
@@ -101,6 +108,16 @@ export function distributions(data: DashboardData, f: DashFilters): Distribution
   const revenue = new Map<string, number>();
   const profitSource = new Map<string, number>();
   const profitTarget = new Map<string, number>();
+  const investCard = new Map<string, number>();
+  const profitCard = new Map<string, number>();
+  const points = new Map<string, number>();
+  const cardName = new Map(data.paymentMethods.map(pm => [pm.id, pm.name]));
+  const platformName = new Map((data.pointsPlatforms ?? []).map(pp => [pp.id, pp.name]));
+  const card = (id: string | null) => (id ? cardName.get(id) ?? null : null);
+  /** share：只算已售部分时（按售出日）按件数比例分摊积分 */
+  const addPoints = (p: DashboardData['purchases'][number], share: number) => {
+    for (const [id, v] of p.pointsByPlatform ?? []) add(points, id ? platformName.get(id) ?? null : null, v * share);
+  };
 
   if (f.sellBasis) {
     for (const { p, s } of filteredSales(data, f)) {
@@ -109,16 +126,22 @@ export function distributions(data: DashboardData, f: DashFilters): Distribution
       add(revenue, s.target, s.price * s.qty);
       add(profitSource, p.source, profit);
       add(profitTarget, s.target, profit);
+      add(investCard, card(p.cardId), p.unitPrice * s.qty);
+      add(profitCard, card(p.cardId), profit);
+      addPoints(p, s.qty / (p.quantity || 1));
     }
   } else {
     for (const p of filteredPurchases(data, f)) {
       add(invest, p.source, p.unitPrice * p.quantity);
+      add(investCard, card(p.cardId), p.unitPrice * p.quantity);
+      addPoints(p, 1);
       const cost = holdingUnitCost(p);
       for (const s of p.sales) {
         const profit = s.price * s.qty - s.deduction - cost * s.qty;
         add(revenue, s.target, s.price * s.qty);
         add(profitSource, p.source, profit);
         add(profitTarget, s.target, profit);
+        add(profitCard, card(p.cardId), profit);
       }
     }
   }
@@ -127,5 +150,38 @@ export function distributions(data: DashboardData, f: DashFilters): Distribution
     revenueByTarget: toSlices(revenue),
     profitBySource: toSlices(profitSource),
     profitByTarget: toSlices(profitTarget),
+    investByCard: toSlices(investCard),
+    profitByCard: toSlices(profitCard),
+    pointsByPlatform: toSlices(points),
   };
+}
+
+export interface MonthlyRate {
+  /** YYYY-MM */
+  month: string;
+  /** 该月卖出部分的利润率（%）= Σ(售价 × 数量 − 扣除 − 单件成本 × 数量) ÷ Σ(单件成本 × 数量)；没有出售为 null */
+  roi: number | null;
+  /** 该月进货笔数 */
+  purchases: number;
+  /** 该月卖出件数 */
+  soldQty: number;
+}
+
+/** 月度利润率与笔数：利润率按出售月（看当月卖掉的东西赚了几成），进货笔数按进货月；跟随页面筛选 */
+export function monthlyRates(data: DashboardData, f: DashFilters): MonthlyRate[] {
+  const rows = new Map<string, { profit: number; cost: number; purchases: number; soldQty: number }>();
+  const row = (m: string) => rows.get(m) ?? rows.set(m, { profit: 0, cost: 0, purchases: 0, soldQty: 0 }).get(m)!;
+  if (!f.sellBasis) {
+    for (const p of filteredPurchases(data, f)) row(p.date.slice(0, 7)).purchases += 1;
+  }
+  for (const { p, s } of filteredSales(data, f)) {
+    const r = row(s.date.slice(0, 7));
+    const cost = unitCost(p) * s.qty;
+    r.profit += s.price * s.qty - s.deduction - cost;
+    r.cost += cost;
+    r.soldQty += s.qty;
+  }
+  return [...rows.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, r]) => ({ month, roi: r.cost > 0 ? Math.round((r.profit / r.cost) * 1000) / 10 : null, purchases: r.purchases, soldQty: r.soldQty }));
 }

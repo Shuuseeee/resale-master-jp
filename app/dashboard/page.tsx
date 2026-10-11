@@ -16,7 +16,7 @@ import ProfitTrendChart from '@/components/dashboard/ProfitTrendChart';
 import MonthlyChart from '@/components/dashboard/MonthlyChart';
 import DistributionCharts from '@/components/dashboard/DistributionCharts';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
-import { distributions, monthlyRows } from '@/lib/dashboard/charts';
+import { distributions, monthlyRates, monthlyRows } from '@/lib/dashboard/charts';
 import { fetchDashboardData } from '@/lib/dashboard/data';
 import { bestPrices, computeSummary, defaultFilters, filterOptions, type DashFilters } from '@/lib/dashboard/summary';
 import { loadKaitorixConfig } from '@/lib/kaitorix-config';
@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const summary = useMemo(() => (data ? computeSummary(data, filters, best) : null), [data, filters, best]);
   const options = useMemo(() => (data ? filterOptions(data) : null), [data]);
   const monthly = useMemo(() => (data ? monthlyRows(data, filters, best) : []), [data, filters, best]);
+  const rates = useMemo(() => (data ? monthlyRates(data, filters) : []), [data, filters]);
   const dists = useMemo(() => (data ? distributions(data, filters) : null), [data, filters]);
   const filtersActive =
     filters.period !== 'all' || !!filters.jan || !!filters.source || !!filters.card || filters.completedOnly || filters.sellBasis || filters.sameDay;
@@ -115,7 +116,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-4">
-            <MonthlyChart rows={monthly} completedOnly={filters.completedOnly} today={today} />
+            <MonthlyChart rows={monthly} rates={rates} completedOnly={filters.completedOnly} today={today} />
           </div>
 
           {dists && (
