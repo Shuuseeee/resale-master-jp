@@ -101,7 +101,7 @@ export default function EditTransactionPage() {
         unit_price: fd.unit_price || null,
         purchase_platform_id: fd.purchase_platform_id || null,
         order_number: fd.order_number || null,
-        image_url: imageUrl,
+        image_url: imageUrl || null,
         notes: fd.notes,
       };
       // 运费只在有改动时提交（兼容「代码先部署、库还没加列」）

@@ -387,9 +387,11 @@ export function useTransactionForm({
     reader.readAsDataURL(file);
   }, []);
 
+  // 同时清掉已保存的地址，否则编辑页删掉收据后保存又会把原图片写回去
   const clearImage = useCallback(() => {
     setSelectedImage(null);
     setImagePreview('');
+    setFormData(prev => ({ ...prev, image_url: '' }));
   }, []);
 
   const handleAddPurchasePlatform = useCallback(async () => {

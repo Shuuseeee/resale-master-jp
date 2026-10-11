@@ -85,7 +85,7 @@ function AddTransactionPageContent() {
         .insert([{
           ...withoutZeroShipping(fd),
           status: isPending ? 'pending' : 'in_stock',
-          image_url: imageUrl,
+          image_url: imageUrl || null,
           card_id: fd.card_id || null,
           platform_points_platform_id: fd.platform_points_platform_id || null,
           card_points_platform_id: fd.card_points_platform_id || null,
