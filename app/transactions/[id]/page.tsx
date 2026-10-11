@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase/client';
 import type { Transaction, PaymentMethod, PointsPlatform, PurchasePlatform } from '@/types/database.types';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { confirmPaymentReceived } from '@/lib/api/financial';
-import { markTransactionArrived } from '@/lib/api/arrivals';
 import { arrivedQty, isPartiallyArrived, notArrivedQty, sellableQty } from '@/lib/utils/arrivals';
 import ArrivalsPanel from '@/components/transactions/ArrivalsPanel';
 import Image from 'next/image';
@@ -23,7 +22,6 @@ import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import Toast from '@/components/Toast';
 import { ArrowCounterclockwise20Filled, ArrowCounterclockwise20Regular } from '@fluentui/react-icons/headless/svg/arrow-counterclockwise';
 import { ArrowUndo20Filled, ArrowUndo20Regular } from '@fluentui/react-icons/headless/svg/arrow-undo';
-import { BoxCheckmark20Filled, BoxCheckmark20Regular } from '@fluentui/react-icons/headless/svg/box-checkmark';
 import { Copy20Filled, Copy20Regular } from '@fluentui/react-icons/headless/svg/copy';
 import { Delete20Filled, Delete20Regular } from '@fluentui/react-icons/headless/svg/delete';
 import { Edit20Filled, Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
@@ -241,16 +239,6 @@ export default function TransactionDetailPage() {
     }
   };
 
-  const confirmArrival = async () => {
-    if (!transaction) return;
-    const success = await markTransactionArrived(transaction.id);
-    if (success) {
-      await loadTransaction();
-    } else {
-      alert('到货处理失败');
-    }
-  };
-
   const confirmPayment = async () => {
     if (!transaction) return;
     const success = await confirmPaymentReceived(transaction.id);
@@ -271,14 +259,10 @@ export default function TransactionDetailPage() {
 
   // 只能出售已到货的数量（分批到货，lib/utils/arrivals.ts）
   const canSell = !showSaleForm && sellableQty(transaction) > 0;
-  const canArrive = (transaction.status === 'pending' || transaction.status === 'in_stock') && notArrivedQty(transaction) > 0;
   const canReturn = transaction.quantity_in_stock > 0 && !showReturnForm;
   const canCancelSale = transaction.status === 'sold' || transaction.status === 'awaiting_payment';
   // 桌面文档头：流程操作里第一个适用的做品牌主按钮（Loop 工具栏最多一个），其余与编辑 / 复制 / 删除等为图标按钮
   const workflowActions: PageAction[] = [
-    ...(canArrive
-      ? [{ id: 'arrive', label: transaction.status === 'pending' ? '确认到货' : '剩余全部到货', icon: { regular: BoxCheckmark20Regular, filled: BoxCheckmark20Filled }, onClick: confirmArrival }]
-      : []),
     ...(transaction.status === 'awaiting_payment'
       ? [{ id: 'paid', label: '确认入账', icon: { regular: MoneyHand20Regular, filled: MoneyHand20Filled }, onClick: confirmPayment }]
       : []),
@@ -346,18 +330,6 @@ export default function TransactionDetailPage() {
 
             {/* 操作按钮（手机） */}
             <div className="flex items-center gap-2 flex-wrap md:hidden">
-              {/* 到货按钮：还有没到的件数时显示（未到货 / 只到了一部分） */}
-              {canArrive && (
-                <button
-                  onClick={confirmArrival}
-                  className={button.primary + " gap-1.5 whitespace-nowrap"}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {transaction.status === 'pending' ? '确认到货' : '剩余全部到货'}
-                </button>
-              )}
               {/* 记录销售按钮 */}
               {canSell && (
                 <button
