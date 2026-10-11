@@ -1662,6 +1662,8 @@ CREATE POLICY "user updates own prefs" ON public.user_preferences FOR UPDATE USI
 -- user_line_links：LINE 绑定由服务端（service_role，绕过 RLS）维护，客户端一律拒绝。
 -- 显式写出拒绝策略，避免 linter 的 rls_enabled_no_policy 提示，也表明这是有意为之。
 CREATE POLICY "No client access" ON public.user_line_links FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+-- 纵深防御：表级权限也一并撤掉（RLS 已全拒；边缘函数用 service_role 不受影响）
+REVOKE ALL ON public.user_line_links FROM anon, authenticated;
 
 -- user_roles（写入仅 service_role / SQL Editor）
 CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
