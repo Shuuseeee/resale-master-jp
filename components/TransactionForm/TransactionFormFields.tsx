@@ -15,8 +15,13 @@ type Form = ReturnType<typeof useTransactionForm>;
 export function TransactionFormFields({ form, onTogglePending }: { form: Form; onTogglePending?: () => void }) {
   const fd = form.formData;
   return (
-    <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:space-y-0">
-      <div className="space-y-6">
+    // 两栏按内容区宽度切换（容器查询，globals.css .sn-form-layout）：分区抽屉开着时内容区可能只有 600 左右。
+    // 左：基本信息 / 采购信息 / 凭证；右：采购成本 / 预期积分 / 备注（两栏高度大致相当）。
+    // 单栏时栏容器 display: contents，按 order 排成填写顺序：基本 → 采购信息 → 成本 → 积分 → 凭证 → 备注
+    <div className="sn-form-layout">
+    <div className="sn-form-columns">
+      <div className="sn-form-col">
+        <div className="order-1">
         <BasicInfoSection
           date={fd.date}
           productName={fd.product_name}
@@ -34,6 +39,8 @@ export function TransactionFormFields({ form, onTogglePending }: { form: Form; o
           quantityDisabled={form.quantityLocked}
           quantityWarning={form.quantityWarning}
         />
+        </div>
+        <div className="order-2">
         <PurchaseInfoSection
           orderNumber={fd.order_number || ''}
           purchasePlatformId={fd.purchase_platform_id || ''}
@@ -43,8 +50,18 @@ export function TransactionFormFields({ form, onTogglePending }: { form: Form; o
           onNewPlatformNameChange={form.setNewPurchasePlatformName}
           onAddPlatform={form.handleAddPurchasePlatform}
         />
+        </div>
+        <div className="order-5">
+        <ReceiptUploadSection
+          imagePreview={form.imagePreview}
+          error={form.errors.image}
+          onImageSelect={form.handleImageSelect}
+          onClearImage={form.clearImage}
+        />
+        </div>
       </div>
-      <div className="space-y-6">
+      <div className="sn-form-col">
+        <div className="order-3">
         <PurchaseCostsSection
           unitPrice={fd.unit_price}
           totalPrice={fd.purchase_price_total}
@@ -63,6 +80,8 @@ export function TransactionFormFields({ form, onTogglePending }: { form: Form; o
           onInputChange={form.handleInputChange}
           onPaymentChange={form.handlePaymentChange}
         />
+        </div>
+        <div className="order-4">
         <ExpectedPointsSection
           expectedPlatformPoints={fd.expected_platform_points}
           platformPointsPlatformId={fd.platform_points_platform_id || ''}
@@ -78,17 +97,15 @@ export function TransactionFormFields({ form, onTogglePending }: { form: Form; o
           onNumberChange={form.handleNumberChange}
           getCardPointRateLabel={form.getCardPointRateLabel}
         />
-        <ReceiptUploadSection
-          imagePreview={form.imagePreview}
-          error={form.errors.image}
-          onImageSelect={form.handleImageSelect}
-          onClearImage={form.clearImage}
-        />
+        </div>
+        <div className="order-6">
         <NotesSection
           notes={fd.notes || ''}
           onInputChange={form.handleInputChange}
         />
+        </div>
       </div>
+    </div>
     </div>
   );
 }
