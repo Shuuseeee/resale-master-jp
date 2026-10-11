@@ -5,9 +5,24 @@
 // 三个工具：库存与利润概况、店铺规则、出货方案。实现见 lib/server/mcp-tools.ts。
 import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { inventoryOverview, planShipment, storeRules, type McpUser } from '@/lib/server/mcp-tools';
 import { MCP_SCOPE, verifyAccessToken } from '@/lib/server/oauth';
+
+// 客户端（claude.ai 等）显示的名称与图标（MCP serverInfo.icons）。图标必须是绝对地址，用正式域名；本地开发时退回 localhost
+const SITE = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000';
+const SERVER_INFO: Implementation = {
+  name: 'resale-master',
+  title: 'Resale Master',
+  version: '1.0.0',
+  description: '二手转卖账本：库存与利润概况、买取店规则、全局最优出货方案',
+  websiteUrl: SITE,
+  icons: [
+    { src: `${SITE}/icons/app-icon-192.png`, mimeType: 'image/png', sizes: ['192x192'] },
+    { src: `${SITE}/icons/app-icon-512.png`, mimeType: 'image/png', sizes: ['512x512'] },
+  ],
+};
 
 const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(data) }] });
 
@@ -68,7 +83,7 @@ const handler = createMcpHandler(
         ),
     );
   },
-  { serverInfo: { name: 'resale-master', version: '1.0.0' } },
+  { serverInfo: SERVER_INFO },
   { basePath: '/api/mcp', maxDuration: 60, disableSse: true },
 );
 
