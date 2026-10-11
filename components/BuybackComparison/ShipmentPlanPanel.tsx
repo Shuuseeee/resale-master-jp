@@ -45,6 +45,9 @@ interface PlanResult {
   checks?: { ok: boolean; lines: string[]; greedy_net: number };
 }
 
+/** 每家店的商品清单默认显示的条数，多出的折叠 */
+const BOX_ITEM_LIMIT = 5;
+
 const keyOf = (items: PlanSelection[]) => items.map(i => `${i.transactionId}:${i.qty}`).join('|');
 
 export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] }) {
@@ -52,6 +55,14 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
   const [planKey, setPlanKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingJan, setEditingJan] = useState<string | null>(null);
+  const [openBoxes, setOpenBoxes] = useState<Set<string>>(new Set());
+  const toggleBox = (store: string) =>
+    setOpenBoxes(prev => {
+      const next = new Set(prev);
+      if (next.has(store)) next.delete(store);
+      else next.add(store);
+      return next;
+    });
 
   const run = async () => {
     setLoading(true);
@@ -120,13 +131,18 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1 text-sm">
-                  {box.items.map(it => (
+                  {(openBoxes.has(box.store) ? box.items : box.items.slice(0, BOX_ITEM_LIMIT)).map(it => (
                     <li key={it.tid} className="flex items-baseline justify-between gap-2">
                       <span className="min-w-0 truncate text-[var(--color-text)]" title={it.name}>{it.name}</span>
                       <span className="shrink-0 font-mono text-xs text-[var(--color-text-secondary)]">{formatCurrency(it.unit_price)} × {it.qty}</span>
                     </li>
                   ))}
                 </ul>
+                {box.items.length > BOX_ITEM_LIMIT && (
+                  <button type="button" className="fluent-link mt-1 text-xs" onClick={() => toggleBox(box.store)}>
+                    {openBoxes.has(box.store) ? '收起' : `展开全部 ${box.items.length} 种（还有 ${box.items.length - BOX_ITEM_LIMIT}）`}
+                  </button>
+                )}
                 {box.rule && <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{box.rule}</p>}
                 {[...box.blockers, ...box.warnings].map(w => (
                   <p key={w} className="mt-1 text-xs text-[var(--color-warning)]">{w}</p>

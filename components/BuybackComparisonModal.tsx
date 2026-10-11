@@ -16,6 +16,20 @@ import StoreRowDesktop from '@/components/BuybackComparison/StoreRowDesktop';
 import StoreRowMobile from '@/components/BuybackComparison/StoreRowMobile';
 import ShipmentPlanPanel from '@/components/BuybackComparison/ShipmentPlanPanel';
 
+/** 默认显示的商品卡片（桌面两列 × 2 行，手机单列 2 张）/ 店铺行数，多出的折叠 */
+const PRODUCT_LIMIT_DESKTOP = 4;
+const PRODUCT_LIMIT_MOBILE = 2;
+const STORE_LIMIT = 5;
+
+function ExpandToggle({ total, limit, expanded, onToggle, unit }: { total: number; limit: number; expanded: boolean; onToggle: () => void; unit: string }) {
+  if (total <= limit) return null;
+  return (
+    <button type="button" onClick={onToggle} className="fluent-btn fluent-btn--subtle mt-2 w-full">
+      {expanded ? '收起' : `展开全部 ${total} ${unit}（还有 ${total - limit}）`}
+    </button>
+  );
+}
+
 export type ForceRefreshHandler = (jan: string) => Promise<{ ok: boolean; error?: string }>;
 
 interface Props {
@@ -51,6 +65,24 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
   const [usage, setUsage] = useState<Usage | null>(null);
   const [refreshingJan, setRefreshingJan] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState('');
+  // 商品 / 店铺多时折叠（每次打开弹层恢复折叠）
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [showAllStores, setShowAllStores] = useState(false);
+  const [productLimit, setProductLimit] = useState(PRODUCT_LIMIT_DESKTOP);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const apply = () => setProductLimit(mq.matches ? PRODUCT_LIMIT_DESKTOP : PRODUCT_LIMIT_MOBILE);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setShowAllProducts(false);
+    setShowAllStores(false);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !onForceRefresh) return;
@@ -73,6 +105,8 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
   if (!isOpen) return null;
 
   const bestRevenue = rows[0]?.totalRevenue ?? 0;
+  const shownProducts = showAllProducts ? products : products.slice(0, productLimit);
+  const shownRows = showAllStores ? rows : rows.slice(0, STORE_LIMIT);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="买取价格比较" size="xl">
@@ -96,7 +130,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
             <div className="text-xs text-[var(--color-text-muted)]">可临时调整，不会修改库存</div>
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {products.map(p => (
+            {shownProducts.map(p => (
               <ProductCompareCard
                 key={p.transactionId}
                 product={p}
@@ -107,6 +141,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
               />
             ))}
           </div>
+          <ExpandToggle total={products.length} limit={productLimit} expanded={showAllProducts} onToggle={() => setShowAllProducts(v => !v)} unit="件商品" />
         </div>
 
         {/* 最优出货方案（含运费）：与 MCP 同一个求解器 */}
@@ -140,7 +175,7 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
             </div>
 
             <div className="md:hidden space-y-3">
-              {rows.map(row => (
+              {shownRows.map(row => (
                 <StoreRowMobile key={row.storeName} row={row} bestRevenue={bestRevenue} />
               ))}
             </div>
@@ -166,13 +201,13 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {rows.map(row => (
+                  {shownRows.map(row => (
                     <StoreRowDesktop key={row.storeName} row={row} />
                   ))}
                 </tbody>
               </table>
             </div>
-
+            <ExpandToggle total={rows.length} limit={STORE_LIMIT} expanded={showAllStores} onToggle={() => setShowAllStores(v => !v)} unit="家店铺" />
           </>
         )}
       </div>
