@@ -43,7 +43,6 @@ import { ReceiptMoney24Regular } from '@fluentui/react-icons/headless/svg/receip
 import { ArrowSwap24Regular } from '@fluentui/react-icons/headless/svg/arrow-swap';
 import { BoxCheckmark24Regular } from '@fluentui/react-icons/headless/svg/box-checkmark';
 import { MoneyHand24Regular } from '@fluentui/react-icons/headless/svg/money-hand';
-import { Sparkle24Regular } from '@fluentui/react-icons/headless/svg/sparkle';
 import { Delete24Regular } from '@fluentui/react-icons/headless/svg/delete';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
@@ -65,8 +64,6 @@ import TransactionColumnPicker from '@/components/TransactionColumnPicker';
 import { useKaitorixPrices } from '@/hooks/useKaitorixPrices';
 import { getMaxEntries } from '@/lib/kaitorix-domain';
 import { usePlatforms } from '@/contexts/PlatformsContext';
-import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
-import { copyTextAsync } from '@/lib/utils/clipboard';
 import OfflineNoCache from '@/components/OfflineNoCache';
 import { useSectionDrawer } from '@/lib/section-drawer';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -886,23 +883,6 @@ function TransactionsContent() {
     }
   }, [selectedIds, exitCompareMode]);
 
-  // 复制所选交易的 AI 分析数据（JSON，含销售 / 退货 / 买取价；结构与原生 App 一致）
-  const [aiCopying, setAiCopying] = useState(false);
-  const handleCopyAIExport = useCallback(async () => {
-    if (selectedTransactions.length === 0 || aiCopying) return;
-    const count = selectedTransactions.length;
-    setAiCopying(true);
-    try {
-      // copyTextAsync 必须在点击的同步调用栈内发起（Safari 的剪贴板手势限制）
-      await copyTextAsync(() => buildAIExportJSON(selectedTransactions, { purchasePlatforms, sellingPlatforms }));
-      setToastMsg(`已复制 ${count} 笔交易的 AI 分析数据`);
-    } catch (error) {
-      console.error('复制 AI 分析数据失败:', error);
-      setToastMsg('复制失败，请重试');
-    } finally {
-      setAiCopying(false);
-    }
-  }, [selectedTransactions, aiCopying, purchasePlatforms, sellingPlatforms]);
 
   // 共享：将指定 ID 列表的交易本地状态标记为 sold
   const markTransactionsAsSold = useCallback((ids: string[]) => {
@@ -1616,7 +1596,6 @@ function TransactionsContent() {
             ...(transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment')
               ? [{ id: 'paid', label: '入账', icon: MoneyHand24Regular, onClick: () => setBatchPaymentModalOpen(true) }]
               : []),
-            { id: 'ai', label: aiCopying ? '复制中…' : 'AI 分析', icon: Sparkle24Regular, onClick: handleCopyAIExport, disabled: aiCopying },
             { id: 'delete', label: '删除', icon: Delete24Regular, onClick: handleBatchDelete, danger: true },
           ]}
         />

@@ -29,11 +29,7 @@ import { Delete20Filled, Delete20Regular } from '@fluentui/react-icons/headless/
 import { Edit20Filled, Edit20Regular } from '@fluentui/react-icons/headless/svg/edit';
 import { MoneyHand20Filled, MoneyHand20Regular } from '@fluentui/react-icons/headless/svg/money-hand';
 import { ReceiptMoney20Filled, ReceiptMoney20Regular } from '@fluentui/react-icons/headless/svg/receipt-money';
-import { Sparkle20Filled, Sparkle20Regular } from '@fluentui/react-icons/headless/svg/sparkle';
 import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
-import { usePlatforms } from '@/contexts/PlatformsContext';
-import { buildAIExportJSON } from '@/lib/api/transaction-ai-export';
-import { copyTextAsync } from '@/lib/utils/clipboard';
 import { formatPointRate, paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 
 interface TransactionWithPayment extends Transaction {
@@ -108,8 +104,6 @@ export default function TransactionDetailPage() {
   const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
   const [showToast, setShowToast] = useState(false);
   const [toastText, setToastText] = useState('已复制到剪贴板');
-  const [aiCopying, setAiCopying] = useState(false);
-  const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const copyToClipboard = (text: string) => {
@@ -119,24 +113,6 @@ export default function TransactionDetailPage() {
     });
   };
 
-  // 复制本笔交易的 AI 分析数据（JSON，含销售 / 退货 / 买取价；结构与原生 App 一致）
-  const copyAIExport = async () => {
-    if (!transaction || aiCopying) return;
-    setAiCopying(true);
-    try {
-      // copyTextAsync 必须在点击的同步调用栈内发起（Safari 的剪贴板手势限制）
-      await copyTextAsync(() =>
-        buildAIExportJSON([transaction], { purchasePlatforms, sellingPlatforms, single: true }),
-      );
-      setToastText('已复制 AI 分析数据');
-    } catch (error) {
-      console.error('复制 AI 分析数据失败:', error);
-      setToastText('复制失败，请重试');
-    } finally {
-      setAiCopying(false);
-      setShowToast(true);
-    }
-  };
 
   const closeReturn = useCallback(() => setShowReturnForm(false), []);
   const closeSale = useCallback(() => setShowSaleForm(false), []);
@@ -316,7 +292,6 @@ export default function TransactionDetailPage() {
       ? [{ id: 'cancel-sale', label: '取消销售', icon: { regular: ArrowCounterclockwise20Regular, filled: ArrowCounterclockwise20Filled }, onClick: cancelSale, priority: 5 }]
       : []),
     { id: 'edit', label: '编辑', icon: { regular: Edit20Regular, filled: Edit20Filled }, href: `/transactions/${id}/edit`, priority: 1 },
-    { id: 'ai', label: '复制 AI 分析数据', icon: { regular: Sparkle20Regular, filled: Sparkle20Filled }, disabled: aiCopying, onClick: copyAIExport, priority: 6 },
     { id: 'copy', label: '复制为新交易', icon: { regular: Copy20Regular, filled: Copy20Filled }, href: `/transactions/add?copy=${id}`, priority: 7 },
     { id: 'delete', label: '删除', icon: { regular: Delete20Regular, filled: Delete20Filled }, onClick: deleteTransaction, priority: 8 },
     ...(primaryWorkflow ? [{ ...primaryWorkflow, primary: true, priority: 0 }] : []),
@@ -439,15 +414,6 @@ export default function TransactionDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </Link>
-              <button
-                onClick={copyAIExport}
-                disabled={aiCopying}
-                className="sn-icon-button disabled:opacity-50"
-                title="复制 AI 分析数据"
-                aria-label="复制 AI 分析数据"
-              >
-                <Sparkle20Regular />
-              </button>
               <Link
                 href={`/transactions/add?copy=${id}`}
                 className="sn-icon-button"
