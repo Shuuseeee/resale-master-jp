@@ -38,6 +38,13 @@ import { buildTransactionColumns, type TxRowItem } from '@/components/transactio
 import { columnPrefsToTableState } from '@/lib/table/columnPrefs';
 import type { Row } from '@tanstack/react-table';
 import BuybackComparisonModal from '@/components/BuybackComparisonModal';
+import SelectionActionBar from '@/components/transactions/SelectionActionBar';
+import { ReceiptMoney24Regular } from '@fluentui/react-icons/headless/svg/receipt-money';
+import { ArrowSwap24Regular } from '@fluentui/react-icons/headless/svg/arrow-swap';
+import { BoxCheckmark24Regular } from '@fluentui/react-icons/headless/svg/box-checkmark';
+import { MoneyHand24Regular } from '@fluentui/react-icons/headless/svg/money-hand';
+import { Sparkle24Regular } from '@fluentui/react-icons/headless/svg/sparkle';
+import { Delete24Regular } from '@fluentui/react-icons/headless/svg/delete';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import BatchSaleForm from '@/components/BatchSaleForm';
@@ -1584,96 +1591,35 @@ function TransactionsContent() {
         ))}
       </div>
 
-      {/* 多选模式浮动操作栏 */}
+      {/* 多选模式操作栏：手机盖住底部导航、桌面底部浮动（components/transactions/SelectionActionBar.tsx） */}
       {compareMode && (
-        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 inset-x-0 flex justify-center px-3 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto bg-[var(--color-bg-elevated)] text-[var(--color-text)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] px-3 py-3 flex items-center gap-2 max-w-lg w-full">
-            <div className="flex-1 text-sm min-w-0">
-              {selectedIds.size === 0
-                ? <span className="text-[var(--color-text-muted)] text-xs">请选择</span>
-                : <span>已选 <span className="font-bold text-[var(--color-primary)]">{selectedIds.size}</span> 件</span>
-              }
-            </div>
-            {/* 批量到货 */}
-            {transactions.some(t => selectedIds.has(t.id) && t.status === 'pending') && (
-              <button
-                onClick={handleBatchArrival}
-                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-warning-bg)] active:opacity-80 text-white transition-all whitespace-nowrap"
-              >
-                批量到货
-              </button>
-            )}
-            {/* 同一订单售出 */}
-            {sellableSelected.length >= 1 && (
-              <button
-                onClick={() => setMultiSaleModalOpen(true)}
-                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-primary-bg)] active:opacity-80 text-white transition-all whitespace-nowrap"
-              >
-                同一订单售出{sellableSelected.length < selectedIds.size ? `(${sellableSelected.length})` : ''}
-              </button>
-            )}
-            {/* 批量入账 */}
-            {transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment') && (
-              <button
-                onClick={() => setBatchPaymentModalOpen(true)}
-                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-primary-bg)] active:opacity-80 text-white transition-all whitespace-nowrap"
-              >
-                批量入账
-              </button>
-            )}
-            {/* 复制 AI 分析数据 */}
-            {selectedIds.size > 0 && (
-              <button
-                onClick={handleCopyAIExport}
-                disabled={aiCopying}
-                title="复制 AI 分析数据（JSON）"
-                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-bg-subtle)] text-[var(--color-text)] active:opacity-80 disabled:opacity-50 transition-all whitespace-nowrap"
-              >
-                {aiCopying ? '复制中…' : 'AI 分析'}
-              </button>
-            )}
-            {/* 批量删除 */}
-            {selectedIds.size > 0 && (
-              <button
-                onClick={handleBatchDelete}
-                className="px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold bg-[var(--color-danger-bg)] text-white active:opacity-80 transition-all whitespace-nowrap"
-              >
-                删除
-              </button>
-            )}
-            {/* 买取比较 */}
-            {kaitorixEnabled && buybackPrices.size > 0 && (
-              <button
-                disabled={selectedIds.size < 2}
-                onClick={() => setShowComparison(true)}
-                className={`px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-semibold transition-all whitespace-nowrap ${
-                  selectedIds.size >= 2
-                    ? 'bg-[var(--color-primary-bg)] active:opacity-80 text-white'
-                    : 'bg-[var(--color-bg-subtle)] text-[var(--color-text-muted)] cursor-not-allowed'
-                }`}
-              >
-                比较
-              </button>
-            )}
-            {selectedIds.size > 0 && (
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors px-1"
-              >
-                清空
-              </button>
-            )}
-            <button
-              onClick={exitCompareMode}
-              className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors flex-shrink-0"
-              aria-label="退出多选模式"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <SelectionActionBar
+          count={selectedIds.size}
+          onClear={() => setSelectedIds(new Set())}
+          onExit={exitCompareMode}
+          actions={[
+            ...(sellableSelected.length >= 1 || selectedIds.size === 0
+              ? [{
+                  id: 'sell',
+                  label: sellableSelected.length && sellableSelected.length < selectedIds.size ? `售出(${sellableSelected.length})` : '同单售出',
+                  icon: ReceiptMoney24Regular,
+                  onClick: () => setMultiSaleModalOpen(true),
+                  disabled: sellableSelected.length === 0,
+                }]
+              : []),
+            ...(kaitorixEnabled && buybackPrices.size > 0
+              ? [{ id: 'compare', label: '比较', icon: ArrowSwap24Regular, onClick: () => setShowComparison(true), disabled: selectedIds.size < 2, hint: '至少选 2 件' }]
+              : []),
+            ...(transactions.some(t => selectedIds.has(t.id) && t.status === 'pending')
+              ? [{ id: 'arrive', label: '到货', icon: BoxCheckmark24Regular, onClick: handleBatchArrival }]
+              : []),
+            ...(transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment')
+              ? [{ id: 'paid', label: '入账', icon: MoneyHand24Regular, onClick: () => setBatchPaymentModalOpen(true) }]
+              : []),
+            { id: 'ai', label: aiCopying ? '复制中…' : 'AI 分析', icon: Sparkle24Regular, onClick: handleCopyAIExport, disabled: aiCopying },
+            { id: 'delete', label: '删除', icon: Delete24Regular, onClick: handleBatchDelete, danger: true },
+          ]}
+        />
       )}
 
       {/* 比较结果 Modal */}

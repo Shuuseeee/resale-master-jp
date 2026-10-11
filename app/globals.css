@@ -2203,6 +2203,7 @@
     --color-bg-stat: var(--colorNeutralBackground2);
     --color-text: var(--colorNeutralForeground1);
     --color-text-muted: var(--colorNeutralForeground3);
+    --color-text-disabled: var(--colorNeutralForegroundDisabled);
     /* 次要正文（表格正文 / 表头、空状态说明、横向 Tab 未选中）：Fluent Foreground2 */
     --color-text-secondary: var(--colorNeutralForeground2);
     --color-text-inverted: var(--colorNeutralForegroundOnBrand);
