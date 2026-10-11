@@ -82,7 +82,7 @@ function Consent() {
           <div className="text-sm">
             <p className="mb-2 font-medium">它将可以：</p>
             <ul className="list-disc space-y-1 pl-5 text-[var(--color-text-secondary)]">
-              <li>读取你的库存、利润概况和买取店规则</li>
+              <li>读取你的库存、利润概况、交易明细（含出售 / 退货）和买取店规则</li>
               <li>为你的未售库存计算出货方案</li>
             </ul>
             <p className="mt-2 text-xs text-[var(--color-text-muted)]">只能查询和计算，不能修改或删除任何数据。</p>

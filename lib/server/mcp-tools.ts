@@ -235,3 +235,115 @@ async function attachStoreLinks(boxes: any[], jans: string[]) {
     }
   }
 }
+
+export interface SearchOptions {
+  jans?: string[];
+  keyword?: string;
+  status?: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: '未到货',
+  in_stock: '库存中',
+  awaiting_payment: '待入账',
+  sold: '已售出',
+  returned: '已退货',
+};
+
+/**
+ * 查交易明细（含已售）：每笔进货的成本、积分、到货、状态、确定利润，以及每次出售（日期 / 渠道 / 单价 / 扣除 / 利润）、
+ * 退货（日期 / 退款 / 损失）、当前最高买取价。取代网页上「复制 AI 分析数据」的用途（AI 直接查，不用复制粘贴）。
+ */
+export async function searchTransactions(user: McpUser, opts: SearchOptions) {
+  const sb = serviceDb();
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 100);
+  let q = sb
+    .from('transactions')
+    .select(
+      'id, date, product_name, jan_code, order_number, status, quantity, quantity_arrived, quantity_sold, quantity_returned, quantity_in_stock, unit_price, shipping_fee, coupon_amount, purchase_price_total, point_paid, expected_platform_points, expected_card_points, extra_platform_points, total_profit, roi, notes, purchase_platform:purchase_platforms(name), payment_method:payment_methods(name)',
+    )
+    .eq('user_id', user.userId)
+    .order('date', { ascending: false })
+    .order('id')
+    .limit(limit);
+  if (opts.jans?.length) q = q.in('jan_code', opts.jans.slice(0, 100));
+  if (opts.keyword?.trim()) q = q.ilike('product_name', `%${opts.keyword.trim().replace(/[%_]/g, '')}%`);
+  if (opts.status?.length) q = q.in('status', opts.status);
+  if (opts.dateFrom) q = q.gte('date', opts.dateFrom);
+  if (opts.dateTo) q = q.lte('date', opts.dateTo);
+  const { data: txs, error } = await q;
+  if (error) throw error;
+  if (!txs?.length) return { count: 0, transactions: [] };
+
+  const ids = txs.map(t => t.id);
+  const jans = [...new Set(txs.map(t => t.jan_code).filter((j): j is string => !!j))];
+  const [{ data: sales }, { data: returns }, { data: best }] = await Promise.all([
+    sb
+      .from('sales_records')
+      .select('transaction_id, sale_date, quantity_sold, selling_price_per_unit, platform_fee, shipping_fee, total_profit, sale_order_number, notes, selling_platform:selling_platforms(name)')
+      .eq('user_id', user.userId)
+      .in('transaction_id', ids)
+      .order('sale_date'),
+    sb
+      .from('return_records')
+      .select('transaction_id, return_date, quantity_returned, return_amount, loss_amount, notes')
+      .eq('user_id', user.userId)
+      .in('transaction_id', ids)
+      .order('return_date'),
+    jans.length
+      ? sb.from('assistant_purchases').select('id, best_price, best_stores, best_price_updated_at, estimated_profit').eq('user_id', user.userId).in('id', ids)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const bestById = new Map((best ?? []).map((b: any) => [b.id, b]));
+  const num = (v: unknown) => (v == null ? null : Number(v));
+
+  return {
+    count: txs.length,
+    truncated: txs.length === limit,
+    transactions: txs.map((t: any) => {
+      const b: any = bestById.get(t.id);
+      return {
+        date: t.date,
+        product_name: t.product_name,
+        jan: t.jan_code,
+        order_number: t.order_number,
+        status: STATUS_LABEL[t.status] ?? t.status,
+        purchase_source: t.purchase_platform?.name ?? null,
+        payment_method: t.payment_method?.name ?? null,
+        quantity: t.quantity,
+        quantity_arrived: t.quantity_arrived ?? (t.status === 'pending' ? 0 : t.quantity),
+        quantity_sold: t.quantity_sold,
+        quantity_returned: t.quantity_returned,
+        quantity_unsold: t.quantity_in_stock,
+        unit_price: num(t.unit_price),
+        shipping_fee: num(t.shipping_fee),
+        coupon_amount: num(t.coupon_amount),
+        purchase_price_total: num(t.purchase_price_total),
+        points_used: num(t.point_paid),
+        points_earned: (Number(t.expected_platform_points) || 0) + (Number(t.expected_card_points) || 0) + (Number(t.extra_platform_points) || 0),
+        confirmed_profit: num(t.total_profit),
+        profit_rate: num(t.roi),
+        notes: t.notes,
+        sales: (sales ?? [])
+          .filter((s: any) => s.transaction_id === t.id)
+          .map((s: any) => ({
+            date: s.sale_date,
+            channel: s.selling_platform?.name ?? null,
+            qty: s.quantity_sold,
+            unit_price: num(s.selling_price_per_unit),
+            deduction: (Number(s.platform_fee) || 0) + (Number(s.shipping_fee) || 0),
+            profit: num(s.total_profit),
+            order_number: s.sale_order_number,
+            notes: s.notes,
+          })),
+        returns: (returns ?? [])
+          .filter((r: any) => r.transaction_id === t.id)
+          .map((r: any) => ({ date: r.return_date, qty: r.quantity_returned, refund: num(r.return_amount), loss: num(r.loss_amount), notes: r.notes })),
+        best_buyback: b?.best_price != null ? { price: Number(b.best_price), stores: b.best_stores, updated_at: b.best_price_updated_at, estimated_profit: num(b.estimated_profit) } : null,
+      };
+    }),
+  };
+}

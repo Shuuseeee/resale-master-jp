@@ -2,12 +2,12 @@
 // 鉴权：OAuth 2.1（MCP 授权规范），授权服务器 = 本站自己的（lib/server/oauth.ts，设计参考 Trek）。
 //   没带令牌 → 401 + WWW-Authenticate 指向 /.well-known/oauth-protected-resource → 客户端动态注册、去 /auth/consent 登录确认
 //   带令牌 → 查 oauth_tokens 取得用户 → 工具按该用户读取（令牌只对本 MCP 有效，工具全部只读）
-// 三个工具：库存与利润概况、店铺规则、出货方案。实现见 lib/server/mcp-tools.ts。
+// 四个工具：库存与利润概况、交易明细查询、店铺规则、出货方案。实现见 lib/server/mcp-tools.ts。
 import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { inventoryOverview, planShipment, storeRules, type McpUser } from '@/lib/server/mcp-tools';
+import { inventoryOverview, planShipment, searchTransactions, storeRules, type McpUser } from '@/lib/server/mcp-tools';
 import { MCP_SCOPE, verifyAccessToken } from '@/lib/server/oauth';
 
 // 客户端（claude.ai 等）显示的名称与图标（MCP serverInfo.icons）。图标必须是绝对地址，用正式域名；本地开发时退回 localhost
@@ -44,6 +44,27 @@ const handler = createMcpHandler(
         inputSchema: { include_items: z.boolean().optional().describe('是否附上每笔未售进货，默认 true') },
       },
       async ({ include_items }, extra) => json(await inventoryOverview(userOf(extra.authInfo), include_items ?? true)),
+    );
+
+    server.registerTool(
+      'search_transactions',
+      {
+        title: '查询交易明细',
+        description:
+          '按 JAN / 商品名关键词 / 状态 / 进货日期查我的交易（含已售出），返回每笔进货的成本、积分、到货、确定利润与利润率，' +
+          '以及每次出售（日期、渠道、单价、扣除、利润）、退货（退款、损失）和当前最高买取价（7 天内报价）。' +
+          '用于复盘某个商品买卖得怎么样、对比不同进货来源或出售渠道。按进货日期从新到旧，最多 100 笔。',
+        inputSchema: {
+          jans: z.array(z.string()).optional().describe('JAN 列表'),
+          keyword: z.string().optional().describe('商品名关键词（部分匹配）'),
+          status: z.array(z.enum(['pending', 'in_stock', 'awaiting_payment', 'sold', 'returned'])).optional().describe('状态：pending 未到货 / in_stock 库存中 / awaiting_payment 待入账 / sold 已售出 / returned 已退货'),
+          date_from: z.string().optional().describe('进货日期起（YYYY-MM-DD）'),
+          date_to: z.string().optional().describe('进货日期止（YYYY-MM-DD）'),
+          limit: z.number().int().min(1).max(100).optional().describe('最多返回几笔，默认 20'),
+        },
+      },
+      async ({ jans, keyword, status, date_from, date_to, limit }, extra) =>
+        json(await searchTransactions(userOf(extra.authInfo), { jans, keyword, status, dateFrom: date_from, dateTo: date_to, limit })),
     );
 
     server.registerTool(
