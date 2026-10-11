@@ -7,6 +7,7 @@
 import { flexRender, type Cell, type Row } from '@tanstack/react-table';
 import { card, empty } from '@/lib/theme';
 import type { CardSlot } from './types';
+import { SELECT_COLUMN_ID } from './SelectionColumn';
 import { cx } from './types';
 import type { ReactNode } from 'react';
 
@@ -15,13 +16,22 @@ interface MobileCardListProps<TData> {
   emptyState?: ReactNode;
 }
 
-type SlotGroups<TData> = Record<Exclude<CardSlot, 'hidden'>, Cell<TData, unknown>[]>;
+type SlotGroups<TData> = Record<Exclude<CardSlot, 'hidden'>, Cell<TData, unknown>[]> & { select: Cell<TData, unknown> | null };
+
+const isEmptyValue = (v: unknown) => v === null || v === undefined || v === '';
 
 function groupCells<TData>(row: Row<TData>): SlotGroups<TData> {
-  const groups: SlotGroups<TData> = { title: [], subtitle: [], badge: [], field: [], actions: [] };
+  const groups: SlotGroups<TData> = { title: [], subtitle: [], badge: [], field: [], actions: [], select: null };
   for (const cell of row.getVisibleCells()) {
+    // 多选列放在卡片标题左边，不当作普通字段
+    if (cell.column.id === SELECT_COLUMN_ID) {
+      groups.select = cell;
+      continue;
+    }
     const slot = cell.column.columnDef.meta?.card?.slot ?? 'field';
     if (slot === 'hidden') continue;
+    // 没有值的字段不占格子（如未设置的账号）
+    if (slot === 'field' && isEmptyValue(cell.getValue())) continue;
     groups[slot].push(cell);
   }
   return groups;
@@ -34,12 +44,15 @@ function fieldLabel<TData>(cell: Cell<TData, unknown>): string {
 
 function MobileCard<TData>({ row }: { row: Row<TData> }) {
   const groups = groupCells(row);
-  const hasHeader = groups.title.length > 0 || groups.badge.length > 0;
+  const hasHeader = groups.title.length > 0 || groups.badge.length > 0 || !!groups.select;
 
   return (
     <div className={cx(card.primary, 'p-4')}>
       {hasHeader && (
         <div className="flex items-start justify-between gap-2">
+          {groups.select && (
+            <span className="shrink-0 pt-0.5">{flexRender(groups.select.column.columnDef.cell, groups.select.getContext())}</span>
+          )}
           <div className="min-w-0 flex-1 text-[15px] font-semibold text-[var(--color-text)]">
             {groups.title.map(cell => (
               <span key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>

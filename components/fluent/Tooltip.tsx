@@ -60,6 +60,32 @@ export function hideTooltipNow() {
   if (tipNode) tipNode.hidden = true;
 }
 
+/**
+ * 点击切换显示（手机没有悬停，「?」说明靠点按）：再点同一个或点别处、滚动、窗口尺寸变化时隐藏
+ */
+export function toggleTooltipNow(target: HTMLElement, text: string) {
+  const tip = node();
+  if (!tip.hidden && tip.textContent === text) {
+    hideTooltipNow();
+    return;
+  }
+  clearTimeout(showTimer);
+  clearTimeout(hideTimer);
+  show(target, text, 'bottom');
+  const off = (e: Event) => {
+    if (e.type === 'pointerdown' && target.contains(e.target as Node)) return;
+    hideTooltipNow();
+    document.removeEventListener('pointerdown', off, true);
+    document.removeEventListener('scroll', off, true);
+    window.removeEventListener('resize', off);
+  };
+  setTimeout(() => {
+    document.addEventListener('pointerdown', off, true);
+    document.addEventListener('scroll', off, true);
+    window.addEventListener('resize', off);
+  });
+}
+
 function hideLater() {
   clearTimeout(showTimer);
   hideTimer = setTimeout(() => {

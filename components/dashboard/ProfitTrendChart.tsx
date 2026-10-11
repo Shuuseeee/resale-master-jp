@@ -10,6 +10,9 @@ import { card } from '@/lib/theme';
 import type { DashboardData } from '@/lib/dashboard/data';
 import { bucketize, buildTrend, type TrendBucket, type TrendSeries, type TrendUnit } from '@/lib/dashboard/trend';
 
+/** 切换按钮行：手机上单行横向滑动（与交易页 chip 栏一致），桌面换行 */
+const TOGGLE_ROW = 'flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-wrap lg:overflow-visible';
+
 type Mode = 'total' | 'realized' | 'unrealized' | 'asset';
 type Range = '30' | '90' | 'ytd' | 'all';
 
@@ -133,12 +136,12 @@ export default function ProfitTrendChart({ data, best, enabledStores, today }: P
 
   return (
     <section className={card.primary + ' p-4'}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
         <div className="flex items-center gap-1.5">
           <h2 className="text-sm font-semibold text-[var(--color-text)]">损益走势</h2>
           <InfoTip text="确定利润（已售出）加上预估利润（未售出）的走势。周线、月线以 K 线显示，下方柱状图是较前一期的增减（行情变动、当天的进货 / 售出 / 经费都会计入）。买取价每天记录一次，从 2026-10-08 开始积累，之前的日子按最早一次的价格计算。不受上方筛选影响。" />
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className={TOGGLE_ROW}>
           {MODES.map(m => (
             <ToggleButton key={m.id} pressed={mode === m.id} onClick={() => { setMode(m.id); writeStored(MODE_STORAGE, m.id); }}>
               {m.label}
@@ -174,13 +177,13 @@ export default function ProfitTrendChart({ data, best, enabledStores, today }: P
         )}
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1">
+      <div className={TOGGLE_ROW + ' mt-2'}>
         {RANGES.map(r => (
           <ToggleButton key={r.id} pressed={range === r.id} onClick={() => { setRange(r.id); setUnit(r.unit); }}>
             {r.label}
           </ToggleButton>
         ))}
-        <span className="mx-1 h-4 w-px bg-[var(--color-border)]" />
+        <span className="mx-1 h-4 w-px shrink-0 bg-[var(--color-border)]" />
         {UNITS.map(u => (
           <ToggleButton key={u.id} pressed={unit === u.id} onClick={() => setUnit(u.id)}>
             {u.label}

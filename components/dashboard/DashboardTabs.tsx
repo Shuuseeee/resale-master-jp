@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table';
 import { DataTable } from '@/components/DataTable';
 import TabList from '@/components/fluent/TabList';
+import { CHIP_BAR, Chip, ClearChip, FilterSheet, SheetOptionList } from '@/components/mobile-filter';
 import Select from '@/components/Select';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import BatchSaleForm from '@/components/BatchSaleForm';
@@ -104,7 +105,7 @@ function Money({ value, color = false }: { value: number | null; color?: boolean
 
 function Options({ label, value, onChange, values, labelOf = v => v }: { label: string; value: string; onChange: (v: string) => void; values: string[]; labelOf?: (v: string) => string }) {
   return (
-    <div className="w-full md:w-40">
+    <div className="w-40">
       <Select value={value} onChange={onChange} placeholder={label} clearable className={input.base + ' w-full'} options={values.map(v => ({ value: v, label: labelOf(v) }))} />
     </div>
   );
@@ -128,6 +129,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   const [thumbs, setThumbs] = useState<JanThumbnailMap>(new Map());
   const [saleTx, setSaleTx] = useState<Transaction | null>(null);
   const [arriveId, setArriveId] = useState<string | null>(null);
+  const [subSheet, setSubSheet] = useState<keyof SubFilters | null>(null);
   const [compareTxs, setCompareTxs] = useState<TransactionForCompare[]>([]);
   const [toast, setToast] = useState('');
 
@@ -445,19 +447,24 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   ];
   const current: TabId = tabs.some(t => t.id === tab) ? tab : 'sales';
 
-  let toolbar: ReactNode = null;
+  // 每个标签页的小筛选：桌面是一排下拉，手机与交易页一致是 chip 栏 + 底部弹层（同一份定义）
+  type SubKey = Exclude<keyof SubFilters, 'orderId'>;
+  type OptDef = { key: SubKey; label: string; values: string[]; labelOf?: (v: string) => string };
+  let opts: OptDef[] = [];
+  let actions: ReactNode = null;
+  let showOrderId = false;
   let table: ReactNode = null;
   if (current === 'stock' || current === 'pending') {
     const rows = current === 'stock' ? stock : pending;
-    toolbar = (
-      <>
-        <Options label="JAN" value={f.jan} onChange={jan => setF({ jan })} values={uniq(rows.map(r => r.p.jan))} />
-        <Options label="进货来源" value={f.source} onChange={source => setF({ source })} values={uniq(rows.map(r => r.p.source))} />
-        <Options label="账号" value={f.account} onChange={v => setF({ account: v })} values={uniq(rows.map(r => account(r.p.cardId)))} />
-        <button type="button" className="fluent-btn fluent-btn--default" onClick={startCompare}>
-          まとめ比較{Object.keys(selection).length > 0 && `（${Object.keys(selection).length}）`}
-        </button>
-      </>
+    opts = [
+      { key: 'jan', label: 'JAN', values: uniq(rows.map(r => r.p.jan)) },
+      { key: 'source', label: '进货来源', values: uniq(rows.map(r => r.p.source)) },
+      { key: 'account', label: '账号', values: uniq(rows.map(r => account(r.p.cardId))) },
+    ];
+    actions = (
+      <button type="button" className="fluent-btn fluent-btn--default" onClick={startCompare}>
+        まとめ比較{Object.keys(selection).length > 0 && `（${Object.keys(selection).length}）`}
+      </button>
     );
     table = (
       <DataTable
@@ -473,41 +480,75 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       />
     );
   } else if (current === 'sales') {
-    toolbar = (
-      <>
-        <Options label="JAN" value={f.jan} onChange={jan => setF({ jan })} values={uniq(sales.map(r => r.p.jan))} />
-        <Options label="进货来源" value={f.source} onChange={source => setF({ source })} values={uniq(sales.map(r => r.p.source))} />
-        <Options label="出售对象" value={f.target} onChange={target => setF({ target })} values={uniq(sales.map(r => r.s.target))} />
-        <Options label="账号" value={f.account} onChange={v => setF({ account: v })} values={uniq(sales.map(r => account(r.p.cardId)))} />
-        <input value={f.orderId} onChange={e => setF({ orderId: e.target.value })} placeholder="出售订单ID" className={input.base + ' w-full md:w-40'} />
-      </>
-    );
+    opts = [
+      { key: 'jan', label: 'JAN', values: uniq(sales.map(r => r.p.jan)) },
+      { key: 'source', label: '进货来源', values: uniq(sales.map(r => r.p.source)) },
+      { key: 'target', label: '出售对象', values: uniq(sales.map(r => r.s.target)) },
+      { key: 'account', label: '账号', values: uniq(sales.map(r => account(r.p.cardId))) },
+    ];
+    showOrderId = true;
     table = <DataTable data={salesShown} columns={saleColumns} getRowId={r => `${r.p.id}-${r.s.date}-${r.s.qty}-${r.s.price}-${r.s.orderId ?? ''}`} mobile="cards" bare emptyState={empty('没有出售记录')} />;
   } else if (current === 'jan') {
-    toolbar = <Options label="JAN" value={f.jan} onChange={jan => setF({ jan })} values={uniq(jans.map(r => r.jan))} />;
+    opts = [{ key: 'jan', label: 'JAN', values: uniq(jans.map(r => r.jan)) }];
     table = <DataTable data={jansShown} columns={janColumns} getRowId={r => r.jan} mobile="cards" bare emptyState={empty('没有数据')} />;
   } else {
-    toolbar = (
-      <>
-        <Options label="分类" value={f.category} onChange={category => setF({ category })} values={uniq(expenses.map(e => e.category))} labelOf={expenseCategoryLabel} />
-        <Link href="/supplies/add" className="fluent-btn fluent-btn--default">
-          添加经费
-        </Link>
-      </>
+    opts = [{ key: 'category', label: '分类', values: uniq(expenses.map(e => e.category)), labelOf: expenseCategoryLabel }];
+    actions = (
+      <Link href="/supplies/add" className="fluent-btn fluent-btn--default">
+        添加经费
+      </Link>
     );
     table = <DataTable data={expensesShown} columns={expenseColumns} getRowId={e => e.id} mobile="cards" bare emptyState={empty('没有经费')} />;
   }
+  const subActive = opts.some(o => f[o.key]) || (showOrderId && !!f.orderId);
+  const sheetDef = opts.find(o => o.key === subSheet);
+  const orderIdInput = (cls: string) => (
+    <input value={f.orderId} onChange={e => setF({ orderId: e.target.value })} placeholder="出售订单ID" className={input.base + ' ' + cls} />
+  );
+  const exportButton = (
+    <button type="button" className="fluent-btn fluent-btn--subtle" onClick={exportCsv}>
+      导出 CSV
+    </button>
+  );
 
   return (
     <section>
       <div className="overflow-x-auto">
         <TabList items={tabs} selected={current} onSelect={selectTab} ariaLabel="明细" />
       </div>
-      <div className="mt-3 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-        {toolbar}
-        <button type="button" className="fluent-btn fluent-btn--subtle md:ml-auto" onClick={exportCsv}>
-          导出 CSV
-        </button>
+      {/* 手机：chip 栏 + 底部弹层，操作按钮另起一行 */}
+      <div className="mt-3 space-y-2 lg:hidden">
+        <div className={CHIP_BAR}>
+          {subActive && <ClearChip onClick={() => setF({ ...EMPTY_SUB })} />}
+          {opts.map(o => (
+            <Chip key={o.key} label={f[o.key] ? (o.labelOf ?? (v => v))(f[o.key]) : o.label} active={!!f[o.key]} onClick={() => setSubSheet(o.key)} />
+          ))}
+        </div>
+        {showOrderId && orderIdInput('w-full')}
+        <div className="flex flex-wrap items-center gap-2">
+          {actions}
+          {exportButton}
+        </div>
+      </div>
+      {sheetDef && (
+        <FilterSheet title={sheetDef.label} onClose={() => setSubSheet(null)} showReset={!!f[sheetDef.key]} onReset={() => setF({ [sheetDef.key]: '' })}>
+          <SheetOptionList
+            mono={sheetDef.key === 'jan'}
+            options={sheetDef.values.map(v => ({ value: v, label: (sheetDef.labelOf ?? (x => x))(v) }))}
+            value={f[sheetDef.key]}
+            onSelect={v => { setF({ [sheetDef.key]: v }); setSubSheet(null); }}
+          />
+        </FilterSheet>
+      )}
+
+      {/* 桌面：一排下拉 */}
+      <div className="mt-3 hidden flex-wrap items-center gap-2 lg:flex">
+        {opts.map(o => (
+          <Options key={o.key} label={o.label} value={f[o.key]} onChange={v => setF({ [o.key]: v })} values={o.values} labelOf={o.labelOf} />
+        ))}
+        {showOrderId && orderIdInput('w-40')}
+        {actions}
+        <div className="ml-auto">{exportButton}</div>
       </div>
       <div className="mt-3">{table}</div>
 

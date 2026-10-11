@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useTooltip } from '@/components/fluent/Tooltip';
+import { toggleTooltipNow, useTooltip } from '@/components/fluent/Tooltip';
 
 /** 小号 subtle 切换按钮（design-spec 07 .btn--sm + toggle 选中态） */
 export function ToggleButton({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: ReactNode }) {
@@ -13,15 +13,21 @@ export function ToggleButton({ pressed, onClick, children }: { pressed: boolean;
   );
 }
 
-/** 悬停显示说明的「?」 */
+/** 显示说明的「?」：桌面悬停，手机点按（再点或点别处收起） */
 export function InfoTip({ text }: { text: string }) {
   const tip = useTooltip(text);
   return (
     <span
       {...tip}
+      role="button"
+      onClick={e => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleTooltipNow(e.currentTarget, text);
+      }}
       tabIndex={0}
       aria-label={text}
-      className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]"
+      className="inline-flex h-5 w-5 shrink-0 cursor-help items-center justify-center rounded-full border border-[var(--color-border)] text-[11px] text-[var(--color-text-muted)] lg:h-4 lg:w-4 lg:text-[10px]"
     >
       ?
     </span>
