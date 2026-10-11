@@ -130,9 +130,15 @@ export function useTransactionForm({
   }, [mode]);
 
   // ──── initialData merge ────
+  // 合并后的内容作为「未修改」的基准（isDirty 用）；继续添加时会换新的 initialData，基准跟着重取
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+  const [baseline, setBaseline] = useState(() => JSON.stringify(formData));
   useEffect(() => {
     if (initialData) {
-      setFormData(prev => ({ ...prev, ...initialData }));
+      const next = { ...formDataRef.current, ...initialData };
+      setFormData(next);
+      setBaseline(JSON.stringify(next));
     }
   }, [initialData]);
 
@@ -200,6 +206,11 @@ export function useTransactionForm({
   });
 
   // ──── Handlers ────
+  // 改了相关字段就清掉对应的错误提示（之前只有文字 / 下拉字段会清，数字字段的错误要等下次提交才消失）
+  const clearErrors = useCallback((...keys: string[]) => {
+    setErrors(prev => (keys.some(k => k in prev) ? Object.fromEntries(Object.entries(prev).filter(([k]) => !keys.includes(k))) : prev));
+  }, []);
+
   const handleInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -246,12 +257,14 @@ export function useTransactionForm({
   }, [paymentMethods, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms, rateFor]);
 
   const handleNumberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    clearErrors(e.target.name);
     const { name, value } = e.target;
     const numValue = parseNumberInput(value, 0);
     setFormData(prev => ({ ...prev, [name]: numValue }));
-  }, []);
+  }, [clearErrors]);
 
   const handlePaymentChange = useCallback((field: 'card_paid' | 'point_paid', value: string) => {
+    clearErrors('payment', 'card_id');
     const numValue = parseNumberInput(value, 0);
     setFormData(prev => {
       const newFormData = { ...prev, [field]: numValue };
@@ -279,13 +292,14 @@ export function useTransactionForm({
 
       return { ...newFormData, balance_paid: balancePaid, expected_card_points: cardPoints };
     });
-  }, [paymentMethods, calculateBalancePaid, mode, defaultPaymentMethodId, rateFor]);
+  }, [paymentMethods, calculateBalancePaid, mode, defaultPaymentMethodId, rateFor, clearErrors]);
 
   const handleDateChange = useCallback((date: Date | null) => {
     setFormData(prev => ({ ...prev, date: formatDateToLocal(date) }));
   }, []);
 
   const handleUnitPriceChange = useCallback((value: string) => {
+    clearErrors('purchase_price_total', 'payment');
     const val = parseNumberInput(value, 0);
     setFormData(prev => {
       const qty = prev.quantity || 1;
@@ -306,9 +320,10 @@ export function useTransactionForm({
         ...amazonUpdates,
       };
     });
-  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms, clearErrors]);
 
   const handleQuantityChange = useCallback((value: string) => {
+    clearErrors('quantity', 'purchase_price_total', 'payment');
     const qty = parseNumberInput(value, 0);
     setFormData(prev => {
       const unitPrice = prev.unit_price ?? 0;
@@ -334,9 +349,10 @@ export function useTransactionForm({
       }
       return { ...prev, quantity: qty };
     });
-  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms, clearErrors]);
 
   const handleTotalPriceChange = useCallback((value: string) => {
+    clearErrors('purchase_price_total', 'payment');
     const total = parseNumberInput(value, 0);
     setFormData(prev => {
       const balancePaid = calculateBalancePaid(total, prev.card_paid, prev.point_paid);
@@ -349,10 +365,11 @@ export function useTransactionForm({
 
       return { ...prev, purchase_price_total: total, balance_paid: balancePaid, ...amazonUpdates };
     });
-  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms]);
+  }, [calculateBalancePaid, mode, amazonConfig, isAmazonPlatform, computeAmazonPointUpdates, pointsPlatforms, clearErrors]);
 
   // 运费计入采购总价：总价 = 单价×数量 + 运费（手填总价模式下按运费的增减调整总价）
   const handleShippingFeeChange = useCallback((value: string) => {
+    clearErrors('purchase_price_total', 'payment');
     const fee = parseNumberInput(value, 0);
     setFormData(prev => {
       const unitPrice = prev.unit_price ?? 0;
@@ -362,7 +379,7 @@ export function useTransactionForm({
       const balancePaid = calculateBalancePaid(newTotal, prev.card_paid, prev.point_paid);
       return { ...prev, shipping_fee: fee, purchase_price_total: newTotal, balance_paid: balancePaid };
     });
-  }, [calculateBalancePaid]);
+  }, [calculateBalancePaid, clearErrors]);
 
   // 优惠券只做记录：单价已是扣后价，不改总价 / 支付
   const handleCouponChange = useCallback((value: string) => {
@@ -453,7 +470,10 @@ export function useTransactionForm({
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setScrollToErrorTick(t => t + 1);
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -481,6 +501,14 @@ export function useTransactionForm({
     }
   }, [formData, selectedImage, isPending, validateForm, onPersist]);
 
+  // 校验失败时滚到第一个错误（手机上表单很长，错误常在屏幕外，看起来像「点了没反应」）
+  const [scrollToErrorTick, setScrollToErrorTick] = useState(0);
+  useEffect(() => {
+    if (!scrollToErrorTick) return;
+    const el = formRef.current?.querySelector<HTMLElement>('.sn-form-error, .sn-form-alert-error');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [scrollToErrorTick]);
+
   const triggerSubmitAndContinue = useCallback(() => {
     setContinueAdding(true);
     continueAddingRef.current = true;
@@ -488,6 +516,8 @@ export function useTransactionForm({
   }, []);
 
   // ──── Computed values ────
+  const isDirty = !!selectedImage || JSON.stringify(formData) !== baseline;
+
   const quantityLocked = mode === 'edit' && !!(transaction && transaction.quantity_sold > 0);
 
   const quantityWarning = quantityLocked && transaction
@@ -550,6 +580,7 @@ export function useTransactionForm({
     janLooking,
 
     // Computed
+    isDirty,
     quantityLocked,
     quantityWarning,
     showPendingToggle,

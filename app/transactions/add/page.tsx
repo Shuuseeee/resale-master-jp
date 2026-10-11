@@ -11,8 +11,10 @@ import BarcodeScanner from '@/components/BarcodeScanner';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { loadAmazonPointConfig } from '@/lib/amazon-point-config';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
+import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import Spinner from '@/components/fluent/Spinner';
 import MessageBar from '@/components/fluent/MessageBar';
+import { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import {
   BasicInfoSection,
   PurchaseInfoSection,
@@ -141,6 +143,9 @@ function AddTransactionPageContent() {
     },
   });
 
+  // 有未保存的修改时，离开页面前确认（导航、面包屑、返回 / 取消、关闭标签页）
+  const leaveGuard = useLeaveGuard(form.isDirty && !form.isSubmitting);
+
   // 「保存并继续添加」时页面不会重新挂载：上一笔选的收据图片要清掉，免得被上传到下一笔
   const { clearImage } = form;
   useEffect(() => {
@@ -158,7 +163,7 @@ function AddTransactionPageContent() {
         {/* Header（桌面用文档头的面包屑返回） */}
         <div className={layout.section + ' md:mb-0'}>
           <button
-            onClick={() => router.back()}
+            onClick={() => leaveGuard.requestLeave(() => router.back())}
             className={button.ghost + ' flex items-center gap-2 mb-4 md:hidden'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,6 +299,15 @@ function AddTransactionPageContent() {
           </div>
         </form>
       </div>
+      <ConfirmModal
+        isOpen={leaveGuard.showConfirm}
+        onClose={leaveGuard.cancelLeave}
+        onConfirm={leaveGuard.confirmLeave}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
       {form.showScanner && (
         <BarcodeScanner
           onDetected={(code) => {

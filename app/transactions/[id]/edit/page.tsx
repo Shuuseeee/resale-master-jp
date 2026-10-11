@@ -10,8 +10,9 @@ import PageHeader from '@/components/shell/PageHeader';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { usePlatforms } from '@/contexts/PlatformsContext';
 import { useTransactionForm } from '@/hooks/useTransactionForm';
+import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import Spinner from '@/components/fluent/Spinner';
-import { ConfirmModal } from '@/components/Modal';
+import { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import {
   BasicInfoSection,
   PurchaseInfoSection,
@@ -140,6 +141,9 @@ export default function EditTransactionPage() {
     },
   });
 
+  // 有未保存的修改时，离开页面前确认（导航、面包屑、返回 / 取消、关闭标签页）
+  const leaveGuard = useLeaveGuard(form.isDirty && !form.isSubmitting);
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -157,7 +161,7 @@ export default function EditTransactionPage() {
         {/* Header（桌面用文档头的面包屑返回） */}
         <div className="mb-8 md:mb-0">
           <button
-            onClick={() => router.back()}
+            onClick={() => leaveGuard.requestLeave(() => router.back())}
             className="flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors mb-4 md:hidden"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +284,7 @@ export default function EditTransactionPage() {
             </button>
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => leaveGuard.requestLeave(() => router.back())}
               className={button.secondary + ' max-md:py-3'}
             >
               取消
@@ -299,6 +303,15 @@ export default function EditTransactionPage() {
         message={`已记录到货 ${dbTransaction?.quantity_arrived ?? 0} 件（共 ${dbTransaction?.quantity ?? 0} 件）。保存后所有到货记录都会删除。`}
         confirmText="改为未到货"
         confirmVariant="danger"
+      />
+      <ConfirmModal
+        isOpen={leaveGuard.showConfirm}
+        onClose={leaveGuard.cancelLeave}
+        onConfirm={leaveGuard.confirmLeave}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
       />
       {form.showScanner && (
         <BarcodeScanner
