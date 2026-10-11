@@ -1,6 +1,7 @@
 // components/BuybackComparisonModal.tsx — 买取价格比较弹层（交易页 / 仪表盘「まとめ比較」）
 // 传入 onForceRefresh 时，每个商品卡片有「官方强刷」（消耗 1 次 Kaitorix 官方 API 额度），顶部显示今天剩余配额。
 // 2026-10-11 买取价格页删除后，网页上的手动强刷只在这里。
+// 「最优出货方案」（ShipmentPlanPanel）按当前比较数量调求解器，算运费与包邮条件；下面的店铺表是不含运费的单纯报价比较。
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import { useBuybackComparison } from '@/hooks/useBuybackComparison';
 import ProductCompareCard from '@/components/BuybackComparison/ProductCompareCard';
 import StoreRowDesktop from '@/components/BuybackComparison/StoreRowDesktop';
 import StoreRowMobile from '@/components/BuybackComparison/StoreRowMobile';
+import ShipmentPlanPanel from '@/components/BuybackComparison/ShipmentPlanPanel';
 
 export type ForceRefreshHandler = (jan: string) => Promise<{ ok: boolean; error?: string }>;
 
@@ -106,6 +108,9 @@ export default function BuybackComparisonModal({ isOpen, onClose, selectedTransa
             ))}
           </div>
         </div>
+
+        {/* 最优出货方案（含运费）：与 MCP 同一个求解器 */}
+        <ShipmentPlanPanel items={products.map(p => ({ transactionId: p.transactionId, qty: p.qty }))} />
 
         {rows.length === 0 ? (
           <div className="py-8 text-center text-[var(--color-text-muted)]">

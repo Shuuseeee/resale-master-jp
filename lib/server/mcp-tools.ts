@@ -104,13 +104,44 @@ interface PlanOptions {
 
 /** 出货方案：未售库存 × 各店报价 × 商品尺寸 → 全局最优分配（含运费、包邮条件、自检） */
 export async function planShipment(user: McpUser, opts: PlanOptions) {
-  const sb = serviceDb();
   const keep = new Set(opts.keepJans ?? []);
   const unsold = await unsoldPurchases(user, !!opts.includePending);
   const purchases = unsold.filter(r => r.jan_code && !keep.has(r.jan_code));
   const noJan = unsold.filter(r => !r.jan_code).map(r => r.product_name);
   if (!purchases.length) return { ok: false, error: '没有可分销的未售库存（需要有 JAN）', no_jan: noJan };
+  const result = await planFromRows(user, purchases, opts);
+  return { ...result, kept_jans: [...keep], no_jan: noJan };
+}
 
+/**
+ * 网页比价弹层用：只对选中的进货、按给定数量排方案（数量不超过未售数）。
+ * selections 来自前端，一律按 user_id 重新查视图，不信任前端传来的成本 / 价格。
+ */
+export async function planShipmentForSelection(
+  user: McpUser,
+  selections: { transactionId: string; qty: number }[],
+  opts: Pick<PlanOptions, 'excludeStores' | 'staleLimit'> = {},
+) {
+  const sb = serviceDb();
+  const ids = [...new Set(selections.map(s => s.transactionId))];
+  if (!ids.length) return { ok: false, error: '没有选中商品' };
+  const rows = await fetchAllByIds<any>(ids, (chunk, from, to, o) =>
+    sb.from('assistant_purchases').select('*', o).eq('user_id', user.userId).in('id', chunk).order('id').range(from, to),
+  );
+  const qtyById = new Map(selections.map(s => [s.transactionId, Math.max(0, Math.floor(s.qty))]));
+  const picked = rows
+    .map(r => ({ ...r, shippable: Math.min(Number(r.quantity_unsold) || 0, qtyById.get(r.id) ?? 0) }))
+    .filter(r => r.shippable > 0);
+  const noJan = picked.filter(r => !r.jan_code).map(r => r.product_name);
+  const withJan = picked.filter(r => r.jan_code);
+  if (!withJan.length) return { ok: false, error: '选中的商品没有可出货的数量（需要有 JAN）', no_jan: noJan };
+  const result = await planFromRows(user, withJan, opts);
+  return { ...result, no_jan: noJan };
+}
+
+/** 共同部分：查尺寸与报价 → 组装求解器输入 → 调 /api/solver。rows 需带 shippable（本次出货件数） */
+async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOptions, 'excludeStores' | 'staleLimit'>) {
+  const sb = serviceDb();
   const jans = [...new Set(purchases.map(r => r.jan_code as string))];
   const [metaRows, priceRows] = await Promise.all([
     fetchAllByIds<any>(jans, (chunk, from, to, o) =>
@@ -154,7 +185,7 @@ export async function planShipment(user: McpUser, opts: PlanOptions) {
       prices: prices.get(r.jan_code) ?? {},
     });
   }
-  if (!items.length) return { ok: false, error: '未售商品都缺少尺寸数据（体积 / 最小箱型），无法排方案', missing_meta: missingMeta };
+  if (!items.length) return { ok: false, error: '商品都缺少尺寸数据（体积 / 最小箱型），无法排方案', missing_meta: missingMeta };
 
   const result = await callSolver({
     action: 'plan',
@@ -163,5 +194,5 @@ export async function planShipment(user: McpUser, opts: PlanOptions) {
     stale_limit: opts.staleLimit ?? 7,
     day: todayJst(),
   });
-  return { ...result, kept_jans: [...keep], missing_meta: missingMeta, no_jan: noJan };
+  return { ...result, missing_meta: missingMeta };
 }

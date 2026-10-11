@@ -19,6 +19,8 @@ import { button, card, heading, input, layout } from '@/lib/theme';
 import Switch from '@/components/Switch';
 import Select from '@/components/Select';
 import ConnectedAppsSection from '@/components/settings/ConnectedAppsSection';
+import ShippingMetaSection from '@/components/settings/ShippingMetaSection';
+import { Cube20Filled, Cube20Regular } from '@fluentui/react-icons/headless/svg/cube';
 import PaymentMethodsSection from '@/components/settings/PaymentMethodsSection';
 import TabList from '@/components/fluent/TabList';
 import { SETTINGS_SECTIONS, initSettingsSection, selectSettingsSection, useSettingsSection, type SettingsSectionId } from '@/lib/settings-nav';
@@ -32,6 +34,7 @@ const SECTION_ICONS: Record<SettingsSectionId, ReactNode> = {
   amazon: <DualIcon regular={Cart20Regular} filled={Cart20Filled} />,
   'payment-methods': <DualIcon regular={Payment20Regular} filled={Payment20Filled} />,
   kaitorix: <DualIcon regular={BuildingShop20Regular} filled={BuildingShop20Filled} />,
+  'shipping-meta': <DualIcon regular={Cube20Regular} filled={Cube20Filled} />,
   'csv-import': <DualIcon regular={DocumentArrowUp20Regular} filled={DocumentArrowUp20Filled} />,
   'connected-apps': <DualIcon regular={PlugConnected20Regular} filled={PlugConnected20Filled} />,
 };
@@ -253,6 +256,7 @@ export default function SettingsPage() {
           {section === 'payment-methods' && <PaymentMethodsSection />}
 
           {section === 'connected-apps' && <ConnectedAppsSection />}
+          {section === 'shipping-meta' && <ShippingMetaSection />}
 
           {section === 'kaitorix' && (
           <section className={card.primary + ' p-6'}>
