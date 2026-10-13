@@ -13,6 +13,8 @@ import TabList from '@/components/fluent/TabList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { fetchAllByIds } from '@/lib/api/fetchAll';
+import AwaitingOrderCard, { type AwaitingOrder } from '@/components/transactions/AwaitingOrderCard';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
 import { confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
 import { markTransactionArrived } from '@/lib/api/arrivals';
@@ -71,6 +73,20 @@ type TransactionWithPayment = TransactionWithProfit;
 // 查询还没有数据（加载中 / 失败 / 离线无缓存）时的默认值必须是同一个数组：每次渲染给新的 [] 会让依赖它的
 // useMemo / useEffect（如 JAN 缩略图）每次都重跑并 setState，陷入无限更新
 const NO_TRANSACTIONS: TransactionWithProfit[] = [];
+
+interface AwaitingSaleRow {
+  id: string;
+  transaction_id: string;
+  sale_group_id: string | null;
+  sale_order_number: string | null;
+  selling_platform_id: string | null;
+  sale_date: string;
+  quantity_sold: number;
+  selling_price_per_unit: number;
+  total_selling_price: number | null;
+  platform_fee: number | null;
+}
+const NO_AWAITING_SALES: AwaitingSaleRow[] = [];
 
 export interface TransactionGroup {
   /** 行键：JAN；没有 JAN 的进货各自一组，键为 no-jan-<id>（买取X 同样做法） */
@@ -239,7 +255,8 @@ function TransactionsContent() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [batchPaymentModalOpen, setBatchPaymentModalOpen] = useState(false);
   const [tabPaymentModalOpen, setTabPaymentModalOpen] = useState(false);
-  const [awaitingPaymentView, setAwaitingPaymentView] = useState<'list' | 'order'>('list');
+  // 待入账默认按订单看（对账用；可切回列表）
+  const [awaitingPaymentView, setAwaitingPaymentView] = useState<'list' | 'order'>('order');
   const [orderPaymentConfirm, setOrderPaymentConfirm] = useState<{ ids: string[]; label: string } | null>(null);
 
   // searchTerm 防抖：避免每次击键都触发 filter+sort
@@ -701,36 +718,76 @@ function TransactionsContent() {
     return items;
   }, [filteredTransactions, isGrouped, buildGroupSummary]);
 
-  // 待入账"按订单"视图：按 (selling_platform, sale_order_number) 分组
-  interface OrderGroup {
-    key: string;
-    sellingPlatformId: string | null;
-    orderNumber: string | null;
-    transactions: TransactionWithPayment[];
-    totalSellingPrice: number;
-    saleDate: string;
-    daysPending: number;
-  }
+  // 待入账「按订单」视图（对账）：读这些交易的出售记录，按真实的出售订单分组（同一订单售出建的 sale_orders；
+  // 没有的按 店铺 + 订单号，再没有就一次出售一张）。之前按「交易第一次出售的订单号」分组、金额用交易全部出售的合计，
+  // 同一笔进货分两单卖时会归错、多算
+  const awaitingIds = useMemo(
+    () => (statusFilter === 'awaiting_payment' ? filteredTransactions.map(t => t.id) : []),
+    [statusFilter, filteredTransactions],
+  );
+  const { data: awaitingSales = NO_AWAITING_SALES } = useQuery({
+    queryKey: ['transactions', 'awaiting-sales', awaitingIds.join(',')],
+    enabled: awaitingIds.length > 0 && awaitingPaymentView === 'order',
+    queryFn: () =>
+      fetchAllByIds<AwaitingSaleRow>(awaitingIds, (chunk, from, to, opts) =>
+        supabase
+          .from('sales_records')
+          .select('id, transaction_id, sale_group_id, sale_order_number, selling_platform_id, sale_date, quantity_sold, selling_price_per_unit, total_selling_price, platform_fee', opts)
+          .in('transaction_id', chunk)
+          .order('sale_date')
+          .order('id')
+          .range(from, to),
+      ),
+  });
 
-  const orderGroups = useMemo((): OrderGroup[] => {
+  const awaitingOrders = useMemo((): AwaitingOrder[] => {
     if (statusFilter !== 'awaiting_payment' || awaitingPaymentView !== 'order') return [];
-    const groupMap = new Map<string, OrderGroup>();
-    const today = new Date();
-    for (const tx of filteredTransactions) {
-      const platformId = tx.aggregated_selling_platform_ids?.[0] ?? null;
-      const orderNum = tx.aggregated_sale_order_numbers?.[0] ?? null;
-      const key = `${platformId ?? ''}__${orderNum ?? tx.id}`;
-      if (!groupMap.has(key)) {
-        const saleDate = tx.latest_sale_date ?? tx.date;
-        const daysPending = Math.floor((today.getTime() - new Date(saleDate).getTime()) / 86400000);
-        groupMap.set(key, { key, sellingPlatformId: platformId, orderNumber: orderNum, transactions: [], totalSellingPrice: 0, saleDate, daysPending });
+    const txMap = new Map(filteredTransactions.map(t => [t.id, t]));
+    const map = new Map<string, AwaitingOrder>();
+    const today = Date.now();
+    for (const r of awaitingSales) {
+      const tx = txMap.get(r.transaction_id);
+      if (!tx) continue;
+      const key = r.sale_group_id
+        ? `g:${r.sale_group_id}`
+        : r.sale_order_number
+          ? `o:${r.selling_platform_id ?? ''}:${r.sale_order_number}`
+          : `s:${r.id}`;
+      let order = map.get(key);
+      if (!order) {
+        order = {
+          key,
+          platformName: sellingPlatforms.find(p => p.id === r.selling_platform_id)?.name ?? null,
+          orderNumber: r.sale_order_number,
+          saleDate: r.sale_date,
+          daysPending: Math.floor((today - new Date(r.sale_date).getTime()) / 86400000),
+          lines: [],
+          total: 0,
+          fees: 0,
+          expected: 0,
+          transactionIds: [],
+        };
+        map.set(key, order);
       }
-      const g = groupMap.get(key)!;
-      g.transactions.push(tx);
-      g.totalSellingPrice += tx.aggregated_total_selling_price ?? 0;
+      const subtotal = Number(r.total_selling_price ?? r.quantity_sold * r.selling_price_per_unit) || 0;
+      const fee = Number(r.platform_fee) || 0;
+      // 同一商品同一单价（同一订单里来自几笔进货）合并成一行，与承诺书的写法一致
+      const unitPrice = Number(r.selling_price_per_unit) || 0;
+      const same = order.lines.find(l => l.janCode && l.janCode === tx.jan_code && l.unitPrice === unitPrice);
+      if (same) {
+        same.qty += r.quantity_sold;
+        same.subtotal += subtotal;
+        same.fee += fee;
+      } else {
+        order.lines.push({ saleId: r.id, transactionId: tx.id, productName: tx.product_name, janCode: tx.jan_code, qty: r.quantity_sold, unitPrice, subtotal, fee });
+      }
+      order.total += subtotal;
+      order.fees += fee;
+      order.expected = order.total - order.fees;
+      if (!order.transactionIds.includes(tx.id)) order.transactionIds.push(tx.id);
     }
-    return Array.from(groupMap.values()).sort((a, b) => a.saleDate.localeCompare(b.saleDate));
-  }, [filteredTransactions, statusFilter, awaitingPaymentView]);
+    return [...map.values()].sort((a, b) => a.saleDate.localeCompare(b.saleDate));
+  }, [statusFilter, awaitingPaymentView, filteredTransactions, awaitingSales, sellingPlatforms]);
 
   const toggleGroupExpand = useCallback((janCode: string) => {
     setExpandedGroups(prev => {
@@ -1355,55 +1412,20 @@ function TransactionsContent() {
           </div>
         )}
 
-        {/* 待入账"按订单"视图 */}
+        {/* 待入账「按订单」视图：对账卡片（components/transactions/AwaitingOrderCard.tsx） */}
         {statusFilter === 'awaiting_payment' && awaitingPaymentView === 'order' && (
           <div className="space-y-3">
-            {orderGroups.length === 0 ? (
+            {awaitingOrders.length === 0 ? (
               <div className={card.primary + ' p-12 text-center'}>
                 <p className="text-[var(--color-text-muted)]">没有待入账订单</p>
               </div>
-            ) : orderGroups.map(g => {
-              const platformName = sellingPlatforms.find(p => p.id === g.sellingPlatformId)?.name;
-              const ids = g.transactions.map(t => t.id);
-              const urgentClass = g.daysPending >= 14 ? 'text-[var(--color-danger)]' : g.daysPending >= 7 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]';
-              return (
-                <div key={g.key} className={card.primary + ' p-4'}>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex flex-wrap items-center gap-2 min-w-0">
-                      {platformName && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--label-platform-bg)] text-[var(--label-platform-fg)] shrink-0">
-                          {platformName}
-                        </span>
-                      )}
-                      <span className="text-sm font-semibold text-[var(--color-text)] truncate">
-                        {g.orderNumber ? `订单 ${g.orderNumber}` : '无订单号'}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setOrderPaymentConfirm({ ids, label: g.orderNumber ? `订单 ${g.orderNumber}` : (platformName ?? '此订单') })}
-                      className="shrink-0 min-h-[44px] px-4 py-2 text-xs font-semibold bg-[var(--color-primary-bg)] text-white rounded-[var(--radius-md)] hover:opacity-90 active:opacity-80 transition-opacity inline-flex items-center"
-                    >
-                      确认入账
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3 mb-3 text-xs text-[var(--color-text-muted)]">
-                    <span>{g.saleDate}</span>
-                    <span className={urgentClass + ' font-medium'}>待 {g.daysPending} 天</span>
-                    <span className="ml-auto font-semibold text-[var(--color-text)] text-sm">
-                      ¥{g.totalSellingPrice.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    {g.transactions.map(tx => (
-                      <div key={tx.id} className="flex items-center justify-between text-xs text-[var(--color-text-muted)] py-0.5">
-                        <span className="truncate mr-2">{tx.product_name}</span>
-                        <span className="shrink-0">×{tx.quantity_sold}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            ) : awaitingOrders.map(o => (
+              <AwaitingOrderCard
+                key={o.key}
+                order={o}
+                onConfirm={() => setOrderPaymentConfirm({ ids: o.transactionIds, label: o.orderNumber ? `订单 ${o.orderNumber}` : (o.platformName ?? '此订单') })}
+              />
+            ))}
           </div>
         )}
 
