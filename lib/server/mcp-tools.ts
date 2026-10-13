@@ -199,6 +199,15 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
 }
 
 /**
+ * 人工实测过的店铺地址，优先于买取X 给的地址（买取X 的数据有过时的：携帯空間 它记的是旧域名 keitai-space.jp、没有搜索）。
+ * search 里的 {jan} 换成 JAN。发现别的店链接不对时加在这里。
+ */
+const STORE_LINK_OVERRIDES: Record<string, { home: string; search?: string }> = {
+  // 2026-10-13 用户实测
+  携帯空間: { home: 'https://www.keitaispace.co.jp/', search: 'https://www.keitaispace.co.jp/product/?kw={jan}#list' },
+};
+
+/**
  * 给方案里的每家店 / 每件商品挂上链接：店名 → 店铺首页，商品 → 该店的 JAN 搜索页。
  * 地址来自官方 API 价格缓存里每条报价的 url（买取X 给的：能搜的店是「站内搜索 + JAN」，不能搜的是首页；每日 CSV 不带地址）。
  * 某个 JAN 没有该店的地址时，用同一家店别的 JAN（本次或最近 300 条缓存）的搜索地址换掉 JAN 作模板；再没有就退回首页。
@@ -229,9 +238,13 @@ async function attachStoreLinks(boxes: any[], jans: string[]) {
     }
   }
   for (const box of boxes) {
-    box.store_url = home.get(box.store) ?? null;
+    const override = STORE_LINK_OVERRIDES[box.store];
+    box.store_url = override?.home ?? home.get(box.store) ?? null;
     for (const it of box.items ?? []) {
-      it.url = direct.get(`${it.jan}\u0001${box.store}`) ?? template.get(box.store)?.split('{jan}').join(encodeURIComponent(it.jan)) ?? box.store_url;
+      const jan = encodeURIComponent(it.jan);
+      it.url = override
+        ? override.search?.split('{jan}').join(jan) ?? override.home
+        : direct.get(`${it.jan}\u0001${box.store}`) ?? template.get(box.store)?.split('{jan}').join(jan) ?? box.store_url;
     }
   }
 }
