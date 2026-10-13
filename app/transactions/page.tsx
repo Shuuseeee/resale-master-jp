@@ -24,6 +24,7 @@ import TransactionFilters, { type FilterValues } from '@/components/TransactionF
 import TransactionCard from '@/components/TransactionCard';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
 import { DataTable, ExpandableTable, SELECT_COLUMN_ID } from '@/components/DataTable';
+import { buildGroupColumns } from '@/components/transactions/groupColumns';
 import { buildTransactionColumns, type TxRowItem } from '@/components/transactions/tableColumns';
 import { columnPrefsToTableState } from '@/lib/table/columnPrefs';
 import type { Row } from '@tanstack/react-table';
@@ -73,6 +74,8 @@ type TransactionWithPayment = TransactionWithProfit;
 const NO_TRANSACTIONS: TransactionWithProfit[] = [];
 
 export interface TransactionGroup {
+  /** 行键：JAN；没有 JAN 的进货各自一组，键为 no-jan-<id>（买取X 同样做法） */
+  key: string;
   janCode: string;
   productName: string;
   imageUrl: string | null;
@@ -82,7 +85,12 @@ export interface TransactionGroup {
   totalPending: number;
   totalSold: number;
   totalPurchasePrice: number;
+  /** 平均单价（不含运费 / 返点）= Σ单价×数量 ÷ 总数量 */
+  avgUnitPrice: number;
+  totalReturned: number;
   totalProfit: number | null;
+  /** 组内各笔预估利润（按当前最高买取价）之和 */
+  totalExpectedProfit: number;
   bestBuybackPrice: number;
   bestBuybackStore: string;
   bestExpectedProfit: number;
@@ -111,8 +119,9 @@ interface PaymentMethodBasic {
 }
 
 // 桌面 DataTable 的稳定函数 props（模块级，配合 DataTable 的 memo）
-const txRowId = (r: TxRowItem) => (r.kind === 'group' ? `g:${r.group.janCode}` : r.tx.id);
-const txSubRows = (r: TxRowItem) => (r.kind === 'group' ? r.children : undefined);
+const txRowId = (r: TxRowItem) => r.tx.id;
+const groupRowId = (g: TransactionGroup) => g.key;
+const groupRowClass = () => 'cursor-pointer';
 
 function TransactionsContent() {
   const router = useRouter();
@@ -174,7 +183,26 @@ function TransactionsContent() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showComparison, setShowComparison] = useState(false);
-  const [isGrouped, setIsGrouped] = useState(true);
+  // JAN 分组：默认关（照买取X），开关状态记在本机
+  const [isGrouped, setIsGroupedState] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem('transactionListGrouped') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setIsGrouped = useCallback((next: boolean | ((v: boolean) => boolean)) => {
+    setIsGroupedState(prev => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      try {
+        window.localStorage.setItem('transactionListGrouped', value ? '1' : '0');
+      } catch {
+        // 存储不可用时只是不记住
+      }
+      return value;
+    });
+  }, []);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // 列定制
@@ -557,8 +585,9 @@ function TransactionsContent() {
   );
 
   // 分组汇总辅助函数
-  const buildGroupSummary = useCallback((janCode: string, txs: TransactionWithPayment[]): TransactionGroup => {
+  const buildGroupSummary = useCallback((janCode: string, txs: TransactionWithPayment[], key: string = janCode): TransactionGroup => {
     let totalQuantity = 0, totalInStock = 0, totalPending = 0, totalSold = 0, totalPurchasePrice = 0;
+    let totalReturned = 0, goodsTotal = 0, totalExpectedProfit = 0;
     let totalProfit: number | null = null;
     let bestBuybackPrice = 0, bestBuybackStore = '', bestExpectedProfit = 0;
     let latestDate = '';
@@ -569,13 +598,16 @@ function TransactionsContent() {
       totalPending += notArrivedQty(tx);
       totalInStock += sellableQty(tx);
       totalSold += tx.quantity_sold ?? 0;
+      totalReturned += tx.quantity_returned ?? 0;
       totalPurchasePrice += tx.purchase_price_total;
+      goodsTotal += tx.unit_price != null ? tx.unit_price * tx.quantity : tx.purchase_price_total - (tx.shipping_fee || 0);
       if (tx.aggregated_profit != null) {
         totalProfit = (totalProfit ?? 0) + tx.aggregated_profit;
       }
       if (tx.date > latestDate) latestDate = tx.date;
 
       const bb = buybackPrices.get(tx.id);
+      if (bb && bb.maxPrice > 0) totalExpectedProfit += bb.expectedProfit;
       if (bb && bb.maxPrice > bestBuybackPrice) {
         bestBuybackPrice = bb.maxPrice;
         bestBuybackStore = bb.maxStore;
@@ -585,12 +617,13 @@ function TransactionsContent() {
 
     // 优先组内任意一笔的手动凭证；没有则用 JAN 共享缓存缩略图
     const manualUrl = txs.find(t => t.image_url)?.image_url ?? null;
-    const janThumb = janThumbnails.get(janCode);
+    const janThumb = janCode ? janThumbnails.get(janCode) : undefined;
     const imageUrl = manualUrl
       ?? withImageCacheBuster(janThumb?.image_url, janThumb?.image_fetched_at)
       ?? null;
 
     return {
+      key,
       janCode,
       productName: txs[0].product_name,
       imageUrl,
@@ -600,7 +633,10 @@ function TransactionsContent() {
       totalPending,
       totalSold,
       totalPurchasePrice,
+      avgUnitPrice: totalQuantity > 0 ? Math.round(goodsTotal / totalQuantity) : 0,
+      totalReturned,
       totalProfit,
+      totalExpectedProfit,
       bestBuybackPrice,
       bestBuybackStore,
       bestExpectedProfit,
@@ -901,16 +937,46 @@ function TransactionsContent() {
   const onToggleProfitSortMode = useCallback(
     () => setProfitSortMode(m => (m === 'actual' ? 'expected' : 'actual')), []);
 
-  // displayItems（移动端沿用）→ 树形行模型（桌面 DataTable 用）
-  const rowItems = useMemo((): TxRowItem[] => displayItems.map(item =>
-    item.type === 'group'
-      ? {
-          kind: 'group' as const,
-          group: item.data,
-          children: item.data.transactions.map(tx => ({ kind: 'tx' as const, tx })),
-        }
-      : { kind: 'tx' as const, tx: item.data }
-  ), [displayItems]);
+  // 桌面平铺表格的行
+  const rowItems = useMemo((): TxRowItem[] => filteredTransactions.map(tx => ({ kind: 'tx' as const, tx })), [filteredTransactions]);
+
+  // 桌面分组表格（照买取X）：每个 JAN 一行，只有一笔也成组；没有 JAN 的每笔各自一行。
+  // 顺序跟随当前排序：组的位置 = 组内最靠前那一笔的位置。手机仍用 displayItems（2 笔以上才成组）
+  const desktopGroups = useMemo((): TransactionGroup[] => {
+    if (!isGrouped) return [];
+    const map = new Map<string, { jan: string; txs: TransactionWithPayment[] }>();
+    filteredTransactions.forEach(t => {
+      const key = t.jan_code || `no-jan-${t.id}`;
+      const entry = map.get(key);
+      if (entry) entry.txs.push(t);
+      else map.set(key, { jan: t.jan_code || '', txs: [t] });
+    });
+    return Array.from(map, ([key, { jan, txs }]) => buildGroupSummary(jan, txs, key));
+  }, [isGrouped, filteredTransactions, buildGroupSummary]);
+
+  // 分组表格「出售」：只有一笔可售就直接出售那一笔，多笔用「同一订单售出」
+  const sellGroup = useCallback((group: TransactionGroup) => {
+    const sellable = group.transactions.filter(t => sellableQty(t) > 0 && t.status !== 'returned');
+    if (sellable.length === 0) return;
+    if (sellable.length === 1) {
+      openQuickSale(sellable[0].id);
+      return;
+    }
+    setSelectedIds(new Set(sellable.map(t => t.id)));
+    setMultiSaleModalOpen(true);
+  }, [openQuickSale]);
+
+  const groupColumns = useMemo(() => buildGroupColumns({
+    compareMode,
+    selectedIds,
+    expandedGroups,
+    sortField,
+    sortOrder,
+    toggleSort,
+    onToggleExpand: toggleGroupExpand,
+    onSelectGroup: selectGroup,
+    onSellGroup: sellGroup,
+  }), [compareMode, selectedIds, expandedGroups, sortField, sortOrder, toggleSort, toggleGroupExpand, selectGroup, sellGroup]);
 
   const tableColumns = useMemo(() => buildTransactionColumns({
     compareMode,
@@ -947,30 +1013,48 @@ function TransactionsContent() {
     };
   }, [columns, compareMode]);
 
-  // expandedGroups(Set<janCode>) → TanStack ExpandedState（rowId = g:janCode）
+  // expandedGroups(Set<组键>) → TanStack ExpandedState（rowId = 组键）
   const expandedRowState = useMemo(() => {
     const rec: Record<string, boolean> = {};
-    expandedGroups.forEach(jan => { rec[`g:${jan}`] = true; });
+    expandedGroups.forEach(key => { rec[key] = true; });
     return rec;
   }, [expandedGroups]);
 
   const handleDesktopRowClick = useCallback((row: Row<TxRowItem>) => {
-    if (row.original.kind === 'group') {
-      toggleGroupExpand(row.original.group.janCode);
-    } else if (compareMode) {
-      toggleSelect(row.original.tx.id);
-    }
-  }, [toggleGroupExpand, compareMode, toggleSelect]);
+    if (compareMode) toggleSelect(row.original.tx.id);
+  }, [compareMode, toggleSelect]);
+
+  // 分组行：点整行展开 / 收起（链接、按钮除外）
+  const handleGroupRowClick = useCallback((row: Row<TransactionGroup>) => {
+    toggleGroupExpand(row.original.key);
+  }, [toggleGroupExpand]);
 
   const desktopRowClass = useCallback((row: Row<TxRowItem>) => {
-    if (row.original.kind === 'group') {
-      return 'bg-[var(--color-primary-light)] hover:!bg-[var(--color-primary-light)] cursor-pointer';
-    }
     if (!compareMode) return '';
     return selectedIds.has(row.original.tx.id)
       ? 'bg-[var(--color-primary-light)] cursor-pointer'
       : 'cursor-pointer';
   }, [compareMode, selectedIds]);
+
+  // 展开区：这组的进货小表（列 = 平铺表格的列去掉商品；买取X 同样缩进 20、有自己的表头）
+  const subTableVisibility = useMemo(() => ({ ...tableColumnState.columnVisibility, product: false }), [tableColumnState.columnVisibility]);
+  const renderGroupPurchases = useCallback((row: Row<TransactionGroup>) => (
+    <div className="py-1 pl-5">
+      <DataTable<TxRowItem>
+        data={row.original.transactions.map(tx => ({ kind: 'tx' as const, tx }))}
+        columns={tableColumns}
+        getRowId={txRowId}
+        manualSorting
+        columnVisibility={subTableVisibility}
+        columnOrder={tableColumnState.columnOrder}
+        onRowClick={handleDesktopRowClick}
+        rowClassName={desktopRowClass}
+        bare
+        mobile="none"
+      />
+    </div>
+  ), [tableColumns, subTableVisibility, tableColumnState.columnOrder, handleDesktopRowClick, desktopRowClass]);
+
 
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
   // 桌面文档头的操作（手机端仍是标题下方那排按钮）；priority 越大越先收进「…」
@@ -1451,19 +1535,32 @@ function TransactionsContent() {
             <div className="hidden md:block">
               {/* 正文列限宽 920 的例外：表格可展开撑满内容卡片（Loop「表の展開」，components/DataTable/TableExpand.tsx） */}
               <ExpandableTable storageKey="transactions">
-              <DataTable<TxRowItem>
-                data={rowItems}
-                columns={tableColumns}
-                getRowId={txRowId}
-                manualSorting
-                columnVisibility={tableColumnState.columnVisibility}
-                columnOrder={tableColumnState.columnOrder}
-                getSubRows={txSubRows}
-                expanded={expandedRowState}
-                onRowClick={handleDesktopRowClick}
-                rowClassName={desktopRowClass}
-                mobile="none"
-              />
+              {isGrouped ? (
+                // JAN 分组：另一张表，每个 JAN 一行，展开显示这组的进货小表（components/transactions/groupColumns.tsx）
+                <DataTable<TransactionGroup>
+                  data={desktopGroups}
+                  columns={groupColumns}
+                  getRowId={groupRowId}
+                  manualSorting
+                  expanded={expandedRowState}
+                  renderSubComponent={renderGroupPurchases}
+                  onRowClick={handleGroupRowClick}
+                  rowClassName={groupRowClass}
+                  mobile="none"
+                />
+              ) : (
+                <DataTable<TxRowItem>
+                  data={rowItems}
+                  columns={tableColumns}
+                  getRowId={txRowId}
+                  manualSorting
+                  columnVisibility={tableColumnState.columnVisibility}
+                  columnOrder={tableColumnState.columnOrder}
+                  onRowClick={handleDesktopRowClick}
+                  rowClassName={desktopRowClass}
+                  mobile="none"
+                />
+              )}
               </ExpandableTable>
             </div>
           </>

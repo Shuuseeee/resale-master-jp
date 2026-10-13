@@ -123,5 +123,7 @@ export const table = {
   trSelected: 'bg-[var(--color-bg-selected)]',
   trSelectable: 'cursor-pointer',
   trChild: 'bg-[var(--color-bg-subtle)]',
+  // 展开区（renderSubComponent）所在的行：不参与悬停底色
+  trSub: 'bg-[var(--color-bg-subtle)]',
   td: 'px-2 py-[var(--table-cell-py)]',
 };

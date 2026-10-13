@@ -67,8 +67,9 @@ export interface DataTableProps<TData> {
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 
-  /* 行展开（树形子行，交易 JAN 分组用） */
+  /* 行展开：树形子行（getSubRows，子行用同一套列）或展开区（renderSubComponent，展开后在行下方渲染任意内容，如嵌套小表） */
   getSubRows?: (row: TData) => TData[] | undefined;
+  renderSubComponent?: (row: Row<TData>) => ReactNode;
   expanded?: ExpandedState;
   onExpandedChange?: OnChangeFn<ExpandedState>;
 

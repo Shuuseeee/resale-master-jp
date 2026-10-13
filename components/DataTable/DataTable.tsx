@@ -4,7 +4,7 @@
 
 'use client';
 
-import { memo, useMemo, type MouseEvent } from 'react';
+import { Fragment, memo, useMemo, type MouseEvent } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -37,6 +37,7 @@ function DataTableImpl<TData>({
   rowSelection,
   onRowSelectionChange,
   getSubRows,
+  renderSubComponent,
   expanded,
   onExpandedChange,
   onRowClick,
@@ -80,6 +81,7 @@ function DataTableImpl<TData>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
     ...(getSubRows ? { getSubRows, getExpandedRowModel: getExpandedRowModel() } : {}),
+    ...(renderSubComponent ? { getRowCanExpand: () => true } : {}),
   });
 
   const rows = table.getRowModel().rows;
@@ -115,8 +117,8 @@ function DataTableImpl<TData>({
               </tr>
             ) : (
               rows.map(row => (
+                <Fragment key={row.id}>
                 <tr
-                  key={row.id}
                   onClick={e => handleRowClick(row, e)}
                   className={cx(
                     tableStyles.tr,
@@ -143,6 +145,14 @@ function DataTableImpl<TData>({
                     );
                   })}
                 </tr>
+                {renderSubComponent && row.getIsExpanded() && (
+                  <tr className={tableStyles.trSub}>
+                    <td colSpan={row.getVisibleCells().length} className="p-0">
+                      {renderSubComponent(row)}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))
             )}
           </tbody>

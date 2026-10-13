@@ -1,6 +1,6 @@
 // components/transactions/tableColumns.tsx
 // 交易列表桌面表格的 ColumnDef 工厂（TanStack Table）
-// cell 内容按 row.original.kind 分支，一对一移植自 TransactionRow / TransactionGroupRow 的 cellMap
+// 一行一笔进货（平铺表格、JAN 分组展开后的小表共用）；JAN 分组表的列在 groupColumns.tsx
 // 排序/多选状态不进 TanStack：表头按钮直接调 page 的 toggleSort 等 handler（机械移植，零桥接）
 
 'use client';
@@ -12,7 +12,6 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { formatCurrency } from '@/lib/financial/calculator';
 import type { TransactionWithProfit } from '@/lib/api/transactions-cache';
-import type { TransactionGroup } from '@/app/transactions/page';
 import type { BuybackInfo } from '@/hooks/useKaitorixPrices';
 import { COLUMN_LABELS } from '@/lib/transactions/columns';
 import { SELECT_COLUMN_ID } from '@/components/DataTable';
@@ -22,9 +21,8 @@ import { ProductImage } from '@/components/OptimizedImage';
 import { sellableQty } from '@/lib/utils/arrivals';
 import { TransactionStatusBadge } from '@/components/transactions/StatusBadge';
 
-export type TxRowItem =
-  | { kind: 'group'; group: TransactionGroup; children: TxRowItem[] }
-  | { kind: 'tx'; tx: TransactionWithProfit };
+/** 平铺表格与分组展开小表的一行（一笔进货）；JAN 分组表是另一张表（groupColumns.tsx） */
+export type TxRowItem = { kind: 'tx'; tx: TransactionWithProfit };
 
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 
@@ -102,22 +100,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         </button>
       ),
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const groupIds = row.original.group.transactions.map(t => t.id);
-          const selectedCount = groupIds.filter(id => deps.selectedIds.has(id)).length;
-          const allSelected = selectedCount === groupIds.length;
-          const someSelected = selectedCount > 0 && !allSelected;
-          return (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); deps.onSelectGroup(groupIds); }}
-              aria-label="全选该组"
-              className="flex items-center flex-shrink-0"
-            >
-              <CheckMark state={allSelected ? true : someSelected ? 'mixed' : false} />
-            </button>
-          );
-        }
         const isSelected = deps.selectedIds.has(row.original.tx.id);
         return (
           <CheckMark state={isSelected} />
@@ -147,19 +129,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         </div>
       ),
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          return (
-            <div className="flex items-center gap-1.5">
-              <svg
-                className={`w-3.5 h-3.5 text-[var(--color-primary)] transition-transform duration-200 flex-shrink-0 ${row.getIsExpanded() ? 'rotate-180' : ''}`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-              <span className="text-xs text-[var(--color-text-muted)]">{row.original.group.latestDate}</span>
-            </div>
-          );
-        }
         const tx = row.original.tx;
         const displayDate = deps.dateSortMode === 'sale' && tx.latest_sale_date
           ? new Date(tx.latest_sale_date).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -173,28 +142,8 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.product,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const group = row.original.group;
-          return (
-            <div className="flex items-center gap-2">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-[var(--color-text)] truncate max-w-[200px]">
-                    {group.productName}
-                  </span>
-                  <span className="flex-shrink-0 text-xs bg-[var(--color-primary-bg)] text-[var(--color-text-inverted)] px-1.5 py-0.5 rounded-full font-medium">
-                    ×{group.transactions.length}
-                  </span>
-                </div>
-                <CopyableJan jan={group.janCode} className="block text-xs text-[var(--color-text-muted)]" />
-              </div>
-            </div>
-          );
-        }
         const tx = row.original.tx;
-        const parent = row.getParentRow()?.original;
-        const thumbSrc = tx.image_url
-          || (parent && parent.kind === 'group' ? parent.group.imageUrl : deps.getJanThumbnail(tx.jan_code));
+        const thumbSrc = tx.image_url || deps.getJanThumbnail(tx.jan_code);
         return (
           <div className="flex items-center gap-2">
             {thumbSrc && (
@@ -230,15 +179,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         </div>
       ),
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const group = row.original.group;
-          return (
-            <div className="text-right">
-              <div className="text-sm font-mono text-[var(--color-text)]">{formatCurrency(group.totalPurchasePrice)}</div>
-              <div className="text-xs text-[var(--color-text-muted)]">合计 ×{group.totalQuantity}</div>
-            </div>
-          );
-        }
         const tx = row.original.tx;
         const totalPoints = (tx.expected_platform_points || 0)
           + (tx.expected_card_points || 0)
@@ -262,7 +202,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.channel,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') return null;
         const tx = row.original.tx;
         const platformName = deps.purchasePlatforms.find(p => p.id === tx.purchase_platform_id)?.name || null;
         return platformName ? (
@@ -278,7 +217,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.order,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') return null;
         const tx = row.original.tx;
         return tx.order_number ? (
           <CopyableText
@@ -295,7 +233,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.account,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') return null;
         return row.original.tx.payment_method?.name || '-';
       },
       meta: { tdClassName: 'whitespace-nowrap text-sm' },
@@ -305,15 +242,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.status,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const group = row.original.group;
-          return (
-            <div className="text-xs text-[var(--color-text-muted)] space-y-0.5">
-              <div>库存 <span className="font-medium text-[var(--color-text)]">{group.totalInStock}</span></div>
-              <div>已售 <span className="font-medium text-[var(--color-text)]">{group.totalSold}</span></div>
-            </div>
-          );
-        }
         return <TransactionStatusBadge tx={row.original.tx} showStock />;
       },
     },
@@ -322,7 +250,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: () => null,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') return null;
         const tx = row.original.tx;
         if (tx.status !== 'pending') return null;
         return (
@@ -358,16 +285,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         </div>
       ),
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const group = row.original.group;
-          return group.totalProfit != null ? (
-            <span className={`text-sm font-mono font-medium ${group.totalProfit >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
-              {group.totalProfit >= 0 ? '+' : ''}{formatCurrency(group.totalProfit)}
-            </span>
-          ) : (
-            <span className="text-[var(--color-text-muted)]">—</span>
-          );
-        }
         const tx = row.original.tx;
         const buybackInfo = deps.buybackPrices.get(tx.id);
         return (
@@ -404,19 +321,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
         </button>
       ),
       cell: ({ row }) => {
-        if (row.original.kind === 'group') {
-          const group = row.original.group;
-          return group.bestBuybackPrice > 0 ? (
-            <div>
-              <div className="text-sm font-mono font-medium text-[var(--color-text)]">
-                {formatCurrency(group.bestBuybackPrice)}
-              </div>
-              <div className="text-xs text-[var(--color-primary)]">{group.bestBuybackStore}</div>
-            </div>
-          ) : (
-            <span className="text-[var(--color-text-muted)]">—</span>
-          );
-        }
         const buybackInfo = deps.buybackPrices.get(row.original.tx.id);
         if (buybackInfo?.loading) {
           return (
@@ -458,7 +362,6 @@ export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<T
       enableSorting: false,
       header: COLUMN_LABELS.actions,
       cell: ({ row }) => {
-        if (row.original.kind === 'group') return null;
         const tx = row.original.tx;
         return (
           <div className="flex flex-col gap-0.5 min-w-[90px]">
