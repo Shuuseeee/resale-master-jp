@@ -60,10 +60,13 @@ export default function Select({
     const spaceAbove = rect.top - 8;
     // 下方空间不足时向上翻转
     const up = spaceBelow < 180 && spaceAbove > spaceBelow;
+    // 补测-3 #10：面板离触发器 6（定位偏移 2 + 面板 margin-top 4）；宽 = max(触发器宽, 232)（Fluent listbox min-width 232，
+    // 只在桌面用，手机保持触发器宽）；加宽后超出视口右缘时左移
+    const width = window.innerWidth >= 768 ? Math.max(rect.width, 232) : rect.width;
     setPos({
-      top: up ? rect.top - 4 : rect.bottom + 4,
-      left: rect.left,
-      width: rect.width,
+      top: up ? rect.top - 6 : rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+      width,
       up,
       // Fluent listbox 没有固定上限：最高到视口边缘，再多就在面板里滚动（design-spec/components/03-select.css）；面板 padding 4 × 2
       maxHeight: Math.max(120, (up ? spaceAbove : spaceBelow) - 8),

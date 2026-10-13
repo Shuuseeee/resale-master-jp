@@ -6,7 +6,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
 
 type Placement = 'bottom-start' | 'bottom-end';
 
@@ -118,7 +117,7 @@ interface MenuItemProps {
   onSelect: () => void;
   /** 禁用：不可选、跳过键盘焦点，文字用禁用色（Fluent 规则；Loop 现有菜单里未见） */
   disabled?: boolean;
-  /** 切换型菜单项（menuitemcheckbox）：选中时行尾显示 16px 勾选图标 */
+  /** 切换型菜单项（menuitemcheckbox）：选中时行首图标变实心，没有勾选图标（补测-3 #7，Loop「ページをロックする」） */
   checked?: boolean;
   children: ReactNode;
 }
@@ -144,7 +143,6 @@ export function MenuItem({ icon, onSelect, disabled, checked, children }: MenuIt
     >
       {icon && <span className="fluent-menu-item__icon">{icon}</span>}
       <span className="fluent-menu-item__text">{children}</span>
-      {checked && <Checkmark16Regular className="fluent-menu-item__check" />}
     </div>
   );
 }

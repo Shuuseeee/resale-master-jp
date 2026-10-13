@@ -121,7 +121,7 @@ export default function Modal({
       >
         {/* 标题栏 */}
         {(title || showCloseButton) && (
-          <div className="modal-header flex items-center justify-between max-md:px-4 max-md:py-4 max-md:border-b max-md:border-[var(--color-border)] max-md:bg-[var(--color-bg-subtle)]">
+          <div className="modal-header flex max-md:items-center justify-between max-md:px-4 max-md:py-4 max-md:border-b max-md:border-[var(--color-border)] max-md:bg-[var(--color-bg-subtle)]">
             {/* 移动端拖动指示器 */}
             <div className="absolute top-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-[var(--color-border)] md:hidden" />
 

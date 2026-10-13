@@ -128,7 +128,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
       </button>
 
       {open && (
-        <div className="fluent-listbox absolute z-50 top-full left-0 mt-1 min-w-full" role="listbox" aria-multiselectable="true">
+        <div className="fluent-listbox absolute z-50 top-full left-0 mt-1.5 min-w-full md:min-w-[232px]" role="listbox" aria-multiselectable="true">
           {searchable && (
             <div className="mb-1 border-b border-[var(--color-border)] pb-1">
               <input

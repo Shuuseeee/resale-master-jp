@@ -107,7 +107,14 @@ export function hasSectionDrawer(path: string | null): path is string {
 function panelFor(path: string): SectionDrawerPanel {
   if (state.panel?.path === path && !state.panel.child) return state.panel;
   const last = lastContent.get(path);
-  return { path, title: SECTION_DRAWER_PAGES[path], items: last?.items ?? null, selected: last?.selected ?? null, onSelect: noop };
+  // 分区固定的页面（交易列表、经费）没进过也能直接列出（没有计数）；分区随数据加载的（税务年度）先显示树骨架屏
+  return {
+    path,
+    title: SECTION_DRAWER_PAGES[path],
+    items: last?.items ?? SECTION_CHILD_PAGES[path]?.items ?? null,
+    selected: last?.selected ?? null,
+    onSelect: noop,
+  };
 }
 
 /** 导航 Tab 被点击：已在该页时重新打开抽屉；去另一个有抽屉的页面时立刻换成该页的面板 */

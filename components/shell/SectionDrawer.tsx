@@ -25,9 +25,13 @@ function useMediaQuery(query: string) {
   );
 }
 
-/** Loop 实测：系统「减少动态效果」时抽屉动画压到 1ms（design-spec/components/21-misc.css #29）；面板切换同样处理（待补测） */
+function reducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** Loop 实测：系统「减少动态效果」时抽屉开 / 关动画压到 1ms（design-spec/components/21-misc.css #29） */
 function duration(ms: number) {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : ms;
+  return reducedMotion() ? 1 : ms;
 }
 
 const OFF: Keyframe = { opacity: 0, transform: 'translate3d(-320px, 0, 0)' };
@@ -101,9 +105,10 @@ export default function SectionDrawer() {
     const prev = shownPathRef.current;
     shownPathRef.current = panelPath;
     const el = panelRef.current;
-    if (!prev || prev === panelPath || !el) return;
-    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration(200), easing: 'cubic-bezier(0, 0, 1, 1)' });
-    el.animate([{ transform: 'translateX(-20px)' }, { transform: 'translateX(0px)' }], { duration: duration(200), easing: 'cubic-bezier(0.33, 0, 0.1, 1)' });
+    // 面板切换在「减少动态效果」下完全取消（补测-3 #3：与抽屉开关的 1ms 不同）
+    if (!prev || prev === panelPath || !el || reducedMotion()) return;
+    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0, 0, 1, 1)' });
+    el.animate([{ transform: 'translateX(-20px)' }, { transform: 'translateX(0px)' }], { duration: 200, easing: 'cubic-bezier(0.33, 0, 0.1, 1)' });
   }, [open, rendered, panelPath]);
 
   // 缩到 ≤1024（抽屉变浮层）时默认关闭（实测）
@@ -157,6 +162,8 @@ export default function SectionDrawer() {
           </div>
         </div>
         <div className="section-drawer__body">
+          {/* 分区还不知道（本次会话第一次进入、分区随数据加载的页面）：树骨架屏（补测-3 #4） */}
+          {!panel.items && <TreeSkeleton />}
           {panel.items && (
             <div className="section-tree" role="tablist" aria-orientation="vertical" aria-label={panel.title} onKeyDown={handleTreeKeyDown}>
               {panel.items.map((item, index) => {
@@ -197,5 +204,21 @@ export default function SectionDrawer() {
       {drawer}
     </>,
     document.body,
+  );
+}
+
+/** 树骨架屏（补测-3 #4）：15 行，每行 20 方块 + 文字条 + 20 圆点，行距 48，底部渐隐；流光同切页骨架屏。
+ *  Loop 还有一块标题条，我们的抽屉标题一开始就有，不需要。没有进场 / 退场动画。 */
+function TreeSkeleton() {
+  return (
+    <div className="section-tree-skeleton" aria-hidden="true">
+      {Array.from({ length: 15 }, (_, i) => (
+        <div key={i} className="section-tree-skeleton__row">
+          <span className="skeleton-item section-tree-skeleton__icon" />
+          <span className="skeleton-item section-tree-skeleton__text" />
+          <span className="skeleton-item section-tree-skeleton__dot" />
+        </div>
+      ))}
+    </div>
   );
 }

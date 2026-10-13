@@ -1393,11 +1393,11 @@
   --loop-tree-hover-bg: rgba(255, 255, 255, 0.1);
   --loop-tree-pressed-bg: rgba(255, 255, 255, 0.05);
   --loop-tree-selected-bg: rgb(61, 61, 61);
-  /* 待补测（深色未实测到）：暂用浅色实测值对应的 Fluent token 的深色值 */
+  /* 补测-3 #1 实测：图标 #adadad、悬停 #999999；选中项悬停底色反而变暗成 #292929（静止 #3d3d3d），按下时图标 #999999 */
   --loop-tree-icon: var(--colorNeutralForeground3);
-  --loop-tree-icon-hover: var(--colorNeutralForeground3Hover);
-  --loop-tree-selected-hover-bg: var(--colorNeutralBackground1Selected);
-  --loop-tree-selected-pressed-icon: var(--colorNeutralForeground3);
+  --loop-tree-icon-hover: var(--colorNeutralForeground4);
+  --loop-tree-selected-hover-bg: var(--colorNeutralBackground1);
+  --loop-tree-selected-pressed-icon: var(--colorNeutralForeground4);
 }
 
 /* ---- 4. Fluent 图表配色（DataViz palette）----

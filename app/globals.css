@@ -259,7 +259,8 @@
   .nav-rail__tab[data-selected] .ic-r,
   .section-tree__layout[data-selected] .ic-r,
   .doc-header__primary:not(:disabled):hover .ic-r,
-  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-r {
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-r,
+  .fluent-menu-item[aria-checked="true"] .ic-r {
     display: none;
   }
 
@@ -269,7 +270,8 @@
   .nav-rail__tab[data-selected] .ic-f,
   .section-tree__layout[data-selected] .ic-f,
   .doc-header__primary:not(:disabled):hover .ic-f,
-  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-f {
+  .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-f,
+  .fluent-menu-item[aria-checked="true"] .ic-f {
     display: inline;
   }
 
@@ -330,9 +332,13 @@
     transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
   }
 
-  .doc-header__crumb--link:hover,
-  .doc-header__crumb--link:active {
+  .doc-header__crumb--link:hover {
     background: var(--colorSubtleBackgroundHover);
+  }
+
+  /* 补测-3 #5：按下 = SubtleBackgroundPressed（之前与悬停同色） */
+  .doc-header__crumb--link:active {
+    background: var(--colorSubtleBackgroundPressed);
   }
 
   .doc-header__crumb--link:focus-visible {
@@ -362,6 +368,7 @@
     flex: none;
     align-items: center;
     justify-content: center;
+    min-width: 76px; /* 补测-3 #6：Loop 把文档头的「共有」从 Fluent 默认 96 改成 76 */
     height: 32px;
     margin: 0 4px 0 8px;
     padding: 5px 12px;
@@ -575,7 +582,7 @@
 
   /* 输入框 = filled-darker（Loop 表单全部是这种）：Background3 底、边框透明、radius 4、14/20；
      聚焦时底部 2px 品牌线从中间展开（Fluent ::after scaleX 0→1 进 200ms / 出 50ms，这里用背景渐变的宽度实现，原生 input 没有伪元素）。
-     桌面 32 高（padding 5px 12px；文字左右内边距按「对话框内 0 12px」，待补测），手机保持原尺寸 */
+     桌面 32 高（padding 5px 12px：补测-3 #8 实测外框 padding 0、input 0 12px，文字离外框左缘 13 = 1 边框 + 12，与此一致），手机保持原尺寸 */
   .fluent-input,
   .sn-form-input {
     padding: 10px 14px;
@@ -784,10 +791,12 @@
     outline: none;
   }
 
+  /* 补测-3 #11：Loop 的焦点环画在开关根元素上（inset -2、2px、radius 4），根元素在轨道四周各有 8 的内边距；
+     我们的开关只有轨道，换算成离轨道 10 */
   .fluent-switch:focus-visible::after {
     content: "";
     position: absolute;
-    inset: -3px;
+    inset: -10px;
     border: 2px solid var(--colorStrokeFocus2);
     border-radius: var(--borderRadiusMedium);
     pointer-events: none;
@@ -909,8 +918,10 @@
       animation: fluent-dialog-in 250ms cubic-bezier(0, 0, 0, 1);
     }
 
+    /* 补测-3 #12：标题与关闭按钮顶部对齐（都在 y=32；标题行高 28、按钮 32，文字中线比按钮中线高 2，与 Loop 一致） */
     .modal-header {
       flex: none;
+      align-items: flex-start;
     }
 
     .modal-title {
@@ -927,15 +938,17 @@
       padding: 5px;
       border-radius: var(--borderRadiusLarge);
       color: var(--colorNeutralForeground2);
-      transition: background 0.1s var(--loop-ease-button);
+      transition: background 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
     }
 
     .modal-close:hover {
       background: var(--colorSubtleBackgroundHover);
+      color: var(--colorNeutralForeground1);
     }
 
     .modal-close:active {
       background: var(--colorSubtleBackgroundPressed);
+      color: var(--colorNeutralForeground1);
     }
 
     .modal-content {
@@ -1008,13 +1021,13 @@
     padding-left: 8px;
     overflow: hidden;
     font-size: 16px;
-    line-height: 22px;
+    line-height: normal; /* 补测-3 #13：Loop 是 normal（Segoe UI 下盒高 23.33） */
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  /* 右上关闭：32×32、radius 2、padding 0 4px（悬停样式材料里没有，待补测） */
+  /* 右上关闭：32×32、radius 2、padding 0 4px（悬停 / 按下见下，补测-3 #13） */
   .loop-toast__close {
     display: flex;
     flex: none;
@@ -1025,6 +1038,19 @@
     padding: 0 4px;
     border-radius: 2px;
     color: var(--colorNeutralForeground1);
+  }
+
+  /* 补测-3 #13：悬停底 Background3、图标品牌色、圆角变 4；按下底 Background5；没有过渡（瞬间切换） */
+  .loop-toast__close:hover {
+    border-radius: 4px;
+    background: var(--colorNeutralBackground3);
+    color: var(--colorBrandForeground1);
+  }
+
+  .loop-toast__close:active {
+    border-radius: 4px;
+    background: var(--colorNeutralBackground5);
+    color: var(--colorBrandForeground1);
   }
 
   /* ── 右侧覆盖式抽屉（components/fluent/OverlayDrawer.tsx；design-spec/components/09-overlay-drawer.css）──
@@ -1928,8 +1954,9 @@
     white-space: nowrap;
   }
 
-  /* 计数徽章：design-spec/components/11-badge.css .badge--count（树节点「3」：20×20、圆角 4、12/16/600、BrandBackground2 / BrandForeground2）；
-     多位数时的左右内边距、在树节点里的右边距待补测 */
+  /* 计数徽章：design-spec/components/11-badge.css .badge--count（树节点「3」：20×20、圆角 4、12/16/600、BrandBackground2 / BrandForeground2）。
+     补测-3 #2：Loop 固定 20×20、padding 0、右缘离树节点右缘 10（操作区 padding-right 10）。Loop 没有多位数实例；
+     我们的计数会到三位数（「全部 152」），所以保留 min-width 20 + 左右 4 的自适应宽度，一位数时仍是 20×20 */
   .section-tree__count {
     display: inline-flex;
     flex: none;
@@ -1937,7 +1964,7 @@
     justify-content: center;
     min-width: 20px;
     height: 20px;
-    margin-right: 8px;
+    margin-right: 10px;
     padding: 0 4px;
     border: 1px solid transparent;
     border-radius: var(--borderRadiusMedium);
@@ -1946,6 +1973,34 @@
     line-height: 16px;
     font-weight: 600;
     color: var(--colorBrandForeground2);
+  }
+
+  /* 树骨架屏（补测-3 #4）：列表 flex 列、间距 8、底部渐隐；每行 grid（20 方块 / 文字条 / 20 圆点，列距 8）、
+     外边距 10px 8px、高 20 → 行距 48。方块圆角 0、文字条 4、圆点 50%；底色与流光同切页骨架屏（.skeleton-item） */
+  .section-tree-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-mask-image: linear-gradient(#000, transparent);
+    mask-image: linear-gradient(#000, transparent);
+  }
+
+  .section-tree-skeleton__row {
+    display: grid;
+    grid-template-columns: 20px 152.8px minmax(0, 1fr); /* 文字条固定 152.8（实测），圆点靠右 */
+    column-gap: 8px;
+    height: 20px;
+    margin: 10px 8px;
+  }
+
+  .section-tree-skeleton__icon {
+    border-radius: 0;
+  }
+
+  .section-tree-skeleton__dot {
+    justify-self: end;
+    width: 20px;
+    border-radius: 50%;
   }
 
   .section-tree__layout:hover {
@@ -2193,11 +2248,6 @@
   }
 
   /* 切换型菜单项的勾选图标：16×16、Foreground2（04-menu.css 实测；位置放行尾） */
-  .fluent-menu-item__check {
-    flex: none;
-    color: var(--colorNeutralForeground2);
-  }
-
   .fluent-menu-item--static {
     cursor: default;
   }
