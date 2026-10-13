@@ -3,10 +3,11 @@
 // 附自检）。缺尺寸的商品可就地补尺寸后重算；数量改了会提示重新计算。
 // 每家店：店名链到店铺首页，商品名链到该店的 JAN 搜索页（地址见 lib/server/mcp-tools.ts 的 attachStoreLinks），可复制单个 / 整箱 JAN。
 // 每家店的「售出」：把这箱的商品当作同一订单售出（与交易页「同一订单售出」同一个表单），预填店铺、数量、该店单价，
-// 运费（不包邮时）与汇款手续费按金额分摊到各件；店铺奖励（incentive）出售记录没有对应字段，不带过去。
+// 汇款手续费按金额分摊到各件。运费不带：用户的运费单独记在经费里，带进出售记录会重复扣；店铺奖励（incentive）也没有对应字段。
+// 商品清单按 JAN 合并成一行（同一商品来自多笔进货时，单价相同、只有总数量有用），「来自 N 笔进货」可展开看每笔。
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import MultiItemSaleForm from '@/components/MultiItemSaleForm';
@@ -72,7 +73,23 @@ function allocate(total: number, weights: number[]): number[] {
   });
 }
 
-/** 每家店的商品清单默认显示的条数，多出的折叠 */
+/** 同一家店里同一 JAN、同一单价的几笔进货合并成一行（单价是这家店的报价，只有总数量有用） */
+function mergeByJan(items: PlanBox['items']) {
+  const map = new Map<string, { key: string; jan: string; name: string; url?: string | null; unitPrice: number; qty: number; parts: PlanBox['items'] }>();
+  for (const it of items) {
+    const key = `${it.jan || it.tid}\u0001${it.unit_price}`;
+    const line = map.get(key);
+    if (line) {
+      line.qty += it.qty;
+      line.parts.push(it);
+    } else {
+      map.set(key, { key, jan: it.jan, name: it.name, url: it.url, unitPrice: it.unit_price, qty: it.qty, parts: [it] });
+    }
+  }
+  return [...map.values()];
+}
+
+/** 每家店的商品清单默认显示的条数（按合并后的商品种数），多出的折叠 */
 const BOX_ITEM_LIMIT = 5;
 
 const keyOf = (items: PlanSelection[]) => items.map(i => `${i.transactionId}:${i.qty}`).join('|');
@@ -83,6 +100,15 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
   const [loading, setLoading] = useState(false);
   const [editingJan, setEditingJan] = useState<string | null>(null);
   const [openBoxes, setOpenBoxes] = useState<Set<string>>(new Set());
+  // 合并行「来自 N 笔进货」展开的明细
+  const [openLines, setOpenLines] = useState<Set<string>>(new Set());
+  const toggleLine = (key: string) =>
+    setOpenLines(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const toggleBox = (store: string) =>
     setOpenBoxes(prev => {
       const next = new Set(prev);
@@ -107,14 +133,13 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
       const ids = [...new Set(box.items.map(i => i.tid))];
       const transactions = await Promise.all(ids.map(id => fetchSingleTransaction(id)));
       const amounts = box.items.map(i => i.unit_price * i.qty);
-      const ship = allocate(box.free_shipping ? 0 : box.shipping, amounts);
       const fee = allocate(box.transfer_fee || 0, amounts);
       const drafts: Record<string, { quantity_sold: number; selling_price_per_unit: number; shipping_fee: number; platform_fee: number }> = {};
       box.items.forEach((it, i) => {
         const prev = drafts[it.tid];
         drafts[it.tid] = prev
-          ? { ...prev, quantity_sold: prev.quantity_sold + it.qty, shipping_fee: prev.shipping_fee + ship[i], platform_fee: prev.platform_fee + fee[i] }
-          : { quantity_sold: it.qty, selling_price_per_unit: it.unit_price, shipping_fee: ship[i], platform_fee: fee[i] };
+          ? { ...prev, quantity_sold: prev.quantity_sold + it.qty, platform_fee: prev.platform_fee + fee[i] }
+          : { quantity_sold: it.qty, selling_price_per_unit: it.unit_price, shipping_fee: 0, platform_fee: fee[i] };
       });
       setSale({ box, transactions, drafts });
     } catch {
@@ -142,7 +167,15 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
     }
   };
 
-  const stale = !!result && planKey !== keyOf(items);
+  // 售出后比较数量会随数据刷新而变（卖掉的件数没了），这不是用户改了数量，不提示重新计算
+  const resyncAfterSale = useRef(false);
+  const itemsKey = keyOf(items);
+  useEffect(() => {
+    if (!resyncAfterSale.current) return;
+    resyncAfterSale.current = false;
+    setPlanKey(itemsKey);
+  }, [itemsKey]);
+  const stale = !!result && planKey !== itemsKey;
   const total = result?.total;
   const gain = total && result?.checks ? total.net - result.checks.greedy_net : 0;
 
@@ -216,31 +249,57 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1 text-sm">
-                  {(openBoxes.has(box.store) ? box.items : box.items.slice(0, BOX_ITEM_LIMIT)).map(it => (
-                    <li key={it.tid} className="flex items-center justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1">
-                        {it.url ? (
-                          <a
-                            href={it.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-w-0 truncate text-[var(--color-primary)] hover:underline"
-                            title={`在 ${box.store} 搜索 ${it.jan}`}
-                          >
-                            {it.name}
-                          </a>
-                        ) : (
-                          <span className="min-w-0 truncate text-[var(--color-text)]" title={it.name}>{it.name}</span>
-                        )}
-                        <CopyButton text={it.jan} label={`复制 JAN ${it.jan}`} />
-                      </span>
-                      <span className="shrink-0 font-mono text-xs text-[var(--color-text-secondary)]">{formatCurrency(it.unit_price)} × {it.qty}</span>
-                    </li>
-                  ))}
+                  {(() => {
+                    const lines = mergeByJan(box.items);
+                    const shown = openBoxes.has(box.store) ? lines : lines.slice(0, BOX_ITEM_LIMIT);
+                    return shown.map(line => {
+                      const lineKey = `${box.store}\u0001${line.key}`;
+                      return (
+                        <li key={line.key}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="flex min-w-0 items-center gap-1">
+                              {line.url ? (
+                                <a
+                                  href={line.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="min-w-0 truncate text-[var(--color-primary)] hover:underline"
+                                  title={`在 ${box.store} 搜索 ${line.jan}`}
+                                >
+                                  {line.name}
+                                </a>
+                              ) : (
+                                <span className="min-w-0 truncate text-[var(--color-text)]" title={line.name}>{line.name}</span>
+                              )}
+                              <CopyButton text={line.jan} label={`复制 JAN ${line.jan}`} />
+                            </span>
+                            <span className="shrink-0 font-mono text-xs text-[var(--color-text-secondary)]">{formatCurrency(line.unitPrice)} × {line.qty}</span>
+                          </div>
+                          {line.parts.length > 1 && (
+                            <>
+                              <button type="button" className="fluent-link text-xs" onClick={() => toggleLine(lineKey)}>
+                                来自 {line.parts.length} 笔进货{openLines.has(lineKey) ? '（收起）' : ''}
+                              </button>
+                              {openLines.has(lineKey) && (
+                                <ul className="mt-0.5 space-y-0.5 pl-3 text-xs text-[var(--color-text-secondary)]">
+                                  {line.parts.map(p => (
+                                    <li key={p.tid} className="flex justify-between gap-2">
+                                      <span>成本 {formatCurrency(p.unit_cost)}</span>
+                                      <span className="font-mono">× {p.qty}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </>
+                          )}
+                        </li>
+                      );
+                    });
+                  })()}
                 </ul>
-                {box.items.length > BOX_ITEM_LIMIT && (
+                {mergeByJan(box.items).length > BOX_ITEM_LIMIT && (
                   <button type="button" className="fluent-link mt-1 text-xs" onClick={() => toggleBox(box.store)}>
-                    {openBoxes.has(box.store) ? '收起' : `展开全部 ${box.items.length} 种（还有 ${box.items.length - BOX_ITEM_LIMIT}）`}
+                    {openBoxes.has(box.store) ? '收起' : `展开全部 ${mergeByJan(box.items).length} 种（还有 ${mergeByJan(box.items).length - BOX_ITEM_LIMIT}）`}
                   </button>
                 )}
                 {box.rule && <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{box.rule}</p>}
@@ -316,6 +375,7 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
             initialPlatformName={sale.box.store}
             initialDrafts={sale.drafts}
             onSuccess={() => {
+              resyncAfterSale.current = true;
               setSoldStores(prev => new Set(prev).add(sale.box.store));
               setSale(null);
               queryClient.invalidateQueries({ queryKey: ['transactions'] });

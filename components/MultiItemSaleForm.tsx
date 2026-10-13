@@ -144,6 +144,22 @@ export default function MultiItemSaleForm({
     }
   };
 
+  // 同一商品来自多笔进货时，每张卡片标「同一商品 第 i/n 笔」（出售记录按进货分开记，成本不同）
+  const sameJanTag = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const tx of transactions) if (tx.jan_code) counts.set(tx.jan_code, (counts.get(tx.jan_code) ?? 0) + 1);
+    const seen = new Map<string, number>();
+    const tags: Record<string, string> = {};
+    for (const tx of transactions) {
+      const n = tx.jan_code ? counts.get(tx.jan_code) ?? 0 : 0;
+      if (n < 2) continue;
+      const i = (seen.get(tx.jan_code!) ?? 0) + 1;
+      seen.set(tx.jan_code!, i);
+      tags[tx.id] = `同一商品 第 ${i}/${n} 笔`;
+    }
+    return tags;
+  }, [transactions]);
+
   // ── 每件实时利润预览 ──
   const profitPreviews = useMemo(() => {
     const result: Record<string, ReturnType<typeof computeSaleProfit>> = {};
@@ -335,7 +351,10 @@ export default function MultiItemSaleForm({
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--color-text)] truncate">{tx.product_name}</p>
                   {tx.jan_code && (
-                    <p className="text-xs text-[var(--color-text-muted)]">JAN: {tx.jan_code}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      JAN: {tx.jan_code}
+                      {sameJanTag[tx.id] && <span className="ml-2 text-[var(--color-primary)]">{sameJanTag[tx.id]}</span>}
+                    </p>
                   )}
                 </div>
                 <span className="flex-shrink-0 text-xs text-[var(--color-text-muted)] bg-[var(--color-bg-subtle)] px-2 py-1 rounded-full whitespace-nowrap">
