@@ -23,7 +23,7 @@ import PageSkeleton from '@/components/Skeleton';
 import TransactionFilters, { type FilterValues } from '@/components/TransactionFilters';
 import TransactionCard from '@/components/TransactionCard';
 import TransactionGroupCard from '@/components/TransactionGroupCard';
-import { DataTable, SELECT_COLUMN_ID } from '@/components/DataTable';
+import { DataTable, ExpandableTable, SELECT_COLUMN_ID } from '@/components/DataTable';
 import { buildTransactionColumns, type TxRowItem } from '@/components/transactions/tableColumns';
 import { columnPrefsToTableState } from '@/lib/table/columnPrefs';
 import type { Row } from '@tanstack/react-table';
@@ -1449,6 +1449,8 @@ function TransactionsContent() {
 
             {/* 桌面端：表格（共用 DataTable；排序/多选状态仍由 page 管理，见 tableColumns 工厂） */}
             <div className="hidden md:block">
+              {/* 正文列限宽 920 的例外：表格可展开撑满内容卡片（Loop「表の展開」，components/DataTable/TableExpand.tsx） */}
+              <ExpandableTable storageKey="transactions">
               <DataTable<TxRowItem>
                 data={rowItems}
                 columns={tableColumns}
@@ -1462,6 +1464,7 @@ function TransactionsContent() {
                 rowClassName={desktopRowClass}
                 mobile="none"
               />
+              </ExpandableTable>
             </div>
           </>
         ))}

@@ -55,6 +55,60 @@
     @apply mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)];
   }
 
+  /* 表格工具条 + 「展开」按钮（补测-3 #14 与追加）：工具条 30 高、按钮从正文列左缘起、间距 8，工具条底 → 表格 22；
+     按钮 30×30、padding 4、radius 4、subtle：静止 Foreground3，悬停底 SubtleHover + 图标品牌色（实心），
+     按下底 SubtlePressed + Foreground2BrandPressed；展开状态保持按下底色、图标 Foreground1（悬停仍品牌色）；
+     焦点 = 1px StrokeFocus2 + inset 1.25px；颜色 / 边框过渡 100ms */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    height: 30px;
+    margin-bottom: 22px;
+  }
+
+  .table-expand-btn {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusMedium);
+    background: transparent;
+    color: var(--colorNeutralForeground3);
+    cursor: pointer;
+    transition: background 0.1s var(--loop-ease-button), border 0.1s var(--loop-ease-button), color 0.1s var(--loop-ease-button);
+  }
+
+  .table-expand-btn:hover {
+    background: var(--colorSubtleBackgroundHover);
+    color: var(--colorNeutralForeground2BrandHover);
+  }
+
+  .table-expand-btn:active {
+    background: var(--colorSubtleBackgroundPressed);
+    color: var(--colorNeutralForeground2BrandPressed);
+  }
+
+  .table-expand-btn[data-expanded] {
+    background: var(--colorSubtleBackgroundPressed);
+    color: var(--colorNeutralForeground1);
+  }
+
+  .table-expand-btn[data-expanded]:hover {
+    color: var(--colorNeutralForeground2BrandHover);
+  }
+
+  .table-expand-btn:focus-visible {
+    outline: none;
+    border-color: var(--colorStrokeFocus2);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
+  }
+
   /* 通用：按内容区宽度切换列数的容器（分区抽屉开着时内容区比窗口窄得多，lg: / xl: 判断不准） */
   .sn-cq {
     container-type: inline-size;
@@ -260,7 +314,9 @@
   .section-tree__layout[data-selected] .ic-r,
   .doc-header__primary:not(:disabled):hover .ic-r,
   .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-r,
-  .fluent-menu-item[aria-checked="true"] .ic-r {
+  .fluent-menu-item[aria-checked="true"] .ic-r,
+  .table-expand-btn:hover .ic-r,
+  .table-expand-btn:active .ic-r {
     display: none;
   }
 
@@ -271,7 +327,9 @@
   .section-tree__layout[data-selected] .ic-f,
   .doc-header__primary:not(:disabled):hover .ic-f,
   .fluent-menu-item:not(.fluent-menu-item--static):not([aria-disabled="true"]):hover .ic-f,
-  .fluent-menu-item[aria-checked="true"] .ic-f {
+  .fluent-menu-item[aria-checked="true"] .ic-f,
+  .table-expand-btn:hover .ic-f,
+  .table-expand-btn:active .ic-f {
     display: inline;
   }
 

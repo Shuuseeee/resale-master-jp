@@ -4,6 +4,7 @@
 //   bottom-start 顶栏按钮：目标下方 4px，左边缘与目标左边缘对齐
 //   bottom-end   顶栏最右侧按钮（头像）、文档头最右侧按钮：下方 4px，右边缘对齐
 //   bottom       文档头按钮：下方 4px，水平居中
+//   top          表格工具条按钮（补测-3 追加 #3）：目标上方 4px，水平居中；上方放不下时改到下方
 //   放不下时翻转为另一侧对齐（超出右边 → 右边缘对齐，超出左边 → 左边缘对齐）
 //   下方放不下时改到目标上方 4px；仍超出左右时贴住视口边（留 4px），长说明不会被裁掉
 // 全页面共用一个 tooltip 节点（与 Loop 相同），样式见 globals.css .fluent-tooltip
@@ -11,7 +12,7 @@
 
 import { useCallback, type MouseEvent } from 'react';
 
-export type TooltipPlacement = 'right' | 'bottom' | 'bottom-start' | 'bottom-end';
+export type TooltipPlacement = 'right' | 'top' | 'bottom' | 'bottom-start' | 'bottom-end';
 
 let tipNode: HTMLDivElement | null = null;
 let showTimer: ReturnType<typeof setTimeout> | undefined;
@@ -42,7 +43,8 @@ function show(target: HTMLElement, text: string, placement: TooltipPlacement) {
     tip.style.top = `${r.top + r.height / 2 - t.height / 2}px`;
     return;
   }
-  tip.style.top = `${r.bottom + 4 + t.height > window.innerHeight ? r.top - 4 - t.height : r.bottom + 4}px`;
+  if (placement === 'top') tip.style.top = `${r.top - 4 - t.height < 0 ? r.bottom + 4 : r.top - 4 - t.height}px`;
+  else tip.style.top = `${r.bottom + 4 + t.height > window.innerHeight ? r.top - 4 - t.height : r.bottom + 4}px`;
   const startLeft = r.left;
   const endLeft = r.right - t.width;
   let left = placement === 'bottom-start' ? startLeft : placement === 'bottom-end' ? endLeft : r.left + r.width / 2 - t.width / 2;
@@ -97,19 +99,21 @@ interface TooltipOptions {
   /** 返回 false 时不显示（如导航展开态只在文字被截断时显示） */
   when?: (target: HTMLElement) => boolean;
   placement?: TooltipPlacement;
+  /** 出现延迟（默认 250，实测）；表格工具条实测 312–356（含轮询误差），用 300 */
+  delay?: number;
 }
 
 /** 返回挂到目标元素上的鼠标事件处理器 */
-export function useTooltip(text: string, { when, placement = 'bottom' }: TooltipOptions = {}) {
+export function useTooltip(text: string, { when, placement = 'bottom', delay = 250 }: TooltipOptions = {}) {
   const onMouseEnter = useCallback(
     (e: MouseEvent<HTMLElement>) => {
       clearTimeout(hideTimer);
       clearTimeout(showTimer);
       const target = e.currentTarget;
       if (when && !when(target)) return;
-      showTimer = setTimeout(() => show(target, text, placement), 250);
+      showTimer = setTimeout(() => show(target, text, placement), delay);
     },
-    [text, when, placement],
+    [text, when, placement, delay],
   );
   return { onMouseEnter, onMouseLeave: hideLater, onMouseDown: hideTooltipNow };
 }
