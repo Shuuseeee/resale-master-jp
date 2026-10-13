@@ -14,6 +14,8 @@ import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/uti
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 import { sellableQty } from '@/lib/utils/arrivals';
+import { quoteFor, useStoreQuotes } from '@/hooks/useStoreQuotes';
+import StoreQuoteHint from '@/components/StoreQuoteHint';
 
 function getInitialFormData(): SalesRecordFormData {
   return {
@@ -72,12 +74,35 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
     getSellingPlatforms().then(setSellingPlatforms);
   }, []);
 
+  // ── 选了出售对象就带出该店报价（照买取X 出售表单）──
+  // 单价为空、或单价是上次自动带出的 → 换成新店的报价；换到没有报价的店 → 清掉自动带出的单价；手动改过单价就不再覆盖
+  const quotes = useStoreQuotes([transaction.jan_code]);
+  const platformName = sellingPlatforms.find(p => p.id === formData.selling_platform_id)?.name;
+  const quote = quoteFor(quotes, transaction.jan_code, platformName);
+  const priceAutoFilled = useRef(false);
+  const applyQuote = () => {
+    if (!quote) return;
+    priceAutoFilled.current = true;
+    setFormData(prev => ({ ...prev, selling_price_per_unit: quote.price }));
+  };
+  useEffect(() => {
+    if (quote) {
+      if (!formData.selling_price_per_unit || priceAutoFilled.current) applyQuote();
+    } else if (priceAutoFilled.current) {
+      priceAutoFilled.current = false;
+      setFormData(prev => ({ ...prev, selling_price_per_unit: 0 }));
+    }
+    // 只在出售对象或报价变化时触发（单价由用户输入时不触发）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.selling_platform_id, quote?.store, quote?.price]);
+
   useEffect(() => {
     if (prevTransactionId.current === transaction.id) return;
     prevTransactionId.current = transaction.id;
     const initial = getInitialFormData();
     setFormData(initial);
     initialDataRef.current = initial;
+    priceAutoFilled.current = false;
     setSuccessCount(0);
     setError('');
   }, [transaction.id]);
@@ -200,11 +225,15 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
             type="text"
             inputMode="decimal"
             value={formData.selling_price_per_unit || ''}
-            onChange={(e) => setFormData({ ...formData, selling_price_per_unit: parseNumberInput(e.target.value, 0) })}
+            onChange={(e) => {
+              priceAutoFilled.current = false;
+              setFormData({ ...formData, selling_price_per_unit: parseNumberInput(e.target.value, 0) });
+            }}
             className={input.base + ' w-full'}
             required
             placeholder="0.00"
           />
+          <StoreQuoteHint quote={quote} currentPrice={formData.selling_price_per_unit} onApply={applyQuote} />
         </div>
       </div>
 

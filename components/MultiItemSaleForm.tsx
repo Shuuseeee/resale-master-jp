@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Transaction, SellingPlatform } from '@/types/database.types';
 import { createSaleOrder } from '@/lib/api/sale-orders';
 import { computeSaleProfit } from '@/lib/api/sales-records';
@@ -14,6 +14,8 @@ import { getTodayString, formatDateToLocal, parseDateFromLocal } from '@/lib/uti
 import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 import { sellableQty } from '@/lib/utils/arrivals';
+import { quoteFor, useStoreQuotes } from '@/hooks/useStoreQuotes';
+import StoreQuoteHint from '@/components/StoreQuoteHint';
 
 interface PerItemDraft {
   quantity_sold: number;
@@ -33,6 +35,10 @@ function getDefaultDraft(tx: Transaction): PerItemDraft {
 
 interface MultiItemSaleFormProps {
   transactions: Transaction[];
+  /** 预选的销售平台（按名字找；没有这个平台时填进「添加新的销售平台」等用户确认）——出货方案按店售出用 */
+  initialPlatformName?: string;
+  /** 逐件预填（数量 / 单价 / 费用）——出货方案按店售出用 */
+  initialDrafts?: Record<string, Partial<PerItemDraft>>;
   onSuccess: (orderId: string) => void;
   onCancel: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
@@ -40,6 +46,8 @@ interface MultiItemSaleFormProps {
 
 export default function MultiItemSaleForm({
   transactions,
+  initialPlatformName,
+  initialDrafts,
   onSuccess,
   onCancel,
   onDirtyChange,
@@ -55,7 +63,7 @@ export default function MultiItemSaleForm({
   const [drafts, setDrafts] = useState<Record<string, PerItemDraft>>(() => {
     const init: Record<string, PerItemDraft> = {};
     for (const tx of transactions) {
-      init[tx.id] = getDefaultDraft(tx);
+      init[tx.id] = { ...getDefaultDraft(tx), ...initialDrafts?.[tx.id] };
     }
     return init;
   });
@@ -65,29 +73,63 @@ export default function MultiItemSaleForm({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getSellingPlatforms().then(setSellingPlatforms);
+    getSellingPlatforms().then(list => {
+      setSellingPlatforms(list);
+      if (!initialPlatformName) return;
+      const found = list.find(p => p.name.trim() === initialPlatformName.trim());
+      if (found) setSellingPlatformId(found.id);
+      else setNewPlatformName(initialPlatformName);
+    });
+    // 只在打开时按预选店名找一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // dirty 检测
-  const isDirty = useMemo(() => {
-    if (submitting) return false;
-    if (saleOrderNumber || notes || sellingPlatformId) return true;
-    return transactions.some(tx => {
-      const d = drafts[tx.id];
-      if (!d) return false;
-      return (
-        d.selling_price_per_unit !== 0 ||
-        d.platform_fee !== 0 ||
-        d.shipping_fee !== 0
-      );
+  // ── 选了销售平台就带出各件在该店的报价（照买取X 出售表单）──
+  // 逐件：单价为空、或单价是上次自动带出的 → 换成该店报价；该店对这件没有报价 → 清掉自动带出的单价；手动改过的不覆盖。
+  // 出货方案预填的单价就是该店报价，也按「自动带出」处理
+  const quotes = useStoreQuotes(transactions.map(tx => tx.jan_code));
+  const platformName = sellingPlatforms.find(p => p.id === sellingPlatformId)?.name;
+  const priceAutoFilled = useRef<Set<string>>(
+    new Set(Object.entries(initialDrafts ?? {}).filter(([, d]) => (d.selling_price_per_unit ?? 0) > 0).map(([id]) => id)),
+  );
+  const quoteKey = transactions.map(tx => `${tx.id}:${quoteFor(quotes, tx.jan_code, platformName)?.price ?? ''}`).join('|');
+  useEffect(() => {
+    setDrafts(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const tx of transactions) {
+        const d = prev[tx.id];
+        if (!d) continue;
+        const q = quoteFor(quotes, tx.jan_code, platformName);
+        const auto = priceAutoFilled.current.has(tx.id);
+        if (q) {
+          if ((!d.selling_price_per_unit || auto) && d.selling_price_per_unit !== q.price) {
+            next[tx.id] = { ...d, selling_price_per_unit: q.price };
+            changed = true;
+          }
+          if (!d.selling_price_per_unit || auto) priceAutoFilled.current.add(tx.id);
+        } else if (auto) {
+          priceAutoFilled.current.delete(tx.id);
+          next[tx.id] = { ...d, selling_price_per_unit: 0 };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
     });
-  }, [submitting, saleDate, saleOrderNumber, notes, sellingPlatformId, drafts, transactions]);
+    // 只在销售平台或报价变化时触发
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sellingPlatformId, quoteKey]);
+
+  // dirty 检测：用户改过任何字段才算（预填的值——出货方案带进来的单价 / 费用、自动带出的报价——不算）
+  const [touched, setTouched] = useState(false);
+  const isDirty = touched && !submitting;
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
   const updateDraft = (txId: string, patch: Partial<PerItemDraft>) => {
+    setTouched(true);
     setDrafts(prev => ({ ...prev, [txId]: { ...prev[txId], ...patch } }));
   };
 
@@ -207,7 +249,7 @@ export default function MultiItemSaleForm({
             </label>
             <DatePicker
               selected={saleDate ? parseDateFromLocal(saleDate) : new Date()}
-              onChange={(date) => setSaleDate(date ? formatDateToLocal(date) : getTodayString())}
+              onChange={(date) => { setTouched(true); setSaleDate(date ? formatDateToLocal(date) : getTodayString()); }}
               placeholder="选择销售日期"
             />
           </div>
@@ -220,7 +262,7 @@ export default function MultiItemSaleForm({
             <input
               type="text"
               value={saleOrderNumber}
-              onChange={(e) => setSaleOrderNumber(e.target.value)}
+              onChange={(e) => { setTouched(true); setSaleOrderNumber(e.target.value); }}
               className={input.base + ' w-full'}
               placeholder="如：Yahoo! 注文番号"
             />
@@ -234,7 +276,7 @@ export default function MultiItemSaleForm({
           </label>
           <Select
             value={sellingPlatformId}
-            onChange={setSellingPlatformId}
+            onChange={(v) => { setTouched(true); setSellingPlatformId(v); }}
             options={sellingPlatforms.map((p) => ({ value: p.id, label: p.name }))}
             placeholder="请选择"
             clearable
@@ -266,7 +308,7 @@ export default function MultiItemSaleForm({
           </label>
           <textarea
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => { setTouched(true); setNotes(e.target.value); }}
             rows={2}
             className={input.base + ' w-full'}
             placeholder="可选"
@@ -328,9 +370,22 @@ export default function MultiItemSaleForm({
                     type="text"
                     inputMode="decimal"
                     value={d.selling_price_per_unit || ''}
-                    onChange={(e) => updateDraft(tx.id, { selling_price_per_unit: parseNumberInput(e.target.value, 0) })}
+                    onChange={(e) => {
+                      priceAutoFilled.current.delete(tx.id);
+                      updateDraft(tx.id, { selling_price_per_unit: parseNumberInput(e.target.value, 0) });
+                    }}
                     className={input.base + ' w-full'}
                     placeholder="0"
+                  />
+                  <StoreQuoteHint
+                    quote={quoteFor(quotes, tx.jan_code, platformName)}
+                    currentPrice={d.selling_price_per_unit}
+                    onApply={() => {
+                      const q = quoteFor(quotes, tx.jan_code, platformName);
+                      if (!q) return;
+                      priceAutoFilled.current.add(tx.id);
+                      updateDraft(tx.id, { selling_price_per_unit: q.price });
+                    }}
                   />
                 </div>
               </div>
