@@ -1165,40 +1165,98 @@
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.48));
   }
 
-  /* 提示条 = Fluent MessageBar（Loop 无实例，用户确认按 Fluent 默认）：最小高 36、padding 0 12px、radius 4、1px 边框、20px 图标；
-     信息色按用户决定用蓝（标签蓝底 + Blue 边框 / 图标） */
+  /* 提示条 = Loop 实测的 Fluent v9 MessageBar（补测-4：断网 = 警告、页面锁定 = 信息）。
+     最小高 36、radius 4、1px 边框；padding 只有左 12（右侧留白来自正文、操作区各自的右 12）；
+     图标 20、右距 8；标题 14/20/600 inline-block、右距 4，与正文同一行接着排；正文 14/normal/400；
+     放不下一行时多行：padding 10 0 0 12、顶部对齐、操作区换到下一行。出现 / 消失无动画 */
   .fluent-messagebar {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "icon body actions";
     align-items: center;
-    column-gap: 8px;
     min-height: 36px;
-    padding: 0 12px;
+    padding: 0 0 0 12px;
     border: 1px solid var(--mb-border);
     border-radius: var(--borderRadiusMedium);
     background: var(--mb-bg);
     font-size: 14px;
-    line-height: 20px;
     font-weight: 400;
     color: var(--colorNeutralForeground1);
   }
 
+  .fluent-messagebar[data-multiline] {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "icon body"
+      "actions actions";
+    align-items: start;
+    padding: 10px 0 0 12px;
+  }
+
   .fluent-messagebar__icon {
+    grid-area: icon;
     display: flex;
     width: 20px;
     height: 20px;
+    margin-right: 8px;
     color: var(--mb-icon);
   }
 
   .fluent-messagebar__body {
+    grid-area: body;
     min-width: 0;
-    padding: 8px 0;
+    padding-right: 12px;
+    line-height: normal;
+  }
+
+  .fluent-messagebar__title {
+    display: inline-block;
+    margin-right: 4px;
+    line-height: 20px;
+    font-weight: 600;
   }
 
   .fluent-messagebar__actions {
+    grid-area: actions;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
+    padding-right: 12px;
+  }
+
+  .fluent-messagebar[data-multiline] .fluent-messagebar__actions {
+    min-height: 18px;
+  }
+
+  /* 关闭：24×24、padding 1、radius 4，悬停 / 按下都没有底色，只把图标换成品牌色；聚焦框 radius 2 */
+  .fluent-messagebar__dismiss {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 1px;
+    border: 1px solid transparent;
+    border-radius: var(--borderRadiusMedium);
+    background: transparent;
+    color: var(--colorNeutralForeground2);
+  }
+
+  .fluent-messagebar__dismiss:hover {
+    color: var(--colorNeutralForeground2BrandHover);
+  }
+
+  .fluent-messagebar__dismiss:active {
+    color: var(--colorNeutralForeground2BrandPressed);
+  }
+
+  .fluent-messagebar__dismiss:focus-visible {
+    outline: none;
+    border-color: var(--colorStrokeFocus2);
+    border-radius: var(--borderRadiusSmall);
+    box-shadow: inset 0 0 0 1.25px var(--colorStrokeFocus2);
   }
 
   .fluent-messagebar--success {
@@ -1219,10 +1277,36 @@
     --mb-icon: var(--colorStatusWarningForeground3);
   }
 
+  /* 信息：Loop 实测是中性灰（之前用的蓝是自选值） */
   .fluent-messagebar--info {
-    --mb-bg: var(--color-info-subtle);
-    --mb-border: var(--color-info-border);
-    --mb-icon: var(--color-info);
+    --mb-bg: var(--colorNeutralBackground3);
+    --mb-border: var(--colorNeutralStroke1);
+    --mb-icon: var(--colorNeutralForeground3);
+  }
+
+  /* 提示条栈（Loop FluidMessageBannerStack）：桌面在文档头下方 4、撑满内容卡片、占位把正文往下推、不随正文滚动；
+     手机（Loop 没有手机布局）固定在顶栏下方，左右各留 12 */
+  .app-banner-stack {
+    position: fixed;
+    top: calc(63px + var(--app-top-inset));
+    right: 12px;
+    left: 12px;
+    z-index: 8500;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .app-banner-stack:empty {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .app-banner-stack {
+      position: static;
+      flex: none;
+      margin-top: 4px;
+    }
   }
 
   /* 转圈 = Fluent Spinner（Loop 无实例，用户确认按钮加载用 tiny）：轨道 BrandStroke2Contrast、弧 BrandStroke1、1.5s 一圈 */
@@ -2325,6 +2409,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* 切换型菜单项（补测-4 更正 3 #7）：行尾 40×20 开关（只是外观，点整行切换）；打开时文字与图标 Foreground1 */
+  .fluent-menu-item__switch {
+    pointer-events: none;
+  }
+
+  .fluent-menu-item[aria-checked="true"] {
+    color: var(--colorNeutralForeground1);
   }
 
   /* 分隔线：横贯整个面板（负边距抵消 padding 4 + 边框 1），与上下项各相距 4px（含 flex gap 2px） */

@@ -117,7 +117,8 @@ interface MenuItemProps {
   onSelect: () => void;
   /** 禁用：不可选、跳过键盘焦点，文字用禁用色（Fluent 规则；Loop 现有菜单里未见） */
   disabled?: boolean;
-  /** 切换型菜单项（menuitemcheckbox）：选中时行首图标变实心，没有勾选图标（补测-3 #7，Loop「ページをロックする」） */
+  /** 切换型菜单项（menuitemcheckbox）：行尾一个开关；打开时文字和行首图标从 Foreground2 变 Foreground1、图标变实心
+   *  （补测-3 #7〔补测-4 更正〕，Loop「ページをロックする」） */
   checked?: boolean;
   children: ReactNode;
 }
@@ -143,6 +144,11 @@ export function MenuItem({ icon, onSelect, disabled, checked, children }: MenuIt
     >
       {icon && <span className="fluent-menu-item__icon">{icon}</span>}
       <span className="fluent-menu-item__text">{children}</span>
+      {checked !== undefined && (
+        <span className="fluent-switch fluent-menu-item__switch" aria-checked={checked} aria-hidden="true">
+          <span className="fluent-switch__thumb" />
+        </span>
+      )}
     </div>
   );
 }

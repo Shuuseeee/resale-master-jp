@@ -1,31 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import { useSWUpdate } from '@/hooks/useSWUpdate'
 import MessageBar from '@/components/fluent/MessageBar'
 
 /**
- * 有新版本 Service Worker 时，从底部滑入的提示条（Fluent MessageBar 信息样式 + 「刷新」链接按钮）。
- * 挂在 ClientProviders 里，每页都有；不依赖 Toast / Modal，提示是一次性的。
+ * 有新版本 Service Worker 时的提示条（信息样式 +「刷新」+ 关闭）。放在外壳的提示条栈里，与离线提示同一处
+ * （Loop 的提示条都在文档头下方、没有动画；之前是从底部滑入的浮层）。关闭只是这次不再提示。
  */
 export function SWUpdatePrompt() {
   const { hasUpdate, updateSW } = useSWUpdate()
+  const [dismissed, setDismissed] = useState(false)
+  if (!hasUpdate || dismissed) return null
 
   return (
-    <div
-      className="fixed left-1/2 z-[9999] max-w-[calc(100vw-2rem)] -translate-x-1/2 whitespace-nowrap"
-      style={{ bottom: hasUpdate ? '1rem' : '-6rem', transition: 'bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1)' }}
+    <MessageBar
+      intent="info"
+      role="alert"
+      title="有新版本可用。"
+      actions={
+        <button type="button" onClick={updateSW} className="fluent-link">
+          刷新
+        </button>
+      }
+      onDismiss={() => setDismissed(true)}
     >
-      <MessageBar
-        intent="info"
-        role="alert"
-        actions={
-          <button type="button" onClick={updateSW} className="fluent-link">
-            刷新
-          </button>
-        }
-      >
-        有新版本可用
-      </MessageBar>
-    </div>
+      刷新后生效
+    </MessageBar>
   )
 }

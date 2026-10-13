@@ -5,10 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PlatformsProvider } from '@/contexts/PlatformsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { SWUpdatePrompt } from '@/components/SWUpdatePrompt';
 import { ThemeSync } from '@/components/ThemeSync';
 import OfflineCacheProvider from '@/components/OfflineCacheProvider';
-import OfflineBanner from '@/components/OfflineBanner';
 import QueryInvalidationBridge from '@/components/QueryInvalidationBridge';
 import RecurringExpensesRunner from '@/components/RecurringExpensesRunner';
 import { OFFLINE_CACHE_MAX_AGE } from '@/lib/offline/persister';
@@ -49,8 +47,6 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
             <PlatformsProvider>
               <BfcacheRefreshListener />
               <ThemeSync />
-              <SWUpdatePrompt />
-              <OfflineBanner />
               <QueryInvalidationBridge />
               <RecurringExpensesRunner />
               {children}
