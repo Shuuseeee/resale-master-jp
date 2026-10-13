@@ -122,7 +122,7 @@ export default function SelectionActionBar({ count, actions, onClear, onExit }: 
               清空
             </button>
           )}
-          <button type="button" onClick={onExit} className="fluent-btn fluent-btn--subtle px-2" aria-label="退出多选" title="退出多选">
+          <button type="button" onClick={onExit} className="fluent-btn fluent-btn--subtle px-2" aria-label="取消选择" title="取消选择">
             <Dismiss20Regular />
           </button>
         </div>

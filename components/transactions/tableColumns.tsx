@@ -27,7 +27,6 @@ export type TxRowItem = { kind: 'tx'; tx: TransactionWithProfit };
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 
 export interface TransactionTableDeps {
-  compareMode: boolean;
   dateSortMode: 'purchase' | 'sale';
   profitSortMode: 'actual' | 'expected';
   sortField: SortField;
@@ -43,6 +42,7 @@ export interface TransactionTableDeps {
   onToggleProfitSortMode: () => void;
   toggleSelectAllVisible: () => void;
   onSelectGroup: (ids: string[]) => void;
+  onToggleSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onMarkArrived: (id: string) => void;
   onConfirmPayment: (id: string) => void;
@@ -83,32 +83,39 @@ function CopyableText({ text, className = '' }: { text: string; className?: stri
 export function buildTransactionColumns(deps: TransactionTableDeps): ColumnDef<TxRowItem>[] {
   const columns: ColumnDef<TxRowItem>[] = [];
 
-  // 多选模式：独立选择列，与列定制解耦（page 侧在 columnOrder 前插 '_select'）
-  if (deps.compareMode) {
-    columns.push({
-      id: SELECT_COLUMN_ID,
-      enableSorting: false,
-      header: () => (
+  // 勾选列常驻（桌面表格，照买取X；手机卡片另有选择模式）；与列定制解耦，page 侧在 columnOrder 前插 '_select'
+  columns.push({
+    id: SELECT_COLUMN_ID,
+    enableSorting: false,
+    header: () => (
+      <button
+        type="button"
+        onClick={deps.toggleSelectAllVisible}
+        aria-label="全选当前显示的记录"
+        title="全选当前显示的记录"
+        className="flex items-center"
+      >
+        <CheckMark state={deps.allVisibleSelected ? true : deps.someVisibleSelected ? 'mixed' : false} />
+      </button>
+    ),
+    cell: ({ row }) => {
+      const id = row.original.tx.id;
+      return (
         <button
           type="button"
-          onClick={deps.toggleSelectAllVisible}
-          aria-label="全选当前显示的记录"
-          title="全选当前显示的记录"
+          onClick={e => {
+            e.stopPropagation();
+            deps.onToggleSelect(id);
+          }}
+          aria-label="选择这笔"
           className="flex items-center"
         >
-          <CheckMark state={deps.allVisibleSelected ? true : deps.someVisibleSelected ? 'mixed' : false} />
+          <CheckMark state={deps.selectedIds.has(id)} />
         </button>
-      ),
-      cell: ({ row }) => {
-        const isSelected = deps.selectedIds.has(row.original.tx.id);
-        return (
-          <CheckMark state={isSelected} />
-        );
-      },
-      meta: { thClassName: 'w-10 !pl-4 !pr-1', tdClassName: 'w-10 !pl-4 !pr-1' },
-    });
-  }
-
+      );
+    },
+    meta: { thClassName: 'w-10 !pl-4 !pr-1', tdClassName: 'w-10 !pl-4 !pr-1' },
+  });
   columns.push(
     {
       id: 'date',

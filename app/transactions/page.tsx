@@ -7,7 +7,6 @@ import { Add20Filled, Add20Regular } from '@fluentui/react-icons/headless/svg/ad
 import { ArrowDownload20Filled, ArrowDownload20Regular } from '@fluentui/react-icons/headless/svg/arrow-download';
 import { DocumentTable20Filled, DocumentTable20Regular } from '@fluentui/react-icons/headless/svg/document-table';
 import { GroupList20Filled, GroupList20Regular } from '@fluentui/react-icons/headless/svg/group-list';
-import { MultiselectLtr20Filled, MultiselectLtr20Regular } from '@fluentui/react-icons/headless/svg/multiselect-ltr';
 import { TableSettings20Filled, TableSettings20Regular } from '@fluentui/react-icons/headless/svg/table-settings';
 import PageHeader, { type PageAction } from '@/components/shell/PageHeader';
 import TabList from '@/components/fluent/TabList';
@@ -229,7 +228,12 @@ function TransactionsContent() {
 
   // 同一订单售出 Modal
   const [multiSaleModalOpen, setMultiSaleModalOpen] = useState(false);
-  const closeMultiSale = useCallback(() => setMultiSaleModalOpen(false), []);
+  // 分组表的「出售」：卖这组可售的几笔，不动多选的勾选（勾选框常驻，借用勾选会让行高亮、操作栏弹出）
+  const [groupSaleTxs, setGroupSaleTxs] = useState<TransactionWithPayment[] | null>(null);
+  const closeMultiSale = useCallback(() => {
+    setMultiSaleModalOpen(false);
+    setGroupSaleTxs(null);
+  }, []);
   const multiSaleGuard = useModalCloseGuard(closeMultiSale);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -583,6 +587,9 @@ function TransactionsContent() {
     () => selectedTransactions.filter(t => sellableQty(t) > 0 && t.status !== 'returned'),
     [selectedTransactions]
   );
+
+  // 「同一订单售出」卖哪几笔：分组表的整组出售优先，否则是多选里可售的
+  const multiSaleTxs = groupSaleTxs ?? sellableSelected;
 
   // 分组汇总辅助函数
   const buildGroupSummary = useCallback((janCode: string, txs: TransactionWithPayment[], key: string = janCode): TransactionGroup => {
@@ -962,13 +969,16 @@ function TransactionsContent() {
       openQuickSale(sellable[0].id);
       return;
     }
-    setSelectedIds(new Set(sellable.map(t => t.id)));
+    setGroupSaleTxs(sellable);
     setMultiSaleModalOpen(true);
   }, [openQuickSale]);
 
   const groupColumns = useMemo(() => buildGroupColumns({
-    compareMode,
+    // 桌面表格的勾选框常驻（照买取X，不用先进「多选」模式）；手机仍是长按 / 「多选」进入选择模式
     selectedIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleSelectAllVisible,
     expandedGroups,
     sortField,
     sortOrder,
@@ -976,10 +986,9 @@ function TransactionsContent() {
     onToggleExpand: toggleGroupExpand,
     onSelectGroup: selectGroup,
     onSellGroup: sellGroup,
-  }), [compareMode, selectedIds, expandedGroups, sortField, sortOrder, toggleSort, toggleGroupExpand, selectGroup, sellGroup]);
+  }), [selectedIds, allVisibleSelected, someVisibleSelected, toggleSelectAllVisible, expandedGroups, sortField, sortOrder, toggleSort, toggleGroupExpand, selectGroup, sellGroup]);
 
   const tableColumns = useMemo(() => buildTransactionColumns({
-    compareMode,
     dateSortMode,
     profitSortMode,
     sortField,
@@ -995,6 +1004,7 @@ function TransactionsContent() {
     onToggleProfitSortMode,
     toggleSelectAllVisible,
     onSelectGroup: selectGroup,
+    onToggleSelect: toggleSelect,
     onDelete: deleteTransaction,
     onMarkArrived: handleMarkArrived,
     onConfirmPayment: handleConfirmPayment,
@@ -1002,16 +1012,16 @@ function TransactionsContent() {
     onQuickReturn: openQuickReturn,
     onQuickEdit: openQuickEdit,
     onQuickCopy: openQuickCopy,
-  }), [compareMode, dateSortMode, profitSortMode, sortField, sortOrder, selectedIds, allVisibleSelected, someVisibleSelected, buybackPrices, purchasePlatforms, getJanThumbnail, toggleSort, onToggleDateSortMode, onToggleProfitSortMode, toggleSelectAllVisible, selectGroup, deleteTransaction, handleMarkArrived, handleConfirmPayment, openQuickSale, openQuickReturn, openQuickEdit, openQuickCopy]);
+  }), [dateSortMode, profitSortMode, sortField, sortOrder, selectedIds, allVisibleSelected, someVisibleSelected, buybackPrices, purchasePlatforms, getJanThumbnail, toggleSort, onToggleDateSortMode, onToggleProfitSortMode, toggleSelectAllVisible, selectGroup, toggleSelect, deleteTransaction, handleMarkArrived, handleConfirmPayment, openQuickSale, openQuickReturn, openQuickEdit, openQuickCopy]);
 
   // 列定制（ColumnConfig[]，Supabase 持久化格式不变）→ TanStack 列状态
   const tableColumnState = useMemo(() => {
     const s = columnPrefsToTableState(columns);
     return {
       columnVisibility: s.columnVisibility,
-      columnOrder: compareMode ? [SELECT_COLUMN_ID, ...s.columnOrder] : s.columnOrder,
+      columnOrder: [SELECT_COLUMN_ID, ...s.columnOrder],
     };
-  }, [columns, compareMode]);
+  }, [columns]);
 
   // expandedGroups(Set<组键>) → TanStack ExpandedState（rowId = 组键）
   const expandedRowState = useMemo(() => {
@@ -1020,21 +1030,17 @@ function TransactionsContent() {
     return rec;
   }, [expandedGroups]);
 
-  const handleDesktopRowClick = useCallback((row: Row<TxRowItem>) => {
-    if (compareMode) toggleSelect(row.original.tx.id);
-  }, [compareMode, toggleSelect]);
 
   // 分组行：点整行展开 / 收起（链接、按钮除外）
   const handleGroupRowClick = useCallback((row: Row<TransactionGroup>) => {
     toggleGroupExpand(row.original.key);
   }, [toggleGroupExpand]);
 
-  const desktopRowClass = useCallback((row: Row<TxRowItem>) => {
-    if (!compareMode) return '';
-    return selectedIds.has(row.original.tx.id)
-      ? 'bg-[var(--color-primary-light)] cursor-pointer'
-      : 'cursor-pointer';
-  }, [compareMode, selectedIds]);
+  // 勾选的行高亮；点行不勾选（只点勾选框），避免看数据、点链接时误选（买取X 同样）
+  const desktopRowClass = useCallback(
+    (row: Row<TxRowItem>) => (selectedIds.has(row.original.tx.id) ? 'bg-[var(--color-primary-light)]' : ''),
+    [selectedIds],
+  );
 
   // 展开区：这组的进货小表（列 = 平铺表格的列去掉商品；买取X 同样缩进 20、有自己的表头）
   const subTableVisibility = useMemo(() => ({ ...tableColumnState.columnVisibility, product: false }), [tableColumnState.columnVisibility]);
@@ -1047,13 +1053,12 @@ function TransactionsContent() {
         manualSorting
         columnVisibility={subTableVisibility}
         columnOrder={tableColumnState.columnOrder}
-        onRowClick={handleDesktopRowClick}
         rowClassName={desktopRowClass}
         bare
         mobile="none"
       />
     </div>
-  ), [tableColumns, subTableVisibility, tableColumnState.columnOrder, handleDesktopRowClick, desktopRowClass]);
+  ), [tableColumns, subTableVisibility, tableColumnState.columnOrder, desktopRowClass]);
 
 
   // 还要确认真的离线：fetchStatus 为 paused 也可能是后台标签页暂停重试，那时应继续显示加载中
@@ -1066,17 +1071,6 @@ function TransactionsContent() {
       pressed: isGrouped,
       onClick: () => setIsGrouped(v => !v),
       priority: 2,
-    },
-    {
-      id: 'select',
-      label: compareMode ? `退出多选（${selectedIds.size}）` : '多选',
-      icon: { regular: MultiselectLtr20Regular, filled: MultiselectLtr20Filled },
-      pressed: compareMode,
-      onClick: () => {
-        setCompareMode(!compareMode);
-        setSelectedIds(new Set());
-      },
-      priority: 3,
     },
     {
       id: 'csv',
@@ -1556,7 +1550,6 @@ function TransactionsContent() {
                   manualSorting
                   columnVisibility={tableColumnState.columnVisibility}
                   columnOrder={tableColumnState.columnOrder}
-                  onRowClick={handleDesktopRowClick}
                   rowClassName={desktopRowClass}
                   mobile="none"
                 />
@@ -1568,7 +1561,8 @@ function TransactionsContent() {
       </div>
 
       {/* 多选模式操作栏：手机盖住底部导航、桌面底部浮动（components/transactions/SelectionActionBar.tsx） */}
-      {compareMode && (
+      {/* 手机：选择模式（长按 / 「多选」）；桌面：勾选框常驻，勾了就出现 */}
+      {(compareMode || selectedIds.size > 0) && (
         <SelectionActionBar
           count={selectedIds.size}
           onClear={() => setSelectedIds(new Set())}
@@ -1613,16 +1607,17 @@ function TransactionsContent() {
         beforeClose={multiSaleGuard.handleCloseRequest}
         closeOnEsc={!multiSaleGuard.showConfirm}
         closeOnOverlayClick={!multiSaleGuard.showConfirm}
-        title={`同一订单售出 (${sellableSelected.length} 件)`}
+        title={`同一订单售出 (${multiSaleTxs.length} 件)`}
         size="xl"
       >
         <MultiItemSaleForm
-          transactions={sellableSelected}
+          transactions={multiSaleTxs}
           onSuccess={(orderId) => {
             setMultiSaleModalOpen(false);
-            exitCompareMode();
-            setToastMsg(`订单已记录 (${sellableSelected.length} 件)`);
-            Promise.all(sellableSelected.map(t => fetchSingleTransaction(t.id)))
+            if (groupSaleTxs) setGroupSaleTxs(null);
+            else exitCompareMode();
+            setToastMsg(`订单已记录 (${multiSaleTxs.length} 件)`);
+            Promise.all(multiSaleTxs.map(t => fetchSingleTransaction(t.id)))
               .then(updates => {
                 queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old => {
                   if (!old) return old;

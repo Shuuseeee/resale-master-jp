@@ -17,8 +17,10 @@ import { ProductImage } from '@/components/OptimizedImage';
 type SortField = 'date' | 'purchase_price_total' | 'total_profit' | 'roi' | 'buyback_price' | 'expected_profit';
 
 export interface GroupTableDeps {
-  compareMode: boolean;
   selectedIds: Set<string>;
+  allVisibleSelected: boolean;
+  someVisibleSelected: boolean;
+  toggleSelectAllVisible: () => void;
   expandedGroups: Set<string>;
   sortField: SortField;
   sortOrder: 'asc' | 'desc';
@@ -48,32 +50,34 @@ function Money({ value }: { value: number }) {
 export function buildGroupColumns(deps: GroupTableDeps): ColumnDef<TransactionGroup>[] {
   const columns: ColumnDef<TransactionGroup>[] = [];
 
-  if (deps.compareMode) {
-    columns.push({
-      id: SELECT_COLUMN_ID,
-      enableSorting: false,
-      header: () => null,
-      cell: ({ row }) => {
-        const ids = row.original.transactions.map(t => t.id);
-        const n = ids.filter(id => deps.selectedIds.has(id)).length;
-        return (
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation();
-              deps.onSelectGroup(ids);
-            }}
-            aria-label="全选该组"
-            className="flex items-center"
-          >
-            <CheckMark state={n === ids.length ? true : n > 0 ? 'mixed' : false} />
-          </button>
-        );
-      },
-      meta: { thClassName: 'w-10 !pl-4 !pr-1', tdClassName: 'w-10 !pl-4 !pr-1' },
-    });
-  }
-
+  // 勾选列常驻（桌面表格，照买取X；手机卡片另有选择模式）
+  columns.push({
+    id: SELECT_COLUMN_ID,
+    enableSorting: false,
+    header: () => (
+      <button type="button" onClick={deps.toggleSelectAllVisible} aria-label="全选当前显示的记录" title="全选当前显示的记录" className="flex items-center">
+        <CheckMark state={deps.allVisibleSelected ? true : deps.someVisibleSelected ? 'mixed' : false} />
+      </button>
+    ),
+    cell: ({ row }) => {
+      const ids = row.original.transactions.map(t => t.id);
+      const n = ids.filter(id => deps.selectedIds.has(id)).length;
+      return (
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation();
+            deps.onSelectGroup(ids);
+          }}
+          aria-label="全选该组"
+          className="flex items-center"
+        >
+          <CheckMark state={n === ids.length ? true : n > 0 ? 'mixed' : false} />
+        </button>
+      );
+    },
+    meta: { thClassName: 'w-10 !pl-4 !pr-1', tdClassName: 'w-10 !pl-4 !pr-1' },
+  });
   columns.push(
     {
       id: 'expand',
