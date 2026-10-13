@@ -2,9 +2,17 @@
 // 按当前比较数量调 /api/shipment-plan（与 MCP plan_shipment 同一个求解器：全局最优分配，算运费、包邮条件、箱型、手续费，
 // 附自检）。缺尺寸的商品可就地补尺寸后重算；数量改了会提示重新计算。
 // 每家店：店名链到店铺首页，商品名链到该店的 JAN 搜索页（地址见 lib/server/mcp-tools.ts 的 attachStoreLinks），可复制单个 / 整箱 JAN。
+// 每家店的「售出」：把这箱的商品当作同一订单售出（与交易页「同一订单售出」同一个表单），预填店铺、数量、该店单价，
+// 运费（不包邮时）与汇款手续费按金额分摊到各件；店铺奖励（incentive）出售记录没有对应字段，不带过去。
 'use client';
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import Modal, { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
+import MultiItemSaleForm from '@/components/MultiItemSaleForm';
+import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
+import { fetchSingleTransaction } from '@/lib/api/transactions-cache';
+import type { Transaction } from '@/types/database.types';
 import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
 import { Copy16Regular } from '@fluentui/react-icons/headless/svg/copy';
 import MessageBar from '@/components/fluent/MessageBar';
@@ -51,6 +59,19 @@ interface PlanResult {
   checks?: { ok: boolean; lines: string[]; greedy_net: number };
 }
 
+/** 按权重分摊整数金额（向下取整，余数给最后一件），保证合计不变 */
+function allocate(total: number, weights: number[]): number[] {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (!total || !sum) return weights.map(() => 0);
+  let acc = 0;
+  return weights.map((w, i) => {
+    if (i === weights.length - 1) return total - acc;
+    const v = Math.floor((total * w) / sum);
+    acc += v;
+    return v;
+  });
+}
+
 /** 每家店的商品清单默认显示的条数，多出的折叠 */
 const BOX_ITEM_LIMIT = 5;
 
@@ -69,6 +90,39 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
       else next.add(store);
       return next;
     });
+
+  // ── 按店售出 ──
+  const queryClient = useQueryClient();
+  const [sale, setSale] = useState<{ box: PlanBox; transactions: Transaction[]; drafts: Record<string, { quantity_sold: number; selling_price_per_unit: number; shipping_fee: number; platform_fee: number }> } | null>(null);
+  const [saleLoading, setSaleLoading] = useState<string | null>(null);
+  const [saleError, setSaleError] = useState('');
+  const [soldStores, setSoldStores] = useState<Set<string>>(new Set());
+  const closeSale = () => setSale(null);
+  const saleGuard = useModalCloseGuard(closeSale);
+
+  const openSale = async (box: PlanBox) => {
+    setSaleError('');
+    setSaleLoading(box.store);
+    try {
+      const ids = [...new Set(box.items.map(i => i.tid))];
+      const transactions = await Promise.all(ids.map(id => fetchSingleTransaction(id)));
+      const amounts = box.items.map(i => i.unit_price * i.qty);
+      const ship = allocate(box.free_shipping ? 0 : box.shipping, amounts);
+      const fee = allocate(box.transfer_fee || 0, amounts);
+      const drafts: Record<string, { quantity_sold: number; selling_price_per_unit: number; shipping_fee: number; platform_fee: number }> = {};
+      box.items.forEach((it, i) => {
+        const prev = drafts[it.tid];
+        drafts[it.tid] = prev
+          ? { ...prev, quantity_sold: prev.quantity_sold + it.qty, shipping_fee: prev.shipping_fee + ship[i], platform_fee: prev.platform_fee + fee[i] }
+          : { quantity_sold: it.qty, selling_price_per_unit: it.unit_price, shipping_fee: ship[i], platform_fee: fee[i] };
+      });
+      setSale({ box, transactions, drafts });
+    } catch {
+      setSaleError(`读取「${box.store}」这箱的交易失败，请重试`);
+    } finally {
+      setSaleLoading(null);
+    }
+  };
 
   const run = async () => {
     setLoading(true);
@@ -140,9 +194,25 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
                       {box.size} 尺寸 · {box.qty} 个 · {box.free_shipping ? '包邮' : `运费 ${formatCurrency(box.shipping)}`}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-mono font-semibold text-[var(--color-text)]">{formatCurrency(box.net)}</div>
-                    <div className="text-xs text-[var(--color-text-secondary)]">净回款</div>
+                  <div className="flex items-start gap-2">
+                    <div className="text-right">
+                      <div className="font-mono font-semibold text-[var(--color-text)]">{formatCurrency(box.net)}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)]">净回款</div>
+                    </div>
+                    {soldStores.has(box.store) ? (
+                      <span className="whitespace-nowrap rounded px-2 py-1 text-xs text-[var(--color-success)]">已售出</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openSale(box)}
+                        disabled={!!saleLoading || stale}
+                        title={stale ? '比较数量改过了，先重新计算' : '这箱当作同一订单售出'}
+                        className={button.primary + ' gap-1.5 whitespace-nowrap'}
+                      >
+                        {saleLoading === box.store && <Spinner />}
+                        售出
+                      </button>
+                    )}
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1 text-sm">
@@ -181,6 +251,7 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
             ))}
           </div>
 
+          {saleError && <MessageBar intent="error">{saleError}</MessageBar>}
           {!!result.unpriced?.length && (
             <MessageBar intent="warning">没有 7 天内有效报价、建议留库：{result.unpriced.map(u => `${u.name} ×${u.qty}`).join('、')}</MessageBar>
           )}
@@ -229,6 +300,41 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
       {!!result?.no_jan?.length && (
         <p className="mt-2 text-xs text-[var(--color-text-secondary)]">没有 JAN、不参与计算：{result.no_jan.join('、')}</p>
       )}
+      {/* 按店售出 = 同一订单售出（交易页同一个表单），预填店铺 / 数量 / 单价 / 分摊的运费与手续费 */}
+      <Modal
+        isOpen={!!sale}
+        onClose={saleGuard.doClose}
+        beforeClose={saleGuard.handleCloseRequest}
+        closeOnEsc={!saleGuard.showConfirm}
+        closeOnOverlayClick={!saleGuard.showConfirm}
+        title={sale ? `售出到 ${sale.box.store}（同一订单 ${sale.transactions.length} 件）` : ''}
+        size="xl"
+      >
+        {sale && (
+          <MultiItemSaleForm
+            transactions={sale.transactions}
+            initialPlatformName={sale.box.store}
+            initialDrafts={sale.drafts}
+            onSuccess={() => {
+              setSoldStores(prev => new Set(prev).add(sale.box.store));
+              setSale(null);
+              queryClient.invalidateQueries({ queryKey: ['transactions'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            }}
+            onCancel={saleGuard.doClose}
+            onDirtyChange={saleGuard.setIsDirty}
+          />
+        )}
+      </Modal>
+      <ConfirmModal
+        isOpen={saleGuard.showConfirm}
+        onClose={saleGuard.cancelConfirm}
+        onConfirm={saleGuard.doClose}
+        title={UNSAVED_CHANGES_CONFIRM.title}
+        message={UNSAVED_CHANGES_CONFIRM.message}
+        confirmText={UNSAVED_CHANGES_CONFIRM.confirmText}
+        cancelText={UNSAVED_CHANGES_CONFIRM.cancelText}
+      />
     </section>
   );
 }
