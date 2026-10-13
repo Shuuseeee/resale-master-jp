@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { card } from '@/lib/theme';
 import Spinner from '@/components/fluent/Spinner';
 import { ConfirmModal } from '@/components/Modal';
+import CopyButton from '@/components/CopyButton';
 
 interface Grant {
   client_id: string;
@@ -51,8 +52,10 @@ export default function ConnectedAppsSection() {
     <section className={card.primary + ' p-6'}>
       <h2 className="text-xl font-bold text-[var(--color-text)]">已连接的 AI</h2>
       <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-        在 claude.ai 等支持 MCP 的 AI 里添加连接器（地址 <code className="text-[var(--color-text)]">{origin}/api/mcp/mcp</code>），
-        登录并点「允许」后会出现在这里。AI 只能查询库存 / 利润 / 交易明细 / 店铺规则和计算出货方案，不能修改数据。
+        在 claude.ai 等支持 MCP 的 AI 里添加连接器（地址{' '}
+        <CopyButton text={`${origin}/api/mcp/mcp`} label="复制 MCP 地址">
+          {origin}/api/mcp/mcp
+        </CopyButton>）， 登录并点「允许」后会出现在这里。AI 只能查询库存 / 利润 / 交易明细 / 店铺规则和计算出货方案，不能修改数据。
       </p>
       <div className="mt-5">
         {error ? (

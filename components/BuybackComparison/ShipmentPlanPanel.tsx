@@ -14,8 +14,7 @@ import MultiItemSaleForm from '@/components/MultiItemSaleForm';
 import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import { fetchSingleTransaction } from '@/lib/api/transactions-cache';
 import type { Transaction } from '@/types/database.types';
-import { Checkmark16Regular } from '@fluentui/react-icons/headless/svg/checkmark';
-import { Copy16Regular } from '@fluentui/react-icons/headless/svg/copy';
+import CopyButton from '@/components/CopyButton';
 import MessageBar from '@/components/fluent/MessageBar';
 import Spinner from '@/components/fluent/Spinner';
 import ShippingMetaForm from '@/components/BuybackComparison/ShippingMetaForm';
@@ -409,23 +408,3 @@ function Stat({ label, value, strong, tone }: { label: string; value: string; st
   );
 }
 
-/** 小号复制按钮：点后图标变成勾 1.5 秒（弹层里不再叠一层提示对话框） */
-function CopyButton({ text, label }: { text: string; label: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        navigator.clipboard.writeText(text).then(() => {
-          setDone(true);
-          setTimeout(() => setDone(false), 1500);
-        });
-      }}
-      className={`shrink-0 rounded-[var(--radius-sm)] p-1 transition-colors hover:bg-[var(--color-bg-hover)] ${done ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
-      title={done ? '已复制' : label}
-      aria-label={label}
-    >
-      {done ? <Checkmark16Regular /> : <Copy16Regular />}
-    </button>
-  );
-}
