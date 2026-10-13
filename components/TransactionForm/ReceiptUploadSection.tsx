@@ -41,7 +41,7 @@ export function ReceiptUploadSection({
               <button
                 type="button"
                 onClick={onClearImage}
-                className="fluent-btn fluent-btn--default absolute right-2 top-2 px-2"
+                className="fluent-btn fluent-btn--default fluent-btn--icon absolute right-2 top-2"
                 aria-label="删除截图"
                 title="删除截图"
               >

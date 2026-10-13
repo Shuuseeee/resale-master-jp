@@ -31,7 +31,7 @@ export function JanField({ janCode, janLooking, onInputChange, onScanBarcode }: 
           <button
             type="button"
             onClick={onScanBarcode}
-            className="fluent-btn fluent-btn--subtle shrink-0 px-2"
+            className="fluent-btn fluent-btn--subtle fluent-btn--icon shrink-0"
             aria-label="扫描条形码"
             title="扫描条形码"
           >

@@ -505,6 +505,21 @@
     }
   }
 
+  /* 只有图标的按钮：Fluent icon-only 不受 96 最小宽限制，桌面 32×32、padding 5（同 .shell-icon-btn），手机 40×40 触控尺寸 */
+  .fluent-btn--icon {
+    width: 40px;
+    min-width: 0;
+    padding: 0;
+  }
+
+  @media (min-width: 768px) {
+    .fluent-btn--icon {
+      width: 32px;
+      min-width: 32px;
+      padding: 5px;
+    }
+  }
+
   .fluent-btn:disabled {
     background: var(--colorNeutralBackgroundDisabled);
     border-color: transparent;
