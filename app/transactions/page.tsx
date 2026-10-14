@@ -718,8 +718,8 @@ function TransactionsContent() {
     return items;
   }, [filteredTransactions, isGrouped, buildGroupSummary]);
 
-  // 待入账「按订单」视图（对账）：读这些交易的出售记录，按真实的出售订单分组（同一订单售出建的 sale_orders；
-  // 没有的按 店铺 + 订单号，再没有就一次出售一张）。之前按「交易第一次出售的订单号」分组、金额用交易全部出售的合计，
+  // 待入账「按订单」视图（对账）：读这些交易的出售记录，按真实的出售订单分组（店铺 + 订单号；没有订单号的按
+  // 同一订单售出建的 sale_orders，再没有就一次出售一张）。之前按「交易第一次出售的订单号」分组、金额用交易全部出售的合计，
   // 同一笔进货分两单卖时会归错、多算
   const awaitingIds = useMemo(
     () => (statusFilter === 'awaiting_payment' ? filteredTransactions.map(t => t.id) : []),
@@ -748,10 +748,12 @@ function TransactionsContent() {
     for (const r of awaitingSales) {
       const tx = txMap.get(r.transaction_id);
       if (!tx) continue;
-      const key = r.sale_group_id
-        ? `g:${r.sale_group_id}`
-        : r.sale_order_number
-          ? `o:${r.selling_platform_id ?? ''}:${r.sale_order_number}`
+      // 照买取X：有订单号就按 店铺 + 订单号（取消一笔后单独补回来的出售也并回原订单）；没订单号才用同一订单售出的分组
+      const orderNo = r.sale_order_number?.trim();
+      const key = orderNo
+        ? `o:${r.selling_platform_id ?? ''}:${orderNo}`
+        : r.sale_group_id
+          ? `g:${r.sale_group_id}`
           : `s:${r.id}`;
       let order = map.get(key);
       if (!order) {
