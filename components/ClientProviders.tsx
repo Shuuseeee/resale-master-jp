@@ -9,6 +9,7 @@ import { ThemeSync } from '@/components/ThemeSync';
 import OfflineCacheProvider from '@/components/OfflineCacheProvider';
 import QueryInvalidationBridge from '@/components/QueryInvalidationBridge';
 import RecurringExpensesRunner from '@/components/RecurringExpensesRunner';
+import BuybackStoresSync from '@/components/BuybackStoresSync';
 import { OFFLINE_CACHE_MAX_AGE } from '@/lib/offline/persister';
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               <ThemeSync />
               <QueryInvalidationBridge />
               <RecurringExpensesRunner />
+              <BuybackStoresSync />
               {children}
             </PlatformsProvider>
           </OfflineCacheProvider>

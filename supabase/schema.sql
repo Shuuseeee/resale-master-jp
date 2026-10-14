@@ -506,7 +506,9 @@ CREATE TABLE public.user_preferences (
   transactions_columns jsonb,
   updated_at timestamp with time zone DEFAULT now(),
   theme_palette text,
-  default_payment_method_id uuid
+  default_payment_method_id uuid,
+  -- 「设置 > 买取价格检查」勾选的买取店（规范店名）；NULL = 没设置过 = 全部店。网页各设备与 MCP 出货方案共用
+  buyback_stores text[]
 );
 
 CREATE TABLE public.user_roles (

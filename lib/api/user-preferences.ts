@@ -53,3 +53,30 @@ export async function saveDefaultPaymentMethodId(id: string | null): Promise<{ e
 
   return { error: error ?? undefined };
 }
+
+// —— 买取价格检查勾选的店（user_preferences.buyback_stores，SQL 31）——
+// 网页各设备与 MCP 出货方案共用；浏览器里的 kaitorix_config 是它的本地副本（components/BuybackStoresSync.tsx 同步）
+
+/** 读取；undefined = 读取失败（离线 / 库没升级），null = 没设置过 */
+export async function getBuybackStores(): Promise<string[] | null | undefined> {
+  const { data, error } = await supabase
+    .from('user_preferences')
+    .select('buyback_stores')
+    .maybeSingle();
+  if (error) return undefined;
+  return (data?.buyback_stores as string[] | null | undefined) ?? null;
+}
+
+export async function saveBuybackStores(stores: string[]): Promise<{ error?: unknown }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { error } = await supabase
+    .from('user_preferences')
+    .upsert(
+      { user_id: user.id, buyback_stores: stores, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+
+  return { error: error ?? undefined };
+}

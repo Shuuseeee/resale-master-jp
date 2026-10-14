@@ -149,6 +149,16 @@ export function loadKaitorixConfig(): KaitorixConfig {
   }
 }
 
+/** 浏览器里有没有用户保存过的设置（没有 = 一直用默认的全部店） */
+export function hasStoredKaitorixConfig(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
 export function saveKaitorixConfig(config: KaitorixConfig): void {
   if (typeof window === 'undefined') return;
 

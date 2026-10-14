@@ -142,9 +142,18 @@ export async function planShipmentForSelection(
   return { ...result, no_jan: noJan };
 }
 
+/** 用户在「设置 > 买取价格检查」勾选的店（user_preferences.buyback_stores，SQL 31）；没设置过 / 库没升级 = undefined（全部店） */
+async function userBuybackStores(user: McpUser): Promise<string[] | undefined> {
+  const { data, error } = await serviceDb().from('user_preferences').select('buyback_stores').eq('user_id', user.userId).maybeSingle();
+  if (error || !Array.isArray(data?.buyback_stores)) return undefined;
+  return data.buyback_stores as string[];
+}
+
 /** 共同部分：查尺寸与报价 → 组装求解器输入 → 调 /api/solver。rows 需带 shippable（本次出货件数） */
 async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOptions, 'excludeStores' | 'onlyStores' | 'staleLimit'>) {
   const sb = serviceDb();
+  // 只用勾选的店：网页请求带了就用它（浏览器里的副本），否则读账号里存的（MCP）
+  const onlyStores = opts.onlyStores ?? await userBuybackStores(user);
   const jans = [...new Set(purchases.map(r => r.jan_code as string))];
   const [metaRows, priceRows] = await Promise.all([
     fetchAllByIds<any>(jans, (chunk, from, to, o) =>
@@ -158,7 +167,7 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
   const now = Date.now();
   const prices = new Map<string, Record<string, [number, number]>>();
   // 与网页比价 / 仪表盘同一口径：没勾选的店的报价不参与（filterPricesByStores 也是按规范店名白名单）
-  const only = opts.onlyStores ? new Set(opts.onlyStores.map(normalizeStoreName)) : null;
+  const only = onlyStores ? new Set(onlyStores.map(normalizeStoreName)) : null;
   for (const p of priceRows) {
     if (only && !only.has(normalizeStoreName(p.store))) continue;
     const age = p.price_updated_at ? Math.max(0, Math.floor((now - Date.parse(p.price_updated_at)) / DAY_MS)) : 0;

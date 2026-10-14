@@ -11,6 +11,7 @@ import { Payment20Filled, Payment20Regular } from '@fluentui/react-icons/headles
 import DualIcon from '@/components/fluent/DualIcon';
 import { prepareOrderImport, commitOrderImport, OrderImportError, type OrderImportResult, type PreparedOrderImport } from '@/lib/api/order-import';
 import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
+import { saveBuybackStores } from '@/lib/api/user-preferences';
 import { downloadImportTemplate } from '@/lib/api/order-export';
 import MessageBar from '@/components/fluent/MessageBar';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
@@ -114,12 +115,14 @@ export default function SettingsPage() {
     });
   };
 
-  const saveKaitorixSettings = () => {
+  // 勾选的店同时存进数据库（user_preferences.buyback_stores）：其它设备与 MCP 的出货方案也按它过滤
+  const saveKaitorixSettings = async () => {
     setKaitorixSaving(true);
     saveKaitorixConfig(kaitorixConfig);
-    setKaitorixSaveMessage('已保存');
+    const { error } = await saveBuybackStores(kaitorixConfig.enabledStores);
+    setKaitorixSaveMessage(error ? '已保存在这台设备（同步到账号失败，请稍后再保存一次）' : '已保存');
     setKaitorixSaving(false);
-    setTimeout(() => setKaitorixSaveMessage(''), 2000);
+    setTimeout(() => setKaitorixSaveMessage(''), error ? 5000 : 2000);
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
