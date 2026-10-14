@@ -147,8 +147,8 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
     fetchJanThumbnails(jans).then(setThumbs);
   }, [data]);
 
-  const cardNames = useMemo(() => new Map(data.paymentMethods.map(pm => [pm.id, pm.name])), [data.paymentMethods]);
-  const account = (cardId: string | null) => (cardId ? cardNames.get(cardId) ?? '' : '');
+  // 「账号」= 购买账号标签（买取X「アカウント」），不是支付方式（之前误显示成卡名）
+  const account = (p: { account: string | null }) => p.account ?? '';
   const image = (jan: string | null) => (jan ? thumbs.get(jan)?.image_url : undefined);
 
   const diffs = useMemo(() => priceDiffs(data, best, enabledStores, today), [data, best, enabledStores, today]);
@@ -161,7 +161,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   const f = sub[tab];
   const setF = (patch: Partial<SubFilters>) => setSub(prev => ({ ...prev, [tab]: { ...prev[tab], ...patch } }));
   const matchStock = (r: StockRow) =>
-    (!f.jan || r.p.jan === f.jan) && (!f.source || r.p.source === f.source) && (!f.account || account(r.p.cardId) === f.account);
+    (!f.jan || r.p.jan === f.jan) && (!f.source || r.p.source === f.source) && (!f.account || account(r.p) === f.account);
   const stockShown = stock.filter(matchStock);
   const pendingShown = pending.filter(matchStock);
   const salesShown = sales.filter(
@@ -169,7 +169,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       (!f.jan || r.p.jan === f.jan) &&
       (!f.source || r.p.source === f.source) &&
       (!f.target || r.s.target === f.target) &&
-      (!f.account || account(r.p.cardId) === f.account) &&
+      (!f.account || account(r.p) === f.account) &&
       (!f.orderId || (r.s.orderId ?? '').toLowerCase().includes(f.orderId.toLowerCase())),
   );
   const jansShown = jans.filter(r => !f.jan || r.jan === f.jan);
@@ -260,7 +260,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       downloadCsv(
         toCsv(
           ['进货日期', '商品名', 'JAN', '进货单价', '单件成本', tab === 'stock' ? '库存' : '数量', '进货来源', '账号', '最高收购价', '收购店', '预估利润', '备注'],
-          rows.map(r => [r.p.date, r.p.productName, r.p.jan, r.p.unitPrice, r.unitCost, r.qty, r.p.source, account(r.p.cardId), r.best?.price ?? null, r.best?.stores.join('、') ?? null, r.estimated, r.p.notes]),
+          rows.map(r => [r.p.date, r.p.productName, r.p.jan, r.p.unitPrice, r.unitCost, r.qty, r.p.source, account(r.p), r.best?.price ?? null, r.best?.stores.join('、') ?? null, r.estimated, r.p.notes]),
         ),
         name,
       );
@@ -268,7 +268,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       downloadCsv(
         toCsv(
           ['出售日期', '商品名', 'JAN', '出售对象', '单价', '数量', '合计', '扣除', '进货来源', '账号', '利润', '出售订单ID'],
-          salesShown.map(r => [r.s.date, r.p.productName, r.p.jan, r.s.target, r.s.price, r.s.qty, r.total, r.s.deduction, r.p.source, account(r.p.cardId), Math.round(r.profit), r.s.orderId]),
+          salesShown.map(r => [r.s.date, r.p.productName, r.p.jan, r.s.target, r.s.price, r.s.qty, r.total, r.s.deduction, r.p.source, account(r.p), Math.round(r.profit), r.s.orderId]),
         ),
         name,
       );
@@ -321,7 +321,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
           ]
         : []),
       { id: 'source', header: '进货来源', accessorFn: r => r.p.source ?? '', meta: { minBreakpoint: 'lg' } },
-      { id: 'account', header: '账号', accessorFn: r => account(r.p.cardId), meta: { minBreakpoint: 'xl' } },
+      { id: 'account', header: '账号', accessorFn: r => account(r.p), meta: { minBreakpoint: 'xl' } },
       { id: 'best', header: '收购价', accessorFn: r => r.best?.price ?? -1, cell: ({ row: { original: r } }) => <BestPrice best={r.best} diff={r.diff} />, meta: { align: 'right' } },
       { id: 'estimated', header: '预估利润', accessorFn: r => r.estimated ?? -Infinity, cell: ({ row: { original: r } }) => <Money value={r.estimated} color />, meta: { align: 'right' } },
       ...(!isStock
@@ -351,7 +351,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, thumbs, cardNames]);
+  }, [tab, thumbs]);
 
   const saleColumns = useMemo(
     (): ColumnDef<SaleRow>[] => [
@@ -363,12 +363,12 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       { id: 'total', header: '合计', accessorFn: r => r.total, cell: ({ getValue }) => <Money value={getValue() as number} />, meta: { align: 'right' } },
       { id: 'deduction', header: '扣除', accessorFn: r => r.s.deduction, cell: ({ getValue }) => <Money value={getValue() as number} />, meta: { align: 'right', minBreakpoint: 'lg' } },
       { id: 'source', header: '进货来源', accessorFn: r => r.p.source ?? '', meta: { minBreakpoint: 'xl' } },
-      { id: 'account', header: '账号', accessorFn: r => account(r.p.cardId), meta: { minBreakpoint: 'xl' } },
+      { id: 'account', header: '账号', accessorFn: r => account(r.p), meta: { minBreakpoint: 'xl' } },
       { id: 'profit', header: '利润', accessorFn: r => r.profit, cell: ({ getValue }) => <Money value={Math.round(getValue() as number)} color />, meta: { align: 'right' } },
       { id: 'order', header: '出售订单ID', accessorFn: r => r.s.orderId ?? '', meta: { minBreakpoint: 'xl' } },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [thumbs, cardNames],
+    [thumbs],
   );
 
   const janColumns = useMemo(
@@ -468,7 +468,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
     opts = [
       { key: 'jan', label: 'JAN', values: uniq(rows.map(r => r.p.jan)) },
       { key: 'source', label: '进货来源', values: uniq(rows.map(r => r.p.source)) },
-      { key: 'account', label: '账号', values: uniq(rows.map(r => account(r.p.cardId))) },
+      { key: 'account', label: '账号', values: uniq(rows.map(r => account(r.p))) },
     ];
     actions = (
       <button type="button" className="fluent-btn fluent-btn--default" onClick={startCompare}>
@@ -493,7 +493,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
       { key: 'jan', label: 'JAN', values: uniq(sales.map(r => r.p.jan)) },
       { key: 'source', label: '进货来源', values: uniq(sales.map(r => r.p.source)) },
       { key: 'target', label: '出售对象', values: uniq(sales.map(r => r.s.target)) },
-      { key: 'account', label: '账号', values: uniq(sales.map(r => account(r.p.cardId))) },
+      { key: 'account', label: '账号', values: uniq(sales.map(r => account(r.p))) },
     ];
     showOrderId = true;
     table = <DataTable data={salesShown} columns={saleColumns} getRowId={r => `${r.p.id}-${r.s.date}-${r.s.qty}-${r.s.price}-${r.s.orderId ?? ''}`} mobile="cards" bare emptyState={empty('没有出售记录')} />;

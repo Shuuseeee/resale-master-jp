@@ -82,6 +82,8 @@ export interface PaymentMethod {
   card_points_platform_id: string | null; // 关联的积分平台ID
   /** 卡号后 4 位（可选，用来区分多张卡）；线上库加列前读不到，按可选处理 */
   card_last4?: string | null;
+  /** 对应的买取X 卡 ID（导入买取X 文件时据此认卡，SQL 30） */
+  kaitorix_card_id?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -134,6 +136,8 @@ export interface Transaction {
   shipping_fee?: number;
   // 进货时用掉的优惠券金额（对齐买取X「クーポン」）：单价已是扣后价，不影响成本与利润，只做记录 / 导入导出。库里加列之前为 undefined
   coupon_amount?: number;
+  // 购买账号标签（买取X「アカウント」）：多账号时区分用哪个账号买的，任意填写，不是支付方式（SQL 30）
+  purchase_account?: string | null;
 
   // 凭证：用户手动上传的采购截图（per-transaction）。商品缩略图按 JAN 共享，见 JanThumbnailCache
   image_url: string | null;
@@ -360,6 +364,7 @@ export interface TransactionFormData {
   unit_price?: number;
   shipping_fee?: number; // 运费（计入采购总价）
   coupon_amount?: number; // 优惠券金额（单价已扣，不影响成本）
+  purchase_account?: string; // 购买账号标签（买取X「アカウント」，多账号时区分用哪个账号买的）
   purchase_platform_id?: string;
   order_number?: string;
   image_url?: string;

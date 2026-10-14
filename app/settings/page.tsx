@@ -9,7 +9,8 @@ import { DocumentArrowUp20Filled, DocumentArrowUp20Regular } from '@fluentui/rea
 import { PlugConnected20Filled, PlugConnected20Regular } from '@fluentui/react-icons/headless/svg/plug-connected';
 import { Payment20Filled, Payment20Regular } from '@fluentui/react-icons/headless/svg/payment';
 import DualIcon from '@/components/fluent/DualIcon';
-import { importOrderFile, OrderImportError, type OrderImportResult } from '@/lib/api/order-import';
+import { prepareOrderImport, commitOrderImport, OrderImportError, type OrderImportResult, type PreparedOrderImport } from '@/lib/api/order-import';
+import { paymentMethodDisplayName } from '@/lib/utils/paymentMethods';
 import { downloadImportTemplate } from '@/lib/api/order-export';
 import MessageBar from '@/components/fluent/MessageBar';
 import { loadAmazonPointConfig, DEFAULT_AMAZON_CONFIG, dismissLegacyAmazonCardRate, getLegacyAmazonCardRate, type AmazonPointConfig } from '@/lib/amazon-point-config';
@@ -53,6 +54,9 @@ export default function SettingsPage() {
   const [kaitorixSaveMessage, setKaitorixSaveMessage] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<OrderImportResult | null>(null);
+  // 文件里有还认不出的买取X 卡 ID 时，先让用户选对应的支付方式（选过的记住，下次不再问）
+  const [pendingImport, setPendingImport] = useState<PreparedOrderImport | null>(null);
+  const [cardChoices, setCardChoices] = useState<Record<string, string | null>>({});
   // 校验或写入失败：整份没有导入，列出全部原因
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,13 +129,34 @@ export default function SettingsPage() {
     setImporting(true);
     setImportResult(null);
     setImportErrors([]);
+    setPendingImport(null);
     try {
-      setImportResult(await importOrderFile(file));
+      const prepared = await prepareOrderImport(file);
+      if (prepared.unresolvedCards.length > 0) {
+        setCardChoices(Object.fromEntries(prepared.unresolvedCards.map(c => [c.cardId, c.suggestedId])));
+        setPendingImport(prepared);
+      } else {
+        setImportResult(await commitOrderImport(prepared));
+      }
     } catch (err) {
       setImportErrors(err instanceof OrderImportError ? err.errors : [err instanceof Error ? err.message : String(err)]);
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const confirmPendingImport = async () => {
+    if (!pendingImport) return;
+    setImporting(true);
+    try {
+      setImportResult(await commitOrderImport(pendingImport, cardChoices));
+      setPendingImport(null);
+    } catch (err) {
+      setImportErrors(err instanceof OrderImportError ? err.errors : [err instanceof Error ? err.message : String(err)]);
+      setPendingImport(null);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -349,15 +374,53 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {pendingImport && (
+                <div className={card.primary + ' p-4'}>
+                  <h3 className="text-base font-semibold text-[var(--color-text)]">这些卡对应哪个支付方式？</h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    买取X 导出的文件里只有卡的内部 ID，没有卡名。选一次就会记住，以后导入同一张卡不再询问。
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    {pendingImport.unresolvedCards.map(c => (
+                      <div key={c.cardId} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_260px] md:items-center">
+                        <div className="min-w-0 text-sm">
+                          <div className="font-medium text-[var(--color-text)]">
+                            {c.last4 ? `尾号 ${c.last4} 的卡` : '未知的卡'}（{c.count} 笔进货）
+                          </div>
+                          <div className="truncate font-mono text-xs text-[var(--color-text-muted)]" title={c.cardId}>买取X 卡 ID：{c.cardId}</div>
+                        </div>
+                        <Select
+                          value={cardChoices[c.cardId] ?? ''}
+                          onChange={v => setCardChoices(prev => ({ ...prev, [c.cardId]: v || null }))}
+                          options={pendingImport.paymentMethods
+                            .filter(m => m.is_active !== false || m.id === cardChoices[c.cardId])
+                            .map(m => ({ value: m.id, label: paymentMethodDisplayName(m) }))}
+                          placeholder="不设置支付方式"
+                          clearable
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={confirmPendingImport} disabled={importing} className={button.primary}>
+                      {importing ? <span className="flex items-center gap-2"><Spinner />导入中...</span> : '继续导入'}
+                    </button>
+                    <button type="button" onClick={() => setPendingImport(null)} disabled={importing} className={button.secondary}>
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {importResult && (
-                <MessageBar intent={importResult.unmatchedAccounts.length > 0 ? 'warning' : 'success'}>
+                <MessageBar intent={importResult.unassignedCards > 0 ? 'warning' : 'success'}>
                   <div>
                     导入完成：进货 {importResult.purchases} 笔、出售 {importResult.sales} 条、退货 {importResult.returns} 条、{importResult.arrivals ? `到货 ${importResult.arrivals} 条、` : ''}经费 {importResult.expenses} 条
                     {importResult.skipped > 0 && `；已存在跳过 ${importResult.skipped} 笔`}
                   </div>
-                  {importResult.unmatchedAccounts.length > 0 && (
+                  {importResult.unassignedCards > 0 && (
                     <div className="mt-1">
-                      这些账号在支付方式里找不到，对应进货没有关联支付方式：{importResult.unmatchedAccounts.join('、')}
+                      有 {importResult.unassignedCards} 笔进货的卡没有选对应的支付方式，没有关联支付方式
                     </div>
                   )}
                 </MessageBar>

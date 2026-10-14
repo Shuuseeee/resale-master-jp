@@ -7,6 +7,9 @@ import type { PurchasePlatform } from '@/types/database.types';
 
 interface PurchaseInfoSectionProps {
   orderNumber: string;
+  purchaseAccount: string;
+  /** 用过的账号（输入时的候选） */
+  accountSuggestions: string[];
   purchasePlatformId: string;
   purchasePlatforms: PurchasePlatform[];
   newPlatformName: string;
@@ -18,6 +21,8 @@ interface PurchaseInfoSectionProps {
 
 export function PurchaseInfoSection({
   orderNumber,
+  purchaseAccount,
+  accountSuggestions,
   purchasePlatformId,
   purchasePlatforms,
   newPlatformName,
@@ -45,6 +50,23 @@ export function PurchaseInfoSection({
             placeholder="订单号"
             className="w-full sn-form-input"
           />
+        </div>
+
+        {/* 购买账号标签（买取X「アカウント」）：多账号时区分用哪个账号买的，可不填；不是支付方式 */}
+        <div>
+          <label className="sn-form-label">账号</label>
+          <input
+            type="text"
+            name="purchase_account"
+            value={purchaseAccount}
+            onChange={onInputChange}
+            list="purchase-account-options"
+            placeholder="可不填，多个账号时区分用"
+            className="w-full sn-form-input"
+          />
+          <datalist id="purchase-account-options">
+            {accountSuggestions.map(a => <option key={a} value={a} />)}
+          </datalist>
         </div>
 
         <div>

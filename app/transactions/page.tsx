@@ -191,12 +191,13 @@ function TransactionsContent() {
     const statusParam = searchParams.get('st');
     const status = statusParam ? statusParam.split(',') as FilterValues['status'] : [];
     const paymentMethodIds = (searchParams.get('pm') || '').split(',').filter(Boolean);
+    const purchaseAccounts = (searchParams.get('acct') || '').split(',').filter(Boolean);
     const purchasePlatformIds = (searchParams.get('pp') || '').split(',').filter(Boolean);
     const sellingPlatformIds = (searchParams.get('sp') || '').split(',').filter(Boolean);
     const janFilterMode = (searchParams.get('jfm') as 'include' | 'exclude') || 'include';
     const excludeJanCodes = (searchParams.get('ejc') || '').split(',').filter(Boolean);
-    if (dateFrom || dateTo || productName || includeJanCodes.length > 0 || status.length > 0 || paymentMethodIds.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
-      return { dateFrom, dateTo, productName, includeJanCodes, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
+    if (dateFrom || dateTo || productName || includeJanCodes.length > 0 || status.length > 0 || paymentMethodIds.length > 0 || purchaseAccounts.length > 0 || purchasePlatformIds.length > 0 || sellingPlatformIds.length > 0 || excludeJanCodes.length > 0) {
+      return { dateFrom, dateTo, productName, includeJanCodes, janFilterMode, excludeJanCodes, status, paymentMethodIds, purchaseAccounts, purchasePlatformIds, sellingPlatformIds, buybackStore: '' };
     }
     return null;
   });
@@ -330,6 +331,7 @@ function TransactionsContent() {
       if (activeFilters.includeJanCodes.length > 0) params.set('jan', activeFilters.includeJanCodes.join(','));
       if (activeFilters.status.length > 0) params.set('st', activeFilters.status.join(','));
       if (activeFilters.paymentMethodIds.length > 0) params.set('pm', activeFilters.paymentMethodIds.join(','));
+      if (activeFilters.purchaseAccounts?.length) params.set('acct', activeFilters.purchaseAccounts.join(','));
       if (activeFilters.purchasePlatformIds.length > 0) params.set('pp', activeFilters.purchasePlatformIds.join(','));
       if (activeFilters.sellingPlatformIds.length > 0) params.set('sp', activeFilters.sellingPlatformIds.join(','));
       if (activeFilters.janFilterMode === 'exclude') params.set('jfm', 'exclude');
@@ -429,6 +431,10 @@ function TransactionsContent() {
     [...new Set(transactions.map(t => t.jan_code).filter((j): j is string => !!j))].sort(),
     [transactions]
   );
+  const purchaseAccounts = useMemo(() =>
+    [...new Set(transactions.map(t => t.purchase_account?.trim()).filter((a): a is string => !!a))].sort(),
+    [transactions]
+  );
 
   // 批量加载 JAN 维度共享缩略图（同 JAN 全站一份）
   useEffect(() => {
@@ -476,6 +482,7 @@ function TransactionsContent() {
           t.notes?.toLowerCase().includes(term) ||
           (t.jan_code || '').toLowerCase().includes(term) ||
           (t.order_number || '').toLowerCase().includes(term) ||
+          (t.purchase_account || '').toLowerCase().includes(term) ||
           t.purchase_price_total.toString().includes(term) ||
           purchasePlatformName.includes(term) ||
           matchesSellingPlatform ||
@@ -526,6 +533,11 @@ function TransactionsContent() {
 
         // 状态筛选（多选）
         if (activeFilters.status.length > 0 && !activeFilters.status.includes(t.status)) {
+          return false;
+        }
+
+        // 账号（购买账号标签）筛选
+        if (activeFilters.purchaseAccounts?.length && !activeFilters.purchaseAccounts.includes(t.purchase_account?.trim() || '')) {
           return false;
         }
 
@@ -1369,6 +1381,7 @@ function TransactionsContent() {
           purchasePlatforms={purchasePlatforms}
           sellingPlatforms={sellingPlatforms}
           janCodes={janCodes}
+          purchaseAccounts={purchaseAccounts}
           initialValues={activeFilters}
           hasBuybackData={buybackPrices.size > 0}
           buybackStores={storeNames}

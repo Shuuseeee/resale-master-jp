@@ -1,6 +1,11 @@
 // lib/api/order-import.ts — 导入买取X 格式的数据（CSV 基本 / XLSX 导入模板 / XLSX 全部数据）
-// 流程：读文件 → lib/order-data/parse.ts 解析并完整校验（有错整份不导入）→ 前端算好金额、积分平台
+// 流程：读文件 → lib/order-data/parse.ts 解析并完整校验（有错整份不导入）→（prepareOrderImport）
+//      → 文件里有还认不出的卡 ID 时让用户选对应的支付方式 →（commitOrderImport）前端算好金额、积分平台
 //      → 一次 RPC import_order_data 在数据库事务里写入（去重、补建平台、写进货 / 出售 / 退货 / 经费；出错整份回滚）
+// 卡：按「クレジットカードID / 信用卡ID」认（买取X 内部的卡 ID；我们自己导出的是支付方式 id）。
+//    「アカウント / 账号」是购买账号标签（多账号管理用），存进 transactions.purchase_account，不拿来匹配支付方式。
+//    认卡顺序：支付方式 id → 支付方式记住的买取X 卡 ID（kaitorix_card_id）→ 本次用户选的（选了就记住）。
+//    没有卡 ID 列的旧文件（我们 SQL 30 前的导出把卡名写在「账号」里）：账号与支付方式同名时当作卡。
 // 金额口径（与买取X 一致）：
 // - 采购总价 = 进货单价 × 数量 + 运费；「使用积分」= 积分抵扣，其余计为信用卡 / 其他支付
 // - 买取X 的「优惠券」是已从单价里扣掉的折扣（不影响原価），存进 transactions.coupon_amount，只做记录
@@ -20,8 +25,27 @@ export interface OrderImportResult {
   expenses: number;
   /** 到货明细条数（库没升级时 RPC 不返回） */
   arrivals?: number;
-  /** 文件里的「账号」在支付方式里找不到的名字（这些进货不挂支付方式） */
-  unmatchedAccounts: string[];
+  /** 有卡 ID 但没选对应支付方式的进货笔数（这些进货不挂支付方式） */
+  unassignedCards: number;
+}
+
+/** 文件里还认不出的买取X 卡 ID：让用户选对应的支付方式 */
+export interface CardChoice {
+  cardId: string;
+  /** 用到这张卡的进货笔数 */
+  count: number;
+  /** 备注里的卡号后 4 位（买取X Chrome 扩展取込的会写「支払: Visa ****4005」） */
+  last4: string | null;
+  /** 按后 4 位预选的支付方式 */
+  suggestedId: string | null;
+}
+
+export interface PreparedOrderImport {
+  fileName: string;
+  parsed: ReturnType<typeof parseOrderData>;
+  paymentMethods: PaymentMethodRef[];
+  pointsPlatforms: PointsPlatformRef[];
+  unresolvedCards: CardChoice[];
 }
 
 /** 校验没通过：一条都没导入 */
@@ -31,10 +55,13 @@ export class OrderImportError extends Error {
   }
 }
 
-interface PaymentMethodRef {
+export interface PaymentMethodRef {
   id: string;
   name: string;
   card_points_platform_id: string | null;
+  card_last4?: string | null;
+  kaitorix_card_id?: string | null;
+  is_active?: boolean;
 }
 
 interface PointsPlatformRef {
@@ -75,22 +102,77 @@ function joinNotes(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join('\n');
 }
 
-export async function importOrderFile(file: File): Promise<OrderImportResult> {
+const LAST4 = /\*{2,}\s*(\d{4})/;
+
+/** 文件里的卡 → 我们的支付方式（choices = 本次用户选的：买取X 卡 ID → 支付方式 id，null = 不设置） */
+function resolveCard(p: ParsedPurchase, methods: PaymentMethodRef[], choices: Record<string, string | null>) {
+  if (p.cardId) {
+    const id = methods.find(m => m.id === p.cardId)?.id
+      ?? methods.find(m => m.kaitorix_card_id === p.cardId)?.id
+      ?? choices[p.cardId] ?? null;
+    return { card: methods.find(m => m.id === id), account: p.account };
+  }
+  // 没有卡 ID：旧版导出把卡名写在「账号」里
+  const byName = p.account ? methods.find(m => m.name === p.account) : undefined;
+  return byName ? { card: byName, account: '' } : { card: undefined, account: p.account };
+}
+
+/** 第一步：解析、校验，找出还认不出的卡 ID（有错抛 OrderImportError，什么都不写） */
+export async function prepareOrderImport(file: File): Promise<PreparedOrderImport> {
   const parsed = parseOrderData(await readTables(file), file.name);
   if (parsed.errors.length > 0) throw new OrderImportError(parsed.errors);
 
   const [{ data: paymentMethods, error: pmError }, { data: pointsPlatforms, error: ppError }] = await Promise.all([
-    supabase.from('payment_methods').select('id, name, card_points_platform_id'),
+    // '*'：kaitorix_card_id / card_last4 是后加的列，库没升级时不能点名
+    supabase.from('payment_methods').select('*').order('name'),
     supabase.from('points_platforms').select('id, display_name').eq('is_active', true),
   ]);
   if (pmError) throw new Error(`读取支付方式失败：${pmError.message}`);
   if (ppError) throw new Error(`读取积分平台失败：${ppError.message}`);
-  const cards = new Map((paymentMethods as PaymentMethodRef[]).map(pm => [pm.name, pm]));
-  const unmatched = new Set<string>();
+  const methods = (paymentMethods ?? []) as PaymentMethodRef[];
+
+  const unresolved = new Map<string, CardChoice>();
+  for (const p of parsed.purchases) {
+    if (!p.cardId || resolveCard(p, methods, {}).card) continue;
+    const choice = unresolved.get(p.cardId) ?? { cardId: p.cardId, count: 0, last4: null, suggestedId: null };
+    choice.count += 1;
+    if (!choice.last4) {
+      const last4 = p.memo.match(LAST4)?.[1] ?? null;
+      if (last4) {
+        choice.last4 = last4;
+        choice.suggestedId = methods.find(m => m.card_last4 === last4)?.id ?? null;
+      }
+    }
+    unresolved.set(p.cardId, choice);
+  }
+  return {
+    fileName: file.name,
+    parsed,
+    paymentMethods: methods,
+    pointsPlatforms: (pointsPlatforms ?? []) as PointsPlatformRef[],
+    unresolvedCards: [...unresolved.values()],
+  };
+}
+
+/** 第二步：记住用户选的卡对应关系，写入数据库 */
+export async function commitOrderImport(
+  prepared: PreparedOrderImport,
+  choices: Record<string, string | null> = {},
+): Promise<OrderImportResult> {
+  const { parsed, pointsPlatforms } = prepared;
+  // 选了对应支付方式的卡记住（同一个买取X 卡 ID 只挂一个支付方式）；库没升级（没有这一列）时只是不记住
+  const methods = prepared.paymentMethods.map(m => ({ ...m }));
+  for (const [cardId, methodId] of Object.entries(choices)) {
+    if (!methodId) continue;
+    const { error } = await supabase.from('payment_methods').update({ kaitorix_card_id: null }).eq('kaitorix_card_id', cardId).neq('id', methodId);
+    if (!error) await supabase.from('payment_methods').update({ kaitorix_card_id: cardId }).eq('id', methodId);
+    methods.forEach(m => { if (m.id === methodId) m.kaitorix_card_id = cardId; });
+  }
+  let unassignedCards = 0;
 
   const purchases = parsed.purchases.map(p => {
-    const card = p.account ? cards.get(p.account) : undefined;
-    if (p.account && !card) unmatched.add(p.account);
+    const { card, account } = resolveCard(p, methods, choices);
+    if (p.cardId && !card) unassignedCards += 1;
     const total = p.unitPrice * p.quantity + p.shippingFee;
     return {
       date: p.date,
@@ -106,9 +188,10 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
       expected_platform_points: p.pointsSite,
       expected_card_points: p.pointsCard,
       extra_platform_points: p.pointsOther,
-      ...inferPointsPlatforms(p, card, pointsPlatforms as PointsPlatformRef[]),
+      ...inferPointsPlatforms(p, card, pointsPlatforms),
       platform_name: p.source,
       order_number: p.orderId,
+      purchase_account: account,
       coupon_amount: p.coupon,
       notes: p.memo,
       // 有着荷明细时按明细写（数据库触发器据此定状态）；没有时，有出售或「着荷」= 1 视为全部到货
@@ -150,5 +233,5 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
 
   const { data, error } = await supabase.rpc('import_order_data', { p_purchases: purchases, p_expenses: expenses });
   if (error) throw new OrderImportError([`写入数据库失败，没有导入任何数据：${error.message}`]);
-  return { ...(data as Omit<OrderImportResult, 'unmatchedAccounts'>), unmatchedAccounts: [...unmatched] };
+  return { ...(data as Omit<OrderImportResult, 'unassignedCards'>), unassignedCards };
 }

@@ -60,6 +60,7 @@ export function useTransactionForm({
     coupon_amount: 0,
     purchase_platform_id: '',
     order_number: '',
+    purchase_account: '',
     image_url: '',
     notes: '',
   });

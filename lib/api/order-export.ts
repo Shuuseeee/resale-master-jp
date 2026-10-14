@@ -15,13 +15,20 @@ type Row = (string | number)[];
 
 const TX_SELECT = `
   *,
-  payment_method:payment_methods(name),
+  payment_method:payment_methods(*),
   purchase_platform:purchase_platforms(name)
 `;
 const SALE_SELECT = `
   *,
   selling_platform:selling_platforms(name)
 `;
+
+// 「信用卡ID」列：支付方式记住了买取X 的卡 ID 就写它（导回买取X 也认得），否则写我们的支付方式 id（导回本系统按 id 认卡）。
+// 「账号」列是购买账号标签（transactions.purchase_account），不是支付方式
+function cardIdOf(tx: { card_id?: string | null; payment_method?: { kaitorix_card_id?: string | null } | null }): string {
+  if (!tx.card_id) return '';
+  return tx.payment_method?.kaitorix_card_id || tx.card_id;
+}
 
 function today() {
   const now = new Date();
@@ -90,7 +97,7 @@ export async function exportOrdersCsv(transactionIds?: string[]): Promise<string
       tx.quantity || 1,
       tx.purchase_platform?.name ?? '',
       tx.order_number ?? '',
-      tx.payment_method?.name ?? '',
+      tx.purchase_account ?? '',
       shippingOf(tx),
       num(tx.point_paid),
       num(tx.coupon_amount),
@@ -99,7 +106,7 @@ export async function exportOrdersCsv(transactionIds?: string[]): Promise<string
       num(tx.extra_platform_points),
       arrived(tx) ? 1 : '',
       tx.notes ?? '',
-      '',
+      cardIdOf(tx),
       'manual',
     ];
     // 入账记在每次出售上（SQL 29）；库没升级时没有这一列，按整笔交易是否已售出
@@ -178,7 +185,7 @@ export async function exportOrdersXlsx(): Promise<void> {
       tx.id, tx.date, tx.product_name, tx.jan_code ?? '', unitPriceOf(tx), qty,
       tx.purchase_platform?.name ?? '', tx.order_number ?? '', shippingOf(tx), num(tx.point_paid), num(tx.coupon_amount),
       num(tx.expected_platform_points), num(tx.expected_card_points), num(tx.extra_platform_points),
-      arrived(tx) ? 1 : '', tx.notes ?? '', tx.id, tx.payment_method?.name ?? '', '', 'manual', arrivedQty(tx),
+      arrived(tx) ? 1 : '', tx.notes ?? '', tx.id, tx.purchase_account ?? '', cardIdOf(tx), 'manual', arrivedQty(tx),
       Math.round(cost), Math.round(num(tx.total_profit)), `${num(tx.roi).toFixed(1)}%`,
     ];
   });

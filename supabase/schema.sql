@@ -213,7 +213,9 @@ CREATE TABLE public.payment_methods (
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   user_id uuid,
   card_points_platform_id uuid,
-  card_last4 text
+  card_last4 text,
+  -- 买取X 导出文件「クレジットカードID / 信用卡ID」里的卡 ID（买取X 内部的），导入时据此认出是哪张卡；第一次导入时由用户选定后记住
+  kaitorix_card_id text
 );
 
 -- 支付方式的店铺特殊规则：同一支付方式在某个进货平台用不同返点率（如 Amazon 卡在 Amazon 返 3%）。
@@ -476,6 +478,8 @@ CREATE TABLE public.transactions (
   coupon_amount numeric(10,2) DEFAULT 0 NOT NULL,
   -- 已到货数量 = transaction_arrivals 合计（触发器维护）；NULL = 没有到货明细，按状态推断（pending = 0，其余 = 全部到齐；老数据与原生 App 都是这种）
   quantity_arrived integer,
+  -- 购买账号标签（买取X「アカウント」）：多账号时区分用哪个账号买的，任意填写，不是支付方式
+  purchase_account text,
   quantity_returned integer DEFAULT 0,
   quantity_in_stock integer GENERATED ALWAYS AS (((quantity - quantity_sold) - quantity_returned)) STORED
 );
@@ -1187,7 +1191,7 @@ BEGIN
       purchase_price_total, card_paid, point_paid, balance_paid, card_id,
       expected_platform_points, expected_card_points, extra_platform_points,
       platform_points_platform_id, card_points_platform_id, extra_platform_points_platform_id,
-      purchase_platform_id, order_number, notes, status
+      purchase_platform_id, order_number, notes, status, purchase_account
     ) VALUES (
       uid, (p->>'date')::date, p->>'product_name', NULLIF(p->>'jan_code', ''), (p->>'unit_price')::numeric,
       (p->>'quantity')::integer, COALESCE((p->>'shipping_fee')::numeric, 0), COALESCE((p->>'coupon_amount')::numeric, 0),
@@ -1197,7 +1201,8 @@ BEGIN
       NULLIF(p->>'platform_points_platform_id', '')::uuid, NULLIF(p->>'card_points_platform_id', '')::uuid,
       NULLIF(p->>'extra_platform_points_platform_id', '')::uuid,
       pp_id, NULLIF(p->>'order_number', ''), NULLIF(p->>'notes', ''),
-      CASE WHEN (p->>'arrived')::boolean THEN 'in_stock' ELSE 'pending' END
+      CASE WHEN (p->>'arrived')::boolean THEN 'in_stock' ELSE 'pending' END,
+      NULLIF(p->>'purchase_account', '')
     ) RETURNING id INTO tx_id;
 
     -- 到货明细先于出售写入：出售受「只能卖已到货」约束

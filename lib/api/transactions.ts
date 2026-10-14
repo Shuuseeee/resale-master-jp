@@ -80,6 +80,7 @@ export async function quickCopyTransaction(
     shipping_fee: shippingFee,
     coupon_amount: source.coupon_amount ?? 0,
     purchase_platform_id: source.purchase_platform_id || null,
+    ...(source.purchase_account ? { purchase_account: source.purchase_account } : {}),
     order_number: overrides.order_number || null,
     image_url: null,
     notes: source.notes || null,

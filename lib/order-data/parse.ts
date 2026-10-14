@@ -39,7 +39,10 @@ export interface ParsedPurchase {
   quantity: number;
   source: string;
   orderId: string;
+  /** 购买账号标签（买取X「アカウント」），不是支付方式 */
   account: string;
+  /** 买取X 的卡 ID（「クレジットカードID」）；我们自己导出的文件里是支付方式 id */
+  cardId: string;
   shippingFee: number;
   pointsUsed: number;
   coupon: number;
@@ -184,6 +187,7 @@ function readPurchase(r: RowReader): ParsedPurchase {
     source: r.text('source'),
     orderId: r.text('orderId'),
     account: r.text('account'),
+    cardId: r.text('cardId'),
     shippingFee: r.num('shippingFee', '运费'),
     pointsUsed: r.num('pointsUsed', '使用积分'),
     coupon: r.num('coupon', '优惠券'),
@@ -217,7 +221,7 @@ function readSale(r: RowReader): ParsedSale {
 
 /** 进货列（用来判断几行是不是同一笔进货） */
 const PURCHASE_KEYS = [
-  'purchaseDate', 'productName', 'jan', 'unitPrice', 'quantity', 'source', 'orderId', 'account',
+  'purchaseDate', 'productName', 'jan', 'unitPrice', 'quantity', 'source', 'orderId', 'account', 'cardId',
   'shippingFee', 'pointsUsed', 'coupon', 'pointsSite', 'pointsCard', 'pointsOther', 'memo',
 ];
 

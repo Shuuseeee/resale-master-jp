@@ -17,9 +17,16 @@ import { ConfirmModal, UNSAVED_CHANGES_CONFIRM } from '@/components/Modal';
 import { TransactionFormFields } from '@/components/TransactionForm';
 
 /** 运费 / 优惠券为 0 时不提交该列（库默认 0），兼容「代码先部署、库还没加列」 */
+// 运费 / 优惠券为 0、账号为空时不提交（兼容「代码先部署、库还没加列」）
 function withoutZeroShipping(fd: TransactionFormData) {
-  const { shipping_fee, coupon_amount, ...rest } = fd;
-  return { ...rest, ...(shipping_fee ? { shipping_fee } : {}), ...(coupon_amount ? { coupon_amount } : {}) };
+  const { shipping_fee, coupon_amount, purchase_account, ...rest } = fd;
+  const account = purchase_account?.trim();
+  return {
+    ...rest,
+    ...(shipping_fee ? { shipping_fee } : {}),
+    ...(coupon_amount ? { coupon_amount } : {}),
+    ...(account ? { purchase_account: account } : {}),
+  };
 }
 
 function AddTransactionPageContent() {
@@ -71,6 +78,7 @@ function AddTransactionPageContent() {
         shipping_fee: data.shipping_fee ?? 0,
         coupon_amount: data.coupon_amount ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
+        purchase_account: data.purchase_account || '',
         notes: data.notes || '',
         order_number: '',
         image_url: '',

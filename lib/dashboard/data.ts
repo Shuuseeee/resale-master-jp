@@ -41,6 +41,8 @@ export interface DashPurchase {
   pointsUsed: number;
   source: string | null;
   cardId: string | null;
+  /** 购买账号标签（买取X「アカウント」，不是支付方式；SQL 30 前没有） */
+  account: string | null;
   status: string;
   notes: string | null;
   soldQty: number;
@@ -174,6 +176,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       pointsUsed: num(t.point_paid),
       source: t.purchase_platform?.name ?? null,
       cardId: t.card_id ?? null,
+      account: t.purchase_account || null,
       status: t.status,
       notes: t.notes || null,
       soldQty: num(t.quantity_sold),

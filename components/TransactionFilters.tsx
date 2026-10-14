@@ -21,6 +21,8 @@ export interface FilterValues {
   excludeJanCodes: string[];
   status: ('pending' | 'in_stock' | 'awaiting_payment' | 'sold' | 'returned')[];
   paymentMethodIds: string[];
+  /** 购买账号标签（买取X「アカウント」） */
+  purchaseAccounts: string[];
   purchasePlatformIds: string[];
   sellingPlatformIds: string[];
   buybackStore: string;
@@ -33,6 +35,8 @@ interface TransactionFiltersProps {
   purchasePlatforms?: Array<{ id: string; name: string }>;
   sellingPlatforms?: Array<{ id: string; name: string }>;
   janCodes?: string[];
+  /** 用过的购买账号（没有时不显示「账号」筛选） */
+  purchaseAccounts?: string[];
   initialValues?: FilterValues | null;
   hasBuybackData?: boolean;
   buybackStores?: string[];
@@ -47,6 +51,7 @@ export const emptyFilters: FilterValues = {
   excludeJanCodes: [],
   status: [],
   paymentMethodIds: [],
+  purchaseAccounts: [],
   purchasePlatformIds: [],
   sellingPlatformIds: [],
   buybackStore: '',
@@ -206,7 +211,7 @@ function MultiSelect({ options, selected, onChange, placeholder, minWidth = '140
 
 // ─────────────────────────────────────────────────────────
 
-type SheetKey = 'date' | 'status' | 'purchase' | 'selling' | 'payment' | 'jan' | 'buyback';
+type SheetKey = 'date' | 'status' | 'purchase' | 'selling' | 'payment' | 'account' | 'jan' | 'buyback';
 
 export default function TransactionFilters({
   onApply,
@@ -215,11 +220,13 @@ export default function TransactionFilters({
   purchasePlatforms,
   sellingPlatforms,
   janCodes = [],
+  purchaseAccounts = [],
   initialValues,
   hasBuybackData = false,
   buybackStores = [],
 }: TransactionFiltersProps) {
-  const [filters, setFilters] = useState<FilterValues>(initialValues || { ...emptyFilters });
+  // 旧版本记下的筛选没有 purchaseAccounts，补上默认值
+  const [filters, setFilters] = useState<FilterValues>({ ...emptyFilters, ...(initialValues || {}) });
   const isFirstRender = useRef(true);
   const [janSearch, setJanSearch] = useState('');
   const [janFeedback, setJanFeedback] = useState<string | null>(null);
@@ -239,6 +246,7 @@ export default function TransactionFilters({
     !!(filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0),
     filters.status.length > 0,
     filters.paymentMethodIds.length > 0,
+    filters.purchaseAccounts.length > 0,
     filters.purchasePlatformIds.length > 0,
     filters.sellingPlatformIds.length > 0,
     !!filters.buybackStore,
@@ -248,7 +256,7 @@ export default function TransactionFilters({
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     const hasAny = filters.dateFrom || filters.dateTo || filters.productName
       || filters.includeJanCodes.length > 0 || filters.excludeJanCodes.length > 0
-      || filters.status.length > 0 || filters.paymentMethodIds.length > 0
+      || filters.status.length > 0 || filters.paymentMethodIds.length > 0 || filters.purchaseAccounts.length > 0
       || filters.purchasePlatformIds.length > 0 || filters.sellingPlatformIds.length > 0
       || filters.buybackStore;
     if (hasAny) { onApply(filters); } else { onClear(); }
@@ -319,7 +327,8 @@ export default function TransactionFilters({
   const statusChipLabel = multiChipLabel('状态', filters.status, v => statusOptions.find(o => o.value === v)?.label ?? v);
   const purchaseChipLabel = multiChipLabel('采购平台', filters.purchasePlatformIds, id => (purchasePlatforms || []).find(p => p.id === id)?.name ?? id);
   const sellingChipLabel = multiChipLabel('售出平台', filters.sellingPlatformIds, id => (sellingPlatforms || []).find(p => p.id === id)?.name ?? id);
-  const paymentChipLabel = multiChipLabel('账号', filters.paymentMethodIds, id => paymentMethods.find(p => p.id === id)?.name ?? id);
+  const paymentChipLabel = multiChipLabel('支付方式', filters.paymentMethodIds, id => paymentMethods.find(p => p.id === id)?.name ?? id);
+  const accountChipLabel = multiChipLabel('账号', filters.purchaseAccounts, a => a);
   const janChipLabel = filters.includeJanCodes.length > 0
     ? (filters.includeJanCodes.length === 1
         ? filters.includeJanCodes[0]
@@ -355,6 +364,9 @@ export default function TransactionFilters({
           <Chip label={sellingChipLabel} active={filters.sellingPlatformIds.length > 0} onClick={() => setOpenSheet('selling')} />
         )}
         <Chip label={paymentChipLabel} active={filters.paymentMethodIds.length > 0} onClick={() => setOpenSheet('payment')} />
+        {purchaseAccounts.length > 0 && (
+          <Chip label={accountChipLabel} active={filters.purchaseAccounts.length > 0} onClick={() => setOpenSheet('account')} />
+        )}
         {janCodes.length > 0 && (
           <Chip
             label={janChipLabel}
@@ -482,13 +494,23 @@ export default function TransactionFilters({
           )}
         </div>
 
-        {/* 账号 多选 */}
+        {/* 支付方式 多选 */}
         <MultiSelect
           options={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
           selected={filters.paymentMethodIds}
           onChange={(vals) => updateFilter('paymentMethodIds', vals)}
-          placeholder="账号"
+          placeholder="支付方式"
         />
+
+        {/* 账号（购买账号标签）多选 */}
+        {purchaseAccounts.length > 0 && (
+          <MultiSelect
+            options={purchaseAccounts.map(a => ({ value: a, label: a }))}
+            selected={filters.purchaseAccounts}
+            onChange={(vals) => updateFilter('purchaseAccounts', vals)}
+            placeholder="账号"
+          />
+        )}
 
         {/* 状态 多选 */}
         <MultiSelect
@@ -603,7 +625,7 @@ export default function TransactionFilters({
 
       {openSheet === 'payment' && (
         <FilterSheet
-          title="账号"
+          title="支付方式"
           onClose={() => setOpenSheet(null)}
           showReset={filters.paymentMethodIds.length > 0}
           onReset={() => updateFilter('paymentMethodIds', [])}
@@ -612,6 +634,21 @@ export default function TransactionFilters({
             options={paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))}
             selected={filters.paymentMethodIds}
             onToggle={(v) => updateFilter('paymentMethodIds', toggleIn(filters.paymentMethodIds, v))}
+          />
+        </FilterSheet>
+      )}
+
+      {openSheet === 'account' && (
+        <FilterSheet
+          title="账号"
+          onClose={() => setOpenSheet(null)}
+          showReset={filters.purchaseAccounts.length > 0}
+          onReset={() => updateFilter('purchaseAccounts', [])}
+        >
+          <SheetCheckList
+            options={purchaseAccounts.map(a => ({ value: a, label: a }))}
+            selected={filters.purchaseAccounts}
+            onToggle={(v) => updateFilter('purchaseAccounts', toggleIn(filters.purchaseAccounts, v))}
           />
         </FilterSheet>
       )}

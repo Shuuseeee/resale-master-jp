@@ -63,6 +63,7 @@ export default function EditTransactionPage() {
         coupon_amount: data.coupon_amount ?? 0,
         purchase_platform_id: data.purchase_platform_id || '',
         order_number: data.order_number || '',
+        purchase_account: data.purchase_account || '',
         image_url: data.image_url || '',
         notes: data.notes || '',
       });
@@ -98,7 +99,10 @@ export default function EditTransactionPage() {
         image_url: imageUrl || null,
         notes: fd.notes,
       };
-      // 运费只在有改动时提交（兼容「代码先部署、库还没加列」）
+      // 账号 / 运费只在有改动时提交（兼容「代码先部署、库还没加列」）
+      if ((fd.purchase_account?.trim() || null) !== (dbTransaction?.purchase_account || null)) {
+        updateData.purchase_account = fd.purchase_account?.trim() || null;
+      }
       if ((fd.shipping_fee || 0) !== (dbTransaction?.shipping_fee ?? 0)) {
         updateData.shipping_fee = fd.shipping_fee || 0;
       }

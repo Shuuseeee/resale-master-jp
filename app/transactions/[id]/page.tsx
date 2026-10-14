@@ -63,6 +63,7 @@ const FIELD_LABELS: Record<string, string> = {
   extra_platform_points: '额外积分',
   jan_code: 'JAN 码',
   order_number: '订单号',
+  purchase_account: '账号',
   notes: '备注',
   status: '状态',
   image_url: '图片',
@@ -581,10 +582,17 @@ export default function TransactionDetailPage() {
                 </dl>
               </div>
 
-              {transaction.order_number && (
+              {(transaction.order_number || transaction.purchase_account) && (
                 <div className="sn-detail-card">
                   <h2 className="sn-detail-title">订单</h2>
                   <dl className="space-y-2.5 text-sm">
+                    {transaction.purchase_account && (
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-[var(--color-text-secondary)]">账号</dt>
+                        <dd className="break-all text-right text-[var(--color-text)]">{transaction.purchase_account}</dd>
+                      </div>
+                    )}
+                    {transaction.order_number && (
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-[var(--color-text-secondary)]">订单号</dt>
                       <dd>
@@ -597,6 +605,7 @@ export default function TransactionDetailPage() {
                         </button>
                       </dd>
                     </div>
+                    )}
                     {orderHistory && (
                       <div className="flex items-center justify-between gap-3">
                         <dt className="text-[var(--color-text-secondary)]">订单历史</dt>

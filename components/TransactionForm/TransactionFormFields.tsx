@@ -2,7 +2,10 @@
 
 // 新增 / 编辑交易共用的表单主体：两页的字段与排布只在这里维护（之前各写一份，JAN 位置等逐渐不一致）
 
+import { useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { useTransactionForm } from '@/hooks/useTransactionForm';
+import type { Transaction } from '@/types/database.types';
 import { BasicInfoSection } from './BasicInfoSection';
 import { PurchaseInfoSection } from './PurchaseInfoSection';
 import { PurchaseCostsSection } from './PurchaseCostsSection';
@@ -14,6 +17,12 @@ type Form = ReturnType<typeof useTransactionForm>;
 
 export function TransactionFormFields({ form, onTogglePending }: { form: Form; onTogglePending?: () => void }) {
   const fd = form.formData;
+  // 账号候选 = 交易列表缓存里用过的账号（没进过列表时为空，照样可以手输）
+  const queryClient = useQueryClient();
+  const accountSuggestions = useMemo(() => {
+    const txs = queryClient.getQueryData<Transaction[]>(['transactions']) ?? [];
+    return [...new Set(txs.map(t => t.purchase_account?.trim()).filter((a): a is string => !!a))].sort();
+  }, [queryClient]);
   return (
     // 两栏按内容区宽度切换（容器查询，globals.css .sn-form-layout）：分区抽屉开着时内容区可能只有 600 左右。
     // 左：基本信息 / 采购信息 / 凭证；右：采购成本 / 预期积分 / 备注（两栏高度大致相当）。
@@ -43,6 +52,8 @@ export function TransactionFormFields({ form, onTogglePending }: { form: Form; o
         <div className="order-2">
         <PurchaseInfoSection
           orderNumber={fd.order_number || ''}
+          purchaseAccount={fd.purchase_account || ''}
+          accountSuggestions={accountSuggestions}
           purchasePlatformId={fd.purchase_platform_id || ''}
           purchasePlatforms={form.purchasePlatforms}
           newPlatformName={form.newPurchasePlatformName}

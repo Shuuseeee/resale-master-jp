@@ -15,7 +15,9 @@ const ALIASES: Record<string, string[]> = {
   quantity: ['数量', 'Qty', 'Quantity'],
   source: ['仕入先', '进货来源', 'Source', 'Purchase Source'],
   orderId: ['注文ID', '订单ID', 'Order ID'],
+  // 购买账号标签（多账号管理用，任意填写），不是支付方式；卡在 cardId
   account: ['アカウント', '账号', 'Account'],
+  cardId: ['クレジットカードID', '信用卡ID', 'Credit Card ID'],
   shippingFee: ['送料', '运费', 'Shipping', 'Shipping Fee'],
   pointsUsed: ['ポイント使用', '使用积分', 'Points Used'],
   coupon: ['クーポン', '优惠券', 'Coupon'],
@@ -51,7 +53,7 @@ for (const [key, names] of Object.entries(ALIASES)) {
   for (const name of names) HEADER_TO_KEY.set(name.toLowerCase(), key);
 }
 
-/** 表头 → 规范名（不认识的列返回 null，导入时忽略：计算列、仕入ID、クレジットカードID、取込方法 等） */
+/** 表头 → 规范名（不认识的列返回 null，导入时忽略：计算列、仕入ID、取込方法 等） */
 export function headerKey(header: string): string | null {
   return HEADER_TO_KEY.get(header.trim().toLowerCase()) ?? null;
 }
