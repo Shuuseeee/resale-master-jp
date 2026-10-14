@@ -413,6 +413,8 @@ export interface SalesRecord {
   selling_platform_id: string | null;
   sale_order_number: string | null;
   sale_group_id: string | null;
+  /** 这次出售的货款是否已到账（SQL 29；库没升级时没有这一列） */
+  payment_received?: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;

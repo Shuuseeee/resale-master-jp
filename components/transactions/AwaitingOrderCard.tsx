@@ -1,5 +1,6 @@
 // components/transactions/AwaitingOrderCard.tsx — 待入账「按订单」的对账卡片
-// 一张卡片 = 一张出售订单（同一订单售出建的 sale_orders；没有的按 店铺 + 订单号）。逐件列 商品 × 数量 × 单价 = 小计
+// 一张卡片 = 一张出售订单里还没入账的出售（店铺 + 订单号；没有订单号的按同一订单售出建的 sale_orders）。
+// 部分售出的进货、先卖的那几件也在这里（入账记在每次出售上）。逐件列 商品 × 数量 × 单价 = 小计
 // （同一商品同一单价来自几笔进货时合并成一行），
 // 与买取店的承诺书逐行对得上；应入金额 = 买取合计 − 手续费（平台费用）。运费不计入：用户的运费单独记在经费里，店铺也不从货款扣。
 // 「实际入金」只用来比对（不存库），一致显示 ✓，不一致显示差额。
@@ -33,6 +34,8 @@ export interface AwaitingOrder {
   fees: number;
   expected: number;
   transactionIds: string[];
+  /** 这个订单里还没入账的出售（确认入账只标这些；入账记在每次出售上） */
+  saleIds: string[];
 }
 
 export default function AwaitingOrderCard({ order, onConfirm }: { order: AwaitingOrder; onConfirm: () => void }) {

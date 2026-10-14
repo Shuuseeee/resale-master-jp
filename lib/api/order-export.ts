@@ -102,7 +102,8 @@ export async function exportOrdersCsv(transactionIds?: string[]): Promise<string
       '',
       'manual',
     ];
-    const paid = tx.status === 'sold' ? 1 : '';
+    // 入账记在每次出售上（SQL 29）；库没升级时没有这一列，按整笔交易是否已售出
+    const paid = (s: { payment_received?: boolean }) => (s.payment_received ?? tx.status === 'sold') ? 1 : '';
     const txSales = sales.get(tx.id) ?? [];
     const rows: Row[] = txSales.length
       ? txSales.map(s => [
@@ -114,7 +115,7 @@ export async function exportOrdersCsv(transactionIds?: string[]): Promise<string
           num(s.platform_fee) + num(s.shipping_fee),
           s.sale_order_number ?? '',
           s.notes ?? '',
-          paid,
+          paid(s),
         ])
       : [[...purchase, '', '', '', '', '', '', '', '']];
     for (const row of rows) lines.push(row.map(escapeCsv).join(','));
@@ -184,7 +185,7 @@ export async function exportOrdersXlsx(): Promise<void> {
   const saleRows: Row[] = sales.map(s => [
     s.transaction_id, s.sale_date, s.selling_platform?.name ?? '', s.sale_order_number ?? '',
     num(s.selling_price_per_unit), s.quantity_sold, num(s.platform_fee) + num(s.shipping_fee), s.notes ?? '',
-    statusById.get(s.transaction_id) === 'sold' ? 1 : '',
+    (s.payment_received ?? statusById.get(s.transaction_id) === 'sold') ? 1 : '',
   ]);
   const returnRows: Row[] = returns.map(r => [
     r.transaction_id, r.quantity_returned, r.return_date, num(r.return_amount), num(r.loss_amount),

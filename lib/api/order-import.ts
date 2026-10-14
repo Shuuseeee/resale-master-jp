@@ -114,6 +114,7 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
       // 有着荷明细时按明细写（数据库触发器据此定状态）；没有时，有出售或「着荷」= 1 视为全部到货
       arrived: p.arrivals.length === 0 && (p.received || p.sales.length > 0),
       arrivals: p.arrivals.map(a => ({ arrived_date: a.date || null, quantity: a.qty, notes: a.memo })),
+      // 库没升级（SQL 29 前）的 RPC 只认整笔的 paid_all；升级后按每次出售的 paid 写入、状态交给出售触发器
       paid_all: p.sales.length > 0 && p.sales.every(s => s.paid),
       sales: p.sales.map(s => ({
         sale_date: s.date,
@@ -123,6 +124,7 @@ export async function importOrderFile(file: File): Promise<OrderImportResult> {
         platform_fee: s.deduction,
         sale_order_number: s.orderId,
         notes: s.memo,
+        paid: s.paid,
       })),
       returns: p.returns.map(r => ({
         return_date: r.date,

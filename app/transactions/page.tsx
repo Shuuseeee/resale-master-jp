@@ -16,7 +16,7 @@ import { supabase } from '@/lib/supabase/client';
 import { fetchAllByIds } from '@/lib/api/fetchAll';
 import AwaitingOrderCard, { type AwaitingOrder } from '@/components/transactions/AwaitingOrderCard';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { confirmPaymentReceived, confirmBatchPaymentReceived } from '@/lib/api/financial';
+import { confirmPaymentReceived, confirmBatchPaymentReceived, confirmSalesPaymentReceived } from '@/lib/api/financial';
 import { markTransactionArrived } from '@/lib/api/arrivals';
 import Link from 'next/link';
 import { layout, heading, card, button, input } from '@/lib/theme';
@@ -85,8 +85,14 @@ interface AwaitingSaleRow {
   selling_price_per_unit: number;
   total_selling_price: number | null;
   platform_fee: number | null;
+  /** SQL 29 前没有这一列 */
+  payment_received?: boolean;
 }
 const NO_AWAITING_SALES: AwaitingSaleRow[] = [];
+
+/** 「待入账」标签：整笔卖完待入账，或部分售出、已卖的几件还没入账（入账记在每次出售上，SQL 29） */
+const isAwaitingPayment = (t: TransactionWithProfit) =>
+  t.status === 'awaiting_payment' || (t.unpaid_sales_count ?? 0) > 0;
 
 export interface TransactionGroup {
   /** 行键：JAN；没有 JAN 的进货各自一组，键为 no-jan-<id>（买取X 同样做法） */
@@ -257,7 +263,7 @@ function TransactionsContent() {
   const [tabPaymentModalOpen, setTabPaymentModalOpen] = useState(false);
   // 待入账默认按订单看（对账用；可切回列表）
   const [awaitingPaymentView, setAwaitingPaymentView] = useState<'list' | 'order'>('order');
-  const [orderPaymentConfirm, setOrderPaymentConfirm] = useState<{ ids: string[]; label: string } | null>(null);
+  const [orderPaymentConfirm, setOrderPaymentConfirm] = useState<{ saleIds: string[]; transactionIds: string[]; label: string } | null>(null);
 
   // searchTerm 防抖：避免每次击键都触发 filter+sort
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
@@ -368,6 +374,8 @@ function TransactionsContent() {
     let totalCost = 0, totalProfit = 0, totalActualCashSpent = 0;
     transactions.forEach(t => {
       totalCost += t.purchase_price_total;
+      // 部分售出、已卖的几件还没入账的也算进「待入账」（入账记在每次出售上，isAwaitingPayment）
+      if (t.status !== 'awaiting_payment' && isAwaitingPayment(t)) awaitingPayment++;
       switch (t.status) {
         case 'pending': pending++; break;
         case 'in_stock': inStock++; break;
@@ -478,7 +486,9 @@ function TransactionsContent() {
       // 状态标签栏快速切换
       const matchesStatus =
         statusFilter === 'all' ||
-        (statusFilter === 'active' ? t.status === 'pending' || t.status === 'in_stock' : t.status === statusFilter);
+        (statusFilter === 'active'
+          ? t.status === 'pending' || t.status === 'in_stock'
+          : statusFilter === 'awaiting_payment' ? isAwaitingPayment(t) : t.status === statusFilter);
       if (!matchesStatus) return false;
 
       // 高级筛选
@@ -732,7 +742,8 @@ function TransactionsContent() {
       fetchAllByIds<AwaitingSaleRow>(awaitingIds, (chunk, from, to, opts) =>
         supabase
           .from('sales_records')
-          .select('id, transaction_id, sale_group_id, sale_order_number, selling_platform_id, sale_date, quantity_sold, selling_price_per_unit, total_selling_price, platform_fee', opts)
+          // '*'：payment_received 是 SQL 29 加的列，库没升级时不能点名
+          .select('*', opts)
           .in('transaction_id', chunk)
           .order('sale_date')
           .order('id')
@@ -748,6 +759,8 @@ function TransactionsContent() {
     for (const r of awaitingSales) {
       const tx = txMap.get(r.transaction_id);
       if (!tx) continue;
+      // 只列还没入账的出售；库没升级（没有这一列）时按整笔交易是否待入账
+      if (r.payment_received ?? tx.status !== 'awaiting_payment') continue;
       // 照买取X：有订单号就按 店铺 + 订单号（取消一笔后单独补回来的出售也并回原订单）；没订单号才用同一订单售出的分组
       const orderNo = r.sale_order_number?.trim();
       const key = orderNo
@@ -768,6 +781,7 @@ function TransactionsContent() {
           fees: 0,
           expected: 0,
           transactionIds: [],
+          saleIds: [],
         };
         map.set(key, order);
       }
@@ -787,6 +801,7 @@ function TransactionsContent() {
       order.fees += fee;
       order.expected = order.total - order.fees;
       if (!order.transactionIds.includes(tx.id)) order.transactionIds.push(tx.id);
+      order.saleIds.push(r.id);
     }
     return [...map.values()].sort((a, b) => a.saleDate.localeCompare(b.saleDate));
   }, [statusFilter, awaitingPaymentView, filteredTransactions, awaitingSales, sellingPlatforms]);
@@ -938,17 +953,20 @@ function TransactionsContent() {
   }, [selectedIds, exitCompareMode]);
 
 
-  // 共享：将指定 ID 列表的交易本地状态标记为 sold
+  // 共享：整笔确认入账后的本地补丁——名下出售全部已入账；原来是「待入账」的变成已售出（部分售出的仍是库存中）
   const markTransactionsAsSold = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
     queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
-      old?.map(t => idSet.has(t.id) ? { ...t, status: 'sold' as const } : t) ?? []
+      old?.map(t => idSet.has(t.id)
+        ? { ...t, unpaid_sales_count: 0, status: t.status === 'awaiting_payment' ? 'sold' as const : t.status }
+        : t) ?? []
     );
+    queryClient.invalidateQueries({ queryKey: ['transactions', 'awaiting-sales'] });
   }, [queryClient]);
 
   const handleBatchPaymentConfirm = useCallback(async () => {
     const paymentIds = transactions
-      .filter(t => selectedIds.has(t.id) && t.status === 'awaiting_payment')
+      .filter(t => selectedIds.has(t.id) && isAwaitingPayment(t))
       .map(t => t.id);
     if (paymentIds.length === 0) return;
     const { confirmed, skipped } = await confirmBatchPaymentReceived(paymentIds);
@@ -967,14 +985,29 @@ function TransactionsContent() {
     setTabPaymentModalOpen(false);
   }, [filteredTransactions, markTransactionsAsSold]);
 
+  // 按订单确认：只标这个订单里的出售（同一笔进货在别的订单里的出售不动），交易状态由数据库触发器决定，
+  // 所以确认后重新取这几笔交易打补丁
   const handleOrderPaymentConfirm = useCallback(async () => {
     if (!orderPaymentConfirm) return;
-    const { ids } = orderPaymentConfirm;
-    const { confirmed, skipped } = await confirmBatchPaymentReceived(ids);
-    if (confirmed > 0) markTransactionsAsSold(ids);
-    setToastMsg(`已确认 ${confirmed} 笔，跳过 ${skipped} 笔`);
+    const { saleIds, transactionIds } = orderPaymentConfirm;
+    const { ok } = await confirmSalesPaymentReceived(saleIds, transactionIds);
     setOrderPaymentConfirm(null);
-  }, [orderPaymentConfirm, markTransactionsAsSold]);
+    if (!ok) {
+      setToastMsg('入账确认失败');
+      return;
+    }
+    try {
+      const fresh = await Promise.all(transactionIds.map(id => fetchSingleTransaction(id)));
+      const byId = new Map(fresh.map(t => [t.id, t]));
+      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
+        old?.map(t => byId.get(t.id) ?? t) ?? []
+      );
+    } catch {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    }
+    queryClient.invalidateQueries({ queryKey: ['transactions', 'awaiting-sales'] });
+    setToastMsg(`已确认 ${saleIds.length} 次出售的入账`);
+  }, [orderPaymentConfirm, queryClient]);
 
   const handleMarkArrived = useCallback(async (id: string) => {
     const success = await markTransactionArrived(id);
@@ -990,12 +1023,10 @@ function TransactionsContent() {
   const handleConfirmPayment = useCallback(async (id: string) => {
     const success = await confirmPaymentReceived(id);
     if (success) {
-      queryClient.setQueryData<TransactionWithProfit[]>(['transactions'], old =>
-        old?.map(t => t.id === id ? { ...t, status: 'sold' as const } : t) ?? []
-      );
+      markTransactionsAsSold([id]);
       setToastMsg('入账已确认');
     }
-  }, [queryClient]);
+  }, [markTransactionsAsSold]);
 
   // ===== 桌面 DataTable 派生状态 =====
   const onToggleDateSortMode = useCallback(
@@ -1425,7 +1456,7 @@ function TransactionsContent() {
               <AwaitingOrderCard
                 key={o.key}
                 order={o}
-                onConfirm={() => setOrderPaymentConfirm({ ids: o.transactionIds, label: o.orderNumber ? `订单 ${o.orderNumber}` : (o.platformName ?? '此订单') })}
+                onConfirm={() => setOrderPaymentConfirm({ saleIds: o.saleIds, transactionIds: o.transactionIds, label: o.orderNumber ? `订单 ${o.orderNumber}` : (o.platformName ?? '此订单') })}
               />
             ))}
           </div>
@@ -1607,7 +1638,7 @@ function TransactionsContent() {
             ...(transactions.some(t => selectedIds.has(t.id) && t.status === 'pending')
               ? [{ id: 'arrive', label: '到货', icon: BoxCheckmark24Regular, onClick: handleBatchArrival }]
               : []),
-            ...(transactions.some(t => selectedIds.has(t.id) && t.status === 'awaiting_payment')
+            ...(transactions.some(t => selectedIds.has(t.id) && isAwaitingPayment(t))
               ? [{ id: 'paid', label: '入账', icon: MoneyHand24Regular, onClick: () => setBatchPaymentModalOpen(true) }]
               : []),
             { id: 'delete', label: '删除', icon: Delete24Regular, onClick: handleBatchDelete, danger: true },
@@ -1844,7 +1875,7 @@ function TransactionsContent() {
         onClose={() => setBatchPaymentModalOpen(false)}
         onConfirm={handleBatchPaymentConfirm}
         title="批量确认入账"
-        message={`确定要将已选的 ${transactions.filter(t => selectedIds.has(t.id) && t.status === 'awaiting_payment').length} 笔交易标记为已入账吗？`}
+        message={`确定要将已选的 ${transactions.filter(t => selectedIds.has(t.id) && isAwaitingPayment(t)).length} 笔交易标记为已入账吗？`}
         confirmText="确认入账"
       />
 
@@ -1864,7 +1895,7 @@ function TransactionsContent() {
         onClose={() => setOrderPaymentConfirm(null)}
         onConfirm={handleOrderPaymentConfirm}
         title="确认订单入账"
-        message={`确定将「${orderPaymentConfirm?.label ?? ''}」的 ${orderPaymentConfirm?.ids.length ?? 0} 笔交易标记为已入账吗？`}
+        message={`确定将「${orderPaymentConfirm?.label ?? ''}」的 ${orderPaymentConfirm?.saleIds.length ?? 0} 次出售标记为已入账吗？`}
         confirmText="确认入账"
       />
 

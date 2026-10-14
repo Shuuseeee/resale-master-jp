@@ -14,6 +14,8 @@ export interface TransactionWithProfit extends Transaction {
   aggregated_total_selling_price?: number | null;
   aggregated_selling_platform_ids?: string[];
   aggregated_sale_order_numbers?: string[];
+  /** 还没入账的出售次数（入账记在每次出售上，SQL 29；部分售出时也可能有） */
+  unpaid_sales_count?: number;
 }
 
 // sales_records 查询结果的元素类型（仅包含列表页所需字段）
@@ -25,6 +27,26 @@ interface SalesRecordRow {
   sale_date: string;
   selling_platform_id: string | null;
   sale_order_number: string | null;
+  payment_received?: boolean;
+}
+
+// 列表要的出售字段。payment_received 是 SQL 29 加的列：库还没升级时带上它会报「列不存在」，
+// 这时退回不带它的查询（本次页面生命周期内不再尝试）
+const SALE_COLS = 'transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number';
+let salesHavePaymentCol = true;
+const saleCols = (): string => (salesHavePaymentCol ? `${SALE_COLS}, payment_received` : SALE_COLS);
+function isMissingPaymentCol(error: unknown): boolean {
+  const e = error as { code?: string; message?: string } | null;
+  return !!e && (e.code === '42703' || /payment_received/.test(e.message ?? ''));
+}
+async function withPaymentColFallback<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (!salesHavePaymentCol || !isMissingPaymentCol(error)) throw error;
+    salesHavePaymentCol = false;
+    return run();
+  }
 }
 
 interface ReturnLossRow {
@@ -64,6 +86,7 @@ function aggregate(transaction: Transaction, salesRecords: SalesRecordRow[], los
 
   return {
     ...transaction,
+    unpaid_sales_count: salesRecords.filter(r => r.payment_received === false).length,
     latest_sale_date,
     aggregated_profit,
     aggregated_roi,
@@ -102,13 +125,16 @@ export async function fetchTransactionsWithProfit(): Promise<TransactionWithProf
         .order('id')
         .range(from, to),
     ),
-    fetchAllRows<SalesRecordRow>((from, to, opts) =>
-      supabase
-        .from('sales_records')
-        .select('transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number', opts)
-        .order('sale_date', { ascending: false })
-        .order('id')
-        .range(from, to),
+    withPaymentColFallback(() =>
+      fetchAllRows<SalesRecordRow>((from, to, opts) =>
+        supabase
+          .from('sales_records')
+          .select(saleCols(), opts)
+          .order('sale_date', { ascending: false })
+          .order('id')
+          .range(from, to)
+          .returns<SalesRecordRow[]>(),
+      ),
     ),
     fetchAllRows<ReturnLossRow>((from, to, opts) =>
       supabase
@@ -143,11 +169,15 @@ export async function fetchSingleTransaction(id: string): Promise<TransactionWit
   if (error || !tx) throw error ?? new Error('Transaction not found');
 
   const [{ data: srData }, { data: rrData }] = await Promise.all([
-    supabase
-      .from('sales_records')
-      .select('transaction_id, total_profit, actual_cash_spent, total_selling_price, sale_date, selling_platform_id, sale_order_number')
-      .eq('transaction_id', id)
-      .order('sale_date', { ascending: false }),
+    withPaymentColFallback(async () => {
+      const res = await supabase
+        .from('sales_records')
+        .select(saleCols())
+        .eq('transaction_id', id)
+        .order('sale_date', { ascending: false });
+      if (res.error && isMissingPaymentCol(res.error)) throw res.error;
+      return res;
+    }),
     supabase.from('return_records').select('transaction_id, loss_amount').eq('transaction_id', id),
   ]);
 

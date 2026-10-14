@@ -370,7 +370,8 @@ CREATE TABLE public.sales_records (
   selling_platform_id uuid,
   sale_order_number text,
   actual_cash_spent numeric(10,2),
-  sale_group_id uuid
+  sale_group_id uuid,
+  payment_received boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE public.selling_platforms (
@@ -852,42 +853,71 @@ BEGIN
 END;
 $function$;
 
--- 销售记录变动后重算交易状态（直接从 sales_records 汇总，避免竞态）
+-- 销售记录变动后重算交易状态（直接从 sales_records 汇总，避免竞态）：全部卖完 + 每次出售都已入账 → 已售出，
+-- 还有没入账的 → 待入账；已售出保持不动，只有把某次出售改回未入账时退回待入账
 CREATE OR REPLACE FUNCTION public.update_transaction_status()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
 DECLARE
+  tx_id uuid := COALESCE(NEW.transaction_id, OLD.transaction_id);
   trans_quantity INTEGER;
-  trans_quantity_sold INTEGER;
   trans_status TEXT;
+  sold_qty INTEGER;
+  unpaid INTEGER;
 BEGIN
   SELECT quantity, status INTO trans_quantity, trans_status
-  FROM transactions
-  WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+  FROM transactions WHERE id = tx_id;
 
-  -- 不自动改动 pending / returned / sold（用户确认过的状态）
-  IF trans_status IN ('pending', 'returned', 'sold') THEN
+  -- 不自动改动 未到货 / 已退货
+  IF trans_status IN ('pending', 'returned') THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
-  SELECT COALESCE(SUM(quantity_sold), 0) INTO trans_quantity_sold
-  FROM sales_records
-  WHERE transaction_id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+  -- 已售出（用户确认过）保持不动，只有把某次出售改回「未入账」时退回待入账
+  IF trans_status = 'sold' THEN
+    IF TG_OP = 'UPDATE' AND OLD.payment_received AND NOT NEW.payment_received THEN
+      UPDATE transactions SET status = 'awaiting_payment' WHERE id = tx_id AND status = 'sold';
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+  END IF;
 
-  IF trans_quantity_sold >= trans_quantity THEN
-    -- 全部售出时设为 awaiting_payment（而非 sold），不降级已确认的 sold
-    UPDATE transactions
-    SET status = 'awaiting_payment'
-    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id)
-      AND status != 'sold';
+  SELECT COALESCE(SUM(quantity_sold), 0), COUNT(*) FILTER (WHERE NOT payment_received)
+  INTO sold_qty, unpaid
+  FROM sales_records WHERE transaction_id = tx_id;
+
+  IF sold_qty >= trans_quantity THEN
+    IF unpaid = 0 THEN
+      UPDATE transactions SET status = 'sold' WHERE id = tx_id AND status <> 'sold';
+    ELSE
+      UPDATE transactions SET status = 'awaiting_payment' WHERE id = tx_id AND status <> 'awaiting_payment';
+    END IF;
   ELSE
-    UPDATE transactions
-    SET status = 'in_stock'
-    WHERE id = COALESCE(NEW.transaction_id, OLD.transaction_id);
+    UPDATE transactions SET status = 'in_stock' WHERE id = tx_id AND status <> 'in_stock';
   END IF;
 
   RETURN COALESCE(NEW, OLD);
+END;
+$function$;
+
+-- 交易被直接改成「已售出」（原生 App、网页整笔确认）/ 从已售出改回待入账时，同步名下出售的入账
+CREATE OR REPLACE FUNCTION public.sync_sales_payment_on_status()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  -- 由出售触发器（③）连带改的状态不回头再改出售（只改一次出售的入账，不能把整笔都带走）
+  IF pg_trigger_depth() > 1 THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.status = 'sold' THEN
+    UPDATE sales_records SET payment_received = true
+    WHERE transaction_id = NEW.id AND NOT payment_received;
+  ELSIF NEW.status = 'awaiting_payment' AND OLD.status = 'sold' THEN
+    UPDATE sales_records SET payment_received = false
+    WHERE transaction_id = NEW.id AND payment_received;
+  END IF;
+  RETURN NEW;
 END;
 $function$;
 
@@ -1192,19 +1222,17 @@ BEGIN
       END IF;
       INSERT INTO sales_records (
         transaction_id, user_id, quantity_sold, selling_price_per_unit, platform_fee, shipping_fee, sale_date,
-        selling_platform_id, sale_order_number, notes
+        selling_platform_id, sale_order_number, notes, payment_received
       ) VALUES (
         tx_id, uid, (s->>'quantity_sold')::integer, (s->>'selling_price_per_unit')::numeric, (s->>'platform_fee')::numeric, 0,
-        (s->>'sale_date')::date, sp_id, NULLIF(s->>'sale_order_number', ''), NULLIF(s->>'notes', '')
+        (s->>'sale_date')::date, sp_id, NULLIF(s->>'sale_order_number', ''), NULLIF(s->>'notes', ''),
+        COALESCE((s->>'paid')::boolean, false)
       );
       sold_qty := sold_qty + (s->>'quantity_sold')::integer;
       n_sales := n_sales + 1;
     END LOOP;
 
-    -- 全部卖出且每条出售都已入账 → 已售出（否则由出售触发器定为待入账 / 库存中）
-    IF COALESCE((p->>'paid_all')::boolean, false) AND sold_qty >= (p->>'quantity')::integer THEN
-      UPDATE transactions SET status = 'sold' WHERE id = tx_id;
-    END IF;
+    -- 全部卖出且每条出售都已入账 → 已售出、否则待入账 / 库存中：都由出售触发器按每次出售的入账决定
 
     FOR r IN SELECT * FROM jsonb_array_elements(COALESCE(p->'returns', '[]'::jsonb)) LOOP
       INSERT INTO return_records (transaction_id, user_id, quantity_returned, return_date, return_amount, points_deducted, loss_amount, notes)
@@ -1468,6 +1496,7 @@ CREATE TRIGGER trigger_update_quantity_sold_on_insert AFTER INSERT ON public.sal
 CREATE TRIGGER trigger_update_quantity_sold_on_update AFTER UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_quantity_sold();
 CREATE TRIGGER trg_check_sale_within_arrived BEFORE INSERT OR UPDATE OF quantity_sold, transaction_id ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.check_sale_within_arrived();
 CREATE TRIGGER trg_sync_transaction_arrivals AFTER INSERT OR DELETE OR UPDATE ON public.transaction_arrivals FOR EACH ROW EXECUTE FUNCTION public.sync_transaction_arrivals();
+CREATE TRIGGER trg_sync_sales_payment_on_status AFTER UPDATE OF status ON public.transactions FOR EACH ROW WHEN (((new.status IS DISTINCT FROM old.status) AND (new.status = ANY (ARRAY['sold'::text, 'awaiting_payment'::text])))) EXECUTE FUNCTION public.sync_sales_payment_on_status();
 CREATE TRIGGER trg_clear_arrivals_on_pending AFTER UPDATE OF status ON public.transactions FOR EACH ROW WHEN (((new.status = 'pending'::text) AND (old.status <> 'pending'::text))) EXECUTE FUNCTION public.clear_arrivals_on_pending();
 CREATE TRIGGER trigger_update_status_on_sale AFTER INSERT OR DELETE OR UPDATE ON public.sales_records FOR EACH ROW EXECUTE FUNCTION public.update_transaction_status();
 CREATE TRIGGER update_selling_platforms_updated_at BEFORE UPDATE ON public.selling_platforms FOR EACH ROW EXECUTE FUNCTION public.update_selling_platforms_updated_at();

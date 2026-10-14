@@ -9,7 +9,8 @@ import { Note16Regular } from '@fluentui/react-icons/headless/svg/note';
 import type { SalesRecord, Transaction } from '@/types/database.types';
 import { getSalesRecords, deleteSalesRecord, updateSalesRecord } from '@/lib/api/sales-records';
 import { formatCurrency, formatROI } from '@/lib/financial/calculator';
-import { button, input } from '@/lib/theme';
+import { badge, button, input } from '@/lib/theme';
+import { setSalePaymentReceived } from '@/lib/api/financial';
 import DatePicker from '@/components/DatePicker';
 import Modal from '@/components/Modal';
 import { DataTable } from '@/components/DataTable';
@@ -115,6 +116,36 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
     }
   }, [loadRecords, onUpdate]);
 
+  // 入账记在每次出售上（SQL 29，照买取X 的 payment_received）：部分售出时先卖的那几件也能单独确认；
+  // 误点可撤销（交易若已是已售出，数据库触发器会把它退回待入账）。库没升级时没有这一列，不显示
+  const handleTogglePaid = useCallback(async (record: SalesRecordWithPlatform) => {
+    const next = !record.payment_received;
+    if (!next && !confirm('把这次出售改回「待入账」吗？')) return;
+    if (!(await setSalePaymentReceived(record.id, next))) {
+      alert('入账状态更新失败，请重试');
+      return;
+    }
+    await loadRecords();
+    onUpdate();
+  }, [loadRecords, onUpdate]);
+
+  const paidCell = useCallback((r: SalesRecordWithPlatform) => {
+    if (r.payment_received === undefined) return null;
+    return r.payment_received ? (
+      <button type="button" onClick={() => handleTogglePaid(r)} title="点击改回待入账" className={badge.success + ' cursor-pointer'}>
+        已入账
+      </button>
+    ) : (
+      <span className="inline-flex items-center gap-2 whitespace-nowrap">
+        <span className={badge.pending}>待入账</span>
+        <button type="button" onClick={() => handleTogglePaid(r)} className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">
+          确认入账
+        </button>
+      </span>
+    );
+  }, [handleTogglePaid]);
+  const hasPaidCol = records.some(r => r.payment_received !== undefined);
+
   const columns = useMemo(() => [
     columnHelper.accessor('sale_date', {
       header: '日期',
@@ -200,6 +231,14 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
       ),
       meta: { align: 'right', tdClassName: 'whitespace-nowrap' },
     }),
+    ...(hasPaidCol
+      ? [columnHelper.display({
+          id: 'paid',
+          header: '入账',
+          cell: ({ row }) => paidCell(row.original),
+          meta: { tdClassName: 'whitespace-nowrap' },
+        })]
+      : []),
     columnHelper.display({
       id: 'actions',
       header: '操作',
@@ -229,7 +268,7 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
       },
       meta: { align: 'right' },
     }),
-  ], [handleEdit, handleCancelSale]);
+  ], [handleEdit, handleCancelSale, hasPaidCol, paidCell]);
 
   // 移动端卡片（沿用原展示形态）
   const renderRecordCard = (record: SalesRecordWithPlatform) => (
@@ -319,6 +358,10 @@ export default function SalesRecordsList({ transactionId, transaction, onUpdate 
           </span>
         </div>
       </div>
+
+      {record.payment_received !== undefined && (
+        <div className="mt-3 pt-3 border-t border-[var(--color-border)]">{paidCell(record)}</div>
+      )}
 
       {record.notes && (
         <div className="mt-3 pt-3 border-t border-[var(--color-border)]">

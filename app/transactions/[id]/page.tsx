@@ -115,6 +115,7 @@ export default function TransactionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false); // 退货表单
+  const [salesListKey, setSalesListKey] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [toastText, setToastText] = useState('已复制到剪贴板');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -259,6 +260,7 @@ export default function TransactionDetailPage() {
     const success = await confirmPaymentReceived(transaction.id);
     if (success) {
       setTransaction({ ...transaction, status: 'sold' });
+      setSalesListKey(k => k + 1); // 名下出售都标成了已入账，销售记录重新读
     } else {
       alert('入金确认失败');
     }
@@ -532,7 +534,7 @@ export default function TransactionDetailPage() {
           {transaction.quantity_sold > 0 && (
             <div className="sn-detail-card">
               <h2 className="sn-detail-title">销售记录</h2>
-              <SalesRecordsList transactionId={transaction.id} transaction={transaction} onUpdate={loadTransaction} />
+              <SalesRecordsList key={salesListKey} transactionId={transaction.id} transaction={transaction} onUpdate={loadTransaction} />
             </div>
           )}
 
