@@ -20,6 +20,7 @@ import Spinner from '@/components/fluent/Spinner';
 import ShippingMetaForm from '@/components/BuybackComparison/ShippingMetaForm';
 import { button, card } from '@/lib/theme';
 import { formatCurrency } from '@/lib/financial/calculator';
+import { loadKaitorixConfig } from '@/lib/kaitorix-config';
 
 export interface PlanSelection {
   transactionId: string;
@@ -155,7 +156,14 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
       const res = await fetch('/api/shipment-plan', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ items: items.filter(i => i.qty > 0).map(i => ({ transaction_id: i.transactionId, qty: i.qty })) }),
+        body: JSON.stringify({
+          items: items.filter(i => i.qty > 0).map(i => ({ transaction_id: i.transactionId, qty: i.qty })),
+          // 只用「设置 > 买取价格检查」勾选的店（与比价、仪表盘一致；设置存在浏览器里，所以由前端带过去）
+          only_stores: (() => {
+            const config = loadKaitorixConfig();
+            return config.enabled ? config.enabledStores : undefined;
+          })(),
+        }),
       });
       setResult(await res.json());
       setPlanKey(keyOf(items));

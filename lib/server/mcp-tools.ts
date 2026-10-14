@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- 视图行按列名取值 */
 
 import { serviceDb } from '@/lib/server/oauth';
+import { normalizeStoreName } from '@/lib/kaitorix-config';
 import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 
 const DAY_MS = 86_400_000;
@@ -97,6 +98,8 @@ export async function storeRules() {
 
 interface PlanOptions {
   excludeStores?: string[];
+  /** 只用这些店的报价（网页「设置 > 买取价格检查」勾选的店，存在浏览器里；按规范店名比较）。不传 = 全部店 */
+  onlyStores?: string[];
   keepJans?: string[];
   includePending?: boolean;
   staleLimit?: number;
@@ -120,7 +123,7 @@ export async function planShipment(user: McpUser, opts: PlanOptions) {
 export async function planShipmentForSelection(
   user: McpUser,
   selections: { transactionId: string; qty: number }[],
-  opts: Pick<PlanOptions, 'excludeStores' | 'staleLimit'> = {},
+  opts: Pick<PlanOptions, 'excludeStores' | 'onlyStores' | 'staleLimit'> = {},
 ) {
   const sb = serviceDb();
   const ids = [...new Set(selections.map(s => s.transactionId))];
@@ -140,7 +143,7 @@ export async function planShipmentForSelection(
 }
 
 /** 共同部分：查尺寸与报价 → 组装求解器输入 → 调 /api/solver。rows 需带 shippable（本次出货件数） */
-async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOptions, 'excludeStores' | 'staleLimit'>) {
+async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOptions, 'excludeStores' | 'onlyStores' | 'staleLimit'>) {
   const sb = serviceDb();
   const jans = [...new Set(purchases.map(r => r.jan_code as string))];
   const [metaRows, priceRows] = await Promise.all([
@@ -154,7 +157,10 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
   const meta = new Map(metaRows.map(m => [m.jan, m]));
   const now = Date.now();
   const prices = new Map<string, Record<string, [number, number]>>();
+  // 与网页比价 / 仪表盘同一口径：没勾选的店的报价不参与（filterPricesByStores 也是按规范店名白名单）
+  const only = opts.onlyStores ? new Set(opts.onlyStores.map(normalizeStoreName)) : null;
   for (const p of priceRows) {
+    if (only && !only.has(normalizeStoreName(p.store))) continue;
     const age = p.price_updated_at ? Math.max(0, Math.floor((now - Date.parse(p.price_updated_at)) / DAY_MS)) : 0;
     const m = prices.get(p.jan) ?? prices.set(p.jan, {}).get(p.jan)!;
     m[p.store] = [Number(p.price), age];

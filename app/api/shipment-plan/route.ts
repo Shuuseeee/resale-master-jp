@@ -35,8 +35,10 @@ export async function POST(req: NextRequest) {
   if (!selections.length) return NextResponse.json({ ok: false, error: '没有选中商品' }, { status: 400 });
 
   const excludeStores = Array.isArray(body?.exclude_stores) ? body.exclude_stores.filter((s: unknown) => typeof s === 'string') : [];
+  // 「设置 > 买取价格检查」勾选的店（存在浏览器里，由前端带来）；没传 = 全部店
+  const onlyStores = Array.isArray(body?.only_stores) ? body.only_stores.filter((s: unknown) => typeof s === 'string') : undefined;
   try {
-    const result = await planShipmentForSelection({ userId }, selections, { excludeStores });
+    const result = await planShipmentForSelection({ userId }, selections, { excludeStores, onlyStores });
     return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : '计算失败' }, { status: 500 });
