@@ -11,6 +11,7 @@ export type QuickEditPayload = Partial<Pick<Transaction,
   | 'unit_price'
   | 'order_number'
   | 'card_id'
+  | 'card_points_platform_id'
   | 'purchase_platform_id'
   | 'notes'
   | 'purchase_price_total'
@@ -29,6 +30,15 @@ export async function quickUpdateTransaction(
   }
   if ('card_id' in partial) {
     updateData.card_id = partial.card_id || null;
+    // 换卡时卡积分平台跟着换成新卡的（与完整编辑表单一致）；之前快速编辑只换卡，积分仍记在旧卡的平台上
+    if (!('card_points_platform_id' in partial)) {
+      let platformId: string | null = null;
+      if (updateData.card_id) {
+        const { data } = await supabase.from('payment_methods').select('card_points_platform_id').eq('id', updateData.card_id).single();
+        platformId = data?.card_points_platform_id ?? null;
+      }
+      updateData.card_points_platform_id = platformId;
+    }
   }
   if ('purchase_platform_id' in partial) {
     updateData.purchase_platform_id = partial.purchase_platform_id || null;

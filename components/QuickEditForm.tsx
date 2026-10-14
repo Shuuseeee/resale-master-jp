@@ -96,7 +96,8 @@ export default function QuickEditForm({
       quantity: formData.quantity,
       unit_price: formData.unit_price,
       order_number: formData.order_number,
-      card_id: formData.card_id,
+      // 只在换了卡时提交：换卡要连带改卡积分平台（quickUpdateTransaction）
+      ...(formData.card_id !== (transaction.card_id ?? '') ? { card_id: formData.card_id } : {}),
       purchase_platform_id: formData.purchase_platform_id,
       notes: formData.notes,
     };
