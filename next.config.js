@@ -29,6 +29,8 @@ const nextConfig = {
           /\.hot-update\.(js|json)$/,
           /\.map$/,
           /sw-source\.ts$/,
+          // Noto Sans SC 的 unicode-range 分片（约 100 片 4.5MB）：只有系统没有中文字体的设备才用到，由运行时字体缓存按需存
+          /static\/media\/.*\.woff2$/,
         ],
         // Content-hashed _next/static URLs must not be cache-busted
         dontCacheBustURLsMatching: /^\/_next\/static\/.*\.[0-9a-f]{16,}\./,

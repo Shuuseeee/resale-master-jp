@@ -29,14 +29,15 @@ precacheAndRoute(self.__WB_MANIFEST)
 // 2. Runtime caching routes
 // ---------------------------------------------------------------------------
 
-// 2a. Fonts — self-hosted TTF, CacheFirst, 60 days, max 10 entries
+// 2a. Fonts — 税务 PDF 的 TTF + Noto Sans SC 分片（只在系统没有中文字体时才会请求；约 100 片，不进预缓存），
+//     CacheFirst, 60 days, max 120 entries（一页常用到几十片，条目太少会反复下载）
 registerRoute(
   ({ request }) => request.destination === 'font',
   new CacheFirst({
     cacheName: 'fonts-cache',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 10,
+        maxEntries: 120,
         maxAgeSeconds: 60 * 24 * 60 * 60, // 60 days
       }),
     ],

@@ -5,7 +5,18 @@ import './globals.css'
 import AppShell from '@/components/shell/AppShell'
 import { ClientProviders } from '@/components/ClientProviders'
 import Script from 'next/script'
+import { Noto_Sans_SC } from 'next/font/google'
 import { BRAND_ICONS } from '@/lib/brand-icons'
+
+// 简体中文兜底字体：只在系统没有中文字体（如日文版 Windows 没装微软雅黑）时才会用到。
+// 构建时自托管（不请求 Google），按 unicode-range 分片、用到哪些字下载哪些；不预加载，有中文系统字体的设备一个字节都不下。
+// 可变字体，400 / 600 / 700 都在同一个文件里。字体栈在 globals.css 的 --font-cjk
+const notoSansSC = Noto_Sans_SC({
+  variable: '--font-noto-sc',
+  display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
+})
 
 export const metadata: Metadata = {
   title: '账务管理',
@@ -44,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" className={notoSansSC.variable} suppressHydrationWarning>
       <body>
         <Script id="theme-init" strategy="beforeInteractive">
           {`

@@ -2534,8 +2534,13 @@
     --radius-lg: var(--borderRadiusXLarge);
     /* 表格单元格上下内边距：Loop 表格单元格没有上下 padding（行高 = 内容高），用户决定暂时保持原来的 12px，想调行高时只改这里 */
     --table-cell-py: 12px;
-    /* 正文字体 = Loop 实测的系统字体栈（Segoe UI Variable Text → Apple / Android 系统字体），不再加载网页字体；标题用 --loop-font-display */
-    --font-sans: var(--loop-font-text);
+    /* 字体 = Loop 实测的系统字体栈（Segoe UI Variable → Apple / Android 系统字体）+ 中文字体（2026-10-14）：
+       Segoe UI 没有汉字，日文版 Windows 默认也没装微软雅黑，汉字会落到 Yu Gothic / Meiryo（日文字形）。
+       所以拉丁字母之后接简体中文字体：苹方 → 冬青 → 微软雅黑，都没有时用自托管的 Noto Sans SC（next/font，按 unicode-range 分片，
+       只有系统里没有中文字体时才下载；app/layout.tsx 的 --font-noto-sc）。标题用 --font-display */
+    --font-cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", var(--font-noto-sc, "Noto Sans SC");
+    --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", var(--font-cjk), system-ui, sans-serif;
+    --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", var(--font-cjk), system-ui, sans-serif;
     /* 顶部安全区：固定顶栏 / 全屏浮层一律用它而不是直接写 env(safe-area-inset-top)。
        iOS 27 起主屏幕 PWA（black-translucent + viewport-fit=cover）的状态栏下方会叠一层系统画的渐变模糊（约 38–40pt），
        CSS / meta 都关不掉，只能把内容挪出这条带子：仅 iPhone 主屏幕打开、竖屏时多留 2.5rem，Safari / 桌面 / 横屏不变 */
