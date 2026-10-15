@@ -233,5 +233,15 @@ export async function commitOrderImport(
 
   const { data, error } = await supabase.rpc('import_order_data', { p_purchases: purchases, p_expenses: expenses });
   if (error) throw new OrderImportError([`写入数据库失败，没有导入任何数据：${error.message}`]);
+
+  // 商品缩略图：与新增 / 编辑交易保存后一样按 JAN 入队（已有图 / 已在队列的由 RPC 跳过），后台取图；不等结果
+  const jans = [...new Set(parsed.purchases.map(p => p.jan.trim()).filter(j => /^\d{8,13}$/.test(j)))];
+  if (jans.length) {
+    fetch('/api/thumbnail/enqueue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jans }),
+    }).catch(() => {});
+  }
   return { ...(data as Omit<OrderImportResult, 'unassignedCards'>), unassignedCards };
 }
