@@ -16,16 +16,19 @@ import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms'
 import { sellableQty } from '@/lib/utils/arrivals';
 import { quoteFor, useStoreQuotes } from '@/hooks/useStoreQuotes';
 import StoreQuoteHint from '@/components/StoreQuoteHint';
+import { loadLastSale, saveLastSale } from '@/lib/sale-draft';
 
+// 5 分钟内记过出售：预填上次的出售对象 / 订单号 / 日期（lib/sale-draft.ts），单价随后由该店报价带出
 function getInitialFormData(): SalesRecordFormData {
+  const last = loadLastSale();
   return {
     quantity_sold: 1,
     selling_price_per_unit: 0,
     platform_fee: 0,
     shipping_fee: 0,
-    sale_date: getTodayString(),
-    selling_platform_id: '',
-    sale_order_number: '',
+    sale_date: last?.sale_date || getTodayString(),
+    selling_platform_id: last?.selling_platform_id || '',
+    sale_order_number: last?.sale_order_number || '',
     notes: '',
   };
 }
@@ -40,7 +43,13 @@ interface BatchSaleFormProps {
 }
 
 export default function BatchSaleForm({ transaction, onSuccess, onCancel, onDataRefresh, closeOnSuccess = false, onDirtyChange }: BatchSaleFormProps) {
-  const [formData, setFormData] = useState<SalesRecordFormData>(() => getInitialFormData());
+  // 「有没有改过」的基准 = 打开时的内容（含预填的上次出售对象 / 订单号 / 日期）
+  const initialDataRef = useRef<SalesRecordFormData>(null as unknown as SalesRecordFormData);
+  const [formData, setFormData] = useState<SalesRecordFormData>(() => {
+    const initial = getInitialFormData();
+    initialDataRef.current = initial;
+    return initial;
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -49,14 +58,15 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   const [newSellingPlatformName, setNewSellingPlatformName] = useState('');
 
   const prevTransactionId = useRef<string | undefined>(transaction.id);
-  const initialDataRef = useRef<SalesRecordFormData>(getInitialFormData());
 
+  // 单价是按所选店报价自动带出的（priceAutoFilled）时不算用户改过：否则一打开就预填了店和价，直接关也会问「放弃修改？」
+  const priceAutoFilled = useRef(false);
   const isDirty = useMemo(() => {
     if (submitting) return false;
     const i = initialDataRef.current;
     return (
       formData.quantity_sold !== i.quantity_sold ||
-      formData.selling_price_per_unit !== i.selling_price_per_unit ||
+      (!priceAutoFilled.current && formData.selling_price_per_unit !== i.selling_price_per_unit) ||
       formData.platform_fee !== i.platform_fee ||
       formData.shipping_fee !== i.shipping_fee ||
       formData.sale_date !== i.sale_date ||
@@ -79,7 +89,6 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
   const quotes = useStoreQuotes([transaction.jan_code]);
   const platformName = sellingPlatforms.find(p => p.id === formData.selling_platform_id)?.name;
   const quote = quoteFor(quotes, transaction.jan_code, platformName);
-  const priceAutoFilled = useRef(false);
   const applyQuote = () => {
     if (!quote) return;
     priceAutoFilled.current = true;
@@ -149,6 +158,7 @@ export default function BatchSaleForm({ transaction, onSuccess, onCancel, onData
       }
 
       setSuccessCount(prev => prev + 1);
+      saveLastSale({ selling_platform_id: formData.selling_platform_id || '', sale_order_number: formData.sale_order_number || '', sale_date: formData.sale_date });
 
       // 保留売却先、単価、費用，只清空数量和注文ID
       setFormData(prev => {

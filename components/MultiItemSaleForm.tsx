@@ -16,6 +16,7 @@ import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms'
 import { sellableQty } from '@/lib/utils/arrivals';
 import { quoteFor, useStoreQuotes } from '@/hooks/useStoreQuotes';
 import { storeMatchKey } from '@/lib/kaitorix-config';
+import { loadLastSale, saveLastSale } from '@/lib/sale-draft';
 import StoreQuoteHint from '@/components/StoreQuoteHint';
 
 interface PerItemDraft {
@@ -54,9 +55,11 @@ export default function MultiItemSaleForm({
   onDirtyChange,
 }: MultiItemSaleFormProps) {
   // ── 共享字段 ──
-  const [saleDate, setSaleDate] = useState(getTodayString());
-  const [sellingPlatformId, setSellingPlatformId] = useState('');
-  const [saleOrderNumber, setSaleOrderNumber] = useState('');
+  // 5 分钟内记过出售：预填上次的出售对象 / 订单号 / 日期（lib/sale-draft.ts）；出货方案指定了店时不用（那是另一张订单）
+  const [lastSale] = useState(() => (initialPlatformName ? null : loadLastSale()));
+  const [saleDate, setSaleDate] = useState(lastSale?.sale_date || getTodayString());
+  const [sellingPlatformId, setSellingPlatformId] = useState(lastSale?.selling_platform_id || '');
+  const [saleOrderNumber, setSaleOrderNumber] = useState(lastSale?.sale_order_number || '');
   const [notes, setNotes] = useState('');
   const [newPlatformName, setNewPlatformName] = useState('');
 
@@ -237,6 +240,7 @@ export default function MultiItemSaleForm({
         return;
       }
 
+      saveLastSale({ selling_platform_id: sellingPlatformId, sale_order_number: saleOrderNumber, sale_date: saleDate });
       onSuccess(orderId);
     } catch (err: any) {
       setError(err.message || '保存失败，请重试');
