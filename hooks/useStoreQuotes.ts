@@ -1,11 +1,12 @@
 // hooks/useStoreQuotes.ts — 出售表单用：这几个 JAN 在各店的当前买取价（照买取X 出售表单：选了出售对象就带出该店报价）
 // 来源 = 视图 assistant_buyback_prices（官方 API 缓存与每日 CSV 取较新，与仪表盘同一口径），只读、不消耗官方 API 额度；
-// 超过 7 天的报价不用（is_stale，与店铺报价 7 天规则一致）。店名与销售平台名一致即视为同一家（平台多从买取X 导入，名字相同）。
+// 超过 7 天的报价不用（is_stale，与店铺报价 7 天规则一致）。店名与销售平台名按 storeMatchKey 比较（忽略大小写、空格、全半角、「買取」字样）。
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAllByIds } from '@/lib/api/fetchAll';
+import { storeMatchKey } from '@/lib/kaitorix-config';
 
 export interface StoreQuote {
   store: string;
@@ -13,7 +14,7 @@ export interface StoreQuote {
   updatedAt: string | null;
 }
 
-/** JAN → 店名 → 报价 */
+/** JAN → 店名键（storeMatchKey）→ 报价 */
 export type StoreQuoteMap = Map<string, Map<string, StoreQuote>>;
 
 export function useStoreQuotes(jans: (string | null | undefined)[]): StoreQuoteMap {
@@ -44,7 +45,12 @@ export function useStoreQuotes(jans: (string | null | undefined)[]): StoreQuoteM
         for (const r of rows) {
           if (r.is_stale || !(Number(r.price) > 0)) continue;
           const byStore = map.get(r.jan) ?? new Map<string, StoreQuote>();
-          byStore.set(r.store.trim(), { store: r.store, price: Number(r.price), updatedAt: r.price_updated_at });
+          // 写法不同的同一家店（如旧名「買取Top Offers」）落到同一个键时，留更新时间较新的那条
+          const k = storeMatchKey(r.store);
+          const prev = byStore.get(k);
+          if (!prev || (r.price_updated_at ?? '') > (prev.updatedAt ?? '')) {
+            byStore.set(k, { store: r.store, price: Number(r.price), updatedAt: r.price_updated_at });
+          }
           map.set(r.jan, byStore);
         }
         setQuotes(map);
@@ -63,7 +69,7 @@ export function useStoreQuotes(jans: (string | null | undefined)[]): StoreQuoteM
 /** 这个 JAN 在这家（按销售平台名匹配店名）的报价 */
 export function quoteFor(quotes: StoreQuoteMap, jan: string | null | undefined, platformName: string | null | undefined): StoreQuote | null {
   if (!jan || !platformName) return null;
-  return quotes.get(jan)?.get(platformName.trim()) ?? null;
+  return quotes.get(jan)?.get(storeMatchKey(platformName)) ?? null;
 }
 
 /** 报价更新时间的短格式（M/D HH:mm） */

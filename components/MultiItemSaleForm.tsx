@@ -15,6 +15,7 @@ import { parseNumberInput } from '@/lib/number-utils';
 import { getSellingPlatforms, createSellingPlatform } from '@/lib/api/platforms';
 import { sellableQty } from '@/lib/utils/arrivals';
 import { quoteFor, useStoreQuotes } from '@/hooks/useStoreQuotes';
+import { storeMatchKey } from '@/lib/kaitorix-config';
 import StoreQuoteHint from '@/components/StoreQuoteHint';
 
 interface PerItemDraft {
@@ -76,7 +77,7 @@ export default function MultiItemSaleForm({
     getSellingPlatforms().then(list => {
       setSellingPlatforms(list);
       if (!initialPlatformName) return;
-      const found = list.find(p => p.name.trim() === initialPlatformName.trim());
+      const found = list.find(p => storeMatchKey(p.name) === storeMatchKey(initialPlatformName));
       if (found) setSellingPlatformId(found.id);
       else setNewPlatformName(initialPlatformName);
     });

@@ -42,6 +42,14 @@ export function normalizeStoreName(name: string): string {
   return STORE_NAME_ALIASES[name] ?? name;
 }
 
+/**
+ * 店名比较用的键：销售平台名（用户自己建的）和买取X 的店名写法常常不完全一样，
+ * 如「買取Wiki」↔「買取wiki」、「TopOffer」↔「買取Top Offer」。忽略大小写、空格、全角 / 半角和「買取」字样后再比。
+ */
+export function storeMatchKey(name: string): string {
+  return normalizeStoreName(name.trim()).normalize('NFKC').toLowerCase().replace(/\s+/g, '').replace(/買取/g, '');
+}
+
 /** 把报价列表里的店名统一成规范名（其余字段原样保留） */
 export function normalizePriceStores<T extends { store: string }>(prices: T[] | null | undefined): T[] {
   if (!prices?.length) return [];
