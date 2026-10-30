@@ -168,3 +168,10 @@ export async function cleanupThumbnailQueue(): Promise<number> {
   const { data } = await serviceDb().rpc('cleanup_jan_thumbnail_queue');
   return Number(data ?? 0);
 }
+
+/** 补扫历史导入 / 入队请求失败的交易；数据库会跳过已有图、已有任务和累计失败 5 次的 JAN。 */
+export async function enqueueMissingThumbnails(): Promise<number> {
+  const { data, error } = await serviceDb().rpc('batch_enqueue_jan_thumbnails');
+  if (error) throw new Error(`batch_enqueue_jan_thumbnails: ${error.message}`);
+  return Number(data ?? 0);
+}

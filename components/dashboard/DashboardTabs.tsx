@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase/client';
 import { markTransactionArrived } from '@/lib/api/arrivals';
 import { downloadCsv } from '@/lib/api/order-export';
 import { forceRefreshBuybackPrice } from '@/lib/api/kaitorix';
-import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
+import { useJanThumbnails } from '@/hooks/useJanThumbnails';
 import { formatCurrency } from '@/lib/financial/calculator';
 import { input } from '@/lib/theme';
 import { expenseCategoryLabel } from '@/lib/expenses/categories';
@@ -127,7 +127,6 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
   const [tab, setTab] = useState<TabId>('stock');
   const [sub, setSub] = useState<Record<TabId, SubFilters>>({ stock: EMPTY_SUB, pending: EMPTY_SUB, sales: EMPTY_SUB, jan: EMPTY_SUB, expenses: EMPTY_SUB });
   const [selection, setSelection] = useState<RowSelectionState>({});
-  const [thumbs, setThumbs] = useState<JanThumbnailMap>(new Map());
   const [saleTx, setSaleTx] = useState<Transaction | null>(null);
   const [arriveId, setArriveId] = useState<string | null>(null);
   const [subSheet, setSubSheet] = useState<keyof SubFilters | null>(null);
@@ -141,11 +140,7 @@ export default function DashboardTabs({ data, filters, best, enabledStores, toda
     } catch {}
   }, []);
 
-  // 缩略图按 JAN 全站共享，取不到只是不显示图片
-  useEffect(() => {
-    const jans = uniq(data.purchases.map(p => p.jan));
-    fetchJanThumbnails(jans).then(setThumbs);
-  }, [data]);
+  const thumbs = useJanThumbnails(uniq(data.purchases.map(p => p.jan)));
 
   // 「账号」= 购买账号标签（买取X「アカウント」），不是支付方式（之前误显示成卡名）
   const account = (p: { account: string | null }) => p.account ?? '';

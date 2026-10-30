@@ -206,6 +206,7 @@ node scripts/scan-design-tokens.mjs  # 扫描设计 token 落实情况
 `scraper/` 是独立 Node.js 项目，不属于 Next.js PWA 构建，包含两个 worker：
 
 - 商品缩略图：2026-10-11 起由 Vercel 处理（`lib/server/jan-thumbnails.ts`），scraper 里只剩全量重置脚本 `src/reset-thumbnails.ts`。
+  CSV / XLSX 导入后按每批最多 500 个 JAN 等待入队确认，图片由后台抓取。每日 `/api/thumbnail/process` 先补扫历史漏图交易再处理队列（已有图、已有任务、累计失败 5 次的 JAN 跳过）；交易列表与仪表盘缺图时每 5 秒重查，持续最多 2 分钟，无需手动刷新。回归检查：`node --test scripts/test-thumbnail-flow.cjs`。
 - **kaitorix-scraper**：监听 `kaitorix_scrape_queue`，用 Playwright 抓价格写回 `kaitorix_price_cache`。**web 端已改走官方 Open API，不再入队**；它只为原生 App 保留（原生的价格自动刷新仍通过 `enqueue_kaitorix_scrape` 入队）。原生端迁到 web 接口之前不要停它。
 
 详细启动方式见 `scraper/README.md`。

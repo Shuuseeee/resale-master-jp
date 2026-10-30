@@ -32,8 +32,7 @@ export async function fetchJanThumbnails(jans: string[]): Promise<JanThumbnailMa
       .not('image_url', 'is', null);
 
     if (error) {
-      console.error('fetchJanThumbnails 失败:', error.message);
-      continue;
+      throw new Error(`读取商品缩略图失败：${error.message}`);
     }
     for (const row of data || []) {
       if (row.image_url) {

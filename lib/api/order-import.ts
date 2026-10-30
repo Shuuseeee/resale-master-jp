@@ -234,14 +234,20 @@ export async function commitOrderImport(
   const { data, error } = await supabase.rpc('import_order_data', { p_purchases: purchases, p_expenses: expenses });
   if (error) throw new OrderImportError([`写入数据库失败，没有导入任何数据：${error.message}`]);
 
-  // 商品缩略图：与新增 / 编辑交易保存后一样按 JAN 入队（已有图 / 已在队列的由 RPC 跳过），后台取图；不等结果
+  // 商品缩略图：已有图由 RPC 跳过；重复导入也补入队。每批不超过接口的 500 个上限。
+  // 等入队响应再报告导入完成，取图仍在服务端 after() 后台执行；入队失败不影响已提交的交易，Cron 会补扫。
   const jans = [...new Set(parsed.purchases.map(p => p.jan.trim()).filter(j => /^\d{8,13}$/.test(j)))];
-  if (jans.length) {
-    fetch('/api/thumbnail/enqueue', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jans }),
-    }).catch(() => {});
+  for (let i = 0; i < jans.length; i += 500) {
+    try {
+      const response = await fetch('/api/thumbnail/enqueue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jans: jans.slice(i, i + 500) }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      console.error('导入后缩略图入队失败，等待每日补扫:', error);
+    }
   }
   return { ...(data as Omit<OrderImportResult, 'unassignedCards'>), unassignedCards };
 }

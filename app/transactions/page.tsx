@@ -41,7 +41,7 @@ import { useModalCloseGuard } from '@/hooks/useModalCloseGuard';
 import BatchSaleForm from '@/components/BatchSaleForm';
 import MultiItemSaleForm from '@/components/MultiItemSaleForm';
 import { withImageCacheBuster } from '@/lib/image-utils';
-import { fetchJanThumbnails, type JanThumbnailMap } from '@/lib/api/jan-thumbnails';
+import { useJanThumbnails } from '@/hooks/useJanThumbnails';
 import ReturnForm from '@/components/ReturnForm';
 import QuickEditForm from '@/components/QuickEditForm';
 import QuickCopyForm from '@/components/QuickCopyForm';
@@ -156,7 +156,6 @@ function TransactionsContent() {
     queryFn: fetchTransactionsWithProfit,
   });
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodBasic[]>([]);
-  const [janThumbnails, setJanThumbnails] = useState<JanThumbnailMap>(new Map());
   const { purchasePlatforms, sellingPlatforms } = usePlatforms();
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('q') || '');
   // 优先级：URL ?tab=（深链/返回）> 本机记忆的上次选择 > 默认「未售出」
@@ -436,18 +435,7 @@ function TransactionsContent() {
     [transactions]
   );
 
-  // 批量加载 JAN 维度共享缩略图（同 JAN 全站一份）
-  useEffect(() => {
-    if (janCodes.length === 0) {
-      setJanThumbnails(new Map());
-      return;
-    }
-    let cancelled = false;
-    fetchJanThumbnails(janCodes).then(map => {
-      if (!cancelled) setJanThumbnails(map);
-    });
-    return () => { cancelled = true; };
-  }, [janCodes]);
+  const janThumbnails = useJanThumbnails(janCodes);
 
   // 单笔交易的 JAN 缩略图 fallback（已 cache-bust）
   const getJanThumbnail = useCallback((janCode: string | null | undefined): string | undefined => {
