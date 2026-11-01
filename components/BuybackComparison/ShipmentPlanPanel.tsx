@@ -319,7 +319,7 @@ export default function ShipmentPlanPanel({ items }: { items: PlanSelection[] })
 
           {saleError && <MessageBar intent="error">{saleError}</MessageBar>}
           {!!result.unpriced?.length && (
-            <MessageBar intent="warning">没有 7 天内有效报价、建议留库：{result.unpriced.map(u => `${u.name} ×${u.qty}`).join('、')}</MessageBar>
+            <MessageBar intent="warning">没有今天或昨天的有效报价、建议留库：{result.unpriced.map(u => `${u.name} ×${u.qty}`).join('、')}</MessageBar>
           )}
           {!!result.need_confirm?.length && (
             <MessageBar intent="warning">

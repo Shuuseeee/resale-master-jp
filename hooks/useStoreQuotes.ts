@@ -1,6 +1,6 @@
 // hooks/useStoreQuotes.ts — 出售表单用：这几个 JAN 在各店的当前买取价（照买取X 出售表单：选了出售对象就带出该店报价）
 // 来源 = 视图 assistant_buyback_prices（官方 API 缓存与每日 CSV 取较新，与仪表盘同一口径），只读、不消耗官方 API 额度；
-// 超过 7 天的报价不用（is_stale，与店铺报价 7 天规则一致）。店名与销售平台名按 storeMatchKey 比较（忽略大小写、空格、全半角、「買取」字样）。
+// 昨天 0 点（日本时间）之前更新的报价不用（is_stale，与店铺报价时效规则一致）。店名与销售平台名按 storeMatchKey 比较（忽略大小写、空格、全半角、「買取」字样）。
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';

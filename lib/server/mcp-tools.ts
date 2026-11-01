@@ -9,6 +9,13 @@ import { normalizeStoreName } from '@/lib/kaitorix-config';
 import { fetchAllByIds, fetchAllRows } from '@/lib/api/fetchAll';
 
 const DAY_MS = 86_400_000;
+const JST_OFFSET_MS = 9 * 3600_000;
+
+/** 报价是几天前（按日本时间的日历日：今天 = 0、昨天 = 1），与 kaitorixReferenceCutoff 同一口径 */
+function jstDaysAgo(iso: string, now: number): number {
+  const day = (t: number) => Math.floor((t + JST_OFFSET_MS) / DAY_MS);
+  return Math.max(0, day(now) - day(Date.parse(iso)));
+}
 
 /** MCP 请求的登录身份（app/api/mcp 校验 Bearer 令牌后传入） */
 export interface McpUser {
@@ -170,7 +177,7 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
   const only = onlyStores ? new Set(onlyStores.map(normalizeStoreName)) : null;
   for (const p of priceRows) {
     if (only && !only.has(normalizeStoreName(p.store))) continue;
-    const age = p.price_updated_at ? Math.max(0, Math.floor((now - Date.parse(p.price_updated_at)) / DAY_MS)) : 0;
+    const age = p.price_updated_at ? jstDaysAgo(p.price_updated_at, now) : 0;
     const m = prices.get(p.jan) ?? prices.set(p.jan, {}).get(p.jan)!;
     m[p.store] = [Number(p.price), age];
   }
@@ -206,7 +213,8 @@ async function planFromRows(user: McpUser, purchases: any[], opts: Pick<PlanOpti
     action: 'plan',
     items,
     exclude_stores: opts.excludeStores ?? [],
-    stale_limit: opts.staleLimit ?? 7,
+    // 默认 1 = 只用今天、昨天更新的报价（与网页 / 视图 is_stale 一致）
+    stale_limit: opts.staleLimit ?? 1,
     day: todayJst(),
   });
   if (result?.ok && Array.isArray(result.boxes)) await attachStoreLinks(result.boxes, jans);

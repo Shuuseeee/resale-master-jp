@@ -152,7 +152,7 @@ async function recordUsage(
 /**
  * 规范化店铺报价：
  * - 店铺标记 stopped（停止买取）的报价不收录，否则会抬高最高价；
- * - 相对时间（"52分前"）按抓取时刻换算成精确的 updated_at 一并保存，之后 7 天参考规则不再依赖相对文本。
+ * - 相对时间（"52分前"）按抓取时刻换算成精确的 updated_at 一并保存，之后报价时效规则不再依赖相对文本。
  */
 function normalizePrices(prices: unknown, fetchedAtMs: number): OfficialPrice[] {
   if (!Array.isArray(prices)) return [];
@@ -228,7 +228,7 @@ async function acquireOfficialSlot() {
  * - 没有这一行：插入一条空缓存行
  * - 已有行（如只存了商品名、抓取时间为空的行，或带旧价格的行）：保留原价格，只更新 fetched_at；
  *   旧价格里还没有 updated_at 的先按「旧抓取时刻 − 相对时间」固化成 updated_at，
- *   否则 fetched_at 前移会让 7 天参考规则把旧价格误当成新价格
+ *   否则 fetched_at 前移会让报价时效规则把旧价格误当成新价格
  */
 async function recordMissingProduct(jan: string) {
   const nowMs = Date.now();

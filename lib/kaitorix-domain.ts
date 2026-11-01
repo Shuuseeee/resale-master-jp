@@ -3,7 +3,7 @@
 // 纯函数模块，比价中心页面与交易页比价链路共用，避免逻辑分叉。
 
 import { getAvailableQty, getUnitCost } from '@/lib/financial/calculator';
-import { KAITORIX_REFERENCE_MAX_AGE_MS } from '@/lib/kaitorix-config';
+import { kaitorixReferenceCutoff } from '@/lib/kaitorix-config';
 
 /** 单条店铺报价。统一 KaitorixPrice / KaitorixCachedPrice / allPrices 项的结构 */
 export interface KaitorixPriceEntry {
@@ -78,17 +78,17 @@ export function getPriceUpdatedAt(
   return (fetchedAt ?? now) - age;
 }
 
-/** 该报价是否仍可作为参考：更新时间未超过 7 天；时间无法确定时按可参考处理 */
+/** 该报价是否仍可作为参考：日本时间昨天 0 点以后更新的；时间无法确定时按可参考处理 */
 export function isPriceReferenceable(
   entry: { updated?: string; updated_at?: string },
   fetchedAt: number | null | undefined,
   now: number = Date.now()
 ): boolean {
   const updatedAt = getPriceUpdatedAt(entry, fetchedAt, now);
-  return updatedAt == null || now - updatedAt <= KAITORIX_REFERENCE_MAX_AGE_MS;
+  return updatedAt == null || updatedAt >= kaitorixReferenceCutoff(now);
 }
 
-/** 剔除更新时间超过 7 天的店铺报价；最高价 / 利润等一律基于它的结果重新计算 */
+/** 剔除前天及更早更新的店铺报价；最高价 / 利润等一律基于它的结果重新计算 */
 export function getReferencePrices<T extends { updated?: string; updated_at?: string }>(
   prices: T[] | null | undefined,
   fetchedAt: number | null | undefined,

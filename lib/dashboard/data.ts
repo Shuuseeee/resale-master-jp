@@ -64,7 +64,7 @@ export interface DashExpense {
 export interface DashPrice {
   store: string;
   price: number;
-  /** 该店报价超过 7 天（不参考） */
+  /** 该店报价在日本时间昨天 0 点之前更新（不参考） */
   stale: boolean;
 }
 

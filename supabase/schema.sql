@@ -1621,7 +1621,7 @@ REVOKE ALL ON public.jan_thumbnail_queue_status FROM anon;
 
 -- ============================================================
 -- 贩卖助手只读视图（2026-10-10）：给 Claude 对话（Supabase MCP）和以后的页面查询用，口径固定在库里
--- 利润口径见 calc_sale_profit / calc_transaction_profit（与买取X 一致）；买取价按「单店报价超过 7 天不参考」规则
+-- 利润口径见 calc_sale_profit / calc_transaction_profit（与买取X 一致）；买取价按「单店报价在日本时间昨天 0 点之前更新的不参考」规则
 -- 都是 security_invoker：登录用户只看到自己的行；用服务端权限查询（如 MCP）会看到所有用户，需按 user_id 过滤
 -- 注意：网页「设置 > 买取价格检查」里的店铺筛选存在浏览器本地，视图无法读取，这里包含全部店铺
 -- ============================================================
@@ -1656,7 +1656,7 @@ WITH entries AS (
 )
 SELECT DISTINCT ON (jan, store)
   jan, store, price, price_updated_at, source, fetched_at,
-  (price_updated_at IS NOT NULL AND price_updated_at < now() - interval '7 days') AS is_stale
+  (price_updated_at IS NOT NULL AND price_updated_at < (((now() AT TIME ZONE 'Asia/Tokyo')::date - 1)::timestamp AT TIME ZONE 'Asia/Tokyo')) AS is_stale
 FROM entries
 WHERE price > 0
 ORDER BY jan, store, COALESCE(price_updated_at, fetched_at) DESC;
@@ -1757,9 +1757,9 @@ REVOKE ALL ON public.assistant_buyback_prices FROM anon;
 REVOKE ALL ON public.assistant_purchases FROM anon;
 REVOKE ALL ON public.assistant_overview FROM anon;
 
-COMMENT ON VIEW public.assistant_buyback_prices IS '每个 JAN × 买取店的最新报价（官方 API 缓存与每日 CSV 取较新）。is_stale = 该店报价超过 7 天，不作参考。';
-COMMENT ON VIEW public.assistant_purchases IS '按进货汇总（与买取X 进货列表同口径）。unit_cost = (采购总价 − 三种积分) ÷ 数量；confirmed_profit = 各次出售利润 − 退货损失；quantity_unsold = 库存 + 未到货；best_price 只取 7 天内的报价；estimated_profit = (best_price − unit_cost) × quantity_unsold。';
-COMMENT ON VIEW public.assistant_overview IS '每个用户的整体汇总：confirmed_profit = 销售利润 − 退货损失 − 经费；profit_rate = confirmed_profit ÷ 售出部分成本；inventory_cost = 未售数量 × 单位成本；unpriced_qty = 没有 7 天内买取价的未售数量。';
+COMMENT ON VIEW public.assistant_buyback_prices IS '每个 JAN × 买取店的最新报价（官方 API 缓存与每日 CSV 取较新）。is_stale = 该店报价在日本时间昨天 0 点之前更新，不作参考。';
+COMMENT ON VIEW public.assistant_purchases IS '按进货汇总（与买取X 进货列表同口径）。unit_cost = (采购总价 − 三种积分) ÷ 数量；confirmed_profit = 各次出售利润 − 退货损失；quantity_unsold = 库存 + 未到货；best_price 只取日本时间昨天 0 点以后更新的报价；estimated_profit = (best_price − unit_cost) × quantity_unsold。';
+COMMENT ON VIEW public.assistant_overview IS '每个用户的整体汇总：confirmed_profit = 销售利润 − 退货损失 − 经费；profit_rate = confirmed_profit ÷ 售出部分成本；inventory_cost = 未售数量 × 单位成本；unpriced_qty = 没有有效（昨天 0 点以后）买取价的未售数量。';
 
 
 -- ============================================================

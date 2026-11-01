@@ -12,8 +12,16 @@ export function needsKaitorixRefresh(fetchedAt: number | undefined): boolean {
 /** 官方查不到 / 没有任何可参考价格的 JAN，隔这么久才再向官方请求一次（官方即使返回 404 也会扣一次额度） */
 export const KAITORIX_NO_DATA_RETRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-/** 店铺自己的报价更新时间超过此时长，该条报价不再作为参考（不参与最高价 / 利润计算） */
-export const KAITORIX_REFERENCE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const DAY_MS = 24 * 60 * 60 * 1000;
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/**
+ * 店铺报价的参考截止时刻 = 日本时间「昨天 0 点」：今天、昨天更新的报价可参考，前天及更早的不再参与最高价 / 利润计算。
+ * 与视图 assistant_buyback_prices 的 is_stale 同一口径（改这里时两边同步）。
+ */
+export function kaitorixReferenceCutoff(now: number = Date.now()): number {
+  return Math.floor((now + JST_OFFSET_MS) / DAY_MS) * DAY_MS - JST_OFFSET_MS - DAY_MS;
+}
 
 export interface KaitorixStore {
   key: string;

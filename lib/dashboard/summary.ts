@@ -105,7 +105,7 @@ export function holdingUnitCost(p: DashPurchase): number {
   return p.unitPrice + Math.floor(p.shippingFee / qty) - Math.floor(p.pointsEarned / qty);
 }
 
-/** 当前最高买取价：只取 7 天内的报价，并按「设置 > 买取价格检查」勾选的店铺过滤 */
+/** 当前最高买取价：只取日本时间昨天 0 点以后更新的报价，并按「设置 > 买取价格检查」勾选的店铺过滤 */
 export function bestPrices(data: DashboardData, enabledStores: ReadonlySet<string> | null): Map<string, { price: number; stores: string[] }> {
   const map = new Map<string, { price: number; stores: string[] }>();
   for (const [jan, list] of Object.entries(data.prices)) {

@@ -135,7 +135,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
   const enabled = config.enabled && config.enabledStores.length > 0;
 
   // 派生 buybackMap：基于原始 JAN 数据 + 当前交易 + 店铺配置即时计算。
-  // 7 天参考过滤、店铺过滤、利润都在这里发生，保证所有消费方口径一致。
+  // 报价时效过滤（昨天 0 点以后）、店铺过滤、利润都在这里发生，保证所有消费方口径一致。
   const buybackMap = useMemo(() => {
     const map = new Map<string, BuybackInfo>();
     if (janPriceMap.size === 0) return map;
@@ -144,7 +144,7 @@ export function useKaitorixPrices(transactions: Transaction[]): KaitorixState {
       const data = janPriceMap.get(jan);
       if (!data) return;
 
-      // 店铺自己的报价更新超过 7 天的不作为参考；全部过期则价格归零，展示组件自动隐藏
+      // 店铺自己的报价在日本时间昨天 0 点之前更新的不作为参考；全部过期则价格归零，展示组件自动隐藏
       const filtered = filterPricesByStores(getReferencePrices(data.prices, data.fetchedAt), config.enabledStores);
       const best = getBestEntry(filtered);
       const fetchedAt = data.fetchedAt ?? undefined;

@@ -68,7 +68,7 @@ export default function SummaryCards({ s }: { s: DashSummary }) {
       {!s.hideStock && (
         <Card
           label="利润（含预估）"
-          tip="确定利润 + 预估利润。预估利润 = 未售部分按当前最高买取价（7 天内的报价、按设置里勾选的店铺）卖掉的利润。"
+          tip="确定利润 + 预估利润。预估利润 = 未售部分按当前最高买取价（今天、昨天更新的报价，按设置里勾选的店铺）卖掉的利润。"
           value={formatCurrency(s.totalWithEstimated)}
           tone={tone(s.totalWithEstimated)}
         >

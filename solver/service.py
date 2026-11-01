@@ -72,7 +72,7 @@ def _box(b):
 
 def plan(payload):
     rules = R.load()
-    stale_limit = int(payload.get("stale_limit") or 7)
+    stale_limit = int(payload.get("stale_limit") or 1)
     exclude = list(payload.get("exclude_stores") or [])
     day = payload.get("day") or datetime.date.today().isoformat()
     items = [_item(x) for x in payload.get("items") or []]
@@ -84,7 +84,7 @@ def plan(payload):
     priced = [t for t in items if usable_prices(t, stores, stale_limit)]
     unpriced = [dict(tid=t["tid"], name=t["name"], jan=t["jan"], qty=t["qty"]) for t in items if t not in priced]
     if not priced:
-        return dict(ok=False, error="所有商品在可用店铺里都没有 %d 天内的有效报价" % stale_limit, unpriced=unpriced)
+        return dict(ok=False, error="所有商品在可用店铺里都没有有效报价（只用 %d 天前以内的，按日本时间日历日）" % stale_limit, unpriced=unpriced)
 
     try:
         sol = solve(priced, candidates, rules, stale_limit=stale_limit, exclude=exclude)

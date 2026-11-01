@@ -36,7 +36,7 @@ export async function GET(
     _fetched_at: cached!.fetched_at,
   });
 
-  // 有可参考价格（店铺报价更新未超过 7 天）的 JAN 按 30 分钟刷新；
+  // 有可参考价格（店铺报价在日本时间昨天 0 点以后更新）的 JAN 按 30 分钟刷新；
   // 官方查不到 / 没有任何可参考价格的 JAN 隔 24 小时才再请求（官方 404 也扣额度，每次进页面重试会白白耗光）
   const fetchedAtMs = cached?.fetched_at ? new Date(cached.fetched_at).getTime() : null;
   const hasReferencePrice = cached
